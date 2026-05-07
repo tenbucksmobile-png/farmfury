@@ -1,0 +1,7 @@
+.env
+user_data/logs/
+user_data/tradesv3.sqlite
+user_data/tradesv3.sqlite-shm
+user_data/tradesv3.sqlite-wal
+__pycache__/
+*.pyc
