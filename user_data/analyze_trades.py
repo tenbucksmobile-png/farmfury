@@ -78,6 +78,25 @@ def main():
     if avg_loss != 0:
         print(f"  Profit factor: {abs(avg_win * wins) / abs(avg_loss * losses):.2f}")
 
+    # --- Drawdown and consecutive loss streak ---
+    sorted_by_close = sorted(trades, key=lambda t: t["close_date"])
+    cumulative, peak, max_dd, current_dd = 0.0, 0.0, 0.0, 0.0
+    consec_streak, max_consec = 0, 0
+    for t in sorted_by_close:
+        cumulative += t["profit_abs"]
+        peak = max(peak, cumulative)
+        current_dd = cumulative - peak
+        max_dd = min(max_dd, current_dd)
+        if t["profit_ratio"] <= 0:
+            consec_streak += 1
+            max_consec = max(max_consec, consec_streak)
+        else:
+            consec_streak = 0
+    wallet = 1000.0
+    print(f"  Max drawdown : {max_dd:+.2f} USDT ({max_dd / wallet * 100:.2f}%)")
+    print(f"  Current DD   : {current_dd:+.2f} USDT")
+    print(f"  Max consec L : {max_consec}  (current streak: {consec_streak})")
+
     # --- Win rate by entry tag ---
     tags = {}
     for t in trades:

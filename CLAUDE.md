@@ -8,7 +8,7 @@ Automated crypto trading bot built on freqtrade. Runs 24/7 on a Hetzner VPS, tra
 
 ## Stack
 
-- **Framework:** freqtrade 2026.4 (open source trading bot)
+- **Framework:** freqtrade 2026.4 (open source trading bot), Docker image `freqtradeorg/freqtrade:stable`
 - **Exchange:** Binance (spot, via CCXT)
 - **Deployment:** Docker on Hetzner VPS (178.105.89.121)
 - **Alerts:** Telegram bot
@@ -26,16 +26,19 @@ docker compose logs -f        # tail live logs
 docker compose ps             # check status
 ```
 
-Analyse live trade performance (run on VPS):
+Analyse trade performance (runs against live DB on VPS, or local `user_data/tradesv3.sqlite` if present):
 ```bash
 docker compose exec freqtrade python /freqtrade/user_data/analyze_trades.py
+# or locally (if tradesv3.sqlite is present):
+python user_data/analyze_trades.py
 ```
 
 Backtesting (one-off container, does not interfere with live bot):
 ```bash
-# Download OHLCV data first if not cached:
+# Download OHLCV data first if not cached (1h required for the MTF gate):
 docker compose run --rm freqtrade download-data \
   --config user_data/config.json \
+  --timeframes 5m 1h \
   --timerange 20240101-20241231
 
 docker compose run --rm freqtrade backtesting \
@@ -59,24 +62,35 @@ Validate strategy loads without errors:
 docker compose run --rm freqtrade list-strategies --config user_data/config.json
 ```
 
-## Project Structure
+## Architecture
 
-```
-crypto-algo/
-├── docker-compose.yml                  # container definition — start/stop here
-├── .env                                # API keys (gitignored — never commit)
-├── .env.example                        # template for .env
-└── user_data/
-    ├── config.json                     # bot config: pairs, risk, stake sizing
-    ├── analyze_trades.py               # win rate analysis script
-    ├── tradesv3.sqlite                 # trade history database (auto-created)
-    └── strategies/
-        └── CombinedStrategy.py         # the trading strategy
-```
+`docker-compose.yml` mounts `./user_data` → `/freqtrade/user_data` inside the container and hardcodes `--strategy CombinedStrategy`. Editing any file under `user_data/` and running `docker compose restart` is sufficient to apply changes — no image rebuild needed.
+
+The bot uses `StaticPairList`, so the traded pairs (BTC/USDT, ETH/USDT, SOL/USDT) are fixed in `config.json` and not dynamically filtered. `process_only_new_candles = True` means `populate_indicators` / `populate_entry_trend` / `populate_exit_trend` execute once per 5m candle close, not on every tick. `cancel_open_orders_on_exit: true` cancels unfilled orders when the bot stops; `initial_state: running` means it resumes trading immediately on container start.
 
 ## Strategy Architecture — CombinedStrategy
 
 `user_data/strategies/CombinedStrategy.py` implements `IStrategy` (freqtrade interface version 3). Indicators are computed with **`pandas_ta`** (not `ta-lib`) — use `pandas_ta` for any new indicators.
+
+### pandas_ta column names
+
+Some `pandas_ta` functions return **stable** column names regardless of parameters (use direct lookup):
+- `ta.macd()` → `MACDh_12_26_9`
+- `ta.adx()` → `ADX_14`, `DMP_14`, `DMN_14`
+- `ta.bbands()` → `BBU_20_2.0`, `BBM_20_2.0`, `BBL_20_2.0`
+
+Others return **parameter-suffixed** column names that must be discovered at runtime:
+- `ta.supertrend()` → `SUPERTd_7_3.0` (direction column)
+- `ta.ichimoku()` → `ITS_*` (Tenkan), `IKS_*` (Kijun)
+- `ta.stoch()` → `STOCHk_14_3_3`, `STOCHd_14_3_3`
+
+Runtime lookup pattern used throughout `populate_indicators`:
+```python
+st = ta.supertrend(...)
+col = next((c for c in st.columns if c.startswith("SUPERTd")), None)
+```
+
+Follow this pattern when adding any `pandas_ta` function that returns multiple named columns. The Ichimoku call also has a try/except because some versions return a tuple instead of a DataFrame.
 
 ### Confluence scoring system
 
@@ -107,7 +121,7 @@ Rather than a binary regime switch, the strategy scores independent signals from
 8. Price near Fibonacci support (38.2%, 50%, or 61.8% of 50-bar swing)
 
 **Additional entry filters:**
-- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA
+- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA, **1h EMA9 > EMA21** (hourly trend gate — prevents buying 5m micro-rallies counter to the hourly direction)
 - `mean_reversion`: ADX below threshold (ranging market only), RSI still falling, price > EMA100 (avoids downtrend)
 
 **Exit conditions:**
@@ -117,6 +131,8 @@ Rather than a binary regime switch, the strategy scores independent signals from
 
 **`startup_candle_count = 100`** — covers EMA100 (longest period used). If you add an indicator with a period longer than 100, increase this value accordingly.
 
+VWAP is computed as a rolling 20-period average (not session-anchored) to remain stable for 24/7 crypto markets that have no daily open.
+
 ### Hyperopt parameters
 
 All key thresholds are exposed as `IntParameter` / `DecimalParameter` for automated tuning:
@@ -124,7 +140,7 @@ All key thresholds are exposed as `IntParameter` / `DecimalParameter` for automa
 | Parameter | Default | Controls |
 |---|---|---|
 | `buy_adx_threshold` | 28 | ADX regime switch point |
-| `buy_trend_score_min` | 8 | Minimum trend confluence to enter |
+| `buy_trend_score_min` | 10 | Minimum trend confluence to enter |
 | `buy_reversion_score_min` | 5 | Minimum reversion confluence to enter |
 | `buy_rsi_trend_min/max` | 48 / 72 | RSI zone for trend entries |
 | `buy_rsi_reversion_max` | 30 | RSI oversold threshold |
@@ -133,9 +149,26 @@ All key thresholds are exposed as `IntParameter` / `DecimalParameter` for automa
 
 ### Performance analysis
 
-`user_data/analyze_trades.py` queries the live SQLite DB and reports win rates broken down by entry tag, pair, exit reason, and hour of day. Run it on the VPS after accumulating trades, then share output to identify which mode needs tuning.
+`user_data/analyze_trades.py` queries the SQLite DB and reports:
+- Win rates by entry tag, pair, exit reason, and hour of day
+- Max drawdown and current drawdown (USDT + % of 1000 USDT baseline wallet)
+- Max consecutive losses and current loss streak
+- 10 worst trades
 
-**Current target: 70% overall win rate.** As of the last analysis (15 trades, early data): trend_confluence 0%, mean_reversion 33% — confluence strategy deployed to address this.
+It probes both `/freqtrade/user_data/tradesv3.sqlite` (container path) and `user_data/tradesv3.sqlite` (local), so it works in both environments.
+
+**Current target: 70% overall win rate.**
+
+## Protections (live circuit breakers)
+
+Defined as a `protections` property in `CombinedStrategy.py` (not in config.json — that placement is deprecated in freqtrade 2026.x). Active during live/dry-run trading; add `--enable-protections` to backtest commands to simulate them:
+
+| Protection | Trigger | Pause duration |
+|---|---|---|
+| `MaxDrawdown` | 10% drawdown in any 24h window (288 × 5m candles) | 24h |
+| `StoplossGuard` | 4 losing trades in any 6h window (72 × 5m candles) | 5h |
+
+After a protection triggers, freqtrade holds open positions but stops new entries. Resume automatically when the pause expires, or send `/start` via Telegram to override early.
 
 ## Configuration
 
@@ -147,7 +180,9 @@ Key settings in `user_data/config.json`:
 | `dry_run_wallet` | `1000` | Starting paper balance in USDT |
 | `max_open_trades` | `3` | One per pair |
 | `stake_amount` | `"unlimited"` | Divides balance by max_open_trades |
+| `tradable_balance_ratio` | `0.99` | 99% of wallet committed; 1% held as buffer |
 | `timeframe` | `5m` | Strategy candle interval |
+| `unfilledtimeout` | `10 min` | Cancels unfilled entry/exit orders after 10 min |
 
 Most config.json changes apply without a full restart — send `/reload_config` via Telegram.
 
@@ -165,6 +200,15 @@ FREQTRADE__API_SERVER__PASSWORD
 FREQTRADE__API_SERVER__JWT_SECRET_KEY
 FREQTRADE__API_SERVER__WS_TOKEN
 ```
+
+## Telegram Notifications
+
+Per-trade entry/exit notifications are **disabled** — the bot sends only:
+- Bot startup, status changes, and warnings
+- Protection triggers (MaxDrawdown / StoplossGuard fired)
+- **Weekly report** — every Friday at 15:00 UTC, covering the preceding Saturday–Friday window
+
+The weekly report is generated in `_maybe_send_weekly_report()` inside `CombinedStrategy.py`. It shows total trades, win rate, per-pair breakdown (trade count, % share, win rate, net USDT), cumulative P&L, and estimated balance. A marker file at `/freqtrade/user_data/.last_weekly_report` prevents duplicate sends within the 5-minute fire window. To change the send time, edit the `ct.hour != 15` check in the strategy.
 
 ## Telegram Commands
 
