@@ -210,8 +210,8 @@ def main():
         print("  docker compose run --rm freqtrade hyperopt \\")
         print("    --config user_data/config.json \\")
         print("    --strategy CombinedStrategy \\")
-        print("    --hyperopt-loss WinRatioAndProfitRatioLoss \\")
-        print("    --spaces buy --epochs 200")
+        print("    --hyperopt-loss SortinoHyperOptLoss \\")
+        print("    --spaces buy sell --epochs 300 --enable-protections")
     else:
         print("All entry tags are at or above 70%. Nice work.")
     print("=" * 60)

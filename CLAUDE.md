@@ -52,9 +52,10 @@ Hyperopt — auto-tune signal thresholds to maximise win rate:
 docker compose run --rm freqtrade hyperopt \
   --config user_data/config.json \
   --strategy CombinedStrategy \
-  --hyperopt-loss WinRatioAndProfitRatioLoss \
+  --hyperopt-loss SortinoHyperOptLoss \
   --spaces buy sell --epochs 300 \
-  --timerange 20240101-20241231
+  --timerange 20250101-20260430 \
+  --enable-protections
 ```
 
 Validate strategy loads without errors:
