@@ -40,7 +40,7 @@ class CombinedStrategy(IStrategy):
     trailing_only_offset_is_reached = True
 
     process_only_new_candles = True
-    use_exit_signal = True
+    use_exit_signal = False
     exit_profit_only = False
     ignore_roi_if_entry_signal = False
 
@@ -249,22 +249,32 @@ class CombinedStrategy(IStrategy):
         return dataframe
 
     def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-
-        trend_exit = (
-            (dataframe["trend_score"] <= self.sell_trend_score_exit.value) &               # confluence collapsed
-            (dataframe["ema9"] < dataframe["ema21"]) &                                     # EMA cross down (AND, not OR)
-            (dataframe["macd_hist"] < 0)                                                    # momentum negative
-        )
-
-        reversion_exit = (
-            (dataframe["close"]   > dataframe["bb_middle"]) &                              # price returned to mean
-            (dataframe["rsi"]     > self.sell_rsi_reversion_min.value) &                   # momentum normalized
-            (dataframe["stoch_k"] > 50)                                                     # stochastic recovered
-        )
-
-        dataframe.loc[trend_exit | reversion_exit, "exit_long"] = 1
-
         return dataframe
+
+    def custom_exit(self, pair: str, trade, current_time, current_rate: float,
+                    current_profit: float, **kwargs):
+        dataframe, _ = self.dp.get_analyzed_dataframe(pair, self.timeframe)
+        if dataframe.empty:
+            return None
+        c = dataframe.iloc[-1]
+
+        if trade.enter_tag == "trend_confluence":
+            if (
+                c["trend_score"] <= self.sell_trend_score_exit.value
+                and c["ema9"] < c["ema21"]
+                and c["macd_hist"] < 0
+            ):
+                return "trend_exit"
+
+        elif trade.enter_tag == "mean_reversion":
+            if (
+                c["close"] > c["bb_middle"]
+                and c["rsi"] > self.sell_rsi_reversion_min.value
+                and c["stoch_k"] > 50
+            ):
+                return "reversion_exit"
+
+        return None
 
     def bot_loop_start(self, current_time: datetime, **kwargs) -> None:
         self._maybe_send_weekly_report(current_time)

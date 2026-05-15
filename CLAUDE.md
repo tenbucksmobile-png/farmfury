@@ -66,7 +66,9 @@ docker compose run --rm freqtrade list-strategies --config user_data/config.json
 
 `docker-compose.yml` mounts `./user_data` → `/freqtrade/user_data` inside the container and hardcodes `--strategy CombinedStrategy`. Editing any file under `user_data/` and running `docker compose restart` is sufficient to apply changes — no image rebuild needed.
 
-The bot uses `StaticPairList`, so the traded pairs (BTC/USDT, ETH/USDT, SOL/USDT) are fixed in `config.json` and not dynamically filtered. `process_only_new_candles = True` means `populate_indicators` / `populate_entry_trend` / `populate_exit_trend` execute once per 5m candle close, not on every tick. `cancel_open_orders_on_exit: true` cancels unfilled orders when the bot stops; `initial_state: running` means it resumes trading immediately on container start.
+The bot uses `StaticPairList`, so the traded pairs (BTC/USDT, ETH/USDT, SOL/USDT) are fixed in `config.json` and not dynamically filtered. `process_only_new_candles = True` means `populate_indicators` / `populate_entry_trend` / `populate_exit_trend` execute once per 5m candle close, not on every tick. `cancel_open_orders_on_exit: true` cancels unfilled orders when the bot stops; `initial_state: running` means it resumes trading immediately on container start. `restart: unless-stopped` in `docker-compose.yml` means the container recovers automatically from crashes and VPS reboots — no cron job needed.
+
+To add a new trading pair: add it to `pair_whitelist` in `config.json` and increase `max_open_trades` by 1. No strategy changes required.
 
 ## Strategy Architecture — CombinedStrategy
 
@@ -91,6 +93,10 @@ col = next((c for c in st.columns if c.startswith("SUPERTd")), None)
 ```
 
 Follow this pattern when adding any `pandas_ta` function that returns multiple named columns. The Ichimoku call also has a try/except because some versions return a tuple instead of a DataFrame.
+
+### Informative pair (multi-timeframe) pattern
+
+`informative_pairs()` returns `(pair, "1h")` for every pair in the whitelist. In `populate_indicators`, the 1h dataframe is fetched, indicators computed, then merged via `merge_informative_pair(dataframe, informative_1h, "5m", "1h", ffill=True)`. This appends a `_1h` suffix to every column — so `informative_1h["trend_up"]` becomes `dataframe["trend_up_1h"]` after the merge. If you add more 1h indicators, follow the same pattern and reference them with the `_1h` suffix in entry/exit logic.
 
 ### Confluence scoring system
 
@@ -183,6 +189,7 @@ Key settings in `user_data/config.json`:
 | `tradable_balance_ratio` | `0.99` | 99% of wallet committed; 1% held as buffer |
 | `timeframe` | `5m` | Strategy candle interval |
 | `unfilledtimeout` | `10 min` | Cancels unfilled entry/exit orders after 10 min |
+| `force_entry_enable` | `false` | `/forcebuy` Telegram command is disabled; set to `true` to enable manual entries |
 
 Most config.json changes apply without a full restart — send `/reload_config` via Telegram.
 
@@ -208,7 +215,7 @@ Per-trade entry/exit notifications are **disabled** — the bot sends only:
 - Protection triggers (MaxDrawdown / StoplossGuard fired)
 - **Weekly report** — every Friday at 15:00 UTC, covering the preceding Saturday–Friday window
 
-The weekly report is generated in `_maybe_send_weekly_report()` inside `CombinedStrategy.py`. It shows total trades, win rate, per-pair breakdown (trade count, % share, win rate, net USDT), cumulative P&L, and estimated balance. A marker file at `/freqtrade/user_data/.last_weekly_report` prevents duplicate sends within the 5-minute fire window. To change the send time, edit the `ct.hour != 15` check in the strategy.
+The weekly report is generated in `_maybe_send_weekly_report()`, called from `bot_loop_start()` (which freqtrade calls every ~5 seconds via `process_throttle_secs`). The method itself gates on day/hour/minute so it only fires once per Friday. It shows total trades, win rate, per-pair breakdown (trade count, % share, win rate, net USDT), cumulative P&L, and estimated balance. A marker file at `/freqtrade/user_data/.last_weekly_report` prevents duplicate sends within the 5-minute fire window. To change the send time, edit the `ct.hour != 15` check in the strategy.
 
 ## Telegram Commands
 
