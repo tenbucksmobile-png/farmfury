@@ -70,13 +70,13 @@ class CombinedStrategy(IStrategy):
         ]
 
     # ── Hyperopt search spaces ────────────────────────────────────────────────
-    buy_adx_threshold       = IntParameter(25, 40, default=28, space="buy",  optimize=True)
-    buy_trend_score_min     = IntParameter(6,  12, default=10, space="buy",  optimize=True)  # raised 8→10
-    buy_reversion_score_min = IntParameter(4,  7,  default=5,  space="buy",  optimize=True)
-    buy_rsi_trend_min       = IntParameter(44, 58, default=48, space="buy",  optimize=True)
-    buy_rsi_trend_max       = IntParameter(65, 78, default=72, space="buy",  optimize=True)
-    buy_rsi_reversion_max   = IntParameter(20, 35, default=30, space="buy",  optimize=True)
-    sell_rsi_reversion_min  = IntParameter(50, 65, default=55, space="sell", optimize=True)
+    buy_adx_threshold       = IntParameter(25, 40, default=26, space="buy",  optimize=True)
+    buy_trend_score_min     = IntParameter(6,  12, default=12, space="buy",  optimize=True)
+    buy_reversion_score_min = IntParameter(4,  7,  default=6,  space="buy",  optimize=True)
+    buy_rsi_trend_min       = IntParameter(44, 58, default=54, space="buy",  optimize=True)
+    buy_rsi_trend_max       = IntParameter(65, 78, default=70, space="buy",  optimize=True)
+    buy_rsi_reversion_max   = IntParameter(20, 35, default=23, space="buy",  optimize=True)
+    sell_rsi_reversion_min  = IntParameter(50, 65, default=58, space="sell", optimize=True)
     sell_trend_score_exit   = IntParameter(2,  6,  default=4,  space="sell", optimize=True)
 
     def informative_pairs(self):
