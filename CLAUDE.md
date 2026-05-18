@@ -134,7 +134,7 @@ Rather than a binary regime switch, the strategy scores independent signals from
 **Exit conditions:**
 - Trend: score ≤ 4 AND EMA9 < EMA21 AND MACD histogram < 0 (all three required)
 - Reversion: price > BB middle AND RSI > 55 AND Stochastic K > 50
-- Hard stoploss: -3%; trailing stop activates at +2%, trails at 1%; ROI ladder: 3% → 2% (30m) → 1.5% (1h) → 1% (2h)
+- Hard stoploss: -5%; trailing stop activates at +3%, trails at 1.5%; ROI ladder: 8% (immediate ceiling) → 5% (1h) → 3% (2h) → 1% (4h)
 
 **`startup_candle_count = 100`** — covers EMA100 (longest period used). If you add an indicator with a period longer than 100, increase this value accordingly.
 
@@ -144,15 +144,18 @@ VWAP is computed as a rolling 20-period average (not session-anchored) to remain
 
 All key thresholds are exposed as `IntParameter` / `DecimalParameter` for automated tuning:
 
-| Parameter | Default | Controls |
-|---|---|---|
-| `buy_adx_threshold` | 28 | ADX regime switch point |
-| `buy_trend_score_min` | 10 | Minimum trend confluence to enter |
-| `buy_reversion_score_min` | 5 | Minimum reversion confluence to enter |
-| `buy_rsi_trend_min/max` | 48 / 72 | RSI zone for trend entries |
-| `buy_rsi_reversion_max` | 30 | RSI oversold threshold |
-| `sell_rsi_reversion_min` | 55 | RSI level to exit reversion trades |
-| `sell_trend_score_exit` | 4 | Score floor that triggers trend exit |
+| Parameter | Current | Range | Controls |
+|---|---|---|---|
+| `buy_adx_threshold` | 26 | 25–40 | ADX regime switch point |
+| `buy_trend_score_min` | 8 | 6–12 | Minimum trend confluence to enter |
+| `buy_reversion_score_min` | 6 | 4–7 | Minimum reversion confluence to enter |
+| `buy_rsi_trend_min` | 54 | 44–58 | RSI lower bound for trend entries |
+| `buy_rsi_trend_max` | 70 | 65–78 | RSI upper bound for trend entries |
+| `buy_rsi_reversion_max` | 23 | 20–35 | RSI oversold threshold |
+| `sell_rsi_reversion_min` | 58 | 50–65 | RSI level to exit reversion trades |
+| `sell_trend_score_exit` | 4 | 2–6 | Score floor that triggers trend exit |
+
+**`CombinedStrategy.json`** — freqtrade auto-loads this file on startup, overriding the Python `default=` values above. After running hyperopt, inspect results before applying — if the best epoch is still net-negative, do not restart the live bot with those parameters. The file also carries `roi`, `stoploss`, and `trailing` blocks which override the strategy class values; keep these in sync when editing either file.
 
 ### Performance analysis
 
