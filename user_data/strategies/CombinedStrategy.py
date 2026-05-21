@@ -80,7 +80,8 @@ class CombinedStrategy(IStrategy):
     sell_trend_score_exit   = IntParameter(2,  6,  default=4,  space="sell", optimize=True)
 
     def informative_pairs(self):
-        return [(pair, "1h") for pair in self.dp.current_whitelist()]
+        pairs = self.dp.current_whitelist()
+        return [(pair, "1h") for pair in pairs] + [(pair, "4h") for pair in pairs]
 
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
 
@@ -212,7 +213,7 @@ class CombinedStrategy(IStrategy):
             dataframe["near_fib_support"].astype(int)                                       # 8. Near Fibonacci support level
         )
 
-        # ── 1h trend gate (Option B) ──────────────────────────────────────────
+        # ── 1h trend gate ─────────────────────────────────────────────────────
         # Prevents 5m trend entries that are counter to the hourly trend direction.
         # merge_informative_pair forward-fills the 1h value across all 5m candles
         # in that hour, so trend_up_1h reflects the most recent closed 1h candle.
@@ -221,6 +222,17 @@ class CombinedStrategy(IStrategy):
         informative_1h["ema21"]    = ta.ema(informative_1h["close"], length=21)
         informative_1h["trend_up"] = informative_1h["ema9"] > informative_1h["ema21"]
         dataframe = merge_informative_pair(dataframe, informative_1h, self.timeframe, "1h", ffill=True)
+
+        # ── 4h macro regime gate ───────────────────────────────────────────────
+        # Blocks all entries when the 4h trend is bearish (EMA50 < EMA200).
+        # In a sustained bear market this goes False and capital is preserved in
+        # USDT until the macro trend flips. Uses the classic "golden/death cross"
+        # on the 4h chart as the regime switch signal.
+        informative_4h = self.dp.get_pair_dataframe(pair=metadata["pair"], timeframe="4h")
+        informative_4h["ema50_4h"]   = ta.ema(informative_4h["close"], length=50)
+        informative_4h["ema200_4h"]  = ta.ema(informative_4h["close"], length=200)
+        informative_4h["macro_bull"] = informative_4h["ema50_4h"] > informative_4h["ema200_4h"]
+        dataframe = merge_informative_pair(dataframe, informative_4h, self.timeframe, "4h", ffill=True)
 
         return dataframe
 
@@ -231,14 +243,16 @@ class CombinedStrategy(IStrategy):
             (dataframe["close"] > dataframe["ema50"]) &                                    # price above medium-term trend
             (dataframe["higher_lows"]) &                                                    # uptrend structure confirmed
             (dataframe["volume"] > dataframe["volume_ma"]) &                               # volume confirmation
-            (dataframe["trend_up_1h"])                                                      # 1h EMA9 > EMA21 gate
+            (dataframe["trend_up_1h"]) &                                                   # 1h EMA9 > EMA21 gate
+            (dataframe["macro_bull_4h"])                                                    # 4h EMA50 > EMA200 macro regime gate
         )
 
         reversion_entry = (
             (dataframe["reversion_score"] >= self.buy_reversion_score_min.value) &
             (dataframe["adx"] < self.buy_adx_threshold.value) &                            # only in ranging (non-trending) market
             (dataframe["rsi"] < dataframe["rsi"].shift(1)) &                               # RSI still falling — not yet bouncing
-            (dataframe["close"] > dataframe["ema100"])                                      # above long-term baseline (avoids downtrend)
+            (dataframe["close"] > dataframe["ema100"]) &                                   # above long-term baseline (avoids downtrend)
+            (dataframe["macro_bull_4h"])                                                    # 4h macro regime gate — no catching falling knives in a bear market
         )
 
         dataframe.loc[trend_entry,     "enter_long"] = 1

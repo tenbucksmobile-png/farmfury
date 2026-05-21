@@ -2,22 +2,22 @@
   "strategy_name": "CombinedStrategy",
   "params": {
     "roi": {
-      "0": 0.08,
-      "60": 0.05,
-      "120": 0.03,
+      "0": 0.05,
+      "60": 0.03,
+      "120": 0.02,
       "240": 0.01
     },
     "stoploss": {
-      "stoploss": -0.05
+      "stoploss": -0.025
     },
     "trailing": {
       "trailing_stop": true,
-      "trailing_stop_positive": 0.015,
-      "trailing_stop_positive_offset": 0.03,
+      "trailing_stop_positive": 0.01,
+      "trailing_stop_positive_offset": 0.02,
       "trailing_only_offset_is_reached": true
     },
     "max_open_trades": {
-      "max_open_trades": 3
+      "max_open_trades": 5
     },
     "buy": {
       "buy_adx_threshold": 26,
@@ -33,5 +33,5 @@
     }
   },
   "ft_stratparam_v": 1,
-  "export_time": "2026-05-15 18:51:15.687896+00:00"
+  "export_time": "2026-05-21 00:00:00.000000+00:00"
 }
