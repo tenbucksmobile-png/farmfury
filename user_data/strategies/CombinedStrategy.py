@@ -42,7 +42,7 @@ class CombinedStrategy(IStrategy):
     process_only_new_candles = True
     use_exit_signal = False
     exit_profit_only = False
-    ignore_roi_if_entry_signal = False
+    ignore_roi_if_entry_signal = True
 
     # Covers EMA100 (longest period used) + Ichimoku + all shorter indicators
     startup_candle_count = 100
