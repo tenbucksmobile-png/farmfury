@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # CryptoAlgoBot
 
-Automated crypto trading bot built on freqtrade. Runs 24/7 on a Hetzner VPS, trading BTC/USDT, ETH/USDT, and SOL/USDT on Binance spot market. Long only, spot trading.
+Automated crypto trading bot built on freqtrade. Runs 24/7 on a Hetzner VPS, trading top-volume USDT pairs on Binance spot market. Long only, spot trading. Dynamic pairlist rotates to whichever pairs have the highest recent volume and activity.
 
 ## Stack
 
@@ -13,6 +13,19 @@ Automated crypto trading bot built on freqtrade. Runs 24/7 on a Hetzner VPS, tra
 - **Deployment:** Docker on Hetzner VPS (178.105.89.121)
 - **Alerts:** Telegram bot
 - **Dashboard:** FreqUI at http://178.105.89.121:8080
+
+## Parallel Project
+
+A second bot (`etf-algo`) trades US ETFs on Alpaca paper trading using the same confluence-scoring approach but via the `alpaca-py` SDK directly (not freqtrade). See `github.com/tenbucksmobile-png/etf-algo`.
+
+## First-time Setup
+
+```bash
+cp .env.example .env   # fill in API keys, Telegram token, and dashboard password
+docker compose up -d
+```
+
+Generate the JWT/WS tokens with `openssl rand -hex 32`.
 
 ## Common Commands
 
@@ -26,6 +39,11 @@ docker compose logs -f        # tail live logs
 docker compose ps             # check status
 ```
 
+Validate strategy loads without errors:
+```bash
+docker compose run --rm freqtrade list-strategies --config user_data/config.json
+```
+
 Analyse trade performance (runs against live DB on VPS, or local `user_data/tradesv3.sqlite` if present):
 ```bash
 docker compose exec freqtrade python /freqtrade/user_data/analyze_trades.py
@@ -35,16 +53,17 @@ python user_data/analyze_trades.py
 
 Backtesting (one-off container, does not interfere with live bot):
 ```bash
-# Download OHLCV data first if not cached (1h required for the MTF gate):
+# Download OHLCV data first — 5m, 1h, and 4h required for the MTF gates:
 docker compose run --rm freqtrade download-data \
   --config user_data/config.json \
-  --timeframes 5m 1h \
-  --timerange 20240101-20241231
+  --timeframes 5m 1h 4h \
+  --timerange 20240101-20261231
 
 docker compose run --rm freqtrade backtesting \
   --config user_data/config.json \
   --strategy CombinedStrategy \
-  --timerange 20240101-20241231
+  --timerange 20240101-20261231 \
+  --enable-protections
 ```
 
 Hyperopt — auto-tune signal thresholds to maximise win rate:
@@ -58,22 +77,28 @@ docker compose run --rm freqtrade hyperopt \
   --enable-protections
 ```
 
-Validate strategy loads without errors:
-```bash
-docker compose run --rm freqtrade list-strategies --config user_data/config.json
-```
-
 ## Architecture
 
 `docker-compose.yml` mounts `./user_data` → `/freqtrade/user_data` inside the container and hardcodes `--strategy CombinedStrategy`. Editing any file under `user_data/` and running `docker compose restart` is sufficient to apply changes — no image rebuild needed.
 
-The bot uses `StaticPairList`, so the traded pairs (BTC/USDT, ETH/USDT, SOL/USDT) are fixed in `config.json` and not dynamically filtered. `process_only_new_candles = True` means `populate_indicators` / `populate_entry_trend` / `populate_exit_trend` execute once per 5m candle close, not on every tick. `cancel_open_orders_on_exit: true` cancels unfilled orders when the bot stops; `initial_state: running` means it resumes trading immediately on container start. `restart: unless-stopped` in `docker-compose.yml` means the container recovers automatically from crashes and VPS reboots — no cron job needed.
+The bot uses a **dynamic pairlist** (VolumePairList → AgeFilter → SpreadFilter → RangeStabilityFilter → PerformanceFilter) that refreshes every 30 minutes to trade the top 30 most active USDT pairs. `process_only_new_candles = True` means `populate_indicators` / `populate_entry_trend` execute once per 5m candle close, not on every tick. `restart: unless-stopped` means the container recovers automatically from crashes and VPS reboots.
 
-To add a new trading pair: add it to `pair_whitelist` in `config.json` and increase `max_open_trades` by 1. No strategy changes required.
+To add a static pair: change `pairlists` in `config.json` back to `StaticPairList` and list pairs in `pair_whitelist`. No strategy changes required.
 
 ## Strategy Architecture — CombinedStrategy
 
 `user_data/strategies/CombinedStrategy.py` implements `IStrategy` (freqtrade interface version 3). Indicators are computed with **`pandas_ta`** (not `ta-lib`) — use `pandas_ta` for any new indicators.
+
+### Exit architecture
+
+`use_exit_signal = False`, so `populate_exit_trend` is intentionally empty and never called by freqtrade. **All signal-driven exits live in `custom_exit`**, which is tag-aware:
+
+- `trend_confluence` entries exit via `"trend_exit"` when score ≤ threshold AND EMA9 < EMA21 AND MACD histogram < 0 (all three required).
+- `mean_reversion` entries exit via `"reversion_exit"` when price > BB middle AND RSI > threshold AND Stochastic K > 50.
+
+Other exit paths: ROI ladder, hard stoploss (−2.5% per JSON), trailing stop (activates at +2%, trails at 1%), and circuit-breaker protections. Do not add logic to `populate_exit_trend` — it will never fire.
+
+`ignore_roi_if_entry_signal = True` — the ROI ladder is suppressed while the entry signal remains active, allowing winners to run. ROI only exits a trade when the entry conditions are no longer met.
 
 ### pandas_ta column names
 
@@ -97,7 +122,13 @@ Follow this pattern when adding any `pandas_ta` function that returns multiple n
 
 ### Informative pair (multi-timeframe) pattern
 
-`informative_pairs()` returns `(pair, "1h")` for every pair in the whitelist. In `populate_indicators`, the 1h dataframe is fetched, indicators computed, then merged via `merge_informative_pair(dataframe, informative_1h, "5m", "1h", ffill=True)`. This appends a `_1h` suffix to every column — so `informative_1h["trend_up"]` becomes `dataframe["trend_up_1h"]` after the merge. If you add more 1h indicators, follow the same pattern and reference them with the `_1h` suffix in entry/exit logic.
+`informative_pairs()` returns `(pair, "1h")` and `(pair, "4h")` for every pair in the whitelist.
+
+**1h gate:** In `populate_indicators`, the 1h dataframe is merged via `merge_informative_pair(dataframe, informative_1h, "5m", "1h", ffill=True)`. This appends a `_1h` suffix — so `informative_1h["trend_up"]` becomes `dataframe["trend_up_1h"]`. All trend entries require `trend_up_1h = True` (EMA9 > EMA21 on 1h) to prevent buying 5m micro-rallies counter to the hourly direction.
+
+**4h macro gate:** The 4h dataframe computes `ema50_4h` and `ema200_4h`. `macro_bull_4h = ema50_4h > ema200_4h`. Both `trend_confluence` and `mean_reversion` entries require `macro_bull_4h = True` — no new positions are opened when the 4h trend is bearish. This prevents entering during macro downtrends (e.g., Jan–Apr 2026, −23.78%).
+
+If you add more informative indicators, follow the same merge pattern and reference them with the appropriate `_1h` or `_4h` suffix.
 
 ### Confluence scoring system
 
@@ -111,14 +142,14 @@ Rather than a binary regime switch, the strategy scores independent signals from
 5. Ichimoku Tenkan > Kijun
 6. MACD histogram positive
 7. MACD histogram accelerating
-8. RSI in bullish zone (default 48–72)
+8. RSI in bullish zone (default 54–70)
 9. Stochastic K > D, not overbought (< 80)
 10. ADX > threshold AND DM+ > DM-
 11. OBV above its 10-period MA
 12. Chaikin Money Flow > 0
 
-**Reversion score (0–8)** — requires ≥ 5 to enter `mean_reversion`:
-1. RSI oversold (default < 30)
+**Reversion score (0–8)** — requires ≥ 6 to enter `mean_reversion`:
+1. RSI oversold (default < 23)
 2. Price below Bollinger lower band
 3. Stochastic K < 20
 4. Williams %R < -80
@@ -128,13 +159,8 @@ Rather than a binary regime switch, the strategy scores independent signals from
 8. Price near Fibonacci support (38.2%, 50%, or 61.8% of 50-bar swing)
 
 **Additional entry filters:**
-- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA, **1h EMA9 > EMA21** (hourly trend gate — prevents buying 5m micro-rallies counter to the hourly direction)
-- `mean_reversion`: ADX below threshold (ranging market only), RSI still falling, price > EMA100 (avoids downtrend)
-
-**Exit conditions:**
-- Trend: score ≤ 4 AND EMA9 < EMA21 AND MACD histogram < 0 (all three required)
-- Reversion: price > BB middle AND RSI > 55 AND Stochastic K > 50
-- Hard stoploss: -5%; trailing stop activates at +3%, trails at 1.5%; ROI ladder: 8% (immediate ceiling) → 5% (1h) → 3% (2h) → 1% (4h)
+- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA, **1h EMA9 > EMA21**, **4h EMA50 > EMA200**
+- `mean_reversion`: ADX below threshold (ranging market only), RSI still falling, price > EMA100, **4h EMA50 > EMA200**
 
 **`startup_candle_count = 100`** — covers EMA100 (longest period used). If you add an indicator with a period longer than 100, increase this value accordingly.
 
@@ -155,7 +181,7 @@ All key thresholds are exposed as `IntParameter` / `DecimalParameter` for automa
 | `sell_rsi_reversion_min` | 58 | 50–65 | RSI level to exit reversion trades |
 | `sell_trend_score_exit` | 4 | 2–6 | Score floor that triggers trend exit |
 
-**`CombinedStrategy.json`** — freqtrade auto-loads this file on startup, overriding the Python `default=` values above. After running hyperopt, inspect results before applying — if the best epoch is still net-negative, do not restart the live bot with those parameters. The file also carries `roi`, `stoploss`, and `trailing` blocks which override the strategy class values; keep these in sync when editing either file.
+**`CombinedStrategy.json`** — freqtrade auto-loads this file on startup, overriding the Python `default=` values above. The "Current" values in the table reflect the JSON, not the Python defaults. The JSON also carries `roi`, `stoploss`, and `trailing` blocks which override the strategy class values; keep these in sync when editing either file. After running hyperopt, inspect results before applying — if the best epoch is still net-negative, do not restart the live bot with those parameters.
 
 ### Performance analysis
 
@@ -171,7 +197,7 @@ It probes both `/freqtrade/user_data/tradesv3.sqlite` (container path) and `user
 
 ## Protections (live circuit breakers)
 
-Defined as a `protections` property in `CombinedStrategy.py` (not in config.json — that placement is deprecated in freqtrade 2026.x). Active during live/dry-run trading; add `--enable-protections` to backtest commands to simulate them:
+Defined as a `protections` property in `CombinedStrategy.py` (not in config.json — that placement is deprecated in freqtrade 2026.x). Add `--enable-protections` to backtest/hyperopt commands to simulate them:
 
 | Protection | Trigger | Pause duration |
 |---|---|---|
@@ -188,18 +214,18 @@ Key settings in `user_data/config.json`:
 |---|---|---|
 | `dry_run` | `true` | Set to `false` for live trading |
 | `dry_run_wallet` | `1000` | Starting paper balance in USDT |
-| `max_open_trades` | `3` | One per pair |
+| `max_open_trades` | `5` | Dynamic — rotates across top-volume pairs |
 | `stake_amount` | `"unlimited"` | Divides balance by max_open_trades |
 | `tradable_balance_ratio` | `0.99` | 99% of wallet committed; 1% held as buffer |
 | `timeframe` | `5m` | Strategy candle interval |
 | `unfilledtimeout` | `10 min` | Cancels unfilled entry/exit orders after 10 min |
-| `force_entry_enable` | `false` | `/forcebuy` Telegram command is disabled; set to `true` to enable manual entries |
+| `force_entry_enable` | `false` | `/forcebuy` Telegram command is disabled |
 
 Most config.json changes apply without a full restart — send `/reload_config` via Telegram.
 
 ## Environment Variables
 
-Secrets are injected via `.env` using freqtrade's `FREQTRADE__` double-underscore prefix convention (maps to nested JSON keys):
+Secrets are injected via `.env` (copy from `.env.example`) using freqtrade's `FREQTRADE__` double-underscore prefix convention:
 
 ```
 FREQTRADE__EXCHANGE__KEY
@@ -219,7 +245,7 @@ Per-trade entry/exit notifications are **disabled** — the bot sends only:
 - Protection triggers (MaxDrawdown / StoplossGuard fired)
 - **Weekly report** — every Friday at 15:00 UTC, covering the preceding Saturday–Friday window
 
-The weekly report is generated in `_maybe_send_weekly_report()`, called from `bot_loop_start()` (which freqtrade calls every ~5 seconds via `process_throttle_secs`). The method itself gates on day/hour/minute so it only fires once per Friday. It shows total trades, win rate, per-pair breakdown (trade count, % share, win rate, net USDT), cumulative P&L, and estimated balance. A marker file at `/freqtrade/user_data/.last_weekly_report` prevents duplicate sends within the 5-minute fire window. To change the send time, edit the `ct.hour != 15` check in the strategy.
+The weekly report is generated in `_maybe_send_weekly_report()`, called from `bot_loop_start()`. A marker file at `/freqtrade/user_data/.last_weekly_report` prevents duplicate sends. To change the send time, edit the `ct.hour != 15` check in the strategy.
 
 ## Telegram Commands
 
@@ -247,9 +273,11 @@ When paper trading is consistently profitable at ≥ 70% win rate (recommend 30 
 No git remote is configured on the VPS — deploy files directly via scp:
 
 ```bash
-# From local machine (Windows):
-scp "C:\Users\Personel\Desktop\crypto-algo\user_data\strategies\CombinedStrategy.py" root@178.105.89.121:/root/crypto-algo/user_data/strategies/CombinedStrategy.py
-scp "C:\Users\Personel\Desktop\crypto-algo\user_data\analyze_trades.py" root@178.105.89.121:/root/crypto-algo/user_data/analyze_trades.py
+# From local machine (Windows) — deploy whichever files changed:
+scp "C:\Users\Personel\Desktop\crypto-algo\user_data\strategies\CombinedStrategy.py"   root@178.105.89.121:/root/crypto-algo/user_data/strategies/CombinedStrategy.py
+scp "C:\Users\Personel\Desktop\crypto-algo\user_data\strategies\CombinedStrategy.json" root@178.105.89.121:/root/crypto-algo/user_data/strategies/CombinedStrategy.json
+scp "C:\Users\Personel\Desktop\crypto-algo\user_data\config.json"                      root@178.105.89.121:/root/crypto-algo/user_data/config.json
+scp "C:\Users\Personel\Desktop\crypto-algo\user_data\analyze_trades.py"                root@178.105.89.121:/root/crypto-algo/user_data/analyze_trades.py
 ```
 
 Then restart on the VPS:
@@ -261,5 +289,6 @@ cd /root/crypto-algo && docker compose restart
 
 ```bash
 ssh root@178.105.89.121
-cd /root/crypto-algo
+cd /root/crypto-algo      # crypto bot
+cd /root/etf-algo         # ETF bot
 ```
