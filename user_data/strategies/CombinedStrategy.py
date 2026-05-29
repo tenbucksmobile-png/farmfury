@@ -306,8 +306,12 @@ class CombinedStrategy(IStrategy):
     def confirm_trade_entry(self, pair: str, order_type: str, amount: float, rate: float,
                             time_in_force: str, current_time: datetime, entry_tag: str,
                             side: str, **kwargs) -> bool:
-        """Block re-entry into a pair too soon after a stop or trailing stop exit."""
-        closed = Trade.get_trades([Trade.pair == pair, Trade.is_open.is_(False)]).all()
+        """Block re-entry into a pair too soon after a stop or trailing stop exit.
+        Trade.get_trades() is not available in backtesting — cooldown is live-only."""
+        try:
+            closed = Trade.get_trades([Trade.pair == pair, Trade.is_open.is_(False)]).all()
+        except NotImplementedError:
+            return True  # backtesting mode — cooldown not simulatable, allow entry
         if not closed:
             return True
         last = max(closed, key=lambda t: t.close_date)
