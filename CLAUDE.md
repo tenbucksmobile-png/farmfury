@@ -56,25 +56,36 @@ Backtesting (one-off container, does not interfere with live bot):
 # Download OHLCV data first — 5m, 1h, and 4h required for the MTF gates:
 docker compose run --rm freqtrade download-data \
   --config user_data/config.json \
+  --pairs SOL/USDT INJ/USDT NEAR/USDT TON/USDT WLD/USDT XLM/USDT FET/USDT SEI/USDT \
+          TRX/USDT ZEC/USDT BNB/USDT LINK/USDT ONDO/USDT ALLO/USDT DASH/USDT \
+          DOGE/USDT RENDER/USDT NIL/USDT ALT/USDT \
   --timeframes 5m 1h 4h \
-  --timerange 20240101-20261231
+  --timerange 20250101-20261231
 
+# VolumePairList does not support backtesting — pass a second config that
+# switches to StaticPairList. user_data/backtest_pairs.json does this.
 docker compose run --rm freqtrade backtesting \
   --config user_data/config.json \
+  --config user_data/backtest_pairs.json \
   --strategy CombinedStrategy \
-  --timerange 20240101-20261231 \
-  --enable-protections
+  --timerange 20260101-20261231 \
+  --enable-protections \
+  --export trades
 ```
 
-Hyperopt — auto-tune signal thresholds to maximise win rate:
+Hyperopt — auto-tune signal thresholds to maximise Sortino ratio:
 ```bash
+# Use -j 1 (not --jobs) to stay within the VPS's 3.7 GB RAM (no swap).
+# A short timerange keeps memory low; tune to the market regime you care about.
 docker compose run --rm freqtrade hyperopt \
   --config user_data/config.json \
+  --config user_data/backtest_pairs.json \
   --strategy CombinedStrategy \
   --hyperopt-loss SortinoHyperOptLoss \
-  --spaces buy sell --epochs 300 \
-  --timerange 20250101-20260430 \
-  --enable-protections
+  --spaces buy sell --epochs 150 \
+  --timerange 20260501-20260529 \
+  --enable-protections \
+  -j 1
 ```
 
 ## Architecture
@@ -139,7 +150,7 @@ If you add more informative indicators, follow the same merge pattern and refere
 
 Rather than a binary regime switch, the strategy scores independent signals from multiple TA categories and only enters when enough agree simultaneously.
 
-**Trend score (0–12)** — requires ≥ 8 to enter `trend_confluence`:
+**Trend score (0–12)** — requires ≥ 12 to enter `trend_confluence` (all signals):
 1. EMA9 > EMA21
 2. EMA21 > EMA50
 3. Price above rolling 20-period VWAP
@@ -147,14 +158,14 @@ Rather than a binary regime switch, the strategy scores independent signals from
 5. Ichimoku Tenkan > Kijun
 6. MACD histogram positive
 7. MACD histogram accelerating
-8. RSI in bullish zone (default 54–70)
+8. RSI in bullish zone (50–72)
 9. Stochastic K > D, not overbought (< 80)
 10. ADX > threshold AND DM+ > DM-
 11. OBV above its 10-period MA
 12. Chaikin Money Flow > 0
 
-**Reversion score (0–8)** — requires ≥ 6 to enter `mean_reversion`:
-1. RSI oversold (default < 23)
+**Reversion score (0–8)** — requires ≥ 7 to enter `mean_reversion`:
+1. RSI oversold (< 25)
 2. Price below Bollinger lower band
 3. Stochastic K < 20
 4. Williams %R < -80
@@ -177,18 +188,20 @@ All key thresholds are exposed as `IntParameter` / `DecimalParameter` for automa
 
 | Parameter | Current | Range | Controls |
 |---|---|---|---|
-| `buy_adx_threshold` | 26 | 25–40 | ADX regime switch point |
-| `buy_trend_score_min` | 8 | 6–12 | Minimum trend confluence to enter |
-| `buy_reversion_score_min` | 6 | 4–7 | Minimum reversion confluence to enter |
-| `buy_rsi_trend_min` | 54 | 44–58 | RSI lower bound for trend entries |
-| `buy_rsi_trend_max` | 70 | 65–78 | RSI upper bound for trend entries |
-| `buy_rsi_reversion_max` | 23 | 20–35 | RSI oversold threshold |
-| `sell_rsi_reversion_min` | 58 | 50–65 | RSI level to exit reversion trades |
+| `buy_adx_threshold` | 39 | 25–40 | ADX regime switch — trend requires ADX > 39; reversion requires ADX < 39 |
+| `buy_trend_score_min` | 12 | 6–12 | Minimum trend confluence to enter (12 = all signals required) |
+| `buy_reversion_score_min` | 7 | 4–7 | Minimum reversion confluence to enter |
+| `buy_rsi_trend_min` | 50 | 44–58 | RSI lower bound for trend entries |
+| `buy_rsi_trend_max` | 72 | 65–78 | RSI upper bound for trend entries |
+| `buy_rsi_reversion_max` | 25 | 20–35 | RSI oversold threshold |
+| `sell_rsi_reversion_min` | 65 | 50–65 | RSI level to exit reversion trades |
 | `sell_trend_score_exit` | 4 | 2–6 | Score floor that triggers trend exit |
 
-**`CombinedStrategy.json`** — freqtrade auto-loads this file on startup, overriding the Python `default=` values above. The "Current" values in the table reflect the JSON, not the Python defaults. The JSON also carries `roi`, `stoploss`, and `trailing` blocks which override the strategy class values; keep these in sync when editing either file. After running hyperopt, inspect results before applying — if the best epoch is still net-negative, do not restart the live bot with those parameters.
+Values tuned via hyperopt over the May 2026 bull period (epoch 103/150: 75% win rate, 0.08% max drawdown, Sortino 107, 8 trades). Small sample — treat as directional guidance and re-run hyperopt over a longer window once more data accumulates.
 
-**Important:** The Python class `stoploss`, `minimal_roi`, and `trailing_stop*` values are never used at runtime — the JSON block always overrides them on startup. Treat the JSON as the single source of truth for those parameters.
+**`CombinedStrategy.json`** — freqtrade auto-loads this file on startup, overriding the Python `default=` values. The "Current" values in the table reflect the JSON, not the Python defaults. The JSON also carries `roi`, `stoploss`, and `trailing` blocks which override the strategy class values; keep these in sync when editing either file. After running hyperopt, inspect results before applying — if the best epoch is still net-negative, do not restart the live bot with those parameters.
+
+**Important:** The Python class `stoploss`, `minimal_roi`, and `trailing_stop*` values are never used at runtime — the JSON block always overrides them on startup. Treat the JSON as the single source of truth for those parameters. When running backtesting or hyperopt without the JSON being loaded, Python `default=` values apply (e.g. `buy_trend_score_min` defaults to `12`, matching the JSON, but `stoploss` defaults to `-0.05` instead of the live `-0.025`).
 
 ### Performance analysis
 
