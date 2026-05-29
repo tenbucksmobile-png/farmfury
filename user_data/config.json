@@ -47,7 +47,11 @@
             ".*UP/USDT",
             ".*DOWN/USDT",
             ".*BULL/USDT",
-            ".*BEAR/USDT"
+            ".*BEAR/USDT",
+            "BTC/USDT",
+            "ETH/USDT",
+            "SUI/USDT",
+            "FIL/USDT"
         ]
     },
     "pairlists": [

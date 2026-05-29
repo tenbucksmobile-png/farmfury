@@ -13,7 +13,7 @@
     "trailing": {
       "trailing_stop": true,
       "trailing_stop_positive": 0.01,
-      "trailing_stop_positive_offset": 0.02,
+      "trailing_stop_positive_offset": 0.03,
       "trailing_only_offset_is_reached": true
     },
     "max_open_trades": {
@@ -25,7 +25,7 @@
       "buy_rsi_reversion_max": 23,
       "buy_rsi_trend_max": 70,
       "buy_rsi_trend_min": 54,
-      "buy_trend_score_min": 8
+      "buy_trend_score_min": 10
     },
     "sell": {
       "sell_rsi_reversion_min": 58,

@@ -35,7 +35,7 @@ class CombinedStrategy(IStrategy):
     stoploss = -0.05
 
     trailing_stop = True
-    trailing_stop_positive = 0.015
+    trailing_stop_positive = 0.01
     trailing_stop_positive_offset = 0.03
     trailing_only_offset_is_reached = True
 
@@ -238,13 +238,19 @@ class CombinedStrategy(IStrategy):
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
 
+        # 06:00–21:59 UTC only — Asian session and late European close have near-0% live win rate
+        in_active_session = dataframe["date"].dt.hour.between(6, 21)
+
         trend_entry = (
             (dataframe["trend_score"] >= self.buy_trend_score_min.value) &
+            (dataframe["trend_score"].shift(1) >= self.buy_trend_score_min.value) &        # 2-candle confirmation: prevents spike-and-collapse entries
+            (dataframe["rsi"] > dataframe["rsi"].shift(1)) &                               # RSI still rising — not at momentum peak
             (dataframe["close"] > dataframe["ema50"]) &                                    # price above medium-term trend
             (dataframe["higher_lows"]) &                                                    # uptrend structure confirmed
             (dataframe["volume"] > dataframe["volume_ma"]) &                               # volume confirmation
             (dataframe["trend_up_1h"]) &                                                   # 1h EMA9 > EMA21 gate
-            (dataframe["macro_bull_4h"])                                                    # 4h EMA50 > EMA200 macro regime gate
+            (dataframe["macro_bull_4h"]) &                                                  # 4h EMA50 > EMA200 macro regime gate
+            in_active_session
         )
 
         reversion_entry = (
@@ -252,7 +258,8 @@ class CombinedStrategy(IStrategy):
             (dataframe["adx"] < self.buy_adx_threshold.value) &                            # only in ranging (non-trending) market
             (dataframe["rsi"] < dataframe["rsi"].shift(1)) &                               # RSI still falling — not yet bouncing
             (dataframe["close"] > dataframe["ema100"]) &                                   # above long-term baseline (avoids downtrend)
-            (dataframe["macro_bull_4h"])                                                    # 4h macro regime gate — no catching falling knives in a bear market
+            (dataframe["macro_bull_4h"]) &                                                  # 4h macro regime gate — no catching falling knives in a bear market
+            in_active_session
         )
 
         dataframe.loc[trend_entry,     "enter_long"] = 1
@@ -288,7 +295,30 @@ class CombinedStrategy(IStrategy):
             ):
                 return "reversion_exit"
 
+        # Free the slot if a trade has been open >24h without reaching 0.5% profit.
+        # Prevents large-cap pairs (BTC, ETH, TRX, BNB) from occupying slots for days.
+        ct = current_time if current_time.tzinfo else current_time.replace(tzinfo=timezone.utc)
+        if (ct - trade.open_date_utc).total_seconds() / 3600 > 24 and current_profit < 0.005:
+            return "max_hold_exit"
+
         return None
+
+    def confirm_trade_entry(self, pair: str, order_type: str, amount: float, rate: float,
+                            time_in_force: str, current_time: datetime, entry_tag: str,
+                            side: str, **kwargs) -> bool:
+        """Block re-entry into a pair too soon after a stop or trailing stop exit."""
+        closed = Trade.get_trades([Trade.pair == pair, Trade.is_open.is_(False)]).all()
+        if not closed:
+            return True
+        last = max(closed, key=lambda t: t.close_date)
+        ct = current_time if current_time.tzinfo else current_time.replace(tzinfo=timezone.utc)
+        last_close = last.close_date if last.close_date.tzinfo else last.close_date.replace(tzinfo=timezone.utc)
+        hours_ago = (ct - last_close).total_seconds() / 3600
+        if last.exit_reason == "stop_loss" and hours_ago < 4:
+            return False
+        if last.exit_reason == "trailing_stop_loss" and hours_ago < 2:
+            return False
+        return True
 
     def bot_loop_start(self, current_time: datetime, **kwargs) -> None:
         self._maybe_send_weekly_report(current_time)

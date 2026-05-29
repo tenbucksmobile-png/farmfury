@@ -81,7 +81,9 @@ docker compose run --rm freqtrade hyperopt \
 
 `docker-compose.yml` mounts `./user_data` → `/freqtrade/user_data` inside the container and hardcodes `--strategy CombinedStrategy`. Editing any file under `user_data/` and running `docker compose restart` is sufficient to apply changes — no image rebuild needed.
 
-The bot uses a **dynamic pairlist** (VolumePairList → AgeFilter → SpreadFilter → RangeStabilityFilter → PerformanceFilter) that refreshes every 30 minutes to trade the top 30 most active USDT pairs. `process_only_new_candles = True` means `populate_indicators` / `populate_entry_trend` execute once per 5m candle close, not on every tick. `restart: unless-stopped` means the container recovers automatically from crashes and VPS reboots.
+The bot uses a **dynamic pairlist** that refreshes every 30 minutes, passing pairs through a chain: VolumePairList (top 30 by 24h quoteVolume, min 10M USDT) → AgeFilter (≥60 days listed) → SpreadFilter (≤0.2% spread) → RangeStabilityFilter (≥3% rate-of-change in 24h) → PerformanceFilter (3-day lookback, min 2 trades). Stablecoins (USDC, BUSD, TUSD, FDUSD, DAI, USDP, USDD), leveraged tokens (`.*UP`, `.*DOWN`, `.*BULL`, `.*BEAR`), and large-caps that don't respond to TA confluence (BTC, ETH, SUI, FIL) are blacklisted in `config.json`.
+
+`process_only_new_candles = True` means `populate_indicators` / `populate_entry_trend` execute once per 5m candle close, not on every tick. `restart: unless-stopped` means the container recovers automatically from crashes and VPS reboots.
 
 To add a static pair: change `pairlists` in `config.json` back to `StaticPairList` and list pairs in `pair_whitelist`. No strategy changes required.
 
@@ -95,8 +97,11 @@ To add a static pair: change `pairlists` in `config.json` back to `StaticPairLis
 
 - `trend_confluence` entries exit via `"trend_exit"` when score ≤ threshold AND EMA9 < EMA21 AND MACD histogram < 0 (all three required).
 - `mean_reversion` entries exit via `"reversion_exit"` when price > BB middle AND RSI > threshold AND Stochastic K > 50.
+- Any trade open >24h with < 0.5% profit exits via `"max_hold_exit"` to free the slot for better opportunities.
 
-Other exit paths: ROI ladder, hard stoploss (−2.5% per JSON), trailing stop (activates at +2%, trails at 1%), and circuit-breaker protections. Do not add logic to `populate_exit_trend` — it will never fire.
+Other exit paths: ROI ladder, hard stoploss (−2.5% per JSON), trailing stop (activates at +3%, trails at 1%), and circuit-breaker protections. Do not add logic to `populate_exit_trend` — it will never fire.
+
+`confirm_trade_entry` enforces pair cooldowns: no re-entry on a pair for 4h after a `stop_loss`, or 2h after a `trailing_stop_loss`. This prevents the bot from chasing re-entries into pairs that just reversed.
 
 `ignore_roi_if_entry_signal = True` — the ROI ladder is suppressed while the entry signal remains active, allowing winners to run. ROI only exits a trade when the entry conditions are no longer met.
 
@@ -159,8 +164,8 @@ Rather than a binary regime switch, the strategy scores independent signals from
 8. Price near Fibonacci support (38.2%, 50%, or 61.8% of 50-bar swing)
 
 **Additional entry filters:**
-- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA, **1h EMA9 > EMA21**, **4h EMA50 > EMA200**
-- `mean_reversion`: ADX below threshold (ranging market only), RSI still falling, price > EMA100, **4h EMA50 > EMA200**
+- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA, **1h EMA9 > EMA21**, **4h EMA50 > EMA200**, **score ≥ threshold for 2 consecutive candles** (prevents spike-and-collapse entries), **RSI rising** (not at momentum peak), **session gate 06:00–21:59 UTC** (Asian session and late European close have near-zero win rate in live data)
+- `mean_reversion`: ADX below threshold (ranging market only), RSI still falling, price > EMA100, **4h EMA50 > EMA200**, session gate 06:00–21:59 UTC
 
 **`startup_candle_count = 100`** — covers EMA100 (longest period used). If you add an indicator with a period longer than 100, increase this value accordingly.
 
@@ -182,6 +187,8 @@ All key thresholds are exposed as `IntParameter` / `DecimalParameter` for automa
 | `sell_trend_score_exit` | 4 | 2–6 | Score floor that triggers trend exit |
 
 **`CombinedStrategy.json`** — freqtrade auto-loads this file on startup, overriding the Python `default=` values above. The "Current" values in the table reflect the JSON, not the Python defaults. The JSON also carries `roi`, `stoploss`, and `trailing` blocks which override the strategy class values; keep these in sync when editing either file. After running hyperopt, inspect results before applying — if the best epoch is still net-negative, do not restart the live bot with those parameters.
+
+**Important:** The Python class `stoploss`, `minimal_roi`, and `trailing_stop*` values are never used at runtime — the JSON block always overrides them on startup. Treat the JSON as the single source of truth for those parameters.
 
 ### Performance analysis
 
@@ -220,6 +227,8 @@ Key settings in `user_data/config.json`:
 | `timeframe` | `5m` | Strategy candle interval |
 | `unfilledtimeout` | `10 min` | Cancels unfilled entry/exit orders after 10 min |
 | `force_entry_enable` | `false` | `/forcebuy` Telegram command is disabled |
+| `initial_state` | `"running"` | Bot starts trading immediately on container launch — no manual `/start` needed |
+| `cancel_open_orders_on_exit` | `true` | Cancels unfilled entry/exit orders when bot stops cleanly |
 
 Most config.json changes apply without a full restart — send `/reload_config` via Telegram.
 
