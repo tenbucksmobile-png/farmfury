@@ -20,15 +20,15 @@
       "max_open_trades": 5
     },
     "buy": {
-      "buy_adx_threshold": 26,
-      "buy_reversion_score_min": 6,
-      "buy_rsi_reversion_max": 23,
-      "buy_rsi_trend_max": 70,
-      "buy_rsi_trend_min": 54,
-      "buy_trend_score_min": 10
+      "buy_adx_threshold": 39,
+      "buy_reversion_score_min": 7,
+      "buy_rsi_reversion_max": 25,
+      "buy_rsi_trend_max": 72,
+      "buy_rsi_trend_min": 50,
+      "buy_trend_score_min": 12
     },
     "sell": {
-      "sell_rsi_reversion_min": 58,
+      "sell_rsi_reversion_min": 65,
       "sell_trend_score_exit": 4
     }
   },
