@@ -133,7 +133,7 @@ To add a static pair: change `pairlists` in `config.json` back to `StaticPairLis
 - `mean_reversion` entries exit via `"reversion_exit"` when price > BB middle AND RSI > threshold AND Stochastic K > 50.
 - Any trade open >24h with < 0.5% profit exits via `"max_hold_exit"` to free the slot for better opportunities.
 
-Other exit paths: ROI ladder, hard stoploss (−2.5% per JSON), trailing stop (activates at +3%, trails at 1%), and circuit-breaker protections. Do not add logic to `populate_exit_trend` — it will never fire.
+Other exit paths: ROI ladder, hard stoploss (−2.0% per JSON), trailing stop (activates at +5%, trails at 1%), and circuit-breaker protections. Do not add logic to `populate_exit_trend` — it will never fire.
 
 `confirm_trade_entry` enforces pair cooldowns: no re-entry on a pair for 4h after a `stop_loss`, or 2h after a `trailing_stop_loss`. Uses `Trade.get_trades_proxy()` which works in both live and backtesting, so cooldowns are now simulated in backtesting too.
 
