@@ -64,6 +64,7 @@ docker compose run --rm freqtrade download-data \
 
 # VolumePairList does not support backtesting — pass a second config that
 # switches to StaticPairList. user_data/backtest_pairs.json does this.
+# If the file doesn't exist, create it (see "backtest_pairs.json" section below).
 docker compose run --rm freqtrade backtesting \
   --config user_data/config.json \
   --config user_data/backtest_pairs.json \
@@ -87,6 +88,28 @@ docker compose run --rm freqtrade hyperopt \
   --enable-protections \
   -j 1
 ```
+
+### backtest_pairs.json
+
+`user_data/backtest_pairs.json` is not committed — create it when needed. It overrides `config.json` to swap `VolumePairList` for `StaticPairList` (VolumePairList hits the exchange API and cannot run offline):
+
+```json
+{
+    "pairlists": [
+        {"method": "StaticPairList"}
+    ],
+    "exchange": {
+        "pair_whitelist": [
+            "SOL/USDT", "INJ/USDT", "NEAR/USDT", "TON/USDT", "WLD/USDT",
+            "XLM/USDT", "FET/USDT", "SEI/USDT", "TRX/USDT", "ZEC/USDT",
+            "BNB/USDT", "LINK/USDT", "ONDO/USDT", "ALLO/USDT", "DASH/USDT",
+            "DOGE/USDT", "RENDER/USDT", "NIL/USDT", "ALT/USDT"
+        ]
+    }
+}
+```
+
+Update `pair_whitelist` here to match whatever pairs you downloaded data for.
 
 ## Architecture
 
@@ -112,7 +135,7 @@ To add a static pair: change `pairlists` in `config.json` back to `StaticPairLis
 
 Other exit paths: ROI ladder, hard stoploss (−2.5% per JSON), trailing stop (activates at +3%, trails at 1%), and circuit-breaker protections. Do not add logic to `populate_exit_trend` — it will never fire.
 
-`confirm_trade_entry` enforces pair cooldowns: no re-entry on a pair for 4h after a `stop_loss`, or 2h after a `trailing_stop_loss`. This prevents the bot from chasing re-entries into pairs that just reversed.
+`confirm_trade_entry` enforces pair cooldowns: no re-entry on a pair for 4h after a `stop_loss`, or 2h after a `trailing_stop_loss`. Uses `Trade.get_trades_proxy()` which works in both live and backtesting, so cooldowns are now simulated in backtesting too.
 
 `ignore_roi_if_entry_signal = True` — the ROI ladder is suppressed while the entry signal remains active, allowing winners to run. ROI only exits a trade when the entry conditions are no longer met.
 
@@ -175,8 +198,8 @@ Rather than a binary regime switch, the strategy scores independent signals from
 8. Price near Fibonacci support (38.2%, 50%, or 61.8% of 50-bar swing)
 
 **Additional entry filters:**
-- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA, **1h EMA9 > EMA21**, **4h EMA50 > EMA200**, **score ≥ threshold for 2 consecutive candles** (prevents spike-and-collapse entries), **RSI rising** (not at momentum peak), **session gate 06:00–21:59 UTC** (Asian session and late European close have near-zero win rate in live data)
-- `mean_reversion`: ADX below threshold (ranging market only), RSI still falling, price > EMA100, **4h EMA50 > EMA200**, session gate 06:00–21:59 UTC
+- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA, **1h EMA9 > EMA21**, **4h EMA50 > EMA200**, **score ≥ threshold for 2 consecutive candles** (prevents spike-and-collapse entries), **RSI rising** (not at momentum peak), **session gate 08:00–09:59 and 14:00–17:59 UTC** (live data: all other hours within the old 06–21 gate showed 0% WR)
+- `mean_reversion`: ADX below threshold (ranging market only), RSI still falling, price > EMA100, **4h EMA50 > EMA200**, session gate 08:00–09:59 and 14:00–17:59 UTC. Currently disabled — `buy_reversion_score_min = 8` exceeds the maximum reversion score of 8.
 
 **`startup_candle_count = 100`** — covers EMA100 (longest period used). If you add an indicator with a period longer than 100, increase this value accordingly.
 
@@ -190,7 +213,7 @@ All key thresholds are exposed as `IntParameter` / `DecimalParameter` for automa
 |---|---|---|---|
 | `buy_adx_threshold` | 39 | 25–40 | ADX regime switch — trend requires ADX > 39; reversion requires ADX < 39 |
 | `buy_trend_score_min` | 12 | 6–12 | Minimum trend confluence to enter (12 = all signals required) |
-| `buy_reversion_score_min` | 7 | 4–7 | Minimum reversion confluence to enter |
+| `buy_reversion_score_min` | 8 | 4–7 | Minimum reversion confluence to enter (8 = effectively disabled — above max score of 8) |
 | `buy_rsi_trend_min` | 50 | 44–58 | RSI lower bound for trend entries |
 | `buy_rsi_trend_max` | 72 | 65–78 | RSI upper bound for trend entries |
 | `buy_rsi_reversion_max` | 25 | 20–35 | RSI oversold threshold |
@@ -234,7 +257,7 @@ Key settings in `user_data/config.json`:
 |---|---|---|
 | `dry_run` | `true` | Set to `false` for live trading |
 | `dry_run_wallet` | `1000` | Starting paper balance in USDT |
-| `max_open_trades` | `5` | Dynamic — rotates across top-volume pairs |
+| `max_open_trades` | `3` | Reduced from 5 — limits simultaneous stop-loss exposure in bear market |
 | `stake_amount` | `"unlimited"` | Divides balance by max_open_trades |
 | `tradable_balance_ratio` | `0.99` | 99% of wallet committed; 1% held as buffer |
 | `timeframe` | `5m` | Strategy candle interval |

@@ -238,8 +238,12 @@ class CombinedStrategy(IStrategy):
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
 
-        # 06:00–21:59 UTC only — Asian session and late European close have near-0% live win rate
-        in_active_session = dataframe["date"].dt.hour.between(6, 21)
+        # Live data: 08:00–09:59 and 14:00–17:59 UTC have positive WR; all other hours are at or near 0%.
+        # 07:00 (0/8), 11–13:00 (0/10), 18:00 (0/6) were the worst offenders inside the old 06–21 gate.
+        in_active_session = (
+            dataframe["date"].dt.hour.between(8, 9) |
+            dataframe["date"].dt.hour.between(14, 17)
+        )
 
         trend_entry = (
             (dataframe["trend_score"] >= self.buy_trend_score_min.value) &
@@ -307,11 +311,8 @@ class CombinedStrategy(IStrategy):
                             time_in_force: str, current_time: datetime, entry_tag: str,
                             side: str, **kwargs) -> bool:
         """Block re-entry into a pair too soon after a stop or trailing stop exit.
-        Trade.get_trades() is not available in backtesting — cooldown is live-only."""
-        try:
-            closed = Trade.get_trades([Trade.pair == pair, Trade.is_open.is_(False)]).all()
-        except NotImplementedError:
-            return True  # backtesting mode — cooldown not simulatable, allow entry
+        Uses get_trades_proxy which works in both live and backtesting modes."""
+        closed = Trade.get_trades_proxy(pair=pair, is_open=False)
         if not closed:
             return True
         last = max(closed, key=lambda t: t.close_date)

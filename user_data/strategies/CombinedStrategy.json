@@ -8,20 +8,20 @@
       "240": 0.01
     },
     "stoploss": {
-      "stoploss": -0.025
+      "stoploss": -0.02
     },
     "trailing": {
       "trailing_stop": true,
       "trailing_stop_positive": 0.01,
-      "trailing_stop_positive_offset": 0.03,
+      "trailing_stop_positive_offset": 0.05,
       "trailing_only_offset_is_reached": true
     },
     "max_open_trades": {
-      "max_open_trades": 5
+      "max_open_trades": 3
     },
     "buy": {
       "buy_adx_threshold": 39,
-      "buy_reversion_score_min": 7,
+      "buy_reversion_score_min": 8,
       "buy_rsi_reversion_max": 25,
       "buy_rsi_trend_max": 72,
       "buy_rsi_trend_min": 50,
