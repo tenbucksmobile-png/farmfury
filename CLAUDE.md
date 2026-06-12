@@ -198,8 +198,8 @@ Rather than a binary regime switch, the strategy scores independent signals from
 8. Price near Fibonacci support (38.2%, 50%, or 61.8% of 50-bar swing)
 
 **Additional entry filters:**
-- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA, **1h EMA9 > EMA21**, **4h EMA50 > EMA200**, **score ≥ threshold for 2 consecutive candles** (prevents spike-and-collapse entries), **RSI rising** (not at momentum peak), **session gate 08:00–09:59 and 14:00–17:59 UTC** (live data: all other hours within the old 06–21 gate showed 0% WR)
-- `mean_reversion`: ADX below threshold (ranging market only), RSI still falling, price > EMA100, **4h EMA50 > EMA200**, session gate 08:00–09:59 and 14:00–17:59 UTC. Currently disabled — `buy_reversion_score_min = 8` exceeds the maximum reversion score of 8.
+- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA, **1h EMA9 > EMA21**, **4h EMA50 > EMA200**, **score ≥ threshold for 2 consecutive candles** (prevents spike-and-collapse entries), **RSI rising** (not at momentum peak), **session gate 08:xx, 15:xx, 17:xx UTC only** (refined from 110 live trades: 08:xx 62.5% WR, 15:xx 77.8%, 17:xx 75.0%; dropped 09:xx 0%, 14:xx 45.5%, 16:xx 25%)
+- `mean_reversion`: ADX below threshold (ranging market only), RSI still falling, price > EMA100, **4h EMA50 > EMA200**, session gate 08:xx, 15:xx, 17:xx UTC. Currently disabled — `buy_reversion_score_min = 8` exceeds the maximum reversion score of 8.
 
 **`startup_candle_count = 100`** — covers EMA100 (longest period used). If you add an indicator with a period longer than 100, increase this value accordingly.
 
