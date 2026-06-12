@@ -238,11 +238,13 @@ class CombinedStrategy(IStrategy):
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
 
-        # Live data: 08:00–09:59 and 14:00–17:59 UTC have positive WR; all other hours are at or near 0%.
-        # 07:00 (0/8), 11–13:00 (0/10), 18:00 (0/6) were the worst offenders inside the old 06–21 gate.
+        # Session gate refined against 110 live trades: only hours with ≥ 62% WR are kept.
+        # 08:xx 62.5% (8t), 15:xx 77.8% (9t), 17:xx 75.0% (4t).
+        # Dropped: 09:xx 0% (2t), 14:xx 45.5% (11t), 16:xx 25% (4t).
         in_active_session = (
-            dataframe["date"].dt.hour.between(8, 9) |
-            dataframe["date"].dt.hour.between(14, 17)
+            (dataframe["date"].dt.hour == 8) |
+            (dataframe["date"].dt.hour == 15) |
+            (dataframe["date"].dt.hour == 17)
         )
 
         trend_entry = (
@@ -310,8 +312,15 @@ class CombinedStrategy(IStrategy):
     def confirm_trade_entry(self, pair: str, order_type: str, amount: float, rate: float,
                             time_in_force: str, current_time: datetime, entry_tag: str,
                             side: str, **kwargs) -> bool:
-        """Block re-entry into a pair too soon after a stop or trailing stop exit.
-        Uses get_trades_proxy which works in both live and backtesting modes."""
+        # Gap filter: reject if price has moved > 0.3% away from the signal candle's close.
+        # Prevents chasing fast-moving entries where stop-loss slippage is worst.
+        dataframe, _ = self.dp.get_analyzed_dataframe(pair, self.timeframe)
+        if not dataframe.empty:
+            signal_close = dataframe.iloc[-1]["close"]
+            if abs(rate - signal_close) / signal_close > 0.003:
+                return False
+
+        # Cooldown: block re-entry too soon after a stop or trailing stop exit.
         closed = Trade.get_trades_proxy(pair=pair, is_open=False)
         if not closed:
             return True

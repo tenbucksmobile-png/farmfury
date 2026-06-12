@@ -51,7 +51,11 @@
             "BTC/USDT",
             "ETH/USDT",
             "SUI/USDT",
-            "FIL/USDT"
+            "FIL/USDT",
+            "EDEN/USDT",
+            "FF/USDT",
+            "PENGU/USDT",
+            "IO/USDT"
         ]
     },
     "pairlists": [
@@ -64,7 +68,7 @@
         },
         {
             "method": "AgeFilter",
-            "min_days_listed": 60
+            "min_days_listed": 90
         },
         {
             "method": "SpreadFilter",
