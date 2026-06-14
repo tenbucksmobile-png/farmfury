@@ -1,0 +1,964 @@
+{
+  "version": 1,
+  "minor_version": 22,
+  "key": "core.entity_registry",
+  "data": {
+    "entities": [
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12T598MGMKQF8VZYZHMWAZ",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:54.986515+00:00",
+        "device_class": null,
+        "device_id": "73aa6686d62de9e05fe7090c701cd73b",
+        "disabled_by": "integration",
+        "entity_category": "diagnostic",
+        "entity_id": "binary_sensor.sun_solar_rising",
+        "hidden_by": null,
+        "icon": null,
+        "id": "dfe6bb605501c4149895f15549a9fe0d",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:54.986600+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {},
+        "original_device_class": null,
+        "original_icon": null,
+        "original_name": "Solar rising",
+        "platform": "sun",
+        "suggested_object_id": "sun_solar_rising",
+        "supported_features": 0,
+        "translation_key": "solar_rising",
+        "unique_id": "01KV12T598MGMKQF8VZYZHMWAZ-solar_rising",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12T598MGMKQF8VZYZHMWAZ",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:54.987465+00:00",
+        "device_class": null,
+        "device_id": "73aa6686d62de9e05fe7090c701cd73b",
+        "disabled_by": null,
+        "entity_category": "diagnostic",
+        "entity_id": "sensor.sun_next_dawn",
+        "hidden_by": null,
+        "icon": null,
+        "id": "d150d3d80e988215e7afc4b7b274dd36",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:55.897694+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": "timestamp",
+        "original_icon": null,
+        "original_name": "Next dawn",
+        "platform": "sun",
+        "suggested_object_id": "sun_next_dawn",
+        "supported_features": 0,
+        "translation_key": "next_dawn",
+        "unique_id": "01KV12T598MGMKQF8VZYZHMWAZ-next_dawn",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12T598MGMKQF8VZYZHMWAZ",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:54.987783+00:00",
+        "device_class": null,
+        "device_id": "73aa6686d62de9e05fe7090c701cd73b",
+        "disabled_by": null,
+        "entity_category": "diagnostic",
+        "entity_id": "sensor.sun_next_dusk",
+        "hidden_by": null,
+        "icon": null,
+        "id": "6e3c7fcdeca694fc47b400f5ff3b3a9a",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:55.897895+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": "timestamp",
+        "original_icon": null,
+        "original_name": "Next dusk",
+        "platform": "sun",
+        "suggested_object_id": "sun_next_dusk",
+        "supported_features": 0,
+        "translation_key": "next_dusk",
+        "unique_id": "01KV12T598MGMKQF8VZYZHMWAZ-next_dusk",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12T598MGMKQF8VZYZHMWAZ",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:54.987972+00:00",
+        "device_class": null,
+        "device_id": "73aa6686d62de9e05fe7090c701cd73b",
+        "disabled_by": null,
+        "entity_category": "diagnostic",
+        "entity_id": "sensor.sun_next_midnight",
+        "hidden_by": null,
+        "icon": null,
+        "id": "01ce8b51afc6728f13b0e54f03b1aef9",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:55.897998+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": "timestamp",
+        "original_icon": null,
+        "original_name": "Next midnight",
+        "platform": "sun",
+        "suggested_object_id": "sun_next_midnight",
+        "supported_features": 0,
+        "translation_key": "next_midnight",
+        "unique_id": "01KV12T598MGMKQF8VZYZHMWAZ-next_midnight",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12T598MGMKQF8VZYZHMWAZ",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:54.988117+00:00",
+        "device_class": null,
+        "device_id": "73aa6686d62de9e05fe7090c701cd73b",
+        "disabled_by": null,
+        "entity_category": "diagnostic",
+        "entity_id": "sensor.sun_next_noon",
+        "hidden_by": null,
+        "icon": null,
+        "id": "ee39860b2ed04a6acef8127dddae673c",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:55.898065+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": "timestamp",
+        "original_icon": null,
+        "original_name": "Next noon",
+        "platform": "sun",
+        "suggested_object_id": "sun_next_noon",
+        "supported_features": 0,
+        "translation_key": "next_noon",
+        "unique_id": "01KV12T598MGMKQF8VZYZHMWAZ-next_noon",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12T598MGMKQF8VZYZHMWAZ",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:54.988254+00:00",
+        "device_class": null,
+        "device_id": "73aa6686d62de9e05fe7090c701cd73b",
+        "disabled_by": null,
+        "entity_category": "diagnostic",
+        "entity_id": "sensor.sun_next_rising",
+        "hidden_by": null,
+        "icon": null,
+        "id": "960b7e8acdb9eef0ad74664a59c845a3",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:55.898125+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": "timestamp",
+        "original_icon": null,
+        "original_name": "Next rising",
+        "platform": "sun",
+        "suggested_object_id": "sun_next_rising",
+        "supported_features": 0,
+        "translation_key": "next_rising",
+        "unique_id": "01KV12T598MGMKQF8VZYZHMWAZ-next_rising",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12T598MGMKQF8VZYZHMWAZ",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:54.988384+00:00",
+        "device_class": null,
+        "device_id": "73aa6686d62de9e05fe7090c701cd73b",
+        "disabled_by": null,
+        "entity_category": "diagnostic",
+        "entity_id": "sensor.sun_next_setting",
+        "hidden_by": null,
+        "icon": null,
+        "id": "8944025cd19a096d597dbafd78d42da5",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:55.898178+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": "timestamp",
+        "original_icon": null,
+        "original_name": "Next setting",
+        "platform": "sun",
+        "suggested_object_id": "sun_next_setting",
+        "supported_features": 0,
+        "translation_key": "next_setting",
+        "unique_id": "01KV12T598MGMKQF8VZYZHMWAZ-next_setting",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": {
+          "state_class": "measurement"
+        },
+        "config_entry_id": "01KV12T598MGMKQF8VZYZHMWAZ",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:54.988508+00:00",
+        "device_class": null,
+        "device_id": "73aa6686d62de9e05fe7090c701cd73b",
+        "disabled_by": "integration",
+        "entity_category": "diagnostic",
+        "entity_id": "sensor.sun_solar_elevation",
+        "hidden_by": null,
+        "icon": null,
+        "id": "18a0850ef4b6ec508a02d05be1a64f51",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:54.988530+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {},
+        "original_device_class": null,
+        "original_icon": null,
+        "original_name": "Solar elevation",
+        "platform": "sun",
+        "suggested_object_id": "sun_solar_elevation",
+        "supported_features": 0,
+        "translation_key": "solar_elevation",
+        "unique_id": "01KV12T598MGMKQF8VZYZHMWAZ-solar_elevation",
+        "previous_unique_id": null,
+        "unit_of_measurement": "°"
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": {
+          "state_class": "measurement"
+        },
+        "config_entry_id": "01KV12T598MGMKQF8VZYZHMWAZ",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:54.988589+00:00",
+        "device_class": null,
+        "device_id": "73aa6686d62de9e05fe7090c701cd73b",
+        "disabled_by": "integration",
+        "entity_category": "diagnostic",
+        "entity_id": "sensor.sun_solar_azimuth",
+        "hidden_by": null,
+        "icon": null,
+        "id": "8deb7f287653784b4b8c798e5c6e9709",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:54.988608+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {},
+        "original_device_class": null,
+        "original_icon": null,
+        "original_name": "Solar azimuth",
+        "platform": "sun",
+        "suggested_object_id": "sun_solar_azimuth",
+        "supported_features": 0,
+        "translation_key": "solar_azimuth",
+        "unique_id": "01KV12T598MGMKQF8VZYZHMWAZ-solar_azimuth",
+        "previous_unique_id": null,
+        "unit_of_measurement": "°"
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": {
+          "event_types": [
+            "completed",
+            "failed",
+            "in_progress"
+          ]
+        },
+        "config_entry_id": "01KV12T65YN0651XNA3Y75TJ9H",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:55.923396+00:00",
+        "device_class": null,
+        "device_id": "926d9c70d8eff4a6162afeba1fe0da91",
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "event.backup_automatic_backup",
+        "hidden_by": null,
+        "icon": null,
+        "id": "e7f3c9fdbb6af13ae2d58d764c75515a",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:55.923644+00:00",
+        "name": null,
+        "object_id_base": "Automatic backup",
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": null,
+        "original_icon": null,
+        "original_name": "Automatic backup",
+        "platform": "backup",
+        "suggested_object_id": null,
+        "supported_features": 0,
+        "translation_key": "automatic_backup_event",
+        "unique_id": "automatic_backup_event",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": {
+          "options": [
+            "idle",
+            "create_backup",
+            "blocked",
+            "receive_backup",
+            "restore_backup"
+          ]
+        },
+        "config_entry_id": "01KV12T65YN0651XNA3Y75TJ9H",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:55.924014+00:00",
+        "device_class": null,
+        "device_id": "926d9c70d8eff4a6162afeba1fe0da91",
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "sensor.backup_backup_manager_state",
+        "hidden_by": null,
+        "icon": null,
+        "id": "7d2310c09de081b595e457bd000049a9",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:55.924265+00:00",
+        "name": null,
+        "object_id_base": "Backup Manager state",
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": "enum",
+        "original_icon": null,
+        "original_name": "Backup Manager state",
+        "platform": "backup",
+        "suggested_object_id": null,
+        "supported_features": 0,
+        "translation_key": "backup_manager_state",
+        "unique_id": "backup_manager_state",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12T65YN0651XNA3Y75TJ9H",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:55.924414+00:00",
+        "device_class": null,
+        "device_id": "926d9c70d8eff4a6162afeba1fe0da91",
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "sensor.backup_next_scheduled_automatic_backup",
+        "hidden_by": null,
+        "icon": null,
+        "id": "b2c5af8b5540557a825a9a0134e4f827",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:55.924545+00:00",
+        "name": null,
+        "object_id_base": "Next scheduled automatic backup",
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": "timestamp",
+        "original_icon": null,
+        "original_name": "Next scheduled automatic backup",
+        "platform": "backup",
+        "suggested_object_id": null,
+        "supported_features": 0,
+        "translation_key": "next_scheduled_automatic_backup",
+        "unique_id": "next_scheduled_automatic_backup",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12T65YN0651XNA3Y75TJ9H",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:55.924662+00:00",
+        "device_class": null,
+        "device_id": "926d9c70d8eff4a6162afeba1fe0da91",
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "sensor.backup_last_successful_automatic_backup",
+        "hidden_by": null,
+        "icon": null,
+        "id": "7e026af3c1473b962d5ba882e5c19907",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:55.924826+00:00",
+        "name": null,
+        "object_id_base": "Last successful automatic backup",
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": "timestamp",
+        "original_icon": null,
+        "original_name": "Last successful automatic backup",
+        "platform": "backup",
+        "suggested_object_id": null,
+        "supported_features": 0,
+        "translation_key": "last_successful_automatic_backup",
+        "unique_id": "last_successful_automatic_backup",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12T65YN0651XNA3Y75TJ9H",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:09:55.924944+00:00",
+        "device_class": null,
+        "device_id": "926d9c70d8eff4a6162afeba1fe0da91",
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "sensor.backup_last_attempted_automatic_backup",
+        "hidden_by": null,
+        "icon": null,
+        "id": "090263fb9b670959630f4b0729c06c23",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:09:55.925057+00:00",
+        "name": null,
+        "object_id_base": "Last attempted automatic backup",
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": "timestamp",
+        "original_icon": null,
+        "original_name": "Last attempted automatic backup",
+        "platform": "backup",
+        "suggested_object_id": null,
+        "supported_features": 0,
+        "translation_key": "last_attempted_automatic_backup",
+        "unique_id": "last_attempted_automatic_backup",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": null,
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:11:30.364410+00:00",
+        "device_class": null,
+        "device_id": null,
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "person.marius",
+        "hidden_by": null,
+        "icon": null,
+        "id": "476011f0e1c7e350efb82a35d21ced17",
+        "has_entity_name": false,
+        "labels": [],
+        "modified_at": "2026-06-13T18:11:30.367574+00:00",
+        "name": null,
+        "object_id_base": "marius",
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": null,
+        "original_icon": null,
+        "original_name": "marius",
+        "platform": "person",
+        "suggested_object_id": null,
+        "supported_features": 0,
+        "translation_key": null,
+        "unique_id": "marius",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12YTR60ZGB9JAKX9GD07T8",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:12:28.284478+00:00",
+        "device_class": null,
+        "device_id": null,
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "todo.shopping_list",
+        "hidden_by": null,
+        "icon": null,
+        "id": "016c80f540c19ae3b4e474bdec5dcc05",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:12:28.284900+00:00",
+        "name": null,
+        "object_id_base": "Shopping List",
+        "options": {
+          "conversation": {
+            "should_expose": true
+          }
+        },
+        "original_device_class": null,
+        "original_icon": null,
+        "original_name": "Shopping List",
+        "platform": "shopping_list",
+        "suggested_object_id": null,
+        "supported_features": 15,
+        "translation_key": "shopping_list",
+        "unique_id": "01KV12YTR60ZGB9JAKX9GD07T8",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12YTRNTTCSXB98R8252DAB",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:12:28.352903+00:00",
+        "device_class": null,
+        "device_id": "bf16d6d7f1e845b0fd91abefb8edb922",
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "tts.google_translate_en_com",
+        "hidden_by": null,
+        "icon": null,
+        "id": "2ee5123835c22472f77de59c3cc97b09",
+        "has_entity_name": false,
+        "labels": [],
+        "modified_at": "2026-06-13T18:12:28.353151+00:00",
+        "name": null,
+        "object_id_base": "Google Translate en com",
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": null,
+        "original_icon": null,
+        "original_name": "Google Translate en com",
+        "platform": "google_translate",
+        "suggested_object_id": null,
+        "supported_features": 0,
+        "translation_key": null,
+        "unique_id": "01KV12YTRNTTCSXB98R8252DAB",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV12YTSM2HMATB2TSR9F06JP",
+        "config_subentry_id": null,
+        "created_at": "2026-06-13T18:12:28.840811+00:00",
+        "device_class": null,
+        "device_id": "a1d8bc1c411e23c4df35a23e083cb9b5",
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "weather.forecast_home",
+        "hidden_by": null,
+        "icon": null,
+        "id": "b92de9ee3c1c954852fa1c0adadbe3f2",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:12:28.841099+00:00",
+        "name": null,
+        "object_id_base": "Home",
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": null,
+        "original_icon": null,
+        "original_name": "Home",
+        "platform": "met",
+        "suggested_object_id": null,
+        "supported_features": 3,
+        "translation_key": null,
+        "unique_id": "home",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [],
+        "aliases_v2": [
+          null
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": "01KV1339PGPMHW2VY0BS07EZN7",
+        "config_subentry_id": "01KV13DVWB4BW0WMXQJJ849ETP",
+        "created_at": "2026-06-13T18:20:41.088888+00:00",
+        "device_class": null,
+        "device_id": "d3ce77cf2052ccdacf2dcf4d4856246d",
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "conversation.ollama_conversation",
+        "hidden_by": null,
+        "icon": null,
+        "id": "fb693a562800051a09517e7d6ab8030d",
+        "has_entity_name": true,
+        "labels": [],
+        "modified_at": "2026-06-13T18:20:41.266998+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
+        "original_device_class": null,
+        "original_icon": null,
+        "original_name": null,
+        "platform": "ollama",
+        "suggested_object_id": null,
+        "supported_features": 1,
+        "translation_key": null,
+        "unique_id": "01KV13DVWB4BW0WMXQJJ849ETP",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [
+          "living room",
+          "lounge",
+          "living room lights",
+          "lounge light"
+        ],
+        "aliases_v2": [
+          null,
+          "living room",
+          "lounge",
+          "living room lights",
+          "lounge light"
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": null,
+        "config_subentry_id": null,
+        "created_at": "2026-06-14T15:18:40.598180+00:00",
+        "device_class": null,
+        "device_id": null,
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "input_boolean.living_room_light",
+        "hidden_by": null,
+        "icon": null,
+        "id": "186e33ea9e4562a9bfc5fc0d82cbd72d",
+        "has_entity_name": false,
+        "labels": [],
+        "modified_at": "2026-06-14T15:41:21.680553+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {
+          "conversation": {
+            "should_expose": true
+          }
+        },
+        "original_device_class": null,
+        "original_icon": "mdi:ceiling-light",
+        "original_name": "Living Room Light",
+        "platform": "input_boolean",
+        "suggested_object_id": "living_room_light",
+        "supported_features": 0,
+        "translation_key": null,
+        "unique_id": "living_room_light",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [
+          "bedroom",
+          "bedroom lights"
+        ],
+        "aliases_v2": [
+          null,
+          "bedroom",
+          "bedroom lights"
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": null,
+        "config_subentry_id": null,
+        "created_at": "2026-06-14T15:18:40.598431+00:00",
+        "device_class": null,
+        "device_id": null,
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "input_boolean.bedroom_light",
+        "hidden_by": null,
+        "icon": null,
+        "id": "0858761bd680cfeddb57099576570f9b",
+        "has_entity_name": false,
+        "labels": [],
+        "modified_at": "2026-06-14T15:30:03.533186+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {
+          "conversation": {
+            "should_expose": true
+          }
+        },
+        "original_device_class": null,
+        "original_icon": "mdi:bed",
+        "original_name": "Bedroom Light",
+        "platform": "input_boolean",
+        "suggested_object_id": "bedroom_light",
+        "supported_features": 0,
+        "translation_key": null,
+        "unique_id": "bedroom_light",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [
+          "kitchen",
+          "kitchen power",
+          "kitchen socket"
+        ],
+        "aliases_v2": [
+          null,
+          "kitchen",
+          "kitchen power",
+          "kitchen socket"
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": null,
+        "config_subentry_id": null,
+        "created_at": "2026-06-14T15:18:40.598527+00:00",
+        "device_class": null,
+        "device_id": null,
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "input_boolean.kitchen_switch",
+        "hidden_by": null,
+        "icon": null,
+        "id": "5802c32a86c609eba05cca6c86fedfa3",
+        "has_entity_name": false,
+        "labels": [],
+        "modified_at": "2026-06-14T15:30:03.555217+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {
+          "conversation": {
+            "should_expose": true
+          }
+        },
+        "original_device_class": null,
+        "original_icon": "mdi:power-socket-za",
+        "original_name": "Kitchen Switch",
+        "platform": "input_boolean",
+        "suggested_object_id": "kitchen_switch",
+        "supported_features": 0,
+        "translation_key": null,
+        "unique_id": "kitchen_switch",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      },
+      {
+        "aliases": [
+          "fan",
+          "office",
+          "the fan"
+        ],
+        "aliases_v2": [
+          null,
+          "fan",
+          "office",
+          "the fan"
+        ],
+        "area_id": null,
+        "categories": {},
+        "capabilities": null,
+        "config_entry_id": null,
+        "config_subentry_id": null,
+        "created_at": "2026-06-14T15:18:40.598614+00:00",
+        "device_class": null,
+        "device_id": null,
+        "disabled_by": null,
+        "entity_category": null,
+        "entity_id": "input_boolean.office_fan",
+        "hidden_by": null,
+        "icon": null,
+        "id": "e779ce1476eb4ef0a338760d3bfc6883",
+        "has_entity_name": false,
+        "labels": [],
+        "modified_at": "2026-06-14T15:30:03.557250+00:00",
+        "name": null,
+        "object_id_base": null,
+        "options": {
+          "conversation": {
+            "should_expose": true
+          }
+        },
+        "original_device_class": null,
+        "original_icon": "mdi:fan",
+        "original_name": "Office Fan",
+        "platform": "input_boolean",
+        "suggested_object_id": "office_fan",
+        "supported_features": 0,
+        "translation_key": null,
+        "unique_id": "office_fan",
+        "previous_unique_id": null,
+        "unit_of_measurement": null
+      }
+    ],
+    "deleted_entities": []
+  }
+}

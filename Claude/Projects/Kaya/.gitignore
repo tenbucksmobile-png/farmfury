@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+memory/chroma_db/
+core.entity_registry.check.json
+.claude/
