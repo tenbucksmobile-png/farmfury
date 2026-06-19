@@ -238,18 +238,17 @@ class CombinedStrategy(IStrategy):
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
 
-        # Session gate refined against 110 live trades: only hours with ≥ 62% WR are kept.
-        # 08:xx 62.5% (8t), 15:xx 77.8% (9t), 17:xx 75.0% (4t).
-        # Dropped: 09:xx 0% (2t), 14:xx 45.5% (11t), 16:xx 25% (4t).
+        # Session gate: 15:xx and 17:xx UTC only (110-trade live analysis WR: 77.8% and 75.0%).
+        # 08:xx dropped — 62.5% WR is insufficient for the 80% target.
         in_active_session = (
-            (dataframe["date"].dt.hour == 8) |
             (dataframe["date"].dt.hour == 15) |
             (dataframe["date"].dt.hour == 17)
         )
 
         trend_entry = (
             (dataframe["trend_score"] >= self.buy_trend_score_min.value) &
-            (dataframe["trend_score"].shift(1) >= self.buy_trend_score_min.value) &        # 2-candle confirmation: prevents spike-and-collapse entries
+            (dataframe["trend_score"].shift(1) >= self.buy_trend_score_min.value) &        # 3-candle confirmation: prevents spike-and-collapse entries
+            (dataframe["trend_score"].shift(2) >= self.buy_trend_score_min.value) &
             (dataframe["rsi"] > dataframe["rsi"].shift(1)) &                               # RSI still rising — not at momentum peak
             (dataframe["close"] > dataframe["ema50"]) &                                    # price above medium-term trend
             (dataframe["higher_lows"]) &                                                    # uptrend structure confirmed

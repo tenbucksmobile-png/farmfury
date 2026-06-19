@@ -56,7 +56,7 @@ Backtesting (one-off container, does not interfere with live bot):
 # Download OHLCV data first — 5m, 1h, and 4h required for the MTF gates:
 docker compose run --rm freqtrade download-data \
   --config user_data/config.json \
-  --pairs SOL/USDT INJ/USDT NEAR/USDT TON/USDT WLD/USDT XLM/USDT FET/USDT SEI/USDT \
+  --pairs INJ/USDT NEAR/USDT TON/USDT WLD/USDT XLM/USDT FET/USDT SEI/USDT \
           TRX/USDT ZEC/USDT BNB/USDT LINK/USDT ONDO/USDT ALLO/USDT DASH/USDT \
           DOGE/USDT RENDER/USDT NIL/USDT ALT/USDT \
   --timeframes 5m 1h 4h \
@@ -100,7 +100,7 @@ docker compose run --rm freqtrade hyperopt \
     ],
     "exchange": {
         "pair_whitelist": [
-            "SOL/USDT", "INJ/USDT", "NEAR/USDT", "TON/USDT", "WLD/USDT",
+            "INJ/USDT", "NEAR/USDT", "TON/USDT", "WLD/USDT",
             "XLM/USDT", "FET/USDT", "SEI/USDT", "TRX/USDT", "ZEC/USDT",
             "BNB/USDT", "LINK/USDT", "ONDO/USDT", "ALLO/USDT", "DASH/USDT",
             "DOGE/USDT", "RENDER/USDT", "NIL/USDT", "ALT/USDT"
@@ -115,7 +115,7 @@ Update `pair_whitelist` here to match whatever pairs you downloaded data for.
 
 `docker-compose.yml` mounts `./user_data` → `/freqtrade/user_data` inside the container and hardcodes `--strategy CombinedStrategy`. Editing any file under `user_data/` and running `docker compose restart` is sufficient to apply changes — no image rebuild needed.
 
-The bot uses a **dynamic pairlist** that refreshes every 30 minutes, passing pairs through a chain: VolumePairList (top 30 by 24h quoteVolume, min 10M USDT) → AgeFilter (≥60 days listed) → SpreadFilter (≤0.2% spread) → RangeStabilityFilter (≥3% rate-of-change in 24h) → PerformanceFilter (3-day lookback, min 2 trades). Stablecoins (USDC, BUSD, TUSD, FDUSD, DAI, USDP, USDD), leveraged tokens (`.*UP`, `.*DOWN`, `.*BULL`, `.*BEAR`), and large-caps that don't respond to TA confluence (BTC, ETH, SUI, FIL) are blacklisted in `config.json`.
+The bot uses a **dynamic pairlist** that refreshes every 30 minutes, passing pairs through a chain: VolumePairList (top 30 by 24h quoteVolume, min 10M USDT) → AgeFilter (≥60 days listed) → SpreadFilter (≤0.2% spread) → RangeStabilityFilter (≥3% rate-of-change in 24h) → PerformanceFilter (3-day lookback, min 2 trades). Stablecoins (USDC, BUSD, TUSD, FDUSD, DAI, USDP, USDD), leveraged tokens (`.*UP`, `.*DOWN`, `.*BULL`, `.*BEAR`), and large-caps that don't respond to TA confluence (BTC, ETH, SUI, FIL, SOL) are blacklisted in `config.json`.
 
 `process_only_new_candles = True` means `populate_indicators` / `populate_entry_trend` execute once per 5m candle close, not on every tick. `restart: unless-stopped` means the container recovers automatically from crashes and VPS reboots.
 
@@ -133,7 +133,7 @@ To add a static pair: change `pairlists` in `config.json` back to `StaticPairLis
 - `mean_reversion` entries exit via `"reversion_exit"` when price > BB middle AND RSI > threshold AND Stochastic K > 50.
 - Any trade open >24h with < 0.5% profit exits via `"max_hold_exit"` to free the slot for better opportunities.
 
-Other exit paths: ROI ladder, hard stoploss (−2.0% per JSON), trailing stop (activates at +5%, trails at 1%), and circuit-breaker protections. Do not add logic to `populate_exit_trend` — it will never fire.
+Other exit paths: ROI ladder, hard stoploss (−1.5% per JSON), trailing stop (activates at +3%, trails at 1%), and circuit-breaker protections. Do not add logic to `populate_exit_trend` — it will never fire.
 
 `confirm_trade_entry` enforces pair cooldowns: no re-entry on a pair for 4h after a `stop_loss`, or 2h after a `trailing_stop_loss`. Uses `Trade.get_trades_proxy()` which works in both live and backtesting, so cooldowns are now simulated in backtesting too.
 
@@ -198,8 +198,8 @@ Rather than a binary regime switch, the strategy scores independent signals from
 8. Price near Fibonacci support (38.2%, 50%, or 61.8% of 50-bar swing)
 
 **Additional entry filters:**
-- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA, **1h EMA9 > EMA21**, **4h EMA50 > EMA200**, **score ≥ threshold for 2 consecutive candles** (prevents spike-and-collapse entries), **RSI rising** (not at momentum peak), **session gate 08:xx, 15:xx, 17:xx UTC only** (refined from 110 live trades: 08:xx 62.5% WR, 15:xx 77.8%, 17:xx 75.0%; dropped 09:xx 0%, 14:xx 45.5%, 16:xx 25%)
-- `mean_reversion`: ADX below threshold (ranging market only), RSI still falling, price > EMA100, **4h EMA50 > EMA200**, session gate 08:xx, 15:xx, 17:xx UTC. Currently disabled — `buy_reversion_score_min = 8` exceeds the maximum reversion score of 8.
+- `trend_confluence`: price > EMA50, higher lows structure confirmed, volume > MA, **1h EMA9 > EMA21**, **4h EMA50 > EMA200**, **score ≥ threshold for 3 consecutive candles** (prevents spike-and-collapse entries), **RSI rising** (not at momentum peak), **session gate 15:xx, 17:xx UTC only** (refined from 110 live trades: 15:xx 77.8% WR, 17:xx 75.0%; 08:xx dropped — 62.5% WR insufficient for 80% target)
+- `mean_reversion`: ADX below threshold (ranging market only), RSI still falling, price > EMA100, **4h EMA50 > EMA200**, session gate 15:xx, 17:xx UTC. Currently disabled — `buy_reversion_score_min = 8` exceeds the maximum reversion score of 8.
 
 **`startup_candle_count = 100`** — covers EMA100 (longest period used). If you add an indicator with a period longer than 100, increase this value accordingly.
 
@@ -224,7 +224,7 @@ Values tuned via hyperopt over the May 2026 bull period (epoch 103/150: 75% win 
 
 **`CombinedStrategy.json`** — freqtrade auto-loads this file on startup, overriding the Python `default=` values. The "Current" values in the table reflect the JSON, not the Python defaults. The JSON also carries `roi`, `stoploss`, and `trailing` blocks which override the strategy class values; keep these in sync when editing either file. After running hyperopt, inspect results before applying — if the best epoch is still net-negative, do not restart the live bot with those parameters.
 
-**Important:** The Python class `stoploss`, `minimal_roi`, and `trailing_stop*` values are never used at runtime — the JSON block always overrides them on startup. Treat the JSON as the single source of truth for those parameters. When running backtesting or hyperopt without the JSON being loaded, Python `default=` values apply (e.g. `buy_trend_score_min` defaults to `12`, matching the JSON, but `stoploss` defaults to `-0.05` instead of the live `-0.025`).
+**Important:** The Python class `stoploss`, `minimal_roi`, and `trailing_stop*` values are never used at runtime — the JSON block always overrides them on startup. Treat the JSON as the single source of truth for those parameters. When running backtesting or hyperopt without the JSON being loaded, Python `default=` values apply (e.g. `buy_trend_score_min` defaults to `12`, matching the JSON, but `stoploss` defaults to `-0.05` instead of the live `-0.015`).
 
 ### Performance analysis
 
@@ -236,7 +236,7 @@ Values tuned via hyperopt over the May 2026 bull period (epoch 103/150: 75% win 
 
 It probes both `/freqtrade/user_data/tradesv3.sqlite` (container path) and `user_data/tradesv3.sqlite` (local), so it works in both environments.
 
-**Current target: 70% overall win rate.**
+**Current target: 80% overall win rate.** Bear market context: bot is correctly silent (4h macro gate blocking entries) while BTC is ~$62K (-51% from $126K ATH). Recovery expected Q3–Q4 2026. Re-run hyperopt once macro gate re-opens.
 
 ## Protections (live circuit breakers)
 
@@ -308,7 +308,7 @@ The weekly report is generated in `_maybe_send_weekly_report()`, called from `bo
 
 ## Going Live
 
-When paper trading is consistently profitable at ≥ 70% win rate (recommend 30 days minimum):
+When paper trading is consistently profitable at ≥ 80% win rate over ≥ 30 trades (recommend 30 days minimum):
 
 1. Edit `user_data/config.json` — change `"dry_run": true` to `"dry_run": false`
 2. Run `docker compose restart`
