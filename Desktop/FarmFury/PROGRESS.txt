@@ -1,0 +1,157 @@
+================================================================================
+  FARM FURY — Development Progress
+  Last updated: 2026-06-22
+================================================================================
+
+FILE: index.html (single-file game, no build step)
+STACK: Phaser 3.60 (CDN), Matter.js physics (bundled), vanilla JS
+
+WORLD
+  Size:         1400 × 800 px
+  Viewport:     800 × 600 px
+  Camera start: scroll (300, 200) → center at world (700, 500)
+  Ground:       y = 770 (static body + visual rect)
+  Gravity:      1.5 px/frame² (adjustable with ↑ ↓ keys)
+
+================================================================================
+  PROMPT 1 — Physics Sandbox                                        [COMPLETE]
+================================================================================
+  - Matter.js gravity, ground, side walls
+  - Wood blocks: 60×20, mass 10; Stone blocks: 60×30, mass 30
+  - Animal circle placeholder (radius 18)
+  - Generated textures via make.graphics
+  - Grid background, FPS counter, gravity HUD
+
+================================================================================
+  PROMPT 2 — Block Health System                                    [COMPLETE]
+================================================================================
+  - Block class; body.blockRef back-reference (NOT body.gameObject)
+  - HP bar (green→orange→red), crack overlay at 50% HP
+  - 5 triangle fragments on destroy; blockDestroyed event
+  - Impulse-based damage; delayedCall(0) for body removal
+
+================================================================================
+  PROMPT 3 — Trebuchet Launcher                                     [COMPLETE]
+================================================================================
+  - Base world (420,770); arm tip ~(352,634)
+  - Drag AWAY from tip to pull sling; release fires
+  - Step-simulated trajectory arc (20 dots, exact Matter.js physics)
+  - Arm tween: Power3 snap + Bounce.Out return
+  - Camera follow (lerp 0.08), pan back to (700,500) after 2s
+
+================================================================================
+  PROMPT 4 — CluckAnimal + Animal Base Class                        [COMPLETE]
+================================================================================
+  - Animal base; CluckAnimal extends Animal
+  - static FA = 0.008 shared with Trebuchet.PROJ_FA
+  - Cluster Bomb: 5 eggs at ±60°/±30°/0°, speed = max(v×0.6, 5)
+  - body.eggRef = true stamped AFTER setCircle (new body replaces old)
+  - Eggs bypass global impulse threshold via direct takeDamage calls
+  - White flash 120ms; crack particle 6-ray 9-step fade
+  - Contact timer: 3s after first collision → destroy
+
+================================================================================
+  PROMPT 5 — Robot Enemies                                          [COMPLETE]
+================================================================================
+  - Robot class: 30×40 texture (#444441, red eyes, grill)
+  - body.robotRef (no setCircle — rect body kept); HP 150
+  - Red flash (separate Graphics), 6 square fragments, robotDestroyed event
+  - Global handler: eggRef guard prevents double damage
+  - scene.robots[], removeRobot(), spawnRobot()
+
+================================================================================
+  PROMPT 6 — LevelLoader + 3 Levels                                [COMPLETE]
+================================================================================
+
+  LEVEL DATA FORMAT
+  { id, name, par_birds, birds:[], blocks:[{type,x,y,w,h}], robots:[{x,y}] }
+  Defined as LEVELS constant at top of file (before all classes).
+
+  THREE LEVELS
+  W1_L01 "First Contact" (par 1, 3 birds)
+    · 4 wood 60×20 blocks stacked: x=800, y=490/470/450/430
+    · 1 robot at (800, 510)
+
+  W1_L02 "Stone Wall" (par 2, 3 birds)
+    · 3 stone 60×30 at x=760/820/880, y=490 (wall)
+    · 1 wood 60×20 at (820, 460) on top of center stone
+    · 1 robot at (820, 540) behind wall
+
+  W1_L03 "The Tower" (par 3, 4 birds)
+    · Wood 120×20 at (820, 490) — wide base
+    · Stone 120×20 at (820, 470) — wide middle
+    · Wood 80×20 at (820, 450) — narrower top
+    · Robot at (760, 510) beside tower
+    · Robot at (820, 430) on top
+
+  BLOCK._ENSURETEXTURE(scene, type, w, h) — static
+    · Standard 60×20 wood → 'wood'  (pre-built, no overhead)
+    · Standard 60×30 stone → 'stone' (pre-built)
+    · Any other size → generates 'type_WxH' texture on first use
+    · Wood pattern: grain lines every 15px; Stone: mortar scaled to w/h
+    · Mass and maxHP scaled proportional to area vs standard size
+
+  LEVELLOADER CLASS (between Robot and Trebuchet in file order)
+    loadLevel(idx)
+      · _clearLevel() → spawn blocks/robots → birdsLeft=[...data.birds]
+      · _buildQueueDisplay() → update HUD text, destroyCount=0
+      · camera.setScroll(300,200) + trebuchet.draw() to reset view
+    _clearLevel()
+      · destroy activeAnimal, all blocks (img+crackGfx+hpGfx), all robots
+      · _destroyQueueDisplay(); birdsLeft = []
+    _destroyQueueDisplay()
+      · destroys _baleGfx + _queueCircles only — does NOT touch birdsLeft
+    _buildQueueDisplay()
+      · Hay bale at screen (70,554): brown #7A5218, width=count×28+14
+      · Per-bird Graphics circles at local (0,0), positioned at screen coords
+        so tweening .x/.y animates them in screen space ✓
+    consumeBird()
+      · Shifts birdsLeft; tweens first circle (pos+alpha) → trebuchet tip
+      · Screen-space target: (LAUNCH_X - cam.scrollX, LAUNCH_Y - cam.scrollY)
+      · Slides remaining circles left: x = 70+14+i×28
+      · Fades out hay bale after last bird (delay 420ms)
+    get hasMoreBirds → birdsLeft.length > 0
+
+  TREBUCHET CHANGES
+    draw():  draws yellow circle r=10 at arm tip when hasMoreBirds && !activeAnimal
+    fire():  guards !loader.hasMoreBirds; calls consumeBird(); calls draw()
+             immediately after creating CluckAnimal to clear bird circle
+
+  CLUCKANIMAL CHANGE
+    destroy(): calls scene.trebuchet.draw() after setting activeAnimal=null
+               so next-bird circle reappears on the sling
+
+  SCENE CHANGES
+    · levelNameText at screen (VW/2, 8), gold #FFD700, shows id + name + par
+    · levelLoader created after trebuchet, before input handlers
+    · keydown-N: loadLevel(currentIdx + 1), wraps with modulo
+    · keydown-R: loadLevel(currentIdx)
+    · No more manual spawnRobot() in create() — LevelLoader owns spawning
+    · loadLevel(0) called at end of create()
+
+  KEY TECHNICAL NOTE
+    _destroyQueueDisplay does NOT reset birdsLeft. _clearLevel does.
+    loadLevel sets birdsLeft then calls _buildQueueDisplay (which trusts it).
+    This avoids double-setting and re-reading from LEVELS unnecessarily.
+
+================================================================================
+  NEXT — Not Yet Started
+================================================================================
+  Prompt 7: Score system + auto level progression (all robots dead → advance)
+  Prompt 8+: TBD
+
+================================================================================
+  TECHNICAL NOTES (cumulative)
+================================================================================
+  - body.blockRef / body.robotRef — safe custom refs; body.gameObject Phaser-owned
+  - setCircle replaces physics body — stamp body.* AFTER
+  - body.robotRef assigned directly (rect body, no setCircle)
+  - delayedCall(0) for body removal — never inside collision callback
+  - Egg effective mass 2.3 < impulse threshold → explicit takeDamage in egg handler
+  - eggRef guard in global handler prevents double damage
+  - destroy flash = separate Graphics (outlives destroyed physics body)
+  - Camera pan center: world (700,500) = scroll (300,200) + viewport (400,300)
+  - instanceof in closures: resolved at runtime, safe for forward class refs
+  - Per-bird Graphics circles at (0,0) locally, positioned via setPosition —
+    tweening .x/.y moves them in screen space (scroll factor 0)
+================================================================================
