@@ -197,9 +197,124 @@ WORLD
       on Graphics for button hit detection (no HTML elements)
 
 ================================================================================
+  PROMPT 8 — Levels 4 & 5 + Full Polish Pass                        [COMPLETE]
+================================================================================
+
+  NEW LEVELS
+
+  W1_L04 "Egg Practice" (par 2, 4 birds — all cluck)
+    · 5 wood 50×30 blocks: x=720/770/820/870/920, y=490 (edge-to-edge wall)
+    · 4 robots at x=745/795/845/895, y=510 (tucked behind/between block seams)
+    · Strategy: direct shots hit the wall; egg scatter ability clears gaps
+
+  W1_L05 "The Fortress" (par 3, 5 birds — all cluck)
+    · Stone outer wall: 3 × 20×80 blocks at x=760, y=490/410/330 (tall pillar)
+    · 3×3 wood grid (40×40 blocks): x=820/860/900, y=490/450/410 (inside)
+    · 3 robots at x=820/860/900, y=510
+    · Strategy: breach stone pillar then collapse wood grid, or arc eggs over
+
+  Block._ensureTexture extended for 50×30 wood and 40×40/20×80 stone/wood sizes.
+  All sizes scale mass and maxHealth proportional to area vs standard.
+
+  BACKGROUND + PARALLAX
+
+  Removed old grey rectangle and debug grid from SandboxScene.create().
+
+  _buildBackground() adds (all scrollFactor 0):
+    · Sky: #7EC8E3 fill + subtle upper tint #5BACE0 at 22% opacity, depth -5
+    · Far hills: #6B8F47 sine-wave polygon (genHillPts -400..1400, baseY=336, amp=38)
+      depth -3; shifts at 12% of camera scrollX in update()
+    · Near hills: #4A7A2B polygon (baseY=442, amp=26) depth -2; shifts at 35% scrollX
+
+  genHillPts(x0, x1, baseY, amp, phase) — module-level helper
+    · Returns closed polygon (starts/ends at VH+10 for fill)
+    · Two overlapping sine waves: sin(x/170+phase) + 0.45×sin(x/80+phase×1.6)
+
+  Parallax in update(): farHillGfx.setPosition(-scrollX*0.12, 0), nearHill 0.35
+
+  MenuScene uses same genHillPts for static (non-parallax) background.
+
+  MENU SCENE
+
+  MenuScene class (before SandboxScene in file order).
+  Scene key: 'MenuScene' — first scene in Phaser.Game.scene array.
+
+  Layout:
+    · Sky + 2 hill layers + ground strip + 48% dark overlay
+    · "FARM FURY" — monospace 52px orange #FF8C00, stroke #000 6px, centered y=44
+    · "Select a Level" — 17px grey, y=108
+    · 5 cards: 128×168, gap 12px, centered row; cards center at y=320
+    · Footer: "Click a card to play" 11px at bottom
+
+  Each card (_makeCard):
+    · Background: dark blue-grey #1E2E3E, rounded 10px; border #3A5A7A
+    · Hover: #3A5A7A fill, #FF8C00 border
+    · Level ID (10px #7799BB), level name (12px white, word-wrap)
+    · 3 stars via drawStarShape() — filled gold if earned vs dark outline
+    · Best score (gold if > 0, grey dash if none)
+    · Par info: "par: N bird(s)"
+    · Orange "PLAY" strip at card bottom, highlights #FFAa22 on hover
+    · Card.setInteractive(Geom.Rectangle) → scene.start('SandboxScene', {levelIdx})
+
+  SandboxScene.init(data) reads levelIdx and passes it to loadLevel(_startLevelIdx).
+  'M' key in SandboxScene → scene.start('MenuScene').
+  'Menu' button added to both level-complete (3 buttons) and level-failed (2 buttons)
+  overlay screens.
+
+  SHARED MODULE-LEVEL HELPERS
+
+  drawStarShape(g, cx, cy, r, earned)
+    · 10-point polygon (5 outer r, 5 inner r×0.42)
+    · Used by both ScoreManager and MenuScene (no duplication)
+
+  getStoredLevel(idx)
+    · localStorage.getItem('farmfury_best_N') → { score, stars }
+    · Used by ScoreManager._saveStored/getStoredLevel and MenuScene card rendering
+
+  LEVEL COMPLETE SCREEN UPDATED (3 buttons)
+    · "Next Level" orange 0xFF8C00 at cx=220, w=148, h=42
+    · "Menu" blue-grey 0x334466 at cx=400, w=108, h=42
+    · "Retry" grey 0x555566 at cx=578, w=112, h=42
+    · Layout shifts -16px vertically when no bird bonus (dynamic)
+
+  LEVEL FAILED SCREEN UPDATED (2 buttons)
+    · "Retry" red 0xFF3333 at cx=VW/2-85, w=140, h=44
+    · "Menu" blue-grey at cx=VW/2+85, w=120, h=44
+
+  SOUNDS
+
+  Robot._playDeathSound(): sawtooth sweep 500→150 Hz over 200ms, gain 0.18→0.
+    Called immediately in Robot.explode() after destroyed=true.
+
+  SandboxScene._playThud(impulse):
+    · Sine wave 75–100 Hz random, 60ms, vol = min(0.22, impulse/700)
+    · Throttled 85ms between calls via this._lastThudTime
+    · Triggered in collision handler when impulse > 14 and either body is a Block
+
+  Both sounds: raw WebAudio API (OscillatorNode + GainNode), try/catch guarded.
+
+  SCREEN SHAKE
+
+  cameras.main.shake(150, 0.004) on any collision with impulse > 50.
+  Throttled: min 180ms between shakes via this._lastShakeTime.
+  Prevents spam from multi-body pile-ups.
+
+  WINDOW RESIZE (Phaser Scale)
+
+  Phaser.Game scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
+  CSS: html,body { height:100%; margin:0; overflow:hidden; background:#111; }
+  Canvas fills and centers in browser window at any aspect ratio.
+
+  SCENE LIFECYCLE
+
+  SandboxScene.init(data): sets _startLevelIdx; resets all mutable state cleanly.
+  SandboxScene.shutdown(): calls scoreManager.cleanup() (cancels pending timer).
+  ScoreManager.cleanup(): removes _endTimer + clears overlay (safe before scene stop).
+
+================================================================================
   NEXT — Not Yet Started
 ================================================================================
-  Prompt 8+: TBD
+  Prompt 9+: TBD
 
 ================================================================================
   TECHNICAL NOTES (cumulative)

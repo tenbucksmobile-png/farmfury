@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Farm Fury — v7</title>
+  <title>Farm Fury — v8</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #111; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    canvas { display: block; border: 2px solid #444; }
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #111; }
+    canvas { display: block; }
   </style>
 </head>
 <body>
@@ -17,9 +16,43 @@
 const WW = 1400, WH = 800;
 const VW = 800,  VH = 600;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Level definitions
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+
+function getStoredLevel(idx) {
+  try { return JSON.parse(localStorage.getItem(`farmfury_best_${idx}`)) || { score:0, stars:0 }; }
+  catch { return { score:0, stars:0 }; }
+}
+
+function drawStarShape(g, cx, cy, r, earned) {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const a = (i * Math.PI / 5) - Math.PI / 2;
+    const rad = i % 2 === 0 ? r : r * 0.42;
+    pts.push({ x: cx + Math.cos(a) * rad, y: cy + Math.sin(a) * rad });
+  }
+  if (earned) {
+    g.fillStyle(0xF5C542);      g.fillPoints(pts, true);
+    g.lineStyle(2.5, 0xC8950E); g.strokePoints(pts, true);
+  } else {
+    g.fillStyle(0x262626, 0.9); g.fillPoints(pts, true);
+    g.lineStyle(2, 0x555555);   g.strokePoints(pts, true);
+  }
+}
+
+// Generates a closed hill polygon in local graphics coordinates
+function genHillPts(x0, x1, baseY, amp, phase) {
+  const pts = [{ x: x0, y: VH + 10 }];
+  for (let x = x0; x <= x1 + 1; x += 8) {
+    const y = baseY
+      - amp * Math.sin(x / 170 + phase)
+      - amp * 0.45 * Math.sin(x / 80 + phase * 1.6);
+    pts.push({ x, y });
+  }
+  pts.push({ x: x1 + 1, y: VH + 10 });
+  return pts;
+}
+
+// ─── Level definitions ────────────────────────────────────────────────────────
 const LEVELS = [
   {
     id: 'W1_L01', name: 'First Contact', par_birds: 1,
@@ -53,11 +86,42 @@ const LEVELS = [
     ],
     robots: [{ x:760, y:510 }, { x:820, y:430 }],
   },
+  {
+    id: 'W1_L04', name: 'Egg Practice', par_birds: 2,
+    birds:  ['cluck','cluck','cluck','cluck'],
+    blocks: [
+      { type:'wood', x:720, y:490, w:50, h:30 },
+      { type:'wood', x:770, y:490, w:50, h:30 },
+      { type:'wood', x:820, y:490, w:50, h:30 },
+      { type:'wood', x:870, y:490, w:50, h:30 },
+      { type:'wood', x:920, y:490, w:50, h:30 },
+    ],
+    robots: [{ x:745, y:510 }, { x:795, y:510 }, { x:845, y:510 }, { x:895, y:510 }],
+  },
+  {
+    id: 'W1_L05', name: 'The Fortress', par_birds: 3,
+    birds:  ['cluck','cluck','cluck','cluck','cluck'],
+    blocks: [
+      // Stone outer wall (20×80 — tall thin pillar, 3 segments)
+      { type:'stone', x:760, y:490, w:20, h:80 },
+      { type:'stone', x:760, y:410, w:20, h:80 },
+      { type:'stone', x:760, y:330, w:20, h:80 },
+      // 3×3 wood grid inside
+      { type:'wood', x:820, y:490, w:40, h:40 },
+      { type:'wood', x:860, y:490, w:40, h:40 },
+      { type:'wood', x:900, y:490, w:40, h:40 },
+      { type:'wood', x:820, y:450, w:40, h:40 },
+      { type:'wood', x:860, y:450, w:40, h:40 },
+      { type:'wood', x:900, y:450, w:40, h:40 },
+      { type:'wood', x:820, y:410, w:40, h:40 },
+      { type:'wood', x:860, y:410, w:40, h:40 },
+      { type:'wood', x:900, y:410, w:40, h:40 },
+    ],
+    robots: [{ x:820, y:510 }, { x:860, y:510 }, { x:900, y:510 }],
+  },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Block
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Block ────────────────────────────────────────────────────────────────────
 class Block {
 
   static _ensureTexture(scene, type, w, h) {
@@ -120,7 +184,8 @@ class Block {
   redrawCracks() {
     const g = this.crackGfx, hw = this.w/2, hh = this.h/2; g.clear();
     g.lineStyle(1.4, this.crackColor, 0.9);
-    g.lineBetween(-hw*.5,-hh*.8,hw*.3,hh*.4); g.lineBetween(hw*.4,-hh*.55,-hw*.15,hh*.7);
+    g.lineBetween(-hw*.5,-hh*.8,hw*.3,hh*.4);
+    g.lineBetween(hw*.4,-hh*.55,-hw*.15,hh*.7);
     g.lineBetween(-hw*.2,hh*.2,hw*.55,-hh*.75);
   }
 
@@ -166,14 +231,12 @@ class Block {
       step++; const t=step/STEPS;
       frag.vy+=2.5; frag.x+=frag.vx*.016; frag.y+=frag.vy*.016; frag.rot+=.11;
       g.setPosition(frag.x,frag.y).setRotation(frag.rot); paint(1-t,1-t*.65);
-      if(step>=STEPS) g.destroy();
+      if (step>=STEPS) g.destroy();
     }});
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Animal — base
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Animal — base ────────────────────────────────────────────────────────────
 class Animal {
   constructor(scene) { this.scene=scene; this.img=null; this.destroyed=false; }
   setVelocity(vx,vy) { this.img.setVelocity(vx,vy); }
@@ -184,9 +247,7 @@ class Animal {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CluckAnimal
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── CluckAnimal ──────────────────────────────────────────────────────────────
 class CluckAnimal extends Animal {
 
   static FA = 0.008;
@@ -294,9 +355,7 @@ class CluckAnimal extends Animal {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Robot
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Robot ────────────────────────────────────────────────────────────────────
 class Robot {
 
   constructor(scene, x, y) {
@@ -332,6 +391,7 @@ class Robot {
     if (this.destroyed) return;
     this.destroyed = true;
     const { x, y } = this.img, scene = this.scene;
+    this._playDeathSound();
     const flash = scene.add.graphics().setDepth(10);
     flash.fillStyle(0xFF2222,0.85); flash.fillRect(x-this.w/2,y-this.h/2,this.w,this.h);
     scene.tweens.add({ targets:flash,alpha:0,duration:220,ease:'Power2',onComplete:()=>flash.destroy() });
@@ -339,6 +399,20 @@ class Robot {
     scene.events.emit('robotDestroyed', { x, y });
     const img=this.img, hg=this.hpGfx;
     scene.time.delayedCall(0,()=>{ img.destroy(); hg.destroy(); scene.removeRobot(this); });
+  }
+
+  _playDeathSound() {
+    try {
+      const ctx=this.scene.sound.context;
+      const osc=ctx.createOscillator(), gain=ctx.createGain();
+      osc.type='sawtooth';
+      osc.frequency.setValueAtTime(500, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime+0.2);
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.2);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime+0.22);
+    } catch(e) {}
   }
 
   spawnFragment(cx, cy, index) {
@@ -354,14 +428,12 @@ class Robot {
       step++; const t=step/STEPS;
       frag.vy+=2; frag.x+=frag.vx*.016; frag.y+=frag.vy*.016;
       g.setPosition(frag.x,frag.y); paint(1-t);
-      if(step>=STEPS) g.destroy();
+      if (step>=STEPS) g.destroy();
     }});
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LevelLoader
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── LevelLoader ──────────────────────────────────────────────────────────────
 class LevelLoader {
 
   constructor(scene) {
@@ -372,14 +444,11 @@ class LevelLoader {
   loadLevel(idx) {
     this._clearLevel();
     this.currentIdx = ((idx % LEVELS.length) + LEVELS.length) % LEVELS.length;
-
-    // ScoreManager initialises first (resets counters, updates HUD)
     if (this.scene.scoreManager) this.scene.scoreManager.initLevel(this.currentIdx);
 
     const data = LEVELS[this.currentIdx];
     for (const bd of data.blocks)
       this.scene.blocks.push(new Block(this.scene, bd.x, bd.y, bd.w, bd.h, bd.type));
-    this.scene.refreshBlockText();
 
     for (const rd of data.robots) this.scene.spawnRobot(rd.x, rd.y);
 
@@ -468,9 +537,7 @@ class LevelLoader {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ScoreManager — scoring, HUD, and end-of-level screens
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── ScoreManager ─────────────────────────────────────────────────────────────
 class ScoreManager {
 
   constructor(scene) {
@@ -520,7 +587,7 @@ class ScoreManager {
     });
   }
 
-  // ── Public ───────────────────────────────────────────────────────────────
+  // ── Public ────────────────────────────────────────────────────────────────
 
   initLevel(idx) {
     if (this._endTimer) { this._endTimer.remove(); this._endTimer = null; }
@@ -549,10 +616,8 @@ class ScoreManager {
     this._addScore(50, x, y);
   }
 
-  // Called every frame from SandboxScene.update()
   update() {
     if (this._levelEnded || this.totalRobots === 0) return;
-    // Fail condition: queue exhausted, no bird in flight, robots still alive
     if (!this.scene.activeAnimal && !this.scene.levelLoader.hasMoreBirds &&
         this.robotsDestroyed < this.totalRobots) {
       this._levelEnded = true;
@@ -560,14 +625,19 @@ class ScoreManager {
     }
   }
 
-  // ── Private ──────────────────────────────────────────────────────────────
+  cleanup() {
+    if (this._endTimer) { this._endTimer.remove(); this._endTimer = null; }
+    this._clearOverlay();
+  }
+
+  // ── Private ───────────────────────────────────────────────────────────────
 
   _addScore(pts, x, y) {
     this.score += pts;
     this._updateScoreText(true);
     const cam = this.scene.cameras.main;
     const sx  = Phaser.Math.Clamp(x - cam.scrollX, 40, VW - 40);
-    const sy  = Phaser.Math.Clamp(y - cam.scrollY, 58, VH - 58);
+    const sy  = Phaser.Math.Clamp(y - cam.scrollY, 60, VH - 60);
     const t = this.scene.add.text(sx, sy, `+${pts}`, {
       fontFamily:'monospace', fontSize:'18px', color:'#FFD700',
       stroke:'#000000', strokeThickness:3
@@ -607,13 +677,8 @@ class ScoreManager {
     return 1;
   }
 
-  _getStored(idx) {
-    try { return JSON.parse(localStorage.getItem(`farmfury_best_${idx}`)) || { score:0, stars:0 }; }
-    catch { return { score:0, stars:0 }; }
-  }
-
   _saveStored(idx, score, stars) {
-    const curr = this._getStored(idx);
+    const curr = getStoredLevel(idx);
     const best = { score: Math.max(curr.score, score), stars: Math.max(curr.stars, stars) };
     try { localStorage.setItem(`farmfury_best_${idx}`, JSON.stringify(best)); } catch {}
   }
@@ -623,7 +688,7 @@ class ScoreManager {
     this.score += bonus;
     this._updateScoreText(true);
     const idx     = this.scene.levelLoader.currentIdx;
-    const oldBest = this._getStored(idx);
+    const oldBest = getStoredLevel(idx);
     const stars   = this._calcStars();
     this._saveStored(idx, this.score, stars);
     const isNewBest = this.score > oldBest.score;
@@ -643,40 +708,47 @@ class ScoreManager {
     bg.fillStyle(0x000000, 0.62); bg.fillRect(0, 0, VW, VH);
     O.push(bg);
 
-    O.push(scene.add.text(VW/2, 86, 'Level Complete!', {
+    O.push(scene.add.text(VW/2, 78, 'Level Complete!', {
       fontFamily:'monospace', fontSize:'34px', color:'#FF8C00', stroke:'#000', strokeThickness:4
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(31));
 
-    // Stars — Phaser Graphics star polygon
     const sg = scene.add.graphics().setScrollFactor(0).setDepth(31);
-    for (let i=0; i<3; i++) this._drawStar(sg, VW/2+(i-1)*90, 188, 32, i < stars);
+    for (let i=0; i<3; i++) drawStarShape(sg, VW/2+(i-1)*90, 190, 32, i < stars);
     O.push(sg);
 
-    // Bonus line
-    const bonus = this.birdsRemaining; // already consumed from score; show for info
-    if (bonus > 0) {
-      O.push(scene.add.text(VW/2, 248, `+${bonus} bird${bonus>1?'s':''} remaining  ×500 bonus`, {
+    const bonus = this.birdsRemaining;
+    const hasBonus = bonus > 0;
+    if (hasBonus) {
+      O.push(scene.add.text(VW/2, 244, `+${bonus} bird${bonus>1?'s':''} remaining  × 500 bonus`, {
         fontFamily:'monospace', fontSize:'13px', color:'#88EE88'
       }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(31));
     }
 
-    O.push(scene.add.text(VW/2, bonus>0?268:252, `Score: ${score.toLocaleString()}`, {
+    const scoreY = hasBonus ? 264 : 248;
+    O.push(scene.add.text(VW/2, scoreY, `Score: ${score.toLocaleString()}`, {
       fontFamily:'monospace', fontSize:'22px', color:'#ffffff', stroke:'#000', strokeThickness:2
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(31));
 
     const bestStr = isNewBest ? `★ New Best: ${bestScore.toLocaleString()}` : `Best: ${bestScore.toLocaleString()}`;
-    O.push(scene.add.text(VW/2, bonus>0?300:285, bestStr, {
+    O.push(scene.add.text(VW/2, scoreY+33, bestStr, {
       fontFamily:'monospace', fontSize:'14px', color: isNewBest ? '#FFD700' : '#888888'
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(31));
 
+    const btnY = hasBonus ? 352 : 336;
     const isLast = scene.levelLoader.currentIdx >= LEVELS.length - 1;
-    const [nb, nt] = this._makeButton(VW/2-88, 358, 155, 42,
+
+    const [nb, nt] = this._makeButton(220, btnY, 148, 42,
       isLast ? 'First Level' : 'Next Level', 0xFF8C00, 0xFFAA22, () => {
         scene.time.delayedCall(50, () => scene.levelLoader.loadLevel(scene.levelLoader.currentIdx + 1));
       });
     O.push(nb, nt);
 
-    const [rb, rt] = this._makeButton(VW/2+88, 358, 110, 42, 'Retry', 0x555566, 0x777788, () => {
+    const [mb, mt] = this._makeButton(400, btnY, 108, 42, 'Menu', 0x334466, 0x4466AA, () => {
+      scene.time.delayedCall(50, () => scene.scene.start('MenuScene'));
+    });
+    O.push(mb, mt);
+
+    const [rb, rt] = this._makeButton(578, btnY, 112, 42, 'Retry', 0x555566, 0x777788, () => {
       scene.time.delayedCall(50, () => scene.levelLoader.loadLevel(scene.levelLoader.currentIdx));
     });
     O.push(rb, rt);
@@ -696,18 +768,23 @@ class ScoreManager {
       fontFamily:'monospace', fontSize:'36px', color:'#FF3333', stroke:'#000', strokeThickness:4
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(31));
 
-    O.push(scene.add.text(VW/2, 242, 'All birds used — no robots destroyed', {
+    O.push(scene.add.text(VW/2, 241, 'All birds used — no robots destroyed', {
       fontFamily:'monospace', fontSize:'13px', color:'#777777'
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(31));
 
-    O.push(scene.add.text(VW/2, 264, `Score: ${this.score.toLocaleString()}`, {
+    O.push(scene.add.text(VW/2, 263, `Score: ${this.score.toLocaleString()}`, {
       fontFamily:'monospace', fontSize:'18px', color:'#888888'
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(31));
 
-    const [rb, rt] = this._makeButton(VW/2, 328, 120, 44, 'Retry', 0xFF3333, 0xFF5555, () => {
+    const [rb, rt] = this._makeButton(VW/2-85, 328, 140, 44, 'Retry', 0xFF3333, 0xFF5555, () => {
       scene.time.delayedCall(50, () => scene.levelLoader.loadLevel(scene.levelLoader.currentIdx));
     });
     O.push(rb, rt);
+
+    const [mb, mt] = this._makeButton(VW/2+85, 328, 120, 44, 'Menu', 0x334466, 0x4466AA, () => {
+      scene.time.delayedCall(50, () => scene.scene.start('MenuScene'));
+    });
+    O.push(mb, mt);
   }
 
   _makeButton(cx, cy, w, h, label, color, hoverColor, onClick) {
@@ -727,22 +804,6 @@ class ScoreManager {
     return [btn, txt];
   }
 
-  _drawStar(g, cx, cy, r, earned) {
-    const pts = [];
-    for (let i=0; i<10; i++) {
-      const a   = (i * Math.PI / 5) - Math.PI / 2;
-      const rad = i % 2 === 0 ? r : r * 0.42;
-      pts.push({ x: cx + Math.cos(a)*rad, y: cy + Math.sin(a)*rad });
-    }
-    if (earned) {
-      g.fillStyle(0xF5C542);    g.fillPoints(pts, true);
-      g.lineStyle(2.5, 0xC8950E); g.strokePoints(pts, true);
-    } else {
-      g.fillStyle(0x262626, 0.9); g.fillPoints(pts, true);
-      g.lineStyle(2, 0x555555);   g.strokePoints(pts, true);
-    }
-  }
-
   _clearOverlay() {
     for (const o of this._overlayObjects) { if (o && o.active) o.destroy(); }
     this._overlayObjects = [];
@@ -750,9 +811,7 @@ class ScoreManager {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Trebuchet
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Trebuchet ────────────────────────────────────────────────────────────────
 class Trebuchet {
 
   constructor(scene) {
@@ -875,9 +934,115 @@ class Trebuchet {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Scene
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── MenuScene ────────────────────────────────────────────────────────────────
+class MenuScene extends Phaser.Scene {
+
+  constructor() { super('MenuScene'); }
+
+  create() {
+    // Background
+    const bg = this.add.graphics();
+    bg.fillStyle(0x7EC8E3); bg.fillRect(0, 0, VW, VH);
+    bg.fillStyle(0x5BACE0, 0.22); bg.fillRect(0, 0, VW, VH * 0.5);
+
+    const fg = this.add.graphics();
+    fg.fillStyle(0x6B8F47);
+    fg.fillPoints(genHillPts(-10, VW + 10, VH * 0.55, 38, 0.5), true);
+
+    const ng = this.add.graphics();
+    ng.fillStyle(0x4A7A2B);
+    ng.fillPoints(genHillPts(-10, VW + 10, VH * 0.72, 26, 1.3), true);
+
+    const gr = this.add.graphics();
+    gr.fillStyle(0x5C4020); gr.fillRect(0, VH - 22, VW, 22);
+    gr.fillStyle(0x3D8020); gr.fillRect(0, VH - 22, VW, 7);
+
+    // Dark overlay for readability
+    this.add.graphics().setDepth(1).fillStyle(0x000000, 0.48).fillRect(0, 0, VW, VH);
+
+    // Title
+    this.add.text(VW/2, 44, 'FARM FURY', {
+      fontFamily:'monospace', fontSize:'52px', color:'#FF8C00',
+      stroke:'#000', strokeThickness:6
+    }).setOrigin(0.5, 0).setDepth(2);
+
+    this.add.text(VW/2, 108, 'Select a Level', {
+      fontFamily:'monospace', fontSize:'17px', color:'#cccccc'
+    }).setOrigin(0.5, 0).setDepth(2);
+
+    // Level cards
+    const cardW=128, cardH=168, gap=12;
+    const totalW = LEVELS.length * cardW + (LEVELS.length - 1) * gap;
+    const startX = (VW - totalW) / 2;
+    const cardCY = 320;
+
+    LEVELS.forEach((level, i) => {
+      const cx = startX + i * (cardW + gap) + cardW / 2;
+      this._makeCard(cx, cardCY, cardW, cardH, level, i);
+    });
+
+    // Footer hint
+    this.add.text(VW/2, VH - 12, 'Click a card to play', {
+      fontFamily:'monospace', fontSize:'11px', color:'#777777'
+    }).setOrigin(0.5, 1).setDepth(2);
+  }
+
+  _makeCard(cx, cy, w, h, level, idx) {
+    const x = cx - w/2, y = cy - h/2;
+    const stored = getStoredLevel(idx);
+
+    const card = this.add.graphics().setDepth(3);
+    const drawCard = (hover) => {
+      card.clear();
+      card.fillStyle(hover ? 0x3A5A7A : 0x1E2E3E);
+      card.fillRoundedRect(x, y, w, h, 10);
+      card.lineStyle(2, hover ? 0xFF8C00 : 0x3A5A7A);
+      card.strokeRoundedRect(x, y, w, h, 10);
+    };
+    drawCard(false);
+
+    // Level ID
+    this.add.text(cx, y + 16, level.id, {
+      fontFamily:'monospace', fontSize:'10px', color:'#7799BB'
+    }).setOrigin(0.5, 0.5).setDepth(4);
+
+    // Level name (may wrap)
+    this.add.text(cx, y + 34, level.name, {
+      fontFamily:'monospace', fontSize:'12px', color:'#FFFFFF',
+      wordWrap:{ width: w - 12 }, align:'center'
+    }).setOrigin(0.5, 0).setDepth(4);
+
+    // Stars
+    const sg = this.add.graphics().setDepth(4);
+    for (let s = 0; s < 3; s++) drawStarShape(sg, cx + (s-1)*26, cy - 14, 11, s < stored.stars);
+
+    // Best score
+    const scoreStr = stored.score > 0 ? stored.score.toLocaleString() : '—';
+    this.add.text(cx, cy + 20, scoreStr, {
+      fontFamily:'monospace', fontSize:'12px', color: stored.score > 0 ? '#FFD700' : '#444'
+    }).setOrigin(0.5, 0.5).setDepth(4);
+
+    // Par line
+    this.add.text(cx, cy + 38, `par: ${level.par_birds} bird${level.par_birds>1?'s':''}`, {
+      fontFamily:'monospace', fontSize:'10px', color:'#556677'
+    }).setOrigin(0.5, 0.5).setDepth(4);
+
+    // PLAY button strip
+    const playBg = this.add.graphics().setDepth(4);
+    playBg.fillStyle(0xFF8C00); playBg.fillRoundedRect(x + 10, y + h - 38, w - 20, 28, 6);
+    this.add.text(cx, y + h - 24, 'PLAY', {
+      fontFamily:'monospace', fontSize:'13px', color:'#fff', stroke:'#000', strokeThickness:2
+    }).setOrigin(0.5, 0.5).setDepth(5);
+
+    // Make whole card interactive
+    card.setInteractive(new Phaser.Geom.Rectangle(x, y, w, h), Phaser.Geom.Rectangle.Contains);
+    card.on('pointerover', () => { drawCard(true); playBg.clear(); playBg.fillStyle(0xFFAA22); playBg.fillRoundedRect(x+10, y+h-38, w-20, 28, 6); });
+    card.on('pointerout',  () => { drawCard(false); playBg.clear(); playBg.fillStyle(0xFF8C00); playBg.fillRoundedRect(x+10, y+h-38, w-20, 28, 6); });
+    card.on('pointerdown', () => { this.scene.start('SandboxScene', { levelIdx: idx }); });
+  }
+}
+
+// ─── SandboxScene ─────────────────────────────────────────────────────────────
 class SandboxScene extends Phaser.Scene {
 
   constructor() {
@@ -885,7 +1050,19 @@ class SandboxScene extends Phaser.Scene {
     this.grav=1.5; this.blocks=[]; this.robots=[];
     this.launcherDragging=false; this.activeAnimal=null;
     this.inputBlocked=false;
+    this._lastShakeTime=0; this._lastThudTime=0;
+    this._startLevelIdx=0;
   }
+
+  init(data) {
+    this._startLevelIdx = (data && data.levelIdx !== undefined) ? data.levelIdx : 0;
+    // Reset mutable state on every scene start
+    this.grav=1.5; this.blocks=[]; this.robots=[];
+    this.launcherDragging=false; this.activeAnimal=null;
+    this.inputBlocked=false; this._lastShakeTime=0; this._lastThudTime=0;
+  }
+
+  // ── Texture generation ────────────────────────────────────────────────────
 
   buildTextures() {
     const w=this.make.graphics({add:false});
@@ -925,71 +1102,115 @@ class SandboxScene extends Phaser.Scene {
     ro.generateTexture('robot',30,40); ro.destroy();
   }
 
+  // ── Parallax background ───────────────────────────────────────────────────
+
+  _buildBackground() {
+    // Sky — fixed screen-space fill
+    const sky = this.add.graphics().setScrollFactor(0).setDepth(-5);
+    sky.fillStyle(0x7EC8E3); sky.fillRect(0, 0, VW, VH);
+    sky.fillStyle(0x5BACE0, 0.22); sky.fillRect(0, 0, VW, VH * 0.5);
+
+    // Far hills: local coords from -400 to 1400 (covers full scroll range 0-600)
+    this._farHillGfx = this.add.graphics().setScrollFactor(0).setDepth(-3);
+    this._farHillGfx.fillStyle(0x6B8F47);
+    this._farHillGfx.fillPoints(genHillPts(-400, 1400, 336, 38, 0.5), true);
+
+    // Near hills
+    this._nearHillGfx = this.add.graphics().setScrollFactor(0).setDepth(-2);
+    this._nearHillGfx.fillStyle(0x4A7A2B);
+    this._nearHillGfx.fillPoints(genHillPts(-400, 1400, 442, 26, 1.3), true);
+  }
+
+  // ── Sound helpers ─────────────────────────────────────────────────────────
+
+  _playThud(impulse) {
+    const now = this.time.now;
+    if (now - this._lastThudTime < 85) return;
+    this._lastThudTime = now;
+    try {
+      const ctx=this.sound.context, osc=ctx.createOscillator(), gain=ctx.createGain();
+      osc.type='sine';
+      osc.frequency.value = 75 + Math.random() * 25;
+      const vol = Math.min(0.22, impulse / 700);
+      gain.gain.setValueAtTime(vol, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.06);
+    } catch(e) {}
+  }
+
+  // ── Scene lifecycle ───────────────────────────────────────────────────────
+
   create() {
     this.buildTextures();
+    this._buildBackground();
 
-    // ── World ─────────────────────────────────────────────────────────
-    this.add.rectangle(WW/2,WH/2,WW,WH,0x7F7F7F);
-    const grid=this.add.graphics();
-    grid.lineStyle(1,0x6C6C6C,0.55);
-    for (let x=0;x<=WW;x+=100) grid.lineBetween(x,0,x,WH);
-    for (let y=0;y<=WH;y+=100) grid.lineBetween(0,y,WW,y);
-    this.add.text(4,4,'0,0',{fontFamily:'monospace',fontSize:'11px',color:'#999'});
-    this.add.text(WW-4,4,'1400,0',{fontFamily:'monospace',fontSize:'11px',color:'#999'}).setOrigin(1,0);
-    this.add.text(4,WH-4,'0,800',{fontFamily:'monospace',fontSize:'11px',color:'#999'}).setOrigin(0,1);
-    this.add.text(WW-4,WH-4,'1400,800',{fontFamily:'monospace',fontSize:'11px',color:'#999'}).setOrigin(1,1);
+    // ── World physics boundaries ──────────────────────────────────────
+    this.matter.add.rectangle(WW/2, WH-15, WW+60, 30, { isStatic:true, friction:0.8, restitution:0.05, label:'ground' });
+    this.matter.add.rectangle(-15, WH/2, 30, WH+60, { isStatic:true, restitution:0.3 });
+    this.matter.add.rectangle(WW+15, WH/2, 30, WH+60, { isStatic:true, restitution:0.3 });
 
-    this.matter.add.rectangle(WW/2,WH-15,WW+60,30,{isStatic:true,friction:0.8,restitution:0.05,label:'ground'});
-    const gv=this.add.graphics();
-    gv.fillStyle(0x5C4020); gv.fillRect(0,WH-30,WW,30);
-    gv.fillStyle(0x3D8020); gv.fillRect(0,WH-30,WW,6);
+    // ── World visuals (world-space, scroll with camera) ───────────────
+    const gv = this.add.graphics().setDepth(1);
+    gv.fillStyle(0x5C4020); gv.fillRect(0, WH-32, WW, 32);
+    gv.fillStyle(0x3D8020); gv.fillRect(0, WH-32, WW, 7);
+    // Subtle grass tufts
+    gv.fillStyle(0x4A9528);
+    for (let gx = 20; gx < WW; gx += 60) {
+      gv.fillTriangle(gx, WH-32, gx+5, WH-40, gx+10, WH-32);
+    }
 
-    this.matter.add.rectangle(-15,WH/2,30,WH+60,{isStatic:true,restitution:0.3});
-    this.matter.add.rectangle(WW+15,WH/2,30,WH+60,{isStatic:true,restitution:0.3});
-
-    this.cameras.main.setBounds(0,0,WW,WH);
-    this.cameras.main.setScroll((WW-VW)/2,WH-VH);
+    this.cameras.main.setBounds(0, 0, WW, WH);
+    this.cameras.main.setScroll((WW-VW)/2, WH-VH);
     this.matter.world.setGravity(0, this.grav);
 
-    // ── HUD shell (game HUD created inside ScoreManager) ──────────────
-    const topBg=this.add.graphics();
-    topBg.fillStyle(0x000000,0.55); topBg.fillRect(0,0,VW,56);
+    // ── HUD shell ─────────────────────────────────────────────────────
+    const topBg = this.add.graphics();
+    topBg.fillStyle(0x000000, 0.55); topBg.fillRect(0, 0, VW, 56);
     topBg.setScrollFactor(0).setDepth(19);
 
-    // FPS — dev indicator, small, lower-right above hint bar
     this.fpsText = this.add.text(VW-4, VH-38, 'FPS:--',
       { fontFamily:'monospace', fontSize:'10px', color:'#555555' })
       .setScrollFactor(0).setDepth(20).setOrigin(1,1);
 
-    // Bottom bar
-    const botBg=this.add.graphics();
-    botBg.fillStyle(0x000000,0.48); botBg.fillRect(0,VH-26,VW,26);
+    const botBg = this.add.graphics();
+    botBg.fillStyle(0x000000, 0.48); botBg.fillRect(0, VH-26, VW, 26);
     botBg.setScrollFactor(0).setDepth(19);
     this._hintText = this.add.text(VW/2, VH-13, '',
       { fontFamily:'monospace', fontSize:'11px', color:'#e0e0e0' })
-      .setScrollFactor(0).setDepth(20).setOrigin(0.5,0.5);
+      .setScrollFactor(0).setDepth(20).setOrigin(0.5, 0.5);
     this.refreshGravText();
 
-    // ── Collision → damage ────────────────────────────────────────────
+    // ── Collision handler — damage + shake + thud ─────────────────────
     this.matter.world.on('collisionstart', (event) => {
       event.pairs.forEach(({ bodyA, bodyB }) => {
-        if (bodyA.isStatic||bodyB.isStatic) return;
-        if (bodyA.eggRef  ||bodyB.eggRef)   return;
-        const relSpeed=Math.hypot(bodyA.velocity.x-bodyB.velocity.x,bodyA.velocity.y-bodyB.velocity.y);
-        const effMass=(bodyA.mass*bodyB.mass)/(bodyA.mass+bodyB.mass);
-        const impulse=relSpeed*effMass*0.15;
-        if (impulse>5) {
-          const dmg=impulse*0.8;
+        if (bodyA.isStatic || bodyB.isStatic) return;
+        if (bodyA.eggRef   || bodyB.eggRef)   return;
+        const relSpeed = Math.hypot(bodyA.velocity.x-bodyB.velocity.x, bodyA.velocity.y-bodyB.velocity.y);
+        const effMass  = (bodyA.mass*bodyB.mass)/(bodyA.mass+bodyB.mass);
+        const impulse  = relSpeed * effMass * 0.15;
+        if (impulse > 5) {
+          const dmg = impulse * 0.8;
           if (bodyA.blockRef instanceof Block) bodyA.blockRef.takeDamage(dmg);
           if (bodyB.blockRef instanceof Block) bodyB.blockRef.takeDamage(dmg);
           if (bodyA.robotRef instanceof Robot) bodyA.robotRef.takeDamage(dmg);
           if (bodyB.robotRef instanceof Robot) bodyB.robotRef.takeDamage(dmg);
         }
+        // Block thud sound on block-involving impacts
+        if (impulse > 14 && (bodyA.blockRef || bodyB.blockRef)) this._playThud(impulse);
+        // Screen shake on heavy impacts
+        if (impulse > 50) {
+          const now = this.time.now;
+          if (now - this._lastShakeTime > 180) {
+            this._lastShakeTime = now;
+            this.cameras.main.shake(150, 0.004);
+          }
+        }
       });
     });
 
-    // ── Trebuchet → ScoreManager → LevelLoader (order matters) ────────
-    this.trebuchet   = new Trebuchet(this);
+    // ── Systems ───────────────────────────────────────────────────────
+    this.trebuchet    = new Trebuchet(this);
     this.scoreManager = new ScoreManager(this);
     this.levelLoader  = new LevelLoader(this);
 
@@ -998,31 +1219,31 @@ class SandboxScene extends Phaser.Scene {
       if (ptr.button===0 && !this.launcherDragging && !this.activeAnimal && !this.inputBlocked)
         this.spawnWood(ptr.worldX, ptr.worldY);
     });
-    this.input.keyboard.on('keydown-S',    ()=>{ const p=this.input.activePointer; this.spawnStone(p.worldX,p.worldY); });
-    this.input.keyboard.on('keydown-C',    ()=>{ const p=this.input.activePointer; this.spawnAnimal(p.worldX,p.worldY); });
-    this.input.keyboard.on('keydown-UP',   ()=>{ this.grav=+(Math.min(5.0,this.grav+0.1)).toFixed(1); this.matter.world.setGravity(0,this.grav); this.refreshGravText(); });
-    this.input.keyboard.on('keydown-DOWN', ()=>{ this.grav=+(Math.max(-2.0,this.grav-0.1)).toFixed(1); this.matter.world.setGravity(0,this.grav); this.refreshGravText(); });
-    this.input.keyboard.on('keydown-N',    ()=>{ this.levelLoader.loadLevel(this.levelLoader.currentIdx+1); });
-    this.input.keyboard.on('keydown-R',    ()=>{ this.levelLoader.loadLevel(this.levelLoader.currentIdx); });
+    this.input.keyboard.on('keydown-S',    () => { const p=this.input.activePointer; this.spawnStone(p.worldX,p.worldY); });
+    this.input.keyboard.on('keydown-UP',   () => { this.grav=+(Math.min(5.0,this.grav+0.1)).toFixed(1); this.matter.world.setGravity(0,this.grav); this.refreshGravText(); });
+    this.input.keyboard.on('keydown-DOWN', () => { this.grav=+(Math.max(-2.0,this.grav-0.1)).toFixed(1); this.matter.world.setGravity(0,this.grav); this.refreshGravText(); });
+    this.input.keyboard.on('keydown-N',    () => { this.levelLoader.loadLevel(this.levelLoader.currentIdx+1); });
+    this.input.keyboard.on('keydown-R',    () => { this.levelLoader.loadLevel(this.levelLoader.currentIdx); });
+    this.input.keyboard.on('keydown-M',    () => { this.scene.start('MenuScene'); });
 
-    this.levelLoader.loadLevel(0);
+    this.levelLoader.loadLevel(this._startLevelIdx);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────
+  shutdown() {
+    if (this.scoreManager) this.scoreManager.cleanup();
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   refreshGravText() {
-    const d=this.grav>=0?'▼':'▲';
-    this._hintText.setText(`DRAG=Fire  CLICK=Ability  N=Next  R=Restart  ↑↓ Grav:${this.grav.toFixed(1)}${d}`);
+    const d = this.grav >= 0 ? '▼' : '▲';
+    this._hintText.setText(`DRAG=Fire  CLICK=Ability  N=Next  R=Restart  M=Menu  ↑↓ g:${this.grav.toFixed(1)}${d}`);
   }
 
-  refreshBlockText() { /* block count tracked by ScoreManager */ }
+  refreshBlockText() {}
 
-  removeBlock(block) {
-    const i=this.blocks.indexOf(block); if(i!==-1) this.blocks.splice(i,1);
-  }
-  removeRobot(robot) {
-    const i=this.robots.indexOf(robot); if(i!==-1) this.robots.splice(i,1);
-  }
+  removeBlock(block) { const i=this.blocks.indexOf(block); if(i!==-1) this.blocks.splice(i,1); }
+  removeRobot(robot) { const i=this.robots.indexOf(robot); if(i!==-1) this.robots.splice(i,1); }
 
   spawnWood(x,y)   { this.blocks.push(new Block(this,x,y,60,20,'wood')); }
   spawnStone(x,y)  { this.blocks.push(new Block(this,x,y,60,30,'stone')); }
@@ -1030,10 +1251,16 @@ class SandboxScene extends Phaser.Scene {
     const img=this.matter.add.image(x,y,'animal');
     img.setCircle(18,{mass:8,restitution:0.3,friction:0.5,frictionAir:0.01});
   }
-  spawnRobot(x,y) { this.robots.push(new Robot(this,x,y)); }
+  spawnRobot(x,y)  { this.robots.push(new Robot(this,x,y)); }
 
   update(time, delta) {
-    if (delta>0) this.fpsText.setText(`FPS:${Math.round(1000/delta)}`);
+    if (delta > 0) this.fpsText.setText(`FPS:${Math.round(1000/delta)}`);
+
+    // Parallax scroll (X-axis only, camera Y handled by fixed screen position)
+    const sx = this.cameras.main.scrollX;
+    this._farHillGfx.setPosition(-sx * 0.12, 0);
+    this._nearHillGfx.setPosition(-sx * 0.35, 0);
+
     for (const b of this.blocks) b.sync();
     for (const r of this.robots) r.sync();
     if (this.scoreManager) this.scoreManager.update();
@@ -1042,9 +1269,15 @@ class SandboxScene extends Phaser.Scene {
 
 // ─────────────────────────────────────────────────────────────────────────────
 new Phaser.Game({
-  type:Phaser.AUTO, width:VW, height:VH, backgroundColor:'#7F7F7F',
-  physics:{ default:'matter', matter:{ gravity:{ y:1.5 }, debug:false } },
-  scene:SandboxScene
+  type: Phaser.AUTO,
+  width: VW, height: VH,
+  backgroundColor: '#7EC8E3',
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+  physics: { default:'matter', matter:{ gravity:{ y:1.5 }, debug:false } },
+  scene: [MenuScene, SandboxScene],
 });
 </script>
 </body>
