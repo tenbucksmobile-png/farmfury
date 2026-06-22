@@ -312,9 +312,68 @@ WORLD
   ScoreManager.cleanup(): removes _endTimer + clears overlay (safe before scene stop).
 
 ================================================================================
+  PROMPT 9 — BessieAnimal + Level 6                                   [COMPLETE]
+================================================================================
+  BessieAnimal extends Animal
+    · Radius 26, mass 28, restitution 0.15, frictionAir 0.016 (static FA=0.016)
+    · Large black-and-white cow texture (procedural, same pattern as CluckAnimal)
+    · Ground Slam ability: click mid-flight → vy+18 impulse
+      On landing: shake(250, 0.008), 60Hz deep thud, orange shockwave ring,
+      radial force+damage within 180px via Composite.allBodies()
+
+  L06 "Bessie's Debut" (par 2, birds: cluck/bessie/bessie/cluck)
+    · Flanking stone pillar pair (2 segments each side)
+    · 3 robots clustered between pillars
+
+  L03 updated: birds array now includes 'bessie'
+
+================================================================================
+  PROMPT 10 — Physics Tuning Pass 1                                   [COMPLETE]
+================================================================================
+  Problem: blocks fell at start; falling structure didn't damage robots;
+           structures too strong; trebuchet too far back; trajectory too low.
+
+  Fixes applied:
+    · Block.constructor: img.setStatic(true) — all blocks frozen at spawn
+    · Block.takeDamage(): on first hit, setStatic(false) on ALL scene blocks (wake)
+    · Collision guard: bodyA.isStatic && bodyB.isStatic → skip (was ||, now &&)
+      so bird-vs-static-block collisions register
+    · effMass: both dynamic = reduced mass; one static = movingBody.mass × 0.6
+    · Block HP: wood=20, stone=50 (×area/stdArea); mass: wood=5, stone=8 (×area)
+    · Robot maxHealth: 150→35
+    · gravity: 1.5→1.2; MAX_VEL: 22→18; BASE_X: 420→560
+
+================================================================================
+  PROMPT 11 — Ground-Level Repositioning                              [COMPLETE]
+================================================================================
+  Problem: structure floating in mid-screen; bird still overshooting.
+
+  Fixes applied:
+    · Recalculated all block/robot y from ground (y=770) upward:
+      robot cy=750, wood cy=760, stone cy=755; stack upward by block height
+    · All 6 levels rewritten with correct ground-contact y coordinates
+    · gravity: kept 1.2; MAX_VEL: 18→18 (kept); effMass 0.5→0.6
+
+================================================================================
+  PROMPT 12 — Trajectory Speed Reduction                              [COMPLETE]
+================================================================================
+  Problem: animal still shoots over structure.
+
+  Root cause: at V=18, g=1.2, a 45° pull passes the structure x at y≈677 —
+  above the tower top. Players naturally pull at high angle → arc clears structure.
+
+  Fixes applied:
+    · MAX_VEL: 18→14  (28% slower; arc peaks lower and shorter)
+    · gravity: 1.2→1.4  (faster descent; high-angle shots land on target)
+    · All structure x positions shifted -120px (structures now x≈550–870)
+      Brings structures into sweet spot for V=14 arc:
+      45° full-power → hits y=732 at x=700 (L01 centre) ✓
+      30° → hits y=718 at x=700 ✓
+      10° → hits y=754 at x=700 ✓
+
+================================================================================
   NEXT — Not Yet Started
 ================================================================================
-  Prompt 9+: TBD
 
 ================================================================================
   TECHNICAL NOTES (cumulative)
