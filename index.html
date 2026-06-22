@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Farm Fury — v6</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #111; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; border: 2px solid #444; }
+  </style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+<script>
+'use strict';
+
+const WW = 1400, WH = 800;
+const VW = 800,  VH = 600;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Level definitions
+// ─────────────────────────────────────────────────────────────────────────────
+const LEVELS = [
+  {
+    id: 'W1_L01', name: 'First Contact', par_birds: 1,
+    birds:  ['cluck','cluck','cluck'],
+    blocks: [
+      { type:'wood', x:800, y:490, w:60, h:20 },
+      { type:'wood', x:800, y:470, w:60, h:20 },
+      { type:'wood', x:800, y:450, w:60, h:20 },
+      { type:'wood', x:800, y:430, w:60, h:20 },
+    ],
+    robots: [{ x:800, y:510 }],
+  },
+  {
+    id: 'W1_L02', name: 'Stone Wall', par_birds: 2,
+    birds:  ['cluck','cluck','cluck'],
+    blocks: [
+      { type:'stone', x:760, y:490, w:60, h:30 },
+      { type:'stone', x:820, y:490, w:60, h:30 },
+      { type:'stone', x:880, y:490, w:60, h:30 },
+      { type:'wood',  x:820, y:460, w:60, h:20 },
+    ],
+    robots: [{ x:820, y:540 }],
+  },
+  {
+    id: 'W1_L03', name: 'The Tower', par_birds: 3,
+    birds:  ['cluck','cluck','cluck','cluck'],
+    blocks: [
+      { type:'wood',  x:820, y:490, w:120, h:20 },
+      { type:'stone', x:820, y:470, w:120, h:20 },
+      { type:'wood',  x:820, y:450, w:80,  h:20 },
+    ],
+    robots: [{ x:760, y:510 }, { x:820, y:430 }],
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Block
+// ─────────────────────────────────────────────────────────────────────────────
+class Block {
+
+  // Returns a texture key for type+size, generating the texture on first use.
+  // Standard 60×20 wood and 60×30 stone reuse the pre-built textures from
+  // buildTextures() — no second canvas pass needed for the common sizes.
+  static _ensureTexture(scene, type, w, h) {
+    if (type === 'wood'  && w === 60 && h === 20) return 'wood';
+    if (type === 'stone' && w === 60 && h === 30) return 'stone';
+
+    const key = `${type}_${w}x${h}`;
+    if (scene.textures.exists(key)) return key;
+
+    const isWood = (type === 'wood');
+    const g = scene.make.graphics({ add: false });
+    if (isWood) {
+      g.fillStyle(0xC4843A); g.fillRect(0, 0, w, h);
+      g.lineStyle(1.5, 0x7A4218); g.strokeRect(1, 1, w-2, h-2);
+      g.lineStyle(0.8, 0x9A5E22, 0.55);
+      for (let lx = 15; lx < w; lx += 15) g.lineBetween(lx, 1, lx, h-1);
+    } else {
+      g.fillStyle(0x888780); g.fillRect(0, 0, w, h);
+      g.lineStyle(1.5, 0x4E4D4C); g.strokeRect(1, 1, w-2, h-2);
+      g.lineStyle(0.8, 0x696867, 0.7);
+      const hm = Math.floor(h / 2);
+      const vStep = Math.max(20, Math.floor(w / Math.max(2, Math.round(w / 30))));
+      g.lineBetween(0, hm, w, hm);
+      for (let vx = vStep;       vx < w; vx += vStep) g.lineBetween(vx, hm, vx, h);
+      for (let vx = vStep * 0.5; vx < w; vx += vStep) g.lineBetween(vx, 0,  vx, hm);
+    }
+    g.generateTexture(key, w, h);
+    g.destroy();
+    return key;
+  }
+
+  constructor(scene, x, y, width, height, type) {
+    this.scene     = scene;
+    this.w         = width;
+    this.h         = height;
+    this.type      = type;
+    this.destroyed = false;
+    this.cracked   = false;
+
+    const isWood  = (type === 'wood');
+    const stdArea = isWood ? 1200 : 1800;
+    const area    = width * height;
+
+    this.maxHealth  = (isWood ? 80  : 200) * area / stdArea;
+    this.health     = this.maxHealth;
+    this.faceColor  = isWood ? 0xC4843A : 0x888780;
+    this.edgeColor  = isWood ? 0x7A4218 : 0x4E4D4C;
+    this.crackColor = isWood ? 0x3A1A08 : 0x252524;
+
+    const texKey = Block._ensureTexture(scene, type, width, height);
+    this.img = scene.matter.add.image(x, y, texKey, null, {
+      mass:        (isWood ? 10 : 30) * area / stdArea,
+      restitution: isWood ? 0.2 : 0.1,
+      friction:    0.8,
+      frictionAir: 0.01,
+      label:       type
+    });
+
+    if (isWood) this.img.setAngle((Math.random() - 0.5) * 6);
+    this.img.body.blockRef = this;
+
+    this.crackGfx = scene.add.graphics().setDepth(4);
+    this.hpGfx    = scene.add.graphics().setDepth(6);
+    this.redrawHP();
+    this.sync();
+  }
+
+  redrawHP() {
+    const g = this.hpGfx, ratio = Phaser.Math.Clamp(this.health / this.maxHealth, 0, 1);
+    g.clear();
+    g.fillStyle(0x111111, 0.8); g.fillRect(-this.w/2, 0, this.w, 4);
+    const col = ratio > 0.6 ? 0x44DD44 : ratio > 0.3 ? 0xFFAA00 : 0xFF2222;
+    g.fillStyle(col); g.fillRect(-this.w/2, 0, this.w * ratio, 4);
+  }
+
+  redrawCracks() {
+    const g = this.crackGfx, hw = this.w/2, hh = this.h/2;
+    g.clear();
+    g.lineStyle(1.4, this.crackColor, 0.9);
+    g.lineBetween(-hw*.50, -hh*.80,  hw*.30,  hh*.40);
+    g.lineBetween( hw*.40, -hh*.55, -hw*.15,  hh*.70);
+    g.lineBetween(-hw*.20,  hh*.20,  hw*.55, -hh*.75);
+  }
+
+  sync() {
+    if (this.destroyed) return;
+    const { x, y, rotation } = this.img;
+    this.hpGfx.setPosition(x, y - this.h/2 - 10);
+    if (this.cracked) this.crackGfx.setPosition(x, y).setRotation(rotation);
+  }
+
+  takeDamage(amount) {
+    if (this.destroyed) return;
+    this.health -= amount;
+    if (!this.cracked && this.health < this.maxHealth * 0.5) { this.cracked = true; this.redrawCracks(); }
+    this.redrawHP();
+    if (this.health <= 0) this.explode();
+  }
+
+  explode() {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    const { x, y } = this.img;
+    for (let i = 0; i < 5; i++) this.spawnFragment(x, y, i);
+    this.scene.events.emit('blockDestroyed', { type: this.type, x, y });
+    const img = this.img, cg = this.crackGfx, hg = this.hpGfx, sc = this.scene;
+    sc.time.delayedCall(0, () => { img.destroy(); cg.destroy(); hg.destroy(); sc.removeBlock(this); });
+  }
+
+  spawnFragment(cx, cy, index) {
+    const angle = (Math.PI * 2 * index / 5) + (Math.random() - 0.5) * 0.9;
+    const speed = 55 + Math.random() * 115;
+    const frag  = { x:cx, y:cy, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed-65, rot:angle };
+    const g     = this.scene.add.graphics().setDepth(7);
+    const paint = (alpha, scale) => {
+      g.clear(); if (alpha <= 0.02) return;
+      const s = 8 * scale;
+      g.fillStyle(this.faceColor, alpha);
+      g.fillTriangle(0,-s,-s*.85,s*.85,s*.85,s*.85);
+      g.lineStyle(0.8, this.edgeColor, alpha*.55);
+      g.strokeTriangle(0,-s,-s*.85,s*.85,s*.85,s*.85);
+    };
+    paint(1, 1); g.setPosition(cx, cy).setRotation(frag.rot);
+    const STEPS = 38; let step = 0;
+    this.scene.time.addEvent({ delay:16, repeat:STEPS, callback:() => {
+      step++; const t = step/STEPS;
+      frag.vy += 2.5; frag.x += frag.vx*.016; frag.y += frag.vy*.016; frag.rot += .11;
+      g.setPosition(frag.x, frag.y).setRotation(frag.rot);
+      paint(1-t, 1-t*.65);
+      if (step >= STEPS) g.destroy();
+    }});
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Animal — base
+// ─────────────────────────────────────────────────────────────────────────────
+class Animal {
+  constructor(scene) { this.scene = scene; this.img = null; this.destroyed = false; }
+  setVelocity(vx, vy) { this.img.setVelocity(vx, vy); }
+  destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    if (this.img && this.img.active) this.img.destroy();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CluckAnimal
+// ─────────────────────────────────────────────────────────────────────────────
+class CluckAnimal extends Animal {
+
+  static FA = 0.008;
+
+  constructor(scene, x, y) {
+    super(scene);
+    this.abilityUsed = false;
+    this._hasLanded  = false;
+
+    this.img = scene.matter.add.image(x, y, 'cluck', null);
+    this.img.setCircle(18, { mass:8, restitution:0.4, friction:0.5, frictionAir:CluckAnimal.FA, label:'cluck' });
+    this.img.setDepth(3);
+    this._playLaunchTone();
+    this._setupAbilityInput();
+    this._setupContactTimer();
+  }
+
+  _playLaunchTone() {
+    try {
+      const ctx = this.scene.sound.context, osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = 'triangle'; osc.frequency.value = 400;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.08);
+    } catch (e) {}
+  }
+
+  _setupAbilityInput() {
+    this._clickHandler = () => this._triggerAbility();
+    this.scene.input.once('pointerdown', this._clickHandler);
+  }
+
+  _setupContactTimer() {
+    this._contactHandler = (event) => {
+      if (this.destroyed || this._hasLanded) return;
+      const myBody = this.img?.body; if (!myBody) return;
+      for (const { bodyA, bodyB } of event.pairs) {
+        if (bodyA !== myBody && bodyB !== myBody) continue;
+        this._hasLanded = true;
+        this.scene.input.off('pointerdown', this._clickHandler);
+        this.scene.matter.world.off('collisionstart', this._contactHandler);
+        this.scene.time.delayedCall(3000, () => this.destroy());
+        break;
+      }
+    };
+    this.scene.matter.world.on('collisionstart', this._contactHandler);
+  }
+
+  _triggerAbility() {
+    if (this.abilityUsed || this.destroyed || this.scene.launcherDragging) return;
+    this.abilityUsed = true;
+    const { x, y } = this.img, vel = this.img.body.velocity;
+    const speed = Math.hypot(vel.x, vel.y), baseAngle = Math.atan2(vel.y, vel.x);
+    this.img.setTint(0xFFFFFF);
+    this.scene.time.delayedCall(120, () => { if (!this.destroyed) this.img.clearTint(); });
+    const eggSpeed = Math.max(speed * 0.6, 5);
+    for (const deg of [-60,-30,0,30,60]) {
+      const a = baseAngle + Phaser.Math.DegToRad(deg);
+      this._spawnEgg(x, y, Math.cos(a)*eggSpeed, Math.sin(a)*eggSpeed);
+    }
+  }
+
+  _spawnEgg(x, y, vx, vy) {
+    const scene  = this.scene;
+    const eggImg = scene.matter.add.image(x, y, 'egg', null);
+    eggImg.setCircle(7, { mass:3, restitution:0.3, friction:0.4, frictionAir:0.012, label:'egg' });
+    eggImg.setVelocity(vx, vy); eggImg.setDepth(3);
+    eggImg.body.eggRef = true;
+    let dead = false;
+    const handler = (event) => {
+      if (dead) return;
+      const eggBody = eggImg.body;
+      for (const { bodyA, bodyB } of event.pairs) {
+        if (bodyA !== eggBody && bodyB !== eggBody) continue;
+        const other = bodyA === eggBody ? bodyB : bodyA;
+        if (other.eggRef || other.label === 'cluck') continue;
+        const relSpeed = Math.hypot(bodyA.velocity.x - bodyB.velocity.x, bodyA.velocity.y - bodyB.velocity.y);
+        if (relSpeed < 2) continue;
+        if (other.blockRef instanceof Block) other.blockRef.takeDamage(relSpeed * 1.2);
+        if (other.robotRef instanceof Robot) other.robotRef.takeDamage(relSpeed * 1.2);
+        dead = true;
+        scene.matter.world.off('collisionstart', handler);
+        this._spawnCrackParticle(eggImg.x, eggImg.y);
+        scene.time.delayedCall(0, () => { if (eggImg.active) eggImg.destroy(); });
+        break;
+      }
+    };
+    scene.matter.world.on('collisionstart', handler);
+  }
+
+  _spawnCrackParticle(x, y) {
+    const g = this.scene.add.graphics().setDepth(9);
+    const angles = [0,60,120,180,240,300].map(d => Phaser.Math.DegToRad(d));
+    let step = 0;
+    this.scene.time.addEvent({ delay:18, repeat:9, callback:() => {
+      step++; g.clear(); if (step >= 9) { g.destroy(); return; }
+      const t = step/9, r = 3 + step*2.5;
+      g.lineStyle(1.5, 0xFFFF99, 1-t);
+      angles.forEach(a => g.lineBetween(x, y, x+Math.cos(a)*r, y+Math.sin(a)*r));
+    }});
+  }
+
+  destroy() {
+    if (this.destroyed) return;
+    this.scene.activeAnimal = null;
+    this.scene.input.off('pointerdown', this._clickHandler);
+    this.scene.matter.world.off('collisionstart', this._contactHandler);
+    // Refresh sling so next-bird circle reappears on the trebuchet arm
+    if (this.scene.trebuchet) this.scene.trebuchet.draw();
+    super.destroy();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Robot
+// ─────────────────────────────────────────────────────────────────────────────
+class Robot {
+
+  constructor(scene, x, y) {
+    this.scene = scene; this.w = 30; this.h = 40;
+    this.maxHealth = 150; this.health = 150; this.destroyed = false;
+    this.img = scene.matter.add.image(x, y, 'robot', null, {
+      mass:20, restitution:0.15, friction:0.7, frictionAir:0.01, label:'robot'
+    });
+    this.img.setDepth(3);
+    this.img.body.robotRef = this;
+    this.hpGfx = scene.add.graphics().setDepth(6);
+    this.redrawHP(); this.sync();
+  }
+
+  redrawHP() {
+    const g = this.hpGfx, ratio = Phaser.Math.Clamp(this.health / this.maxHealth, 0, 1);
+    g.clear();
+    g.fillStyle(0x440000, 0.85); g.fillRect(-this.w/2, 0, this.w, 4);
+    g.fillStyle(0xE24B4A);       g.fillRect(-this.w/2, 0, this.w*ratio, 4);
+  }
+
+  sync() {
+    if (this.destroyed) return;
+    this.hpGfx.setPosition(this.img.x, this.img.y - this.h/2 - 10);
+  }
+
+  takeDamage(amount) {
+    if (this.destroyed) return;
+    this.health -= amount; this.redrawHP();
+    if (this.health <= 0) this.explode();
+  }
+
+  explode() {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    const { x, y } = this.img, scene = this.scene;
+    const flash = scene.add.graphics().setDepth(10);
+    flash.fillStyle(0xFF2222, 0.85);
+    flash.fillRect(x-this.w/2, y-this.h/2, this.w, this.h);
+    scene.tweens.add({ targets:flash, alpha:0, duration:220, ease:'Power2', onComplete:()=>flash.destroy() });
+    for (let i = 0; i < 6; i++) this.spawnFragment(x, y, i);
+    scene.events.emit('robotDestroyed', { x, y });
+    const img = this.img, hg = this.hpGfx;
+    scene.time.delayedCall(0, () => { img.destroy(); hg.destroy(); scene.removeRobot(this); });
+  }
+
+  spawnFragment(cx, cy, index) {
+    const angle = (Math.PI*2*index/6) + (Math.random()-0.5)*0.6;
+    const speed = 55 + Math.random()*90;
+    const color = index%2===0 ? 0x444441 : 0xE24B4A;
+    const frag  = { x:cx, y:cy, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed-50 };
+    const g     = this.scene.add.graphics().setDepth(7);
+    const paint = (alpha) => { g.clear(); if(alpha<=.02)return; g.fillStyle(color,alpha); g.fillRect(-3,-3,6,6); };
+    paint(1); g.setPosition(cx,cy);
+    const STEPS=31; let step=0;
+    this.scene.time.addEvent({ delay:16, repeat:STEPS, callback:()=>{
+      step++; const t=step/STEPS;
+      frag.vy+=2; frag.x+=frag.vx*.016; frag.y+=frag.vy*.016;
+      g.setPosition(frag.x, frag.y); paint(1-t);
+      if(step>=STEPS) g.destroy();
+    }});
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LevelLoader
+// ─────────────────────────────────────────────────────────────────────────────
+class LevelLoader {
+
+  constructor(scene) {
+    this.scene         = scene;
+    this.currentIdx    = 0;
+    this.birdsLeft     = [];
+    this._baleGfx      = null;
+    this._queueCircles = [];
+  }
+
+  // ── Public ───────────────────────────────────────────────────────────────
+
+  loadLevel(idx) {
+    this._clearLevel();
+
+    this.currentIdx = ((idx % LEVELS.length) + LEVELS.length) % LEVELS.length;
+    const data = LEVELS[this.currentIdx];
+
+    for (const bd of data.blocks)
+      this.scene.blocks.push(new Block(this.scene, bd.x, bd.y, bd.w, bd.h, bd.type));
+    this.scene.refreshBlockText();
+
+    for (const rd of data.robots) this.scene.spawnRobot(rd.x, rd.y);
+
+    this.birdsLeft = [...data.birds];
+    this._buildQueueDisplay();
+
+    this.scene.levelNameText.setText(`${data.id}  ${data.name}   par: ${data.par_birds}`);
+    this.scene.destroyCount = 0;
+    this.scene.destroyText.setText('Destroyed: 0');
+
+    this.scene.cameras.main.stopFollow();
+    this.scene.cameras.main.setScroll((WW - VW) / 2, WH - VH);
+
+    this.scene.trebuchet.armOffset = 0;
+    this.scene.trebuchet.draw();
+  }
+
+  // Removes the next bird from the queue, fires the queue animation, returns type.
+  consumeBird() {
+    if (this.birdsLeft.length === 0) return null;
+    const type = this.birdsLeft.shift();
+
+    if (this._queueCircles.length > 0) {
+      const first = this._queueCircles.shift();
+      const cam   = this.scene.cameras.main;
+      // Screen-space position of the trebuchet launch tip
+      const tx = this.scene.trebuchet.LAUNCH_X - cam.scrollX;
+      const ty = this.scene.trebuchet.LAUNCH_Y - cam.scrollY;
+
+      this.scene.tweens.add({
+        targets: first, x: tx, y: ty, alpha: 0,
+        duration: 400, ease: 'Sine.easeIn',
+        onComplete: () => first.destroy()
+      });
+
+      // Slide remaining circles left to close the gap
+      const BX = 70;
+      this._queueCircles.forEach((c, i) => {
+        this.scene.tweens.add({ targets: c, x: BX + 14 + i * 28, duration: 300, ease: 'Sine.easeOut' });
+      });
+    }
+
+    // Fade out the hay bale after the last bird is consumed
+    if (this.birdsLeft.length === 0 && this._baleGfx) {
+      const bale = this._baleGfx;
+      this.scene.tweens.add({
+        targets: bale, alpha: 0, delay: 420, duration: 200,
+        onComplete: () => { if (bale.active) bale.destroy(); if (this._baleGfx === bale) this._baleGfx = null; }
+      });
+    }
+
+    return type;
+  }
+
+  get hasMoreBirds() { return this.birdsLeft.length > 0; }
+
+  // ── Private ──────────────────────────────────────────────────────────────
+
+  _clearLevel() {
+    if (this.scene.activeAnimal) this.scene.activeAnimal.destroy();
+    this.scene.launcherDragging = false;
+
+    for (const b of this.scene.blocks) {
+      b.destroyed = true;
+      if (b.img      && b.img.active)      b.img.destroy();
+      if (b.crackGfx && b.crackGfx.active) b.crackGfx.destroy();
+      if (b.hpGfx    && b.hpGfx.active)    b.hpGfx.destroy();
+    }
+    this.scene.blocks = [];
+
+    for (const r of this.scene.robots) {
+      r.destroyed = true;
+      if (r.img   && r.img.active)   r.img.destroy();
+      if (r.hpGfx && r.hpGfx.active) r.hpGfx.destroy();
+    }
+    this.scene.robots = [];
+
+    this._destroyQueueDisplay();
+    this.birdsLeft = [];
+  }
+
+  _destroyQueueDisplay() {
+    if (this._baleGfx) { this._baleGfx.destroy(); this._baleGfx = null; }
+    for (const c of this._queueCircles) c.destroy();
+    this._queueCircles = [];
+    // Does NOT touch birdsLeft — callers own that state
+  }
+
+  _buildQueueDisplay() {
+    this._destroyQueueDisplay();
+    // birdsLeft is already set by loadLevel before this is called
+
+    const scene = this.scene, count = this.birdsLeft.length;
+    const BX = 70, BY = 554, baleW = count * 28 + 14;
+
+    this._baleGfx = scene.add.graphics().setScrollFactor(0).setDepth(20);
+    this._baleGfx.fillStyle(0x7A5218);
+    this._baleGfx.fillRect(BX, BY, baleW, 18);
+    this._baleGfx.lineStyle(1, 0x5A3808);
+    this._baleGfx.strokeRect(BX, BY, baleW, 18);
+    this._baleGfx.lineStyle(1, 0x9A6A28, 0.6);
+    for (let x = BX + 8; x < BX + baleW; x += 8)
+      this._baleGfx.lineBetween(x, BY, x, BY + 18);
+
+    // Each circle is a separate Graphics positioned at its screen location.
+    // Drawing at local (0,0) means tweening .x/.y moves the whole circle.
+    for (let i = 0; i < count; i++) {
+      const g = scene.add.graphics().setScrollFactor(0).setDepth(21);
+      g.fillStyle(0xF5C542); g.fillCircle(0, 0, 10);
+      g.lineStyle(1.5, 0xC8950E); g.strokeCircle(0, 0, 10);
+      g.fillStyle(0xFF8C00); g.fillTriangle(7, -2, 14, 0, 7, 2);
+      g.setPosition(BX + 14 + i * 28, BY - 12);
+      this._queueCircles.push(g);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trebuchet
+// ─────────────────────────────────────────────────────────────────────────────
+class Trebuchet {
+
+  constructor(scene) {
+    this.scene     = scene;
+    this.BASE_X    = 420; this.BASE_Y = 770;
+    this.armOffset = 0;
+    this.dragging  = false; this.dragX = 0; this.dragY = 0;
+    this.MAX_DRAG  = 120; this.MAX_VEL = 22;
+    this.PROJ_FA   = CluckAnimal.FA;
+    this.LAUNCH_X  = 0; this.LAUNCH_Y = 0;
+
+    this.gfx        = scene.add.graphics().setDepth(5);
+    this.overlayGfx = scene.add.graphics().setDepth(8);
+    this.draw();
+    this.setupInput();
+  }
+
+  _armAngle() { return -Math.PI * 0.78 + this.armOffset; }
+
+  draw() {
+    const g = this.gfx; g.clear();
+    const bx = this.BASE_X, by = this.BASE_Y, px = bx, py = by - 80;
+
+    g.fillStyle(0x3D1F00); g.fillRect(bx-24, by-14, 48, 14);
+    g.lineStyle(5, 0x5C3010);
+    g.lineBetween(bx-16, by-14, px, py);
+    g.lineBetween(bx+16, by-14, px, py);
+    g.fillStyle(0x777777); g.fillCircle(px, py, 5);
+
+    const ang  = this._armAngle(), LONG = 88, SHORT = 26;
+    const tipX = px + Math.cos(ang)*LONG,   tipY = py + Math.sin(ang)*LONG;
+    const cwX  = px + Math.cos(ang+Math.PI)*SHORT, cwY = py + Math.sin(ang+Math.PI)*SHORT;
+
+    g.lineStyle(6, 0x6B3A10); g.lineBetween(cwX, cwY, tipX, tipY);
+    g.fillStyle(0x444444); g.fillRect(cwX-8, cwY-8, 16, 16);
+    g.lineStyle(1, 0x666666); g.strokeRect(cwX-8, cwY-8, 16, 16);
+    g.fillStyle(0x8B5E2F); g.fillCircle(tipX, tipY, 6);
+
+    this.LAUNCH_X = tipX; this.LAUNCH_Y = tipY;
+
+    // Show loaded bird on the arm tip when a bird is ready and not in flight
+    const loader = this.scene.levelLoader;
+    if (loader && loader.hasMoreBirds && !this.scene.activeAnimal) {
+      g.fillStyle(0xF5C542, 0.95); g.fillCircle(tipX, tipY, 10);
+      g.lineStyle(1.5, 0xC8950E, 0.95); g.strokeCircle(tipX, tipY, 10);
+      // Mini beak pointing along the arm direction
+      const ba = ang + 0.3;
+      g.fillStyle(0xFF8C00);
+      g.fillTriangle(tipX+Math.cos(ba+0.5)*7, tipY+Math.sin(ba+0.5)*7,
+                     tipX+Math.cos(ba)*12,    tipY+Math.sin(ba)*12,
+                     tipX+Math.cos(ba-0.5)*7, tipY+Math.sin(ba-0.5)*7);
+    }
+  }
+
+  setupInput() {
+    const scene = this.scene;
+    scene.input.on('pointerdown', (ptr) => {
+      if (ptr.button !== 0) return;
+      const dx = ptr.worldX - this.LAUNCH_X, dy = ptr.worldY - this.LAUNCH_Y;
+      if (Math.hypot(dx, dy) < 60) {
+        scene.launcherDragging = true; this.dragging = true;
+        this.dragX = ptr.worldX; this.dragY = ptr.worldY;
+      }
+    });
+    scene.input.on('pointermove', (ptr) => {
+      if (!this.dragging) return;
+      let dx = ptr.worldX - this.LAUNCH_X, dy = ptr.worldY - this.LAUNCH_Y;
+      const d = Math.hypot(dx, dy);
+      if (d > this.MAX_DRAG) { dx = dx/d*this.MAX_DRAG; dy = dy/d*this.MAX_DRAG; }
+      this.dragX = this.LAUNCH_X + dx; this.dragY = this.LAUNCH_Y + dy;
+      this.drawOverlay();
+    });
+    scene.input.on('pointerup', () => {
+      if (!this.dragging) return;
+      this.dragging = false; scene.launcherDragging = false;
+      this.overlayGfx.clear(); this.fire();
+    });
+  }
+
+  _getVelocity() {
+    const dx = this.dragX - this.LAUNCH_X, dy = this.dragY - this.LAUNCH_Y;
+    const dist = Math.min(Math.hypot(dx, dy), this.MAX_DRAG);
+    if (dist < 1) return { vx:0, vy:0 };
+    const speed = dist/this.MAX_DRAG*this.MAX_VEL, len = Math.hypot(dx, dy);
+    return { vx:-(dx/len)*speed, vy:-(dy/len)*speed };
+  }
+
+  drawOverlay() {
+    const g = this.overlayGfx; g.clear();
+    g.lineStyle(2.5, 0xFF8800, 0.85); g.lineBetween(this.LAUNCH_X, this.LAUNCH_Y, this.dragX, this.dragY);
+    const { vx, vy } = this._getVelocity();
+    if (Math.hypot(vx, vy) < 0.5) return;
+    const grav = this.scene.grav, fa = this.PROJ_FA;
+    let sx = this.LAUNCH_X, sy = this.LAUNCH_Y, svx = vx, svy = vy;
+    const dots = [];
+    for (let i = 0; i < 20; i++) {
+      dots.push({ x:sx, y:sy });
+      for (let j = 0; j < 3; j++) { svy+=grav; svx*=(1-fa); svy*=(1-fa); sx+=svx; sy+=svy; }
+    }
+    dots.forEach((d, i) => {
+      const alpha = Phaser.Math.Linear(1.0, 0.2, i/(dots.length-1));
+      g.fillStyle(0xFFFF00, alpha); g.fillCircle(d.x, d.y, 3.5);
+    });
+  }
+
+  fire() {
+    const { vx, vy } = this._getVelocity();
+    if (Math.hypot(vx, vy) < 0.5 || this.scene.activeAnimal) return;
+
+    const loader = this.scene.levelLoader;
+    if (loader && !loader.hasMoreBirds) return;
+    if (loader) loader.consumeBird();
+
+    const cluck = new CluckAnimal(this.scene, this.LAUNCH_X, this.LAUNCH_Y);
+    cluck.setVelocity(vx, vy);
+    this.scene.activeAnimal = cluck;
+
+    this.draw(); // clears bird circle from arm (activeAnimal now set)
+
+    this.scene.tweens.add({
+      targets: this, armOffset: 1.3, duration: 300, ease: 'Power3',
+      onUpdate: () => this.draw(),
+      onComplete: () => {
+        this.scene.tweens.add({
+          targets: this, armOffset: 0, duration: 250, ease: 'Bounce.Out',
+          onUpdate: () => this.draw()
+        });
+      }
+    });
+
+    const cam = this.scene.cameras.main;
+    cam.startFollow(cluck.img, false, 0.08, 0.08);
+    this.scene.time.delayedCall(2000, () => { cam.stopFollow(); cam.pan(700, 500, 900, 'Sine.easeInOut'); });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scene
+// ─────────────────────────────────────────────────────────────────────────────
+class SandboxScene extends Phaser.Scene {
+
+  constructor() {
+    super('SandboxScene');
+    this.grav = 1.5; this.blocks = []; this.robots = [];
+    this.destroyCount = 0; this.launcherDragging = false; this.activeAnimal = null;
+  }
+
+  buildTextures() {
+    const w = this.make.graphics({ add:false });
+    w.fillStyle(0xC4843A); w.fillRect(0,0,60,20);
+    w.lineStyle(1.5,0x7A4218); w.strokeRect(1,1,58,18);
+    w.lineStyle(0.8,0x9A5E22,0.55); [15,30,45].forEach(lx => w.lineBetween(lx,1,lx,19));
+    w.generateTexture('wood',60,20); w.destroy();
+
+    const s = this.make.graphics({ add:false });
+    s.fillStyle(0x888780); s.fillRect(0,0,60,30);
+    s.lineStyle(1.5,0x4E4D4C); s.strokeRect(1,1,58,28);
+    s.lineStyle(0.8,0x696867,0.7);
+    s.lineBetween(0,15,30,15); s.lineBetween(30,0,30,15);
+    s.lineBetween(30,15,60,15); s.lineBetween(15,15,15,30); s.lineBetween(45,0,45,15);
+    s.generateTexture('stone',60,30); s.destroy();
+
+    const a = this.make.graphics({ add:false });
+    a.fillStyle(0xF5C542); a.fillCircle(18,18,17);
+    a.lineStyle(2,0xC8950E); a.strokeCircle(18,18,17);
+    a.fillStyle(0x3C2200); a.fillCircle(12,14,2.5); a.fillCircle(24,14,2.5);
+    a.lineStyle(1.8,0x3C2200); a.beginPath(); a.arc(18,20,5,0,Math.PI,false); a.strokePath();
+    a.generateTexture('animal',36,36); a.destroy();
+
+    const cl = this.make.graphics({ add:false });
+    cl.fillStyle(0xF5C542); cl.fillCircle(20,20,18);
+    cl.lineStyle(2,0xC8950E); cl.strokeCircle(20,20,18);
+    cl.fillStyle(0x000000); cl.fillCircle(14,15,2.5); cl.fillCircle(26,15,2.5);
+    cl.fillStyle(0xFF8C00); cl.fillTriangle(26,18,36,22,26,26);
+    cl.generateTexture('cluck',40,40); cl.destroy();
+
+    const eg = this.make.graphics({ add:false });
+    eg.fillStyle(0xFAD55A); eg.fillCircle(8,8,7);
+    eg.lineStyle(1.5,0xE0A020); eg.strokeCircle(8,8,7);
+    eg.generateTexture('egg',16,16); eg.destroy();
+
+    const ro = this.make.graphics({ add:false });
+    ro.fillStyle(0x444441); ro.fillRect(0,0,30,40);
+    ro.lineStyle(1.5,0x636360); ro.strokeRect(1,1,28,38);
+    ro.fillStyle(0xE24B4A); ro.fillCircle(9,12,4); ro.fillCircle(21,12,4);
+    ro.fillStyle(0xFF8080); ro.fillCircle(9,11,1.5); ro.fillCircle(21,11,1.5);
+    ro.lineStyle(1,0x636360,0.8);
+    ro.lineBetween(6,26,24,26); ro.lineBetween(6,30,24,30); ro.lineBetween(6,34,24,34);
+    ro.generateTexture('robot',30,40); ro.destroy();
+  }
+
+  create() {
+    this.buildTextures();
+
+    // ── World ─────────────────────────────────────────────────────────
+    this.add.rectangle(WW/2, WH/2, WW, WH, 0x7F7F7F);
+    const grid = this.add.graphics();
+    grid.lineStyle(1, 0x6C6C6C, 0.55);
+    for (let x = 0; x <= WW; x += 100) grid.lineBetween(x,0,x,WH);
+    for (let y = 0; y <= WH; y += 100) grid.lineBetween(0,y,WW,y);
+    this.add.text(4,4,'0,0',{fontFamily:'monospace',fontSize:'11px',color:'#999'});
+    this.add.text(WW-4,4,'1400,0',{fontFamily:'monospace',fontSize:'11px',color:'#999'}).setOrigin(1,0);
+    this.add.text(4,WH-4,'0,800',{fontFamily:'monospace',fontSize:'11px',color:'#999'}).setOrigin(0,1);
+    this.add.text(WW-4,WH-4,'1400,800',{fontFamily:'monospace',fontSize:'11px',color:'#999'}).setOrigin(1,1);
+
+    this.matter.add.rectangle(WW/2, WH-15, WW+60, 30, { isStatic:true, friction:0.8, restitution:0.05, label:'ground' });
+    const gv = this.add.graphics();
+    gv.fillStyle(0x5C4020); gv.fillRect(0,WH-30,WW,30);
+    gv.fillStyle(0x3D8020); gv.fillRect(0,WH-30,WW,6);
+
+    this.matter.add.rectangle(-15,   WH/2, 30, WH+60, { isStatic:true, restitution:0.3 });
+    this.matter.add.rectangle(WW+15, WH/2, 30, WH+60, { isStatic:true, restitution:0.3 });
+
+    this.cameras.main.setBounds(0,0,WW,WH);
+    this.cameras.main.setScroll((WW-VW)/2, WH-VH);
+    this.matter.world.setGravity(0, this.grav);
+
+    // ── HUD ───────────────────────────────────────────────────────────
+    const topBg = this.add.graphics();
+    topBg.fillStyle(0x000000,0.48); topBg.fillRect(0,0,VW,72);
+    topBg.setScrollFactor(0).setDepth(19);
+
+    this.gravText = this.add.text(12,8,'',{fontFamily:'monospace',fontSize:'18px',color:'#fff',stroke:'#000',strokeThickness:3})
+      .setScrollFactor(0).setDepth(20);
+    this.blockText = this.add.text(12,34,'Blocks: 0',{fontFamily:'monospace',fontSize:'13px',color:'#ccc'})
+      .setScrollFactor(0).setDepth(20);
+    this.destroyText = this.add.text(12,52,'Destroyed: 0',{fontFamily:'monospace',fontSize:'13px',color:'#FF7755'})
+      .setScrollFactor(0).setDepth(20);
+    this.fpsText = this.add.text(VW-12,8,'FPS: --',{fontFamily:'monospace',fontSize:'18px',color:'#fff',stroke:'#000',strokeThickness:3})
+      .setScrollFactor(0).setDepth(20).setOrigin(1,0);
+    this.levelNameText = this.add.text(VW/2, 8,'',{fontFamily:'monospace',fontSize:'13px',color:'#FFD700',stroke:'#000',strokeThickness:2})
+      .setScrollFactor(0).setDepth(20).setOrigin(0.5,0);
+
+    const botBg = this.add.graphics();
+    botBg.fillStyle(0x000000,0.48); botBg.fillRect(0,VH-26,VW,26);
+    botBg.setScrollFactor(0).setDepth(19);
+    this.add.text(VW/2,VH-13,
+      '[ DRAG ] Fire   [ CLICK ] Ability   [ N ] Next Level   [ R ] Restart   [ ↑↓ ] Grav',
+      {fontFamily:'monospace',fontSize:'11px',color:'#e0e0e0'})
+      .setScrollFactor(0).setDepth(20).setOrigin(0.5,0.5);
+
+    this.refreshGravText();
+
+    // ── Collision → damage ────────────────────────────────────────────
+    this.matter.world.on('collisionstart', (event) => {
+      event.pairs.forEach(({ bodyA, bodyB }) => {
+        if (bodyA.isStatic || bodyB.isStatic) return;
+        if (bodyA.eggRef   || bodyB.eggRef)   return;
+        const relSpeed = Math.hypot(bodyA.velocity.x - bodyB.velocity.x, bodyA.velocity.y - bodyB.velocity.y);
+        const effMass  = (bodyA.mass * bodyB.mass) / (bodyA.mass + bodyB.mass);
+        const impulse  = relSpeed * effMass * 0.15;
+        if (impulse > 5) {
+          const dmg = impulse * 0.8;
+          if (bodyA.blockRef instanceof Block) bodyA.blockRef.takeDamage(dmg);
+          if (bodyB.blockRef instanceof Block) bodyB.blockRef.takeDamage(dmg);
+          if (bodyA.robotRef instanceof Robot) bodyA.robotRef.takeDamage(dmg);
+          if (bodyB.robotRef instanceof Robot) bodyB.robotRef.takeDamage(dmg);
+        }
+      });
+    });
+
+    this.events.on('blockDestroyed', () => { this.destroyCount++; this.destroyText.setText(`Destroyed: ${this.destroyCount}`); });
+    this.events.on('robotDestroyed', () => { this.destroyCount++; this.destroyText.setText(`Destroyed: ${this.destroyCount}`); });
+
+    // ── Trebuchet (before scene pointerdown so its listener fires first) ──
+    this.trebuchet = new Trebuchet(this);
+
+    // ── Level loader ──────────────────────────────────────────────────
+    this.levelLoader = new LevelLoader(this);
+
+    // ── Input ─────────────────────────────────────────────────────────
+    this.input.on('pointerdown', (ptr) => {
+      if (ptr.button === 0 && !this.launcherDragging && !this.activeAnimal)
+        this.spawnWood(ptr.worldX, ptr.worldY);
+    });
+    this.input.keyboard.on('keydown-S',    () => { const p=this.input.activePointer; this.spawnStone(p.worldX,p.worldY); });
+    this.input.keyboard.on('keydown-C',    () => { const p=this.input.activePointer; this.spawnAnimal(p.worldX,p.worldY); });
+    this.input.keyboard.on('keydown-UP',   () => { this.grav=+(Math.min(5.0,this.grav+0.1)).toFixed(1); this.matter.world.setGravity(0,this.grav); this.refreshGravText(); });
+    this.input.keyboard.on('keydown-DOWN', () => { this.grav=+(Math.max(-2.0,this.grav-0.1)).toFixed(1); this.matter.world.setGravity(0,this.grav); this.refreshGravText(); });
+    this.input.keyboard.on('keydown-N',    () => { this.levelLoader.loadLevel(this.levelLoader.currentIdx + 1); });
+    this.input.keyboard.on('keydown-R',    () => { this.levelLoader.loadLevel(this.levelLoader.currentIdx); });
+
+    // ── Load starting level ───────────────────────────────────────────
+    this.levelLoader.loadLevel(0);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────
+
+  refreshGravText() { this.gravText.setText(`Gravity: ${this.grav.toFixed(1)} ${this.grav>=0?'▼':'▲'}`); }
+  refreshBlockText() { this.blockText.setText(`Blocks: ${this.blocks.length}`); }
+  removeBlock(block) { const i=this.blocks.indexOf(block); if(i!==-1) this.blocks.splice(i,1); this.refreshBlockText(); }
+  removeRobot(robot) { const i=this.robots.indexOf(robot); if(i!==-1) this.robots.splice(i,1); }
+
+  spawnWood(x,y)   { this.blocks.push(new Block(this,x,y,60,20,'wood'));  this.refreshBlockText(); }
+  spawnStone(x,y)  { this.blocks.push(new Block(this,x,y,60,30,'stone')); this.refreshBlockText(); }
+  spawnAnimal(x,y) { const img=this.matter.add.image(x,y,'animal'); img.setCircle(18,{mass:8,restitution:0.3,friction:0.5,frictionAir:0.01}); }
+  spawnRobot(x,y)  { this.robots.push(new Robot(this,x,y)); }
+
+  update(time, delta) {
+    if (delta > 0) this.fpsText.setText(`FPS: ${Math.round(1000/delta)}`);
+    for (const b of this.blocks) b.sync();
+    for (const r of this.robots) r.sync();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+new Phaser.Game({
+  type:            Phaser.AUTO,
+  width:           VW, height: VH,
+  backgroundColor: '#7F7F7F',
+  physics: { default:'matter', matter:{ gravity:{ y:1.5 }, debug:false } },
+  scene: SandboxScene
+});
+</script>
+</body>
+</html>
