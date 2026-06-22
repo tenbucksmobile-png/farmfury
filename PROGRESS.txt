@@ -93,9 +93,8 @@ WORLD
 
   LEVELLOADER CLASS (between Robot and Trebuchet in file order)
     loadLevel(idx)
-      · _clearLevel() → spawn blocks/robots → birdsLeft=[...data.birds]
-      · _buildQueueDisplay() → update HUD text, destroyCount=0
-      · camera.setScroll(300,200) + trebuchet.draw() to reset view
+      · _clearLevel() → scoreManager.initLevel() → spawn blocks/robots
+      · birdsLeft=[...data.birds] → _buildQueueDisplay() → reset camera
     _clearLevel()
       · destroy activeAnimal, all blocks (img+crackGfx+hpGfx), all robots
       · _destroyQueueDisplay(); birdsLeft = []
@@ -104,40 +103,102 @@ WORLD
     _buildQueueDisplay()
       · Hay bale at screen (70,554): brown #7A5218, width=count×28+14
       · Per-bird Graphics circles at local (0,0), positioned at screen coords
-        so tweening .x/.y animates them in screen space ✓
     consumeBird()
-      · Shifts birdsLeft; tweens first circle (pos+alpha) → trebuchet tip
-      · Screen-space target: (LAUNCH_X - cam.scrollX, LAUNCH_Y - cam.scrollY)
-      · Slides remaining circles left: x = 70+14+i×28
-      · Fades out hay bale after last bird (delay 420ms)
-    get hasMoreBirds → birdsLeft.length > 0
+      · Shifts birdsLeft; tweens first circle → trebuchet tip
+      · Slides remaining circles left; fades bale after last bird
 
-  TREBUCHET CHANGES
-    draw():  draws yellow circle r=10 at arm tip when hasMoreBirds && !activeAnimal
-    fire():  guards !loader.hasMoreBirds; calls consumeBird(); calls draw()
-             immediately after creating CluckAnimal to clear bird circle
+================================================================================
+  PROMPT 7 — ScoreManager + Full HUD + Level Screens               [COMPLETE]
+================================================================================
 
-  CLUCKANIMAL CHANGE
-    destroy(): calls scene.trebuchet.draw() after setting activeAnimal=null
-               so next-bird circle reappears on the sling
+  SCOREMANAGER CLASS (between LevelLoader and Trebuchet in file order)
 
-  SCENE CHANGES
-    · levelNameText at screen (VW/2, 8), gold #FFD700, shows id + name + par
-    · levelLoader created after trebuchet, before input handlers
-    · keydown-N: loadLevel(currentIdx + 1), wraps with modulo
-    · keydown-R: loadLevel(currentIdx)
-    · No more manual spawnRobot() in create() — LevelLoader owns spawning
-    · loadLevel(0) called at end of create()
+  Scoring
+    · Robot destroyed: +1000 pts
+    · Wood block destroyed: +100 pts
+    · Stone block destroyed: +200 pts
+    · Egg hit: +50 pts
+    · Level complete bonus: birdsRemaining × 500 pts
+    · Stars: 1=all robots dead; 2=all robots+1 bird left; 3=all+2+ birds left
+    · High score and best stars persisted per level to localStorage
+      key: 'farmfury_best_N' → { score: N, stars: N }
 
-  KEY TECHNICAL NOTE
-    _destroyQueueDisplay does NOT reset birdsLeft. _clearLevel does.
-    loadLevel sets birdsLeft then calls _buildQueueDisplay (which trusts it).
-    This avoids double-setting and re-reading from LEVELS unnecessarily.
+  Level complete trigger
+    · robotDestroyed event: if robotsDestroyed >= totalRobots → _levelEnded=true
+      + delayedCall(2000) → _triggerLevelComplete()
+    · _triggerLevelComplete: adds bird bonus, saves to localStorage, shows screen
+
+  Level fail trigger
+    · update() polls each frame: if !activeAnimal && !hasMoreBirds && robots remain
+      → _levelEnded=true + delayedCall(1500) → _showLevelFailed()
+
+  State tracking
+    · initLevel(idx): resets all counters, cancels pending _endTimer, clears overlay
+    · onBirdFired(): decrements birdsRemaining, redraws HUD icons
+    · onEggHit(x,y): +50 pts (guarded by _levelEnded)
+    · update(): fail-condition poll (skips if _levelEnded or totalRobots=0)
+    · _levelEnded flag: prevents double-triggering complete/fail
+
+  HUD (top bar, 56px, scroll factor 0, depth 19-21)
+    · Left: levelNameText — white 13px, at screen (12, 11) — "W1_L01  First Contact"
+    · Centre: "SCORE" label 10px grey at (VW/2,5); score value 26px white at (VW/2,17)
+      Score pulses scale 1→1.35→1 (80ms) on each award
+    · Right: bird icons (yellow circles r=9, orange beak) drawn right-to-left from
+      x=VW-23; updates on each consumeBird via _birdHudGfx.clear()+redraw
+    · FPS: tiny 10px grey text at (VW-4, VH-38), above hint bar
+    · Hint bar: gravity value integrated into bottom bar text (no separate gravText)
+
+  Floating score text
+    · "+N" in gold #FFD700, stroke black, spawned at world→screen coordinates
+    · Tweens y-55 + alpha=0 over 950ms; depth 25
+
+  Level complete screen (depth 30-33, inputBlocked=true)
+    · Black overlay 62% opacity full-screen
+    · "Level Complete!" in orange #FF8C00, 34px
+    · Three 5-pointed star polygons (outer r=32, inner r×0.42) centered at
+      VW/2±90 y=188 — filled #F5C542 if earned, dark outline if not
+    · Bonus line: "+N birds remaining ×500 bonus" in green (if birdsRemaining>0)
+    · Score + Best (or "★ New Best" in gold if new record)
+    · Buttons (Phaser interactive Graphics, fillRoundedRect r=8, hover highlight):
+      "Next Level" orange at (VW/2-88, 358) 155×42 → loadLevel(currentIdx+1)
+      "Retry" grey at (VW/2+88, 358) 110×42 → loadLevel(currentIdx)
+      If last level: "Next Level" label becomes "First Level" (wraps back)
+
+  Level failed screen
+    · Black overlay 65% opacity
+    · "Level Failed" in red #FF3333, 36px
+    · "All birds used — no robots destroyed" subtitle
+    · Score shown in grey
+    · "Retry" button in red at (VW/2, 328)
+
+  inputBlocked flag (SandboxScene.inputBlocked)
+    · Set true by _showLevelComplete/_showLevelFailed
+    · Cleared by _clearOverlay (called by initLevel on each loadLevel)
+    · Checked in Trebuchet.setupInput pointerdown and pointerup
+    · Checked in scene's pointerdown wood-spawn handler
+    · N/R keyboard shortcuts bypass flag (intentional: always work)
+
+  Overlay cleanup
+    · All overlay objects stored in _overlayObjects[]
+    · _clearOverlay() destroys all, sets inputBlocked=false
+    · Called by initLevel() → triggered by any loadLevel() call
+    · 50ms delayedCall before loadLevel in button callbacks (prevents
+      pointerup/pointerout firing on already-destroyed Graphics objects)
+
+  TECHNICAL NOTES (Prompt 7)
+    · ScoreManager created AFTER trebuchet but BEFORE levelLoader in create(),
+      so scoreManager exists before first loadLevel(0) call
+    · LevelLoader.loadLevel calls scoreManager.initLevel(idx) first (before
+      spawning objects), so counters are clean before new level data arrives
+    · _endTimer stored as TimerEvent; .remove() cancels it in initLevel
+    · Phaser fillPoints(pts, true) / strokePoints(pts, true) used for star polygon
+    · fillRoundedRect(x, y, w, h, 8) for button backgrounds
+    · setInteractive(new Phaser.Geom.Rectangle(...), Phaser.Geom.Rectangle.Contains)
+      on Graphics for button hit detection (no HTML elements)
 
 ================================================================================
   NEXT — Not Yet Started
 ================================================================================
-  Prompt 7: Score system + auto level progression (all robots dead → advance)
   Prompt 8+: TBD
 
 ================================================================================
