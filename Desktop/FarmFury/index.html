@@ -165,17 +165,20 @@ class Block {
     const isWood  = (type === 'wood');
     const stdArea = isWood ? 1200 : 1800;
     const area    = width * height;
-    this.maxHealth  = (isWood ? 80  : 200) * area / stdArea;
+    // Wood: 1 direct hit; Stone: 2 hits. Base HP scaled to area.
+    this.maxHealth  = (isWood ? 25 : 55) * area / stdArea;
     this.health     = this.maxHealth;
     this.faceColor  = isWood ? 0xC4843A : 0x888780;
     this.edgeColor  = isWood ? 0x7A4218 : 0x4E4D4C;
     this.crackColor = isWood ? 0x3A1A08 : 0x252524;
     const texKey = Block._ensureTexture(scene, type, width, height);
     this.img = scene.matter.add.image(x, y, texKey, null, {
-      mass: (isWood ? 10 : 30) * area / stdArea,
-      restitution: isWood ? 0.2 : 0.1, friction: 0.8, frictionAir: 0.01, label: type
+      // Lighter masses so birds dominate; stone kept lighter to survive ground falls
+      mass: (isWood ? 5 : 8) * area / stdArea,
+      restitution: isWood ? 0.2 : 0.1, friction: 0.8, frictionAir: 0.02, label: type
     });
-    if (isWood) this.img.setAngle((Math.random() - 0.5) * 6);
+    // Spawn static so structure is stable until first hit
+    this.img.setStatic(true);
     this.img.body.blockRef = this;
     this.crackGfx = scene.add.graphics().setDepth(4);
     this.hpGfx    = scene.add.graphics().setDepth(6);
@@ -207,6 +210,12 @@ class Block {
 
   takeDamage(amount) {
     if (this.destroyed) return;
+    // First hit wakes the entire structure so blocks cascade naturally
+    if (this.img.body.isStatic) {
+      for (const b of this.scene.blocks) {
+        if (!b.destroyed && b.img.body.isStatic) b.img.setStatic(false);
+      }
+    }
     this.health -= amount;
     if (!this.cracked && this.health < this.maxHealth * 0.5) { this.cracked = true; this.redrawCracks(); }
     this.redrawHP();
@@ -552,9 +561,10 @@ class Robot {
 
   constructor(scene, x, y) {
     this.scene=scene; this.w=30; this.h=40;
-    this.maxHealth=150; this.health=150; this.destroyed=false;
+    // Reduced HP so falling blocks can kill; reduced mass so blocks push robots easily
+    this.maxHealth=45; this.health=45; this.destroyed=false;
     this.img = scene.matter.add.image(x, y, 'robot', null, {
-      mass:20, restitution:0.15, friction:0.7, frictionAir:0.01, label:'robot'
+      mass:10, restitution:0.15, friction:0.7, frictionAir:0.01, label:'robot'
     });
     this.img.setDepth(3); this.img.body.robotRef = this;
     this.hpGfx = scene.add.graphics().setDepth(6);
@@ -1008,9 +1018,10 @@ class ScoreManager {
 class Trebuchet {
 
   constructor(scene) {
-    this.scene=scene; this.BASE_X=420; this.BASE_Y=770;
+    this.scene=scene; this.BASE_X=560; this.BASE_Y=770;
     this.armOffset=0; this.dragging=false; this.dragX=0; this.dragY=0;
-    this.MAX_DRAG=120; this.MAX_VEL=22;
+    // MAX_DRAG kept at 120; MAX_VEL raised for longer, higher arcs
+    this.MAX_DRAG=120; this.MAX_VEL=30;
     this.LAUNCH_X=0; this.LAUNCH_Y=0;
     this.gfx        = scene.add.graphics().setDepth(5);
     this.overlayGfx = scene.add.graphics().setDepth(8);
@@ -1251,7 +1262,7 @@ class SandboxScene extends Phaser.Scene {
 
   constructor() {
     super('SandboxScene');
-    this.grav=1.5; this.blocks=[]; this.robots=[];
+    this.grav=0.8; this.blocks=[]; this.robots=[];
     this.launcherDragging=false; this.activeAnimal=null;
     this.inputBlocked=false;
     this._lastShakeTime=0; this._lastThudTime=0;
@@ -1260,7 +1271,7 @@ class SandboxScene extends Phaser.Scene {
 
   init(data) {
     this._startLevelIdx = (data && data.levelIdx !== undefined) ? data.levelIdx : 0;
-    this.grav=1.5; this.blocks=[]; this.robots=[];
+    this.grav=0.8; this.blocks=[]; this.robots=[];
     this.launcherDragging=false; this.activeAnimal=null;
     this.inputBlocked=false; this._lastShakeTime=0; this._lastThudTime=0;
     this._bessieHintShown=false;
@@ -1388,20 +1399,26 @@ class SandboxScene extends Phaser.Scene {
 
     this.matter.world.on('collisionstart', (event) => {
       event.pairs.forEach(({ bodyA, bodyB }) => {
-        if (bodyA.isStatic || bodyB.isStatic) return;
+        // Skip static-vs-static (e.g. ground wall corners) but allow bird-vs-static-block
+        if (bodyA.isStatic && bodyB.isStatic) return;
         if (bodyA.eggRef   || bodyB.eggRef)   return;
         const relSpeed = Math.hypot(bodyA.velocity.x-bodyB.velocity.x, bodyA.velocity.y-bodyB.velocity.y);
-        const effMass  = (bodyA.mass*bodyB.mass)/(bodyA.mass+bodyB.mass);
-        const impulse  = relSpeed * effMass * 0.15;
-        if (impulse > 5) {
-          const dmg = impulse * 0.8;
+        // For static collisions use the moving body's mass × 0.5 (static = infinite mass approximation)
+        const bothDynamic = !bodyA.isStatic && !bodyB.isStatic;
+        const effMass = bothDynamic
+          ? (bodyA.mass * bodyB.mass) / (bodyA.mass + bodyB.mass)
+          : (bodyA.isStatic ? bodyB.mass : bodyA.mass) * 0.5;
+        const impulse = relSpeed * effMass * 0.15;
+        // Lower threshold so falling blocks reliably damage robots
+        if (impulse > 2) {
+          const dmg = impulse * 2.5;
           if (bodyA.blockRef instanceof Block) bodyA.blockRef.takeDamage(dmg);
           if (bodyB.blockRef instanceof Block) bodyB.blockRef.takeDamage(dmg);
           if (bodyA.robotRef instanceof Robot) bodyA.robotRef.takeDamage(dmg);
           if (bodyB.robotRef instanceof Robot) bodyB.robotRef.takeDamage(dmg);
         }
-        if (impulse > 14 && (bodyA.blockRef || bodyB.blockRef)) this._playThud(impulse);
-        if (impulse > 50) {
+        if (impulse > 8 && (bodyA.blockRef || bodyB.blockRef)) this._playThud(impulse);
+        if (impulse > 30) {
           const now = this.time.now;
           if (now - this._lastShakeTime > 180) {
             this._lastShakeTime = now;
@@ -1471,7 +1488,7 @@ new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  physics: { default:'matter', matter:{ gravity:{ y:1.5 }, debug:false } },
+  physics: { default:'matter', matter:{ gravity:{ y:0.8 }, debug:false } },
   scene: [MenuScene, SandboxScene],
 });
 </script>
