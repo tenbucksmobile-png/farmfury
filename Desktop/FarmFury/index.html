@@ -52,81 +52,79 @@ function genHillPts(x0, x1, baseY, amp, phase) {
 }
 
 // ─── Level definitions ────────────────────────────────────────────────────────
+// Ground physics top = y=770. Robot h=40 → center y=750. Wood h=20 → center y=760. Stone h=30 → center y=755.
 const LEVELS = [
   {
     id: 'W1_L01', name: 'First Contact', par_birds: 1,
     birds:  ['cluck','cluck','cluck'],
     blocks: [
-      { type:'wood', x:800, y:490, w:60, h:20 },
-      { type:'wood', x:800, y:470, w:60, h:20 },
-      { type:'wood', x:800, y:450, w:60, h:20 },
-      { type:'wood', x:800, y:430, w:60, h:20 },
+      { type:'wood', x:800, y:760, w:60, h:20 },
+      { type:'wood', x:800, y:740, w:60, h:20 },
+      { type:'wood', x:800, y:720, w:60, h:20 },
+      { type:'wood', x:800, y:700, w:60, h:20 },
     ],
-    robots: [{ x:800, y:510 }],
+    robots: [{ x:860, y:750 }],
   },
   {
     id: 'W1_L02', name: 'Stone Wall', par_birds: 2,
     birds:  ['cluck','cluck','cluck'],
     blocks: [
-      { type:'stone', x:760, y:490, w:60, h:30 },
-      { type:'stone', x:820, y:490, w:60, h:30 },
-      { type:'stone', x:880, y:490, w:60, h:30 },
-      { type:'wood',  x:820, y:460, w:60, h:20 },
+      { type:'stone', x:760, y:755, w:60, h:30 },
+      { type:'stone', x:820, y:755, w:60, h:30 },
+      { type:'stone', x:880, y:755, w:60, h:30 },
+      { type:'wood',  x:820, y:730, w:60, h:20 },
     ],
-    robots: [{ x:820, y:540 }],
+    robots: [{ x:940, y:750 }],
   },
   {
     id: 'W1_L03', name: 'The Tower', par_birds: 3,
     birds:  ['cluck','bessie','cluck','cluck'],
     blocks: [
-      { type:'wood',  x:820, y:490, w:120, h:20 },
-      { type:'stone', x:820, y:470, w:120, h:20 },
-      { type:'wood',  x:820, y:450, w:80,  h:20 },
+      { type:'wood',  x:820, y:760, w:120, h:20 },
+      { type:'stone', x:820, y:740, w:120, h:20 },
+      { type:'wood',  x:820, y:720, w:80,  h:20 },
     ],
-    robots: [{ x:760, y:510 }, { x:820, y:430 }],
+    robots: [{ x:725, y:750 }, { x:820, y:690 }],
   },
   {
     id: 'W1_L04', name: 'Egg Practice', par_birds: 2,
     birds:  ['cluck','cluck','cluck','cluck'],
     blocks: [
-      { type:'wood', x:720, y:490, w:50, h:30 },
-      { type:'wood', x:770, y:490, w:50, h:30 },
-      { type:'wood', x:820, y:490, w:50, h:30 },
-      { type:'wood', x:870, y:490, w:50, h:30 },
-      { type:'wood', x:920, y:490, w:50, h:30 },
+      { type:'wood', x:760, y:760, w:60, h:20 },
+      { type:'wood', x:760, y:740, w:60, h:20 },
+      { type:'wood', x:760, y:720, w:60, h:20 },
     ],
-    robots: [{ x:745, y:510 }, { x:795, y:510 }, { x:845, y:510 }, { x:895, y:510 }],
+    robots: [{ x:820, y:750 }, { x:855, y:750 }, { x:890, y:750 }, { x:925, y:750 }],
   },
   {
     id: 'W1_L05', name: 'The Fortress', par_birds: 3,
     birds:  ['cluck','cluck','cluck','cluck','cluck'],
     blocks: [
-      { type:'stone', x:760, y:490, w:20, h:80 },
-      { type:'stone', x:760, y:410, w:20, h:80 },
-      { type:'stone', x:760, y:330, w:20, h:80 },
-      { type:'wood', x:820, y:490, w:40, h:40 },
-      { type:'wood', x:860, y:490, w:40, h:40 },
-      { type:'wood', x:900, y:490, w:40, h:40 },
-      { type:'wood', x:820, y:450, w:40, h:40 },
-      { type:'wood', x:860, y:450, w:40, h:40 },
-      { type:'wood', x:900, y:450, w:40, h:40 },
-      { type:'wood', x:820, y:410, w:40, h:40 },
-      { type:'wood', x:860, y:410, w:40, h:40 },
-      { type:'wood', x:900, y:410, w:40, h:40 },
+      { type:'stone', x:720, y:730, w:20, h:80 },
+      { type:'stone', x:720, y:650, w:20, h:80 },
+      { type:'stone', x:720, y:570, w:20, h:80 },
+      { type:'wood', x:790, y:750, w:40, h:40 },
+      { type:'wood', x:830, y:750, w:40, h:40 },
+      { type:'wood', x:870, y:750, w:40, h:40 },
+      { type:'wood', x:790, y:710, w:40, h:40 },
+      { type:'wood', x:830, y:710, w:40, h:40 },
+      { type:'wood', x:870, y:710, w:40, h:40 },
+      { type:'wood', x:790, y:670, w:40, h:40 },
+      { type:'wood', x:830, y:670, w:40, h:40 },
+      { type:'wood', x:870, y:670, w:40, h:40 },
     ],
-    robots: [{ x:820, y:510 }, { x:860, y:510 }, { x:900, y:510 }],
+    robots: [{ x:920, y:750 }, { x:955, y:750 }, { x:990, y:750 }],
   },
   {
     id: 'W1_L06', name: "Bessie's Debut", par_birds: 2,
     birds:  ['cluck','bessie','bessie','cluck'],
     blocks: [
-      // Two stone pillars flanking the robots (4 total blocks = "the ring")
-      { type:'stone', x:790, y:490, w:20, h:80 },
-      { type:'stone', x:790, y:410, w:20, h:80 },
-      { type:'stone', x:950, y:490, w:20, h:80 },
-      { type:'stone', x:950, y:410, w:20, h:80 },
+      { type:'stone', x:790, y:730, w:20, h:80 },
+      { type:'stone', x:790, y:650, w:20, h:80 },
+      { type:'stone', x:950, y:730, w:20, h:80 },
+      { type:'stone', x:950, y:650, w:20, h:80 },
     ],
-    robots: [{ x:840, y:510 }, { x:875, y:510 }, { x:910, y:510 }],
+    robots: [{ x:840, y:750 }, { x:875, y:750 }, { x:910, y:750 }],
   },
 ];
 
@@ -166,7 +164,7 @@ class Block {
     const stdArea = isWood ? 1200 : 1800;
     const area    = width * height;
     // Wood: 1 direct hit; Stone: 2 hits. Base HP scaled to area.
-    this.maxHealth  = (isWood ? 25 : 55) * area / stdArea;
+    this.maxHealth  = (isWood ? 20 : 50) * area / stdArea;
     this.health     = this.maxHealth;
     this.faceColor  = isWood ? 0xC4843A : 0x888780;
     this.edgeColor  = isWood ? 0x7A4218 : 0x4E4D4C;
@@ -175,7 +173,7 @@ class Block {
     this.img = scene.matter.add.image(x, y, texKey, null, {
       // Lighter masses so birds dominate; stone kept lighter to survive ground falls
       mass: (isWood ? 5 : 8) * area / stdArea,
-      restitution: isWood ? 0.2 : 0.1, friction: 0.8, frictionAir: 0.02, label: type
+      restitution: isWood ? 0.2 : 0.1, friction: 0.8, frictionAir: 0.03, label: type
     });
     // Spawn static so structure is stable until first hit
     this.img.setStatic(true);
@@ -562,7 +560,7 @@ class Robot {
   constructor(scene, x, y) {
     this.scene=scene; this.w=30; this.h=40;
     // Reduced HP so falling blocks can kill; reduced mass so blocks push robots easily
-    this.maxHealth=45; this.health=45; this.destroyed=false;
+    this.maxHealth=35; this.health=35; this.destroyed=false;
     this.img = scene.matter.add.image(x, y, 'robot', null, {
       mass:10, restitution:0.15, friction:0.7, frictionAir:0.01, label:'robot'
     });
@@ -1020,8 +1018,7 @@ class Trebuchet {
   constructor(scene) {
     this.scene=scene; this.BASE_X=560; this.BASE_Y=770;
     this.armOffset=0; this.dragging=false; this.dragX=0; this.dragY=0;
-    // MAX_DRAG kept at 120; MAX_VEL raised for longer, higher arcs
-    this.MAX_DRAG=120; this.MAX_VEL=30;
+    this.MAX_DRAG=120; this.MAX_VEL=18;
     this.LAUNCH_X=0; this.LAUNCH_Y=0;
     this.gfx        = scene.add.graphics().setDepth(5);
     this.overlayGfx = scene.add.graphics().setDepth(8);
@@ -1262,7 +1259,7 @@ class SandboxScene extends Phaser.Scene {
 
   constructor() {
     super('SandboxScene');
-    this.grav=0.8; this.blocks=[]; this.robots=[];
+    this.grav=1.2; this.blocks=[]; this.robots=[];
     this.launcherDragging=false; this.activeAnimal=null;
     this.inputBlocked=false;
     this._lastShakeTime=0; this._lastThudTime=0;
@@ -1271,7 +1268,7 @@ class SandboxScene extends Phaser.Scene {
 
   init(data) {
     this._startLevelIdx = (data && data.levelIdx !== undefined) ? data.levelIdx : 0;
-    this.grav=0.8; this.blocks=[]; this.robots=[];
+    this.grav=1.2; this.blocks=[]; this.robots=[];
     this.launcherDragging=false; this.activeAnimal=null;
     this.inputBlocked=false; this._lastShakeTime=0; this._lastThudTime=0;
     this._bessieHintShown=false;
@@ -1407,7 +1404,7 @@ class SandboxScene extends Phaser.Scene {
         const bothDynamic = !bodyA.isStatic && !bodyB.isStatic;
         const effMass = bothDynamic
           ? (bodyA.mass * bodyB.mass) / (bodyA.mass + bodyB.mass)
-          : (bodyA.isStatic ? bodyB.mass : bodyA.mass) * 0.5;
+          : (bodyA.isStatic ? bodyB.mass : bodyA.mass) * 0.6;
         const impulse = relSpeed * effMass * 0.15;
         // Lower threshold so falling blocks reliably damage robots
         if (impulse > 2) {
@@ -1488,7 +1485,7 @@ new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  physics: { default:'matter', matter:{ gravity:{ y:0.8 }, debug:false } },
+  physics: { default:'matter', matter:{ gravity:{ y:1.2 }, debug:false } },
   scene: [MenuScene, SandboxScene],
 });
 </script>
