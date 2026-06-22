@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Farm Fury — v8</title>
+  <title>Farm Fury — v9</title>
   <style>
     html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #111; }
     canvas { display: block; }
@@ -39,7 +39,6 @@ function drawStarShape(g, cx, cy, r, earned) {
   }
 }
 
-// Generates a closed hill polygon in local graphics coordinates
 function genHillPts(x0, x1, baseY, amp, phase) {
   const pts = [{ x: x0, y: VH + 10 }];
   for (let x = x0; x <= x1 + 1; x += 8) {
@@ -78,7 +77,7 @@ const LEVELS = [
   },
   {
     id: 'W1_L03', name: 'The Tower', par_birds: 3,
-    birds:  ['cluck','cluck','cluck','cluck'],
+    birds:  ['cluck','bessie','cluck','cluck'],
     blocks: [
       { type:'wood',  x:820, y:490, w:120, h:20 },
       { type:'stone', x:820, y:470, w:120, h:20 },
@@ -102,11 +101,9 @@ const LEVELS = [
     id: 'W1_L05', name: 'The Fortress', par_birds: 3,
     birds:  ['cluck','cluck','cluck','cluck','cluck'],
     blocks: [
-      // Stone outer wall (20×80 — tall thin pillar, 3 segments)
       { type:'stone', x:760, y:490, w:20, h:80 },
       { type:'stone', x:760, y:410, w:20, h:80 },
       { type:'stone', x:760, y:330, w:20, h:80 },
-      // 3×3 wood grid inside
       { type:'wood', x:820, y:490, w:40, h:40 },
       { type:'wood', x:860, y:490, w:40, h:40 },
       { type:'wood', x:900, y:490, w:40, h:40 },
@@ -118,6 +115,18 @@ const LEVELS = [
       { type:'wood', x:900, y:410, w:40, h:40 },
     ],
     robots: [{ x:820, y:510 }, { x:860, y:510 }, { x:900, y:510 }],
+  },
+  {
+    id: 'W1_L06', name: "Bessie's Debut", par_birds: 2,
+    birds:  ['cluck','bessie','bessie','cluck'],
+    blocks: [
+      // Two stone pillars flanking the robots (4 total blocks = "the ring")
+      { type:'stone', x:790, y:490, w:20, h:80 },
+      { type:'stone', x:790, y:410, w:20, h:80 },
+      { type:'stone', x:950, y:490, w:20, h:80 },
+      { type:'stone', x:950, y:410, w:20, h:80 },
+    ],
+    robots: [{ x:840, y:510 }, { x:875, y:510 }, { x:910, y:510 }],
   },
 ];
 
@@ -318,7 +327,7 @@ class CluckAnimal extends Animal {
       for (const { bodyA, bodyB } of event.pairs) {
         if (bodyA !== eggBody && bodyB !== eggBody) continue;
         const other = bodyA === eggBody ? bodyB : bodyA;
-        if (other.eggRef || other.label === 'cluck') continue;
+        if (other.eggRef || other.label === 'cluck' || other.label === 'bessie') continue;
         const relSpeed = Math.hypot(bodyA.velocity.x-bodyB.velocity.x, bodyA.velocity.y-bodyB.velocity.y);
         if (relSpeed < 2) continue;
         if (other.blockRef instanceof Block) other.blockRef.takeDamage(relSpeed * 1.2);
@@ -343,6 +352,189 @@ class CluckAnimal extends Animal {
       const t=step/9, r=3+step*2.5; g.lineStyle(1.5,0xFFFF99,1-t);
       angles.forEach(a => g.lineBetween(x,y,x+Math.cos(a)*r,y+Math.sin(a)*r));
     }});
+  }
+
+  destroy() {
+    if (this.destroyed) return;
+    this.scene.activeAnimal = null;
+    this.scene.input.off('pointerdown', this._clickHandler);
+    this.scene.matter.world.off('collisionstart', this._contactHandler);
+    if (this.scene.trebuchet) this.scene.trebuchet.draw();
+    super.destroy();
+  }
+}
+
+// ─── BessieAnimal ─────────────────────────────────────────────────────────────
+class BessieAnimal extends Animal {
+
+  static FA = 0.016; // double Cluck's drag — shorter, heavier arc
+
+  constructor(scene, x, y) {
+    super(scene);
+    this.abilityUsed  = false;
+    this._hasLanded   = false;
+    this._slamPending = false;
+
+    this.img = scene.matter.add.image(x, y, 'bessie', null);
+    this.img.setCircle(26, {
+      mass: 28, restitution: 0.15, friction: 0.6,
+      frictionAir: BessieAnimal.FA, label: 'bessie'
+    });
+    this.img.setDepth(3);
+
+    this._playLaunchTone();
+    this._setupAbilityInput();
+    this._setupContactTimer();
+    this._maybeShowHint();
+  }
+
+  _playLaunchTone() {
+    try {
+      const ctx=this.scene.sound.context, osc=ctx.createOscillator(), gain=ctx.createGain();
+      osc.type='sine'; osc.frequency.value=140;
+      gain.gain.setValueAtTime(0.32, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.18);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime+0.18);
+    } catch(e) {}
+  }
+
+  _maybeShowHint() {
+    const scene = this.scene;
+    if (scene._bessieHintShown) return;
+    scene._bessieHintShown = true;
+    scene.time.delayedCall(300, () => {
+      if (this.destroyed) return;
+      const cam = scene.cameras.main;
+      const sx = Phaser.Math.Clamp(scene.trebuchet.LAUNCH_X - cam.scrollX, 80, VW - 80);
+      const sy = Phaser.Math.Clamp(scene.trebuchet.LAUNCH_Y - cam.scrollY - 60, 70, VH - 70);
+      const t = scene.add.text(sx, sy, 'Bessie is heavy — use full power!', {
+        fontFamily:'monospace', fontSize:'12px', color:'#FFE080',
+        stroke:'#000000', strokeThickness:3, align:'center'
+      }).setScrollFactor(0).setDepth(35).setOrigin(0.5, 1);
+      scene.tweens.add({
+        targets: t, y: sy - 28, alpha: 0, delay: 2200, duration: 700, ease:'Power2',
+        onComplete: () => t.destroy()
+      });
+    });
+  }
+
+  _setupAbilityInput() {
+    this._clickHandler = () => this._triggerAbility();
+    this.scene.input.once('pointerdown', this._clickHandler);
+  }
+
+  _setupContactTimer() {
+    this._contactHandler = (event) => {
+      if (this.destroyed) return;
+      const myBody = this.img?.body; if (!myBody) return;
+      for (const { bodyA, bodyB } of event.pairs) {
+        if (bodyA !== myBody && bodyB !== myBody) continue;
+        // Fire slam on next impact if triggered mid-air
+        if (this._slamPending) {
+          this._slamPending = false;
+          this._performSlam(this.img.x, this.img.y);
+        }
+        if (!this._hasLanded) {
+          this._hasLanded = true;
+          this.scene.input.off('pointerdown', this._clickHandler);
+          this.scene.matter.world.off('collisionstart', this._contactHandler);
+          this.scene.time.delayedCall(2500, () => this.destroy());
+        }
+        break;
+      }
+    };
+    this.scene.matter.world.on('collisionstart', this._contactHandler);
+  }
+
+  _triggerAbility() {
+    if (this.abilityUsed || this.destroyed || this.scene.launcherDragging) return;
+    this.abilityUsed = true;
+
+    // Red flash
+    this.img.setTint(0xFF6644);
+    this.scene.time.delayedCall(110, () => { if (!this.destroyed) this.img.clearTint(); });
+
+    if (this._hasLanded) {
+      // Already on ground — slam now
+      this._performSlam(this.img.x, this.img.y);
+    } else {
+      // Still in air — accelerate downward, slam on next contact
+      this._slamPending = true;
+      const vel = this.img.body.velocity;
+      this.img.setVelocity(vel.x * 0.5, vel.y + 18);
+    }
+  }
+
+  _performSlam(x, y) {
+    const scene = this.scene;
+
+    // Strong screen shake
+    scene.cameras.main.shake(250, 0.008);
+
+    // Deep thud sound
+    try {
+      const ctx = scene.sound.context;
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = 60;
+      gain.gain.setValueAtTime(0.45, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.30);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.32);
+    } catch(e) {}
+
+    // Shockwave ring visual
+    const ringGfx = scene.add.graphics().setDepth(9);
+    let frame = 0;
+    scene.time.addEvent({ delay:14, repeat:28, callback:() => {
+      frame++; ringGfx.clear();
+      const progress = frame / 28;
+      const r = progress * 190;
+      const a = 1 - progress;
+      ringGfx.lineStyle(6,  0xC67C2A, a * 0.9); ringGfx.strokeCircle(x, y, r);
+      ringGfx.lineStyle(2.5,0xFF9933, a * 0.55); ringGfx.strokeCircle(x, y, r * 0.65);
+      if (frame >= 28) ringGfx.destroy();
+    }});
+
+    // Ground cracks
+    const crackGfx = scene.add.graphics().setDepth(8);
+    crackGfx.lineStyle(2, 0x5C3010, 0.85);
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      const len = 28 + Math.random() * 55;
+      crackGfx.lineBetween(x, y, x + Math.cos(a)*len, y + Math.sin(a)*len);
+    }
+    scene.tweens.add({ targets:crackGfx, alpha:0, delay:500, duration:500, onComplete:()=>crackGfx.destroy() });
+
+    // Radial force + damage to all Matter bodies within 180px
+    const RADIUS   = 180;
+    const MAX_FORCE = 25;
+    const MAX_DMG   = 120;
+    const M = Phaser.Physics.Matter.Matter;
+    const allBodies = M.Composite.allBodies(scene.matter.world.engine.world);
+
+    for (const body of allBodies) {
+      if (body.isStatic || body.eggRef || body.isSensor) continue;
+      const bx = body.position.x, by = body.position.y;
+      const dx = bx - x, dy = by - y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 2 || dist > RADIUS) continue;
+
+      const t = 1 - dist / RADIUS;
+      const nx = dx / dist, ny = dy / dist;
+
+      // Outward velocity impulse
+      const kick = t * MAX_FORCE * 0.38;
+      M.Body.setVelocity(body, {
+        x: body.velocity.x + nx * kick,
+        y: body.velocity.y + (ny - 0.25) * kick
+      });
+
+      // Damage
+      const dmg = t * MAX_DMG;
+      if (body.blockRef instanceof Block) body.blockRef.takeDamage(dmg);
+      if (body.robotRef instanceof Robot) body.robotRef.takeDamage(dmg);
+    }
   }
 
   destroy() {
@@ -528,9 +720,17 @@ class LevelLoader {
     for (let x=BX+8; x<BX+baleW; x+=8) this._baleGfx.lineBetween(x,BY,x,BY+18);
     for (let i=0; i<count; i++) {
       const g=scene.add.graphics().setScrollFactor(0).setDepth(21);
-      g.fillStyle(0xF5C542); g.fillCircle(0,0,10);
-      g.lineStyle(1.5,0xC8950E); g.strokeCircle(0,0,10);
-      g.fillStyle(0xFF8C00); g.fillTriangle(7,-2,14,0,7,2);
+      if (this.birdsLeft[i] === 'bessie') {
+        // Cow icon: white circle with black spot
+        g.fillStyle(0xF5F5F0); g.fillCircle(0, 0, 11);
+        g.lineStyle(1.5, 0x888888); g.strokeCircle(0, 0, 11);
+        g.fillStyle(0x111111); g.fillEllipse(-2, -4, 9, 6);
+      } else {
+        // Cluck icon: yellow circle with beak
+        g.fillStyle(0xF5C542); g.fillCircle(0,0,10);
+        g.lineStyle(1.5,0xC8950E); g.strokeCircle(0,0,10);
+        g.fillStyle(0xFF8C00); g.fillTriangle(7,-2,14,0,7,2);
+      }
       g.setPosition(BX+14+i*28, BY-12);
       this._queueCircles.push(g);
     }
@@ -552,9 +752,7 @@ class ScoreManager {
     this._endTimer      = null;
     this._overlayObjects = [];
 
-    // ── Persistent game HUD ──────────────────────────────────────────
     const z = 20;
-
     this.levelNameText = scene.add.text(12, 11, '',
       { fontFamily:'monospace', fontSize:'13px', color:'#ffffff', stroke:'#000', strokeThickness:2 })
       .setScrollFactor(0).setDepth(z);
@@ -569,7 +767,6 @@ class ScoreManager {
 
     this._birdHudGfx = scene.add.graphics().setScrollFactor(0).setDepth(z);
 
-    // ── Event listeners ──────────────────────────────────────────────
     scene.events.on('blockDestroyed', ({ type, x, y }) => {
       if (this._levelEnded) return;
       this.blocksDestroyed++;
@@ -586,8 +783,6 @@ class ScoreManager {
       }
     });
   }
-
-  // ── Public ────────────────────────────────────────────────────────────────
 
   initLevel(idx) {
     if (this._endTimer) { this._endTimer.remove(); this._endTimer = null; }
@@ -629,8 +824,6 @@ class ScoreManager {
     if (this._endTimer) { this._endTimer.remove(); this._endTimer = null; }
     this._clearOverlay();
   }
-
-  // ── Private ───────────────────────────────────────────────────────────────
 
   _addScore(pts, x, y) {
     this.score += pts;
@@ -817,7 +1010,7 @@ class Trebuchet {
   constructor(scene) {
     this.scene=scene; this.BASE_X=420; this.BASE_Y=770;
     this.armOffset=0; this.dragging=false; this.dragX=0; this.dragY=0;
-    this.MAX_DRAG=120; this.MAX_VEL=22; this.PROJ_FA=CluckAnimal.FA;
+    this.MAX_DRAG=120; this.MAX_VEL=22;
     this.LAUNCH_X=0; this.LAUNCH_Y=0;
     this.gfx        = scene.add.graphics().setDepth(5);
     this.overlayGfx = scene.add.graphics().setDepth(8);
@@ -825,6 +1018,13 @@ class Trebuchet {
   }
 
   _armAngle() { return -Math.PI*0.78 + this.armOffset; }
+
+  // Returns frictionAir for the next bird in queue
+  _getNextFA() {
+    const loader = this.scene.levelLoader;
+    if (!loader || loader.birdsLeft.length === 0) return CluckAnimal.FA;
+    return loader.birdsLeft[0] === 'bessie' ? BessieAnimal.FA : CluckAnimal.FA;
+  }
 
   draw() {
     const g=this.gfx; g.clear();
@@ -842,13 +1042,22 @@ class Trebuchet {
     this.LAUNCH_X=tipX; this.LAUNCH_Y=tipY;
     const loader = this.scene.levelLoader;
     if (loader && loader.hasMoreBirds && !this.scene.activeAnimal) {
-      g.fillStyle(0xF5C542,0.95); g.fillCircle(tipX,tipY,10);
-      g.lineStyle(1.5,0xC8950E,0.95); g.strokeCircle(tipX,tipY,10);
-      const ba=ang+0.3;
-      g.fillStyle(0xFF8C00);
-      g.fillTriangle(tipX+Math.cos(ba+0.5)*7,tipY+Math.sin(ba+0.5)*7,
-                     tipX+Math.cos(ba)*12,   tipY+Math.sin(ba)*12,
-                     tipX+Math.cos(ba-0.5)*7,tipY+Math.sin(ba-0.5)*7);
+      const isBessie = loader.birdsLeft[0] === 'bessie';
+      if (isBessie) {
+        // Bessie: white circle with black spot
+        g.fillStyle(0xF5F5F0, 0.95); g.fillCircle(tipX, tipY, 13);
+        g.lineStyle(2, 0x888888, 0.95); g.strokeCircle(tipX, tipY, 13);
+        g.fillStyle(0x111111, 0.9); g.fillEllipse(tipX-3, tipY-5, 10, 7);
+      } else {
+        // Cluck: yellow circle with beak
+        g.fillStyle(0xF5C542,0.95); g.fillCircle(tipX,tipY,10);
+        g.lineStyle(1.5,0xC8950E,0.95); g.strokeCircle(tipX,tipY,10);
+        const ba=ang+0.3;
+        g.fillStyle(0xFF8C00);
+        g.fillTriangle(tipX+Math.cos(ba+0.5)*7,tipY+Math.sin(ba+0.5)*7,
+                       tipX+Math.cos(ba)*12,   tipY+Math.sin(ba)*12,
+                       tipX+Math.cos(ba-0.5)*7,tipY+Math.sin(ba-0.5)*7);
+      }
     }
   }
 
@@ -891,7 +1100,7 @@ class Trebuchet {
     g.lineStyle(2.5,0xFF8800,0.85); g.lineBetween(this.LAUNCH_X,this.LAUNCH_Y,this.dragX,this.dragY);
     const { vx, vy }=this._getVelocity();
     if (Math.hypot(vx,vy)<0.5) return;
-    const grav=this.scene.grav, fa=this.PROJ_FA;
+    const grav=this.scene.grav, fa=this._getNextFA();
     let sx=this.LAUNCH_X, sy=this.LAUNCH_Y, svx=vx, svy=vy;
     const dots=[];
     for (let i=0;i<20;i++) {
@@ -909,12 +1118,18 @@ class Trebuchet {
     if (Math.hypot(vx,vy)<0.5 || this.scene.activeAnimal) return;
     const loader=this.scene.levelLoader;
     if (loader && !loader.hasMoreBirds) return;
-    if (loader) loader.consumeBird();
+
+    const birdType = loader ? loader.consumeBird() : 'cluck';
     if (this.scene.scoreManager) this.scene.scoreManager.onBirdFired();
 
-    const cluck=new CluckAnimal(this.scene,this.LAUNCH_X,this.LAUNCH_Y);
-    cluck.setVelocity(vx,vy);
-    this.scene.activeAnimal=cluck;
+    let animal;
+    if (birdType === 'bessie') {
+      animal = new BessieAnimal(this.scene, this.LAUNCH_X, this.LAUNCH_Y);
+    } else {
+      animal = new CluckAnimal(this.scene, this.LAUNCH_X, this.LAUNCH_Y);
+    }
+    animal.setVelocity(vx, vy);
+    this.scene.activeAnimal = animal;
     this.draw();
 
     this.scene.tweens.add({
@@ -929,7 +1144,7 @@ class Trebuchet {
     });
 
     const cam=this.scene.cameras.main;
-    cam.startFollow(cluck.img,false,0.08,0.08);
+    cam.startFollow(animal.img,false,0.08,0.08);
     this.scene.time.delayedCall(2000,()=>{ cam.stopFollow(); cam.pan(700,500,900,'Sine.easeInOut'); });
   }
 }
@@ -940,7 +1155,6 @@ class MenuScene extends Phaser.Scene {
   constructor() { super('MenuScene'); }
 
   create() {
-    // Background
     const bg = this.add.graphics();
     bg.fillStyle(0x7EC8E3); bg.fillRect(0, 0, VW, VH);
     bg.fillStyle(0x5BACE0, 0.22); bg.fillRect(0, 0, VW, VH * 0.5);
@@ -957,10 +1171,8 @@ class MenuScene extends Phaser.Scene {
     gr.fillStyle(0x5C4020); gr.fillRect(0, VH - 22, VW, 22);
     gr.fillStyle(0x3D8020); gr.fillRect(0, VH - 22, VW, 7);
 
-    // Dark overlay for readability
     this.add.graphics().setDepth(1).fillStyle(0x000000, 0.48).fillRect(0, 0, VW, VH);
 
-    // Title
     this.add.text(VW/2, 44, 'FARM FURY', {
       fontFamily:'monospace', fontSize:'52px', color:'#FF8C00',
       stroke:'#000', strokeThickness:6
@@ -970,8 +1182,8 @@ class MenuScene extends Phaser.Scene {
       fontFamily:'monospace', fontSize:'17px', color:'#cccccc'
     }).setOrigin(0.5, 0).setDepth(2);
 
-    // Level cards
-    const cardW=128, cardH=168, gap=12;
+    // 6 cards: smaller to fit VW=800
+    const cardW=112, cardH=165, gap=7;
     const totalW = LEVELS.length * cardW + (LEVELS.length - 1) * gap;
     const startX = (VW - totalW) / 2;
     const cardCY = 320;
@@ -981,7 +1193,6 @@ class MenuScene extends Phaser.Scene {
       this._makeCard(cx, cardCY, cardW, cardH, level, i);
     });
 
-    // Footer hint
     this.add.text(VW/2, VH - 12, 'Click a card to play', {
       fontFamily:'monospace', fontSize:'11px', color:'#777777'
     }).setOrigin(0.5, 1).setDepth(2);
@@ -1001,43 +1212,36 @@ class MenuScene extends Phaser.Scene {
     };
     drawCard(false);
 
-    // Level ID
-    this.add.text(cx, y + 16, level.id, {
-      fontFamily:'monospace', fontSize:'10px', color:'#7799BB'
+    this.add.text(cx, y + 15, level.id, {
+      fontFamily:'monospace', fontSize:'9px', color:'#7799BB'
     }).setOrigin(0.5, 0.5).setDepth(4);
 
-    // Level name (may wrap)
-    this.add.text(cx, y + 34, level.name, {
-      fontFamily:'monospace', fontSize:'12px', color:'#FFFFFF',
-      wordWrap:{ width: w - 12 }, align:'center'
+    this.add.text(cx, y + 30, level.name, {
+      fontFamily:'monospace', fontSize:'11px', color:'#FFFFFF',
+      wordWrap:{ width: w - 10 }, align:'center'
     }).setOrigin(0.5, 0).setDepth(4);
 
-    // Stars
     const sg = this.add.graphics().setDepth(4);
-    for (let s = 0; s < 3; s++) drawStarShape(sg, cx + (s-1)*26, cy - 14, 11, s < stored.stars);
+    for (let s = 0; s < 3; s++) drawStarShape(sg, cx + (s-1)*22, cy - 18, 9, s < stored.stars);
 
-    // Best score
     const scoreStr = stored.score > 0 ? stored.score.toLocaleString() : '—';
-    this.add.text(cx, cy + 20, scoreStr, {
-      fontFamily:'monospace', fontSize:'12px', color: stored.score > 0 ? '#FFD700' : '#444'
+    this.add.text(cx, cy + 15, scoreStr, {
+      fontFamily:'monospace', fontSize:'11px', color: stored.score > 0 ? '#FFD700' : '#444'
     }).setOrigin(0.5, 0.5).setDepth(4);
 
-    // Par line
-    this.add.text(cx, cy + 38, `par: ${level.par_birds} bird${level.par_birds>1?'s':''}`, {
-      fontFamily:'monospace', fontSize:'10px', color:'#556677'
+    this.add.text(cx, cy + 32, `par: ${level.par_birds}`, {
+      fontFamily:'monospace', fontSize:'9px', color:'#556677'
     }).setOrigin(0.5, 0.5).setDepth(4);
 
-    // PLAY button strip
     const playBg = this.add.graphics().setDepth(4);
-    playBg.fillStyle(0xFF8C00); playBg.fillRoundedRect(x + 10, y + h - 38, w - 20, 28, 6);
-    this.add.text(cx, y + h - 24, 'PLAY', {
-      fontFamily:'monospace', fontSize:'13px', color:'#fff', stroke:'#000', strokeThickness:2
+    playBg.fillStyle(0xFF8C00); playBg.fillRoundedRect(x + 8, y + h - 35, w - 16, 26, 6);
+    this.add.text(cx, y + h - 22, 'PLAY', {
+      fontFamily:'monospace', fontSize:'12px', color:'#fff', stroke:'#000', strokeThickness:2
     }).setOrigin(0.5, 0.5).setDepth(5);
 
-    // Make whole card interactive
     card.setInteractive(new Phaser.Geom.Rectangle(x, y, w, h), Phaser.Geom.Rectangle.Contains);
-    card.on('pointerover', () => { drawCard(true); playBg.clear(); playBg.fillStyle(0xFFAA22); playBg.fillRoundedRect(x+10, y+h-38, w-20, 28, 6); });
-    card.on('pointerout',  () => { drawCard(false); playBg.clear(); playBg.fillStyle(0xFF8C00); playBg.fillRoundedRect(x+10, y+h-38, w-20, 28, 6); });
+    card.on('pointerover', () => { drawCard(true); playBg.clear(); playBg.fillStyle(0xFFAA22); playBg.fillRoundedRect(x+8, y+h-35, w-16, 26, 6); });
+    card.on('pointerout',  () => { drawCard(false); playBg.clear(); playBg.fillStyle(0xFF8C00); playBg.fillRoundedRect(x+8, y+h-35, w-16, 26, 6); });
     card.on('pointerdown', () => { this.scene.start('SandboxScene', { levelIdx: idx }); });
   }
 }
@@ -1051,18 +1255,16 @@ class SandboxScene extends Phaser.Scene {
     this.launcherDragging=false; this.activeAnimal=null;
     this.inputBlocked=false;
     this._lastShakeTime=0; this._lastThudTime=0;
-    this._startLevelIdx=0;
+    this._startLevelIdx=0; this._bessieHintShown=false;
   }
 
   init(data) {
     this._startLevelIdx = (data && data.levelIdx !== undefined) ? data.levelIdx : 0;
-    // Reset mutable state on every scene start
     this.grav=1.5; this.blocks=[]; this.robots=[];
     this.launcherDragging=false; this.activeAnimal=null;
     this.inputBlocked=false; this._lastShakeTime=0; this._lastThudTime=0;
+    this._bessieHintShown=false;
   }
-
-  // ── Texture generation ────────────────────────────────────────────────────
 
   buildTextures() {
     const w=this.make.graphics({add:false});
@@ -1100,28 +1302,38 @@ class SandboxScene extends Phaser.Scene {
     ro.lineStyle(1,0x636360,0.8);
     ro.lineBetween(6,26,24,26); ro.lineBetween(6,30,24,30); ro.lineBetween(6,34,24,34);
     ro.generateTexture('robot',30,40); ro.destroy();
+
+    // Bessie: large white cow circle with black patches, eyes, pink nose
+    const be=this.make.graphics({add:false});
+    be.fillStyle(0xF5F5F0); be.fillCircle(30,30,26);
+    be.lineStyle(2,0x999990,0.8); be.strokeCircle(30,30,26);
+    // Black patches
+    be.fillStyle(0x111111);
+    be.fillEllipse(17,17,20,13);  // upper-left patch
+    be.fillEllipse(45,28,13,21);  // right-side patch
+    be.fillEllipse(22,45,15,9);   // lower-left patch
+    // Eyes (drawn over patches)
+    be.fillStyle(0x000000); be.fillCircle(22,25,2.5); be.fillCircle(37,25,2.5);
+    be.fillStyle(0x555555); be.fillCircle(22.5,24.5,1); be.fillCircle(37.5,24.5,1);
+    // Pink oval nose
+    be.fillStyle(0xFFAABB); be.fillEllipse(30,35,13,8);
+    be.fillStyle(0x884466,0.75); be.fillCircle(27,36,1.8); be.fillCircle(33,36,1.8);
+    be.generateTexture('bessie',60,60); be.destroy();
   }
 
-  // ── Parallax background ───────────────────────────────────────────────────
-
   _buildBackground() {
-    // Sky — fixed screen-space fill
     const sky = this.add.graphics().setScrollFactor(0).setDepth(-5);
     sky.fillStyle(0x7EC8E3); sky.fillRect(0, 0, VW, VH);
     sky.fillStyle(0x5BACE0, 0.22); sky.fillRect(0, 0, VW, VH * 0.5);
 
-    // Far hills: local coords from -400 to 1400 (covers full scroll range 0-600)
     this._farHillGfx = this.add.graphics().setScrollFactor(0).setDepth(-3);
     this._farHillGfx.fillStyle(0x6B8F47);
     this._farHillGfx.fillPoints(genHillPts(-400, 1400, 336, 38, 0.5), true);
 
-    // Near hills
     this._nearHillGfx = this.add.graphics().setScrollFactor(0).setDepth(-2);
     this._nearHillGfx.fillStyle(0x4A7A2B);
     this._nearHillGfx.fillPoints(genHillPts(-400, 1400, 442, 26, 1.3), true);
   }
-
-  // ── Sound helpers ─────────────────────────────────────────────────────────
 
   _playThud(impulse) {
     const now = this.time.now;
@@ -1129,8 +1341,7 @@ class SandboxScene extends Phaser.Scene {
     this._lastThudTime = now;
     try {
       const ctx=this.sound.context, osc=ctx.createOscillator(), gain=ctx.createGain();
-      osc.type='sine';
-      osc.frequency.value = 75 + Math.random() * 25;
+      osc.type='sine'; osc.frequency.value = 75 + Math.random() * 25;
       const vol = Math.min(0.22, impulse / 700);
       gain.gain.setValueAtTime(vol, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
@@ -1139,22 +1350,17 @@ class SandboxScene extends Phaser.Scene {
     } catch(e) {}
   }
 
-  // ── Scene lifecycle ───────────────────────────────────────────────────────
-
   create() {
     this.buildTextures();
     this._buildBackground();
 
-    // ── World physics boundaries ──────────────────────────────────────
     this.matter.add.rectangle(WW/2, WH-15, WW+60, 30, { isStatic:true, friction:0.8, restitution:0.05, label:'ground' });
     this.matter.add.rectangle(-15, WH/2, 30, WH+60, { isStatic:true, restitution:0.3 });
     this.matter.add.rectangle(WW+15, WH/2, 30, WH+60, { isStatic:true, restitution:0.3 });
 
-    // ── World visuals (world-space, scroll with camera) ───────────────
     const gv = this.add.graphics().setDepth(1);
     gv.fillStyle(0x5C4020); gv.fillRect(0, WH-32, WW, 32);
     gv.fillStyle(0x3D8020); gv.fillRect(0, WH-32, WW, 7);
-    // Subtle grass tufts
     gv.fillStyle(0x4A9528);
     for (let gx = 20; gx < WW; gx += 60) {
       gv.fillTriangle(gx, WH-32, gx+5, WH-40, gx+10, WH-32);
@@ -1164,7 +1370,6 @@ class SandboxScene extends Phaser.Scene {
     this.cameras.main.setScroll((WW-VW)/2, WH-VH);
     this.matter.world.setGravity(0, this.grav);
 
-    // ── HUD shell ─────────────────────────────────────────────────────
     const topBg = this.add.graphics();
     topBg.fillStyle(0x000000, 0.55); topBg.fillRect(0, 0, VW, 56);
     topBg.setScrollFactor(0).setDepth(19);
@@ -1181,7 +1386,6 @@ class SandboxScene extends Phaser.Scene {
       .setScrollFactor(0).setDepth(20).setOrigin(0.5, 0.5);
     this.refreshGravText();
 
-    // ── Collision handler — damage + shake + thud ─────────────────────
     this.matter.world.on('collisionstart', (event) => {
       event.pairs.forEach(({ bodyA, bodyB }) => {
         if (bodyA.isStatic || bodyB.isStatic) return;
@@ -1196,9 +1400,7 @@ class SandboxScene extends Phaser.Scene {
           if (bodyA.robotRef instanceof Robot) bodyA.robotRef.takeDamage(dmg);
           if (bodyB.robotRef instanceof Robot) bodyB.robotRef.takeDamage(dmg);
         }
-        // Block thud sound on block-involving impacts
         if (impulse > 14 && (bodyA.blockRef || bodyB.blockRef)) this._playThud(impulse);
-        // Screen shake on heavy impacts
         if (impulse > 50) {
           const now = this.time.now;
           if (now - this._lastShakeTime > 180) {
@@ -1209,12 +1411,10 @@ class SandboxScene extends Phaser.Scene {
       });
     });
 
-    // ── Systems ───────────────────────────────────────────────────────
     this.trebuchet    = new Trebuchet(this);
     this.scoreManager = new ScoreManager(this);
     this.levelLoader  = new LevelLoader(this);
 
-    // ── Input ─────────────────────────────────────────────────────────
     this.input.on('pointerdown', (ptr) => {
       if (ptr.button===0 && !this.launcherDragging && !this.activeAnimal && !this.inputBlocked)
         this.spawnWood(ptr.worldX, ptr.worldY);
@@ -1232,8 +1432,6 @@ class SandboxScene extends Phaser.Scene {
   shutdown() {
     if (this.scoreManager) this.scoreManager.cleanup();
   }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
 
   refreshGravText() {
     const d = this.grav >= 0 ? '▼' : '▲';
@@ -1255,12 +1453,9 @@ class SandboxScene extends Phaser.Scene {
 
   update(time, delta) {
     if (delta > 0) this.fpsText.setText(`FPS:${Math.round(1000/delta)}`);
-
-    // Parallax scroll (X-axis only, camera Y handled by fixed screen position)
     const sx = this.cameras.main.scrollX;
     this._farHillGfx.setPosition(-sx * 0.12, 0);
     this._nearHillGfx.setPosition(-sx * 0.35, 0);
-
     for (const b of this.blocks) b.sync();
     for (const r of this.robots) r.sync();
     if (this.scoreManager) this.scoreManager.update();
