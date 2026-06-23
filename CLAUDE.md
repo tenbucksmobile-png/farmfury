@@ -52,8 +52,8 @@ Full GDD: `C:\Users\Personel\Desktop\FarmFury_GDD_v2.docx`
 ## Development Roadmap (6 Phases)
 
 ### Phase 1 — Core Feel *(current)*
-1.1 **Slingshot fix** — drag the BIRD backward (click bird → pull back → release), not drag-from-tip. **CURRENT TASK.**
-1.2 Trajectory arc — dotted style, visible only while dragging, fades at midpoint on harder levels
+1.1 **Slingshot fix** — drag the BIRD backward (click bird → pull back → release). ✅ DONE — arm tracks drag, rubber-band line, ArmSnap coroutine.
+1.2 Trajectory arc — dotted style, visible only while dragging, fades at midpoint on harder levels. **CURRENT TASK.**
 1.3 Destruction feedback — block crack states (3 stages), block burst on death, robot flash+explode, screen shake
 1.4 Audio — procedural sounds: launch, wood impact, stone impact, robot death, win fanfare, fail buzzer
 1.5 Camera — smooth follow → smooth pan-back to launcher after landing
@@ -121,7 +121,7 @@ python -m http.server 8080
 ## Unity Port (`unity/`)
 
 ### Running
-Open `unity/` in Unity Hub (Unity 6.5 / 6000.5.0f1). Open `Assets/Scenes/Game.unity`. Press Play. If nothing loads, run **FarmFury → Wire Scene References** from the top menu first.
+Open `unity/` in Unity Hub (Unity 6.5 / 6000.5.0f1). Open `Assets/Scenes/Game.unity`. Press Play — the ground, camera, and LevelLoader reference are all self-wired at runtime. Run **FarmFury → Wire Scene References** only when adding new levels, prefabs, or after a clean checkout.
 
 ### Stack
 - Unity 6.5, URP 2D, Physics2D, New Input System, TextMeshPro
@@ -130,7 +130,7 @@ Open `unity/` in Unity Hub (Unity 6.5 / 6000.5.0f1). Open `Assets/Scenes/Game.un
 - 1 Unity unit = 50 Phaser pixels
 - `x_unity = x_phaser / 50`
 - `y_unity = -(y_phaser - 770) / 50`
-- Ground at Y = −5 (Unity world). Trebuchet base at (11.2, 0, 0).
+- Ground surface at Y = 0 (Unity world). Ground GO centre at (14, −0.5). Trebuchet base at (11.2, 0, 0). Camera at (13, 3, −10), orthoSize = 5.
 
 ### Physics Settings
 - Gravity Y: −20. Layers: Ground=6, Animal=7, Block=8, Robot=9, Egg=10
@@ -166,7 +166,11 @@ Editor/
 - Blocks spawn `RigidbodyType2D.Static`; first `TakeDamage()` calls `WakeAllStaticBlocks()` which uses `FindObjectsByType<BlockBase>()` (Unity 6 API)
 - Animals start Kinematic → Dynamic on `Launch(velocity)`
 - Never destroy physics body in collision callback — defer with coroutine
-- `body.blockRef` / `body.robotRef` must be stamped AFTER `setCircle()` (which replaces the body)
+- **SpriteRenderer is auto-added at runtime:** both `BlockBase.Awake()` and `AnimalBase.Awake()` do `if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();` — prefabs do not need a SpriteRenderer pre-added.
+- **Ground is created at runtime:** `CatapultLauncher.Start()` calls `EnsureGroundExists()` which validates (surface near Y=0, width>5) and recreates the ground if the scene version is stale/buggy. Always runs before `ForceStartLevel`.
+- **LevelLoader is auto-found:** `CatapultLauncher.Awake()` does `if (_levelLoader == null) _levelLoader = FindAnyObjectByType<LevelLoader>();` — Inspector wiring via Wire Scene References is optional.
+- **[SerializeField] stale value trap:** changing a `[SerializeField]` default in code does NOT affect already-serialised components. Use `private const` for values that must not be overridden (e.g. `BirdClickRadius`).
+- Ground collider maths: `localScale = (60,1,1)`, `BoxCollider2D.size = (1,1)` → world collider = 60×1. Never set both scale AND size to large values (60×60 = 3600 wide).
 
 ### Physics Values (matching prototype)
 | Entity | mass | bounciness | linearDrag |

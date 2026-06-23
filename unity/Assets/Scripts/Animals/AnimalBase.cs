@@ -33,6 +33,7 @@ public abstract class AnimalBase : MonoBehaviour
         _rb  = GetComponent<Rigidbody2D>();
         _col = GetComponent<CircleCollider2D>();
         _sr  = GetComponent<SpriteRenderer>();
+        if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
 
         _rb.mass                   = mass;
         _rb.linearDamping          = linearDrag;
@@ -43,8 +44,7 @@ public abstract class AnimalBase : MonoBehaviour
         _col.sharedMaterial = mat;
         _rb.bodyType = RigidbodyType2D.Kinematic;
 
-        if (_sr != null && _sr.sprite == null)
-            _sr.sprite = MakeCircleSprite(32);
+        if (_sr.sprite == null) _sr.sprite = MakeCircleSprite(32);
     }
 
     protected virtual void Update()
