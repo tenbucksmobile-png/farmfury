@@ -24,18 +24,23 @@ public class LevelLoader : MonoBehaviour
     private readonly List<RobotEnemy>  _spawnedRobots = new();
     private readonly Queue<AnimalType> _birdQueue     = new();
 
-    public int       RemainingRobots   => _spawnedRobots.Count;
-    public bool      HasBirdsRemaining => _birdQueue.Count > 0;
-    public int       BirdsRemaining    => _birdQueue.Count;
-    public AnimalType PeekNextBird()   => _birdQueue.Count > 0 ? _birdQueue.Peek() : AnimalType.Cluck;
+    public int        RemainingRobots    => _spawnedRobots.Count;
+    public bool       HasBirdsRemaining  => _birdQueue.Count > 0;
+    public int        BirdsRemaining     => _birdQueue.Count;
+    public AnimalType PeekNextBird()     => _birdQueue.Count > 0 ? _birdQueue.Peek() : AnimalType.Cluck;
+
+    // Snapshot of the queue at this moment (copy — safe to iterate while the queue changes)
+    public AnimalType[] BirdQueueSnapshot => _birdQueue.ToArray();
 
     public bool TryConsumeBird(out AnimalType type)
     {
         if (_birdQueue.Count == 0) { type = default; return false; }
         type = _birdQueue.Dequeue();
+        OnBirdConsumed?.Invoke();
         return true;
     }
 
+    public event Action OnBirdConsumed;
     public event Action OnAllRobotsDestroyed;
     public event Action OnBirdsExhausted;
 

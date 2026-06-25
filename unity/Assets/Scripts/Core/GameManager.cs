@@ -82,7 +82,21 @@ public class GameManager : MonoBehaviour
     public void LoadMenu()
     {
         TransitionTo(GameState.Idle);
-        SceneManager.LoadScene(_menuSceneName);
+        // Only load the menu scene if it's registered in Build Settings.
+        // When it isn't (e.g. Phase 2.5 dev), LevelSelectController handles Idle in-scene.
+        if (SceneInBuild(_menuSceneName))
+            SceneManager.LoadScene(_menuSceneName);
+    }
+
+    static bool SceneInBuild(string sceneName)
+    {
+        for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+        {
+            string path = SceneUtility.GetScenePathByBuildIndex(i);
+            string name = System.IO.Path.GetFileNameWithoutExtension(path);
+            if (name == sceneName) return true;
+        }
+        return false;
     }
 
     void TransitionTo(GameState next)
