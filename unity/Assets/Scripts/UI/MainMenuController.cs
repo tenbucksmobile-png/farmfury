@@ -229,7 +229,7 @@ public class MainMenuController : MonoBehaviour
         lRT.anchorMax = Vector2.one;
         lRT.offsetMin = lRT.offsetMax = Vector2.zero;
         var lTMP    = lblGO.AddComponent<TextMeshProUGUI>();
-        lTMP.text      = "▶  PLAY";
+        lTMP.text      = "> PLAY";
         lTMP.fontSize  = 48f;
         lTMP.color     = Color.white;
         lTMP.alignment = TextAlignmentOptions.Center;

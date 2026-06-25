@@ -11,6 +11,13 @@ public abstract class AnimalBase : MonoBehaviour
     [SerializeField] protected float bounciness = 0.4f;
     [SerializeField] protected float linearDrag = 0.008f;
 
+    [Header("Pose Sprites")]
+    [SerializeField] private Sprite _sprIdle;
+    [SerializeField] private Sprite _sprLoaded;
+    [SerializeField] private Sprite _sprInFlight;
+    [SerializeField] private Sprite _sprImpact;
+    [SerializeField] private Sprite _sprAbility;
+
     [Header("Flight")]
     [SerializeField] private float _contactTimeout = 3f;
 
@@ -23,6 +30,8 @@ public abstract class AnimalBase : MonoBehaviour
     protected Rigidbody2D      _rb;
     protected CircleCollider2D _col;
     protected SpriteRenderer   _sr;
+
+    protected bool HasRealSprites => _sprIdle != null;
 
     protected bool _abilityUsed;
     private bool  _contactStarted;
@@ -44,7 +53,8 @@ public abstract class AnimalBase : MonoBehaviour
         _col.sharedMaterial = mat;
         _rb.bodyType = RigidbodyType2D.Kinematic;
 
-        if (_sr.sprite == null) _sr.sprite = MakeCircleSprite(32);
+        if (_sprIdle != null) { _sr.sprite = _sprIdle; _sr.color = Color.white; }
+        else                    _sr.sprite = MakeCircleSprite(32);
     }
 
     protected virtual void Update()
@@ -55,6 +65,7 @@ public abstract class AnimalBase : MonoBehaviour
         {
             _abilityUsed = true;
             TriggerAbility();
+            if (_sprAbility != null) _sr.sprite = _sprAbility;
         }
 
         if (_contactStarted)
@@ -64,12 +75,20 @@ public abstract class AnimalBase : MonoBehaviour
         }
     }
 
+    // Call after placing the animal in the sling cup — shows the seated pose.
+    public void SetLoadedPose()
+    {
+        if (_sprLoaded  != null) _sr.sprite = _sprLoaded;
+        else if (_sprIdle != null) _sr.sprite = _sprIdle;
+    }
+
     public void Launch(Vector2 velocity)
     {
         _rb.bodyType       = RigidbodyType2D.Dynamic;
         _rb.linearVelocity = velocity;
         IsLaunched         = true;
         IsInFlight         = true;
+        if (_sprInFlight != null) _sr.sprite = _sprInFlight;
     }
 
     protected abstract void TriggerAbility();
@@ -77,6 +96,7 @@ public abstract class AnimalBase : MonoBehaviour
     protected virtual void OnCollisionEnter2D(Collision2D col)
     {
         IsInFlight = false;
+        if (_sprImpact != null) _sr.sprite = _sprImpact;
         if (!_contactStarted)
         {
             _contactStarted = true;
@@ -84,11 +104,13 @@ public abstract class AnimalBase : MonoBehaviour
         }
     }
 
+    protected void FireOnAnimalDestroyed() => OnAnimalDestroyed?.Invoke(this);
+
     protected virtual void DestroyAnimal()
     {
         if (IsDestroyed) return;
         IsDestroyed = true;
-        OnAnimalDestroyed?.Invoke(this);
+        FireOnAnimalDestroyed();
         Destroy(gameObject);
     }
 

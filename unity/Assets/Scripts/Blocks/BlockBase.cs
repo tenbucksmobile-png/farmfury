@@ -28,6 +28,7 @@ public abstract class BlockBase : MonoBehaviour
     protected Rigidbody2D    _rb;
     protected BoxCollider2D  _col;
     protected SpriteRenderer _sr;
+    protected Color          _baseColor = new Color(0.65f, 0.38f, 0.12f); // overwritten in Initialise
 
     private SpriteRenderer _crackSR1;   // light cracks: visible below 67% health
     private SpriteRenderer _crackSR2;   // heavy cracks: visible below 33% health
@@ -56,6 +57,7 @@ public abstract class BlockBase : MonoBehaviour
     public void Initialise(float width, float height)
     {
         transform.localScale = new Vector3(width, height, 1f);
+        _baseColor = _sr.color; // subclass Awake has already set the material colour
 
         float area  = width * height;
         float ratio = area / StdArea;
@@ -102,10 +104,14 @@ public abstract class BlockBase : MonoBehaviour
         if (_sr == null) return;
         float t = Health / MaxHealth;
 
-        // Colour shift: healthy (material colour) → orange → red
-        _sr.color = t > 0.5f
-            ? Color.Lerp(new Color(1f, 0.6f, 0f), Color.white, (t - 0.5f) * 2f)
-            : Color.Lerp(Color.red, new Color(1f, 0.6f, 0f), t * 2f);
+        // Healthy (material colour) → orange at 67% → red-orange at 33% → red at 0%
+        var orange    = new Color(1f, 0.55f, 0f);
+        var redOrange = new Color(0.9f, 0.15f, 0f);
+        _sr.color = t > 0.67f
+            ? Color.Lerp(orange,    _baseColor, (t - 0.67f) / 0.33f)
+            : t > 0.33f
+            ? Color.Lerp(redOrange, orange,     (t - 0.33f) / 0.33f)
+            : Color.Lerp(Color.red, redOrange,  t           / 0.33f);
 
         // Crack stage 1: <67% health shows light cracks
         // Crack stage 2: <33% health shows heavy cracks on top
@@ -193,7 +199,7 @@ public abstract class BlockBase : MonoBehaviour
     // seed keeps the pattern deterministic across runs.
     static Sprite MakeCrackSprite(int size, int numCracks, int seed)
     {
-        var rng   = new Random(seed);
+        var rng   = new System.Random(seed);
         var tex   = new Texture2D(size, size, TextureFormat.ARGB32, false);
         var clear = new Color[size * size]; // Color() defaults to (0,0,0,0)
         tex.SetPixels(clear);

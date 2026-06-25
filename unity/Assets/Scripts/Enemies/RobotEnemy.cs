@@ -12,11 +12,12 @@ public class RobotEnemy : MonoBehaviour
     public float Health      { get; private set; }
     public bool  IsDestroyed { get; private set; }
 
-    private static readonly Color BaseColor = new Color(0.25f, 0.25f, 0.28f);
+    // Steel blue-grey — clearly readable as "enemy" without blending into blocks
+    private static readonly Color BaseColor = new Color(0.38f, 0.44f, 0.54f);
 
-    private Rigidbody2D   _rb;
+    private Rigidbody2D    _rb;
     private SpriteRenderer _sr;
-    private LevelLoader   _loader;
+    private LevelLoader    _loader;
 
     void Awake()
     {
@@ -26,7 +27,26 @@ public class RobotEnemy : MonoBehaviour
         if (_sr.sprite == null) _sr.sprite = MakeSquareSprite();
         _sr.color        = BaseColor;
         _sr.sortingOrder = 3;
-        transform.localScale = new Vector3(0.6f, 0.8f, 1f); // ~30×40px at 50px/unit
+        transform.localScale = new Vector3(0.7f, 0.8f, 1f);
+        AddEyes();
+    }
+
+    void AddEyes()
+    {
+        AddEye(-0.18f, 0.20f);
+        AddEye( 0.18f, 0.20f);
+    }
+
+    void AddEye(float localX, float localY)
+    {
+        var go = new GameObject("Eye");
+        go.transform.SetParent(transform);
+        go.transform.localPosition = new Vector3(localX, localY, -0.01f);
+        go.transform.localScale    = new Vector3(0.26f, 0.24f, 1f);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite       = MakeSquareSprite();
+        sr.color        = new Color(1f, 0.12f, 0.08f); // bright red eyes
+        sr.sortingOrder = 4;
     }
 
     public void Initialise(LevelLoader loader)

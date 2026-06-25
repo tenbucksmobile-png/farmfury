@@ -19,7 +19,7 @@ public class HoraceAnimal : AnimalBase
         bounciness = 0.15f;
         linearDrag = 0.012f;
         base.Awake();
-        _sr.color        = new Color(0.55f, 0.32f, 0.10f); // chestnut brown
+        if (!HasRealSprites) _sr.color = new Color(0.55f, 0.32f, 0.10f); // chestnut brown
         _sr.sortingOrder = 4;
         _col.radius      = 0.40f;
     }
@@ -29,7 +29,7 @@ public class HoraceAnimal : AnimalBase
         _kickArmed = true;
         // Record backward direction from current travel for the eventual kick
         _kickDir   = -_rb.linearVelocity.normalized;
-        _sr.color  = new Color(0.80f, 0.55f, 0.10f); // lighter "armed" tint
+        if (!HasRealSprites) _sr.color = new Color(0.80f, 0.55f, 0.10f); // lighter "armed" tint
     }
 
     protected override void OnCollisionEnter2D(Collision2D col)

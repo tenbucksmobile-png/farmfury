@@ -44,8 +44,8 @@ Full GDD: `C:\Users\Personel\Desktop\FarmFury_GDD_v2.docx`
 
 ### Star System
 - 1★ — all robots dead (progress gate)
-- 2★ — all dead + 1 bird remaining (mastery)
-- 3★ — all dead + 2+ birds remaining (prestige)
+- 2★ — all dead + 1 animal remaining (mastery)
+- 3★ — all dead + 2+ animals remaining (prestige)
 
 ---
 
@@ -66,9 +66,10 @@ Full GDD: `C:\Users\Personel\Desktop\FarmFury_GDD_v2.docx`
 2.5 **Level select** — scrollable grid, star counts, locked/unlocked states. ✅ DONE — `LevelSelectController` singleton; builds its own Canvas (sortingOrder 300, ScaleWithScreenSize 1920×1080); full-screen dark background + "SELECT LEVEL" title; `ScrollRect` + `GridLayoutGroup` (3 columns, 260×200 cards, 28px gap/padding) + `ContentSizeFitter` (grows content height for 18+ levels); `RefreshGrid()` destroys and rebuilds cards each show; unlocked cards are dark-navy Button (onClick → `ForceStartLevel`), locked cards are grey (no Button); stars shown as TMP rich-text "★★★" (gold/grey per count); level N locked if level N-1 has 0 stars. `GameManager.LoadMenu()` now guards with `SceneInBuild()` — stays in Game.unity when MainMenu isn't in build settings, letting `LevelSelectController` handle the Idle state. Wire Scene References now creates a "LevelSelect" GO.
 2.6 **Main menu** — logo, play button, animated farm background. ✅ DONE — `MainMenuController` singleton; Canvas sortingOrder 400; procedural animated background: two tiled `RawImage` hill layers (`TextureWrapMode.Repeat` + `uvRect` scrolling), bobbing sun circle, 3 drifting soft-edged cloud ellipses, bright-green grass strip; "FARM FURY" in 128pt bold gold TMP with dark offset shadow; subtitle; green "▶ PLAY" button → hides panel + calls `LevelSelectController.Instance.Show()`; "World 1 — Meadow Ruins" version label. Shows in `Start()` when `GameState.Idle`. `CatapultLauncher` defers `ForceStartLevel(0)` one frame via `DelayedAutoStart()` coroutine and skips if `MainMenuController.IsVisible`. Level select gains "← BACK" button → `MainMenuController.Instance.Show()`. Wire Scene References creates "MainMenu" GO.
 
-### Phase 3 — Character Roster
-Add remaining 6 animals in GDD world-introduction order:
-Percy → Woolly → Ducky → Horace → Gerald → Billy
+### Phase 3 — Character Roster ✅ DONE
+All 8 animals scripted, all Kling AI art generated, backgrounds batch-removed via `tools/remove_backgrounds.py`, sprites imported to `unity/Assets/Sprites/Characters/<Name>/`, pose sprites wired into all 8 animal prefabs via **FarmFury → Wire Sprites**.
+
+`AnimalBase` now holds 5 pose sprite fields (`_sprIdle`, `_sprLoaded`, `_sprInFlight`, `_sprImpact`, `_sprAbility`) and swaps them at key moments (sling load, launch, collision, ability trigger). All 8 subclasses guard procedural tint colors with `if (!HasRealSprites)` so tints only apply when no real sprite is wired.
 
 #### Art Pipeline (Kling AI → Unity)
 
@@ -77,14 +78,14 @@ Raw sprites live in `assets/<Name>_<Animal>/` — one PNG per pose, white backgr
 **Status (2026-06-25):**
 | Character | Art done | Sprites imported | Script done |
 |---|---|---|---|
-| Cluck (chicken) | ✅ | — | ✅ |
-| Bessie (cow) | ✅ | — | ✅ |
-| Percy (pig) | ✅ | — | ✅ |
-| Woolly (sheep) | ✅ | — | ✅ |
-| Ducky (duck) | ✅ | — | ✅ |
-| Horace (horse) | ✅ | — | ✅ |
-| Gerald (turkey) | ✅ | — | ✅ |
-| Billy (goat) | ✅ | — | ✅ |
+| Cluck (chicken) | ✅ | ✅ | ✅ |
+| Bessie (cow) | ✅ | ✅ | ✅ |
+| Percy (pig) | ✅ | ✅ | ✅ |
+| Woolly (sheep) | ✅ | ✅ | ✅ |
+| Ducky (duck) | ✅ | ✅ | ✅ |
+| Horace (horse) | ✅ | ✅ | ✅ |
+| Gerald (turkey) | ✅ | ✅ | ✅ |
+| Billy (goat) | ✅ | ✅ | ✅ |
 
 **Pose set per character** (maps to game states):
 | File | When used |
@@ -158,8 +159,8 @@ All environment assets generated via Kling AI and stored in `assets/`. Same whit
 
 Unity import target: `unity/Assets/Sprites/` — mirroring the `assets/` folder structure.
 
-### Phase 4 — World 1 Completion
-All 18 Meadow Ruins levels + JSON level generator + validator + environment art + Robot Commander boss
+### Phase 4 — World 1 Completion *(current)*
+All 18 Meadow Ruins levels (6 exist, 12 remaining) + environment art (sky backdrop, launcher sprite, World 1 props) + Robot Commander boss. Robot art sprites (`assets/RobotEnemy/`) not yet imported.
 
 ### Phase 5 — Worlds 2–6
 Each world: new launcher, world physics modifier, new animals, all levels, environment art, music, boss
@@ -218,7 +219,7 @@ Open `unity/` in Unity Hub (Unity 6.5 / 6000.5.0f1). Open `Assets/Scenes/Game.un
 - 1 Unity unit = 50 Phaser pixels
 - `x_unity = x_phaser / 50`
 - `y_unity = -(y_phaser - 770) / 50`
-- Ground surface at Y = 0 (Unity world). Ground GO centre at (14, −0.5). Trebuchet base at (11.2, 0, 0). Camera at (13, 3, −10), orthoSize = 5.
+- Ground surface at Y = 0 (Unity world). Ground GO centre at (14, −0.5). Trebuchet base at (11.2, 0, 0). Camera at (13, 1.5, −10), orthoSize = 3.5 (7u tall — structures fill mid-screen). _cameraRestOffset = (1.8, 1.5) relative to launcher.
 
 ### Physics Settings
 - Gravity Y: −20. Layers: Ground=6, Animal=7, Block=8, Robot=9, Egg=10
@@ -235,16 +236,27 @@ unity/Assets/Scripts/
                           notifies GameManager via DelayedLevelComplete / DelayedLevelFailed coroutines
   Animals/
     AnimalBase.cs       — abstract; Kinematic until Launch(); tap ability via Mouse.current (New Input System)
+                          5 pose sprite fields (_sprIdle/Loaded/InFlight/Impact/Ability); HasRealSprites property
+                          SetLoadedPose() called by CatapultLauncher; sprite swaps at Launch/collision/ability
                           DestroyAnimal() fires OnAnimalDestroyed event after _contactTimeout seconds
     CluckAnimal.cs      — 5-egg cluster bomb in 120° spread; eggs spawned from _eggPrefab (wired by SceneSetup)
     BessieAnimal.cs     — vy-18 slam on tap; shockwave 3.6u radius on Ground-tagged landing
+    PercyAnimal.cs      — Bounce Roll: curls on tap, bounces 3× gaining speed (PhysicsMaterial bounciness boost)
+    WoollyAnimal.cs     — Triple Clone: splits into 3 clones at ±15° on tap (Instantiate + SetAsClone)
+    DuckyAnimal.cs      — Skip Shot: flattens trajectory on tap, skips off Ground up to 3×
+    HoraceAnimal.cs     — Rear Kick: arms on tap; on first structure contact blasts nearby objects backward
+    GeraldAnimal.cs     — Puff Up: inflates 3× on tap (localScale × 3, mass × 4, forward impulse)
+    BillyAnimal.cs      — Headbutt Through: isTrigger window on tap, deals _penetrateDamage via OnTriggerEnter2D
     EggProjectile.cs    — layer 10; flat _damage=15 on first contact only
   Blocks/
     BlockBase.cs        — abstract; spawns Static; wakes ALL blocks on first TakeDamage(); health = baseMaxHealth × area/stdArea
-    WoodBlock.cs        — baseMaxHealth=20, baseMass=5, bounciness=0.2; orange→red colour shift with health
-    StoneBlock.cs       — baseMaxHealth=50, baseMass=8, bounciness=0.1
+                          _baseColor captured in Initialise() (after subclass sets material colour in Awake)
+                          OnHealthChanged: full health → _baseColor, 67% → orange, 33% → red-orange, 0% → red
+    WoodBlock.cs        — baseMaxHealth=20, baseMass=5, bounciness=0.2; starts brown (0.65,0.38,0.12)
+    StoneBlock.cs       — baseMaxHealth=50, baseMass=8, bounciness=0.1; starts grey (0.55,0.55,0.58)
   Enemies/
     RobotEnemy.cs       — HP=35, impulse damage × 2.5; calls LevelLoader.NotifyRobotDestroyed on death
+                          Steel blue-grey body (0.38,0.44,0.54), scale (0.7,0.8); 2 red eye child GOs added in Awake
   Scoring/
     ScoreManager.cs     — singleton; Robot +1000, Wood +100, Stone +200, Egg +50, bird-left bonus +500
                           PlayerPrefs keys: ff_score_N, ff_stars_N
@@ -265,19 +277,26 @@ unity/Assets/Scripts/UI/
 unity/Assets/Editor/
   SceneSetup.cs         — FarmFury > Wire Scene References
                           Wires: GameManager._levels, LevelLoader prefabs+parents, CatapultLauncher,
-                                 Camera, Ground, Egg prefab into CluckAnimal. Always recreates Egg prefab.
+                                 Camera (pos+orthoSize), _cameraRestOffset, Ground, Egg prefab into CluckAnimal.
+                          Always recreates Egg prefab. Sets camera to (13,1.5,-10) orthoSize=3.5.
   LevelDataGenerator.cs — FarmFury > Generate All Level Data
                           Creates/overwrites LevelData assets in Assets/ScriptableObjects/Levels/ for all 6
                           shipped levels. Level filenames must be alphabetical (L01 < L02 ...) — GameManager
                           loads them in that order.
+  SpriteWiring.cs       — FarmFury > Wire Sprites
+                          Sets PPU on all character PNGs in Assets/Sprites/Characters/<Name>/ (per-character PPU
+                          so visual diameter ≈ physics collider). Wires _sprIdle/Loaded/InFlight/Impact/Ability
+                          into each animal prefab via case-insensitive filename matching.
+                          PPU map: Cluck/Percy/Woolly/Billy=1067, Bessie=740, Ducky=1280, Horace=960, Gerald=1010
   BuildScript.cs        — Batch-mode entry points: GenerateLevels, WireScene, BuildWindows, BuildWebGL, BuildAndroid
 ```
 
 ### Editor Menu Items
 | Menu | When to run |
 |---|---|
-| **FarmFury → Wire Scene References** | After adding a new prefab, level, or after clean checkout. Wires all Inspector refs in Game.unity. |
+| **FarmFury → Wire Scene References** | After adding a new prefab, level, or after clean checkout. Wires all Inspector refs in Game.unity. Also sets camera position/orthoSize and _cameraRestOffset. |
 | **FarmFury → Generate All Level Data** | To recreate the 6 World 1 LevelData assets (overwrites existing). Run Wire Scene References after. |
+| **FarmFury → Wire Sprites** | After adding new character art to Assets/Sprites/Characters/. Sets PPU and wires pose sprites into all 8 animal prefabs. |
 
 ### Batch Build Commands (CI / command line)
 ```bash
@@ -331,9 +350,11 @@ Ground            (Ground prefab, tag="Ground", layer=6)
 
 ### Prefabs
 ```
-Prefabs/Animals/    CluckAnimal (yellow), BessieAnimal (pink), Egg (cream)
+Prefabs/Animals/    CluckAnimal, BessieAnimal, PercyAnimal, WoollyAnimal,
+                    DuckyAnimal, HoraceAnimal, GeraldAnimal, BillyAnimal, Egg
+                    (all 8 have pose sprites wired; procedural circle fallback if sprites null)
 Prefabs/Blocks/     WoodBlock (brown), StoneBlock (grey)
-Prefabs/Enemies/    Robot (dark grey, 0.6×0.8 scale)
+Prefabs/Enemies/    Robot (steel blue-grey, 0.7×0.8 scale, red eye child GOs)
 Prefabs/Environment/ Ground (green, static)
 ```
 
@@ -348,7 +369,7 @@ Prefabs/Environment/ Ground (green, static)
 Add `LevelData` ScriptableObject in `Assets/ScriptableObjects/Levels/` with filename `LXX_<Name>.asset` (alphabetical order = load order). Run **Wire Scene References** to add to GameManager's `_levels` array. Or add a `Make(...)` call to `LevelDataGenerator` and run **FarmFury → Generate All Level Data**.
 
 ```
-Y convention: Ground = 0 in Unity. Robot center (h=0.8) → y=0.4.
+Y convention: Ground = 0 in Unity. Robot center (h=0.8, scale 0.7×0.8) → y=0.4.
               Wood center (h=0.4) → y=0.2. Stack upward by block height.
 X convention: Structure zone in Unity coords ≈ 12–18 (600–900 px equivalent).
 ```

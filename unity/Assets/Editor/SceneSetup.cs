@@ -150,17 +150,17 @@ public static class SceneSetup
 
         var so = new SerializedObject(ll);
 
-        SetPrefab(so, "_woodPrefab",   "WoodBlock",    "Assets/Prefabs/Blocks");
-        SetPrefab(so, "_stonePrefab",  "StoneBlock",   "Assets/Prefabs/Blocks");
-        SetPrefab(so, "_cluckPrefab",  "CluckAnimal",  "Assets/Prefabs/Animals");
-        SetPrefab(so, "_bessiePrefab", "BessieAnimal", "Assets/Prefabs/Animals");
-        SetPrefab(so, "_percyPrefab",  "PercyAnimal",  "Assets/Prefabs/Animals");
-        SetPrefab(so, "_woollyPrefab", "WoollyAnimal", "Assets/Prefabs/Animals");
-        SetPrefab(so, "_duckyPrefab",  "DuckyAnimal",  "Assets/Prefabs/Animals");
-        SetPrefab(so, "_horacePrefab", "HoraceAnimal", "Assets/Prefabs/Animals");
-        SetPrefab(so, "_geraldPrefab", "GeraldAnimal", "Assets/Prefabs/Animals");
-        SetPrefab(so, "_billyPrefab",  "BillyAnimal",  "Assets/Prefabs/Animals");
-        SetPrefab(so, "_robotPrefab",  "Robot",        "Assets/Prefabs/Enemies");
+        SetPrefab(so, "_woodPrefab",   "WoodBlock",    "Assets/Prefabs/Blocks",   typeof(WoodBlock));
+        SetPrefab(so, "_stonePrefab",  "StoneBlock",   "Assets/Prefabs/Blocks",   typeof(StoneBlock));
+        SetPrefab(so, "_cluckPrefab",  "CluckAnimal",  "Assets/Prefabs/Animals",  typeof(CluckAnimal));
+        SetPrefab(so, "_bessiePrefab", "BessieAnimal", "Assets/Prefabs/Animals",  typeof(BessieAnimal));
+        SetPrefab(so, "_percyPrefab",  "PercyAnimal",  "Assets/Prefabs/Animals",  typeof(PercyAnimal));
+        SetPrefab(so, "_woollyPrefab", "WoollyAnimal", "Assets/Prefabs/Animals",  typeof(WoollyAnimal));
+        SetPrefab(so, "_duckyPrefab",  "DuckyAnimal",  "Assets/Prefabs/Animals",  typeof(DuckyAnimal));
+        SetPrefab(so, "_horacePrefab", "HoraceAnimal", "Assets/Prefabs/Animals",  typeof(HoraceAnimal));
+        SetPrefab(so, "_geraldPrefab", "GeraldAnimal", "Assets/Prefabs/Animals",  typeof(GeraldAnimal));
+        SetPrefab(so, "_billyPrefab",  "BillyAnimal",  "Assets/Prefabs/Animals",  typeof(BillyAnimal));
+        SetPrefab(so, "_robotPrefab",  "Robot",        "Assets/Prefabs/Enemies",  typeof(RobotEnemy));
 
         so.FindProperty("_blockParent").objectReferenceValue =
             GameObject.Find("BlockParent")?.transform;
@@ -189,6 +189,8 @@ public static class SceneSetup
         var so = new SerializedObject(launcher);
         var ll = Object.FindAnyObjectByType<LevelLoader>();
         so.FindProperty("_levelLoader").objectReferenceValue = ll;
+        // Keep rest offset in sync with PositionCamera() — camera parks at launcher.x+1.8, launcher.y+1.5
+        so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(1.8f, 1.5f);
         so.ApplyModifiedProperties();
 
         Debug.Log("[FarmFury] Launcher: wired LevelLoader reference.");
@@ -238,9 +240,10 @@ public static class SceneSetup
         var cluckComp = contents.GetComponent<CluckAnimal>();
         if (cluckComp != null)
         {
-            var so  = new SerializedObject(cluckComp);
-            var egg = AssetDatabase.LoadAssetAtPath<GameObject>(eggPath);
-            so.FindProperty("_eggPrefab").objectReferenceValue = egg;
+            var so     = new SerializedObject(cluckComp);
+            var eggGO  = AssetDatabase.LoadAssetAtPath<GameObject>(eggPath);
+            var eggRef = eggGO != null ? eggGO.GetComponent<EggProjectile>() : null;
+            so.FindProperty("_eggPrefab").objectReferenceValue = eggRef;
             so.ApplyModifiedProperties();
             PrefabUtility.SaveAsPrefabAsset(contents, cluckPath);
             Debug.Log("[FarmFury] CluckAnimal._eggPrefab wired.");
@@ -295,9 +298,9 @@ public static class SceneSetup
         var cam = Object.FindAnyObjectByType<Camera>();
         if (cam == null) return;
         cam.orthographic     = true;
-        cam.orthographicSize = 5f;   // 10 Unity units tall — covers the full play area
-        cam.transform.position = new Vector3(13f, 3f, -10f);
-        Debug.Log("[FarmFury] Camera positioned at (13, 3, -10), orthoSize=5.");
+        cam.orthographicSize = 3.5f; // 7u tall — structures fill mid-screen, launcher visible left
+        cam.transform.position = new Vector3(13f, 1.5f, -10f);
+        Debug.Log("[FarmFury] Camera positioned at (13, 1.5, -10), orthoSize=3.5.");
     }
 
     // ── Ensure parent holder GameObjects exist in scene ───────────────────────
@@ -317,9 +320,11 @@ public static class SceneSetup
         }
     }
 
-    // ── Helper: find a prefab by name in a folder and assign it ──────────────
+    // ── Helper: find a prefab by name in a folder and assign the correct component ──
+    // componentType: the MonoBehaviour type the field expects (null → assign the GO itself)
 
-    static void SetPrefab(SerializedObject so, string fieldName, string prefabName, string folder)
+    static void SetPrefab(SerializedObject so, string fieldName, string prefabName,
+                          string folder, System.Type componentType = null)
     {
         var guids = AssetDatabase.FindAssets(prefabName + " t:Prefab", new[] { folder });
         if (guids.Length == 0)
@@ -329,7 +334,20 @@ public static class SceneSetup
         }
         var path   = AssetDatabase.GUIDToAssetPath(guids[0]);
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-        so.FindProperty(fieldName).objectReferenceValue = prefab;
+
+        // Fields typed as a Component subclass must receive the component, not the GO.
+        // Assigning a GameObject to a component-typed SerializedProperty serialises as null.
+        UnityEngine.Object target = componentType != null
+            ? prefab.GetComponent(componentType)
+            : prefab;
+
+        if (target == null && componentType != null)
+        {
+            Debug.LogWarning($"[FarmFury] {componentType.Name} not found on prefab '{prefabName}'");
+            target = prefab; // fallback
+        }
+
+        so.FindProperty(fieldName).objectReferenceValue = target;
         Debug.Log($"[FarmFury]   {fieldName} -> {path}");
     }
 }

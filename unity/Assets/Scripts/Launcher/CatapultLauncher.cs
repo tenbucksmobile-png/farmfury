@@ -234,6 +234,7 @@ public class CatapultLauncher : MonoBehaviour
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
         if (_levelLoader == null || !_levelLoader.HasBirdsRemaining) return;
         _readyBird = _levelLoader.CreateNextAnimal(_levelLoader.PeekNextBird(), _launchPoint);
+        _readyBird?.SetLoadedPose();
     }
 
     void Fire()
