@@ -31,5 +31,5 @@ public class LevelData : ScriptableObject
     }
 }
 
-public enum AnimalType { Cluck, Bessie }
+public enum AnimalType { Cluck, Bessie, Percy, Woolly, Ducky, Horace, Gerald, Billy }
 public enum BlockType  { Wood,  Stone  }
