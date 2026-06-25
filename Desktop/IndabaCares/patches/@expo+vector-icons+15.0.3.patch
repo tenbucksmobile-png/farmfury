@@ -1,0 +1,98 @@
+diff --git a/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/lib/create-icon-set.js b/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/lib/create-icon-set.js
+index 5847373..ad1f2bc 100644
+--- a/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/lib/create-icon-set.js
++++ b/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/lib/create-icon-set.js
+@@ -5,8 +5,22 @@ import ensureNativeModuleAvailable from './ensure-native-module-available';
+ import createIconSourceCache from './create-icon-source-cache';
+ import createIconButtonComponent from './icon-button';
+
+-export const NativeIconAPI =
+-  NativeModules.RNVectorIconsManager || NativeModules.RNVectorIconsModule;
++let _NativeIconAPI = null;
++let _NativeIconAPIResolved = false;
++export const NativeIconAPI = new Proxy({}, {
++  get: (_, prop) => {
++    if (!_NativeIconAPIResolved) {
++      _NativeIconAPIResolved = true;
++      // On New Architecture (Bridgeless), NativeModules is BridgelessNativeModuleProxy.
++      // Any property access dispatches to turbomodulemanager.queue → SIGSEGV on iOS 26.
++      // Icons render via expo-font on New Arch — RNVectorIconsManager is not needed.
++      if (!global.expo?.modules) {
++        _NativeIconAPI = NativeModules.RNVectorIconsManager || NativeModules.RNVectorIconsModule || null;
++      }
++    }
++    return _NativeIconAPI ? _NativeIconAPI[prop] : undefined;
++  },
++});
+
+ export const DEFAULT_ICON_SIZE = 12;
+ export const DEFAULT_ICON_COLOR = 'black';
+diff --git a/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/lib/ensure-native-module-available.js b/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/lib/ensure-native-module-available.js
+index 68aad7f..64a68bd 100644
+--- a/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/lib/ensure-native-module-available.js
++++ b/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/lib/ensure-native-module-available.js
+@@ -1,9 +1,9 @@
+ import {NativeModules} from "react-native";
+
+-const NativeIconAPI =
+-  NativeModules.RNVectorIconsManager || NativeModules.RNVectorIconsModule;
+-
+ export default function ensureNativeModuleAvailable() {
++  // On New Architecture (Bridgeless), skip NativeModules access — icons render via expo-font.
++  if (global.expo?.modules) return;
++  const NativeIconAPI = NativeModules.RNVectorIconsManager || NativeModules.RNVectorIconsModule;
+   if (!NativeIconAPI) {
+     throw new Error(
+       'The native RNVectorIcons API is not available, did you properly integrate the module? Please verify your autolinking setup and recompile.'
+diff --git a/node_modules/@expo/vector-icons/build/Ionicons.js b/node_modules/@expo/vector-icons/build/Ionicons.js
+index 992a84b..51ef58b 100644
+--- a/node_modules/@expo/vector-icons/build/Ionicons.js
++++ b/node_modules/@expo/vector-icons/build/Ionicons.js
+@@ -2,5 +2,5 @@
+ import createIconSet from './createIconSet';
+ import font from './vendor/react-native-vector-icons/Fonts/Ionicons.ttf';
+ import glyphMap from './vendor/react-native-vector-icons/glyphmaps/Ionicons.json';
+-export default createIconSet(glyphMap, 'ionicons', font);
++export default createIconSet(glyphMap, 'Ionicons', font);
+ //# sourceMappingURL=Ionicons.js.map
+diff --git a/node_modules/@expo/vector-icons/build/createIconSet.js b/node_modules/@expo/vector-icons/build/createIconSet.js
+index bfdac87..3b29d5e 100644
+--- a/node_modules/@expo/vector-icons/build/createIconSet.js
++++ b/node_modules/@expo/vector-icons/build/createIconSet.js
+@@ -52,17 +52,25 @@
+         };
+         _mounted = false;
+         _icon;
+-        state = {
+-            fontIsLoaded: Font.isLoaded(fontName),
+-        };
+-        async componentDidMount() {
+-            this._mounted = true;
+-            if (!this.state.fontIsLoaded) {
+-                await Font.loadAsync(font);
+-                /* eslint-disable react/no-did-mount-set-state */
+-                this._mounted && this.setState({ fontIsLoaded: true });
+-            }
+-        }
++        state = {
++            // On New Architecture (global.expo?.modules is set), the expo-font config plugin
++            // embeds the font natively via UIAppFonts before JS runs - no async loading needed.
++            fontIsLoaded: Font.isLoaded(fontName) || !!global.expo?.modules,
++        };
++        async componentDidMount() {
++            this._mounted = true;
++            if (!this.state.fontIsLoaded) {
++                try {
++                    await Font.loadAsync(font);
++                }
++                catch (_e) {
++                    // Font.loadAsync failed. On New Architecture the font is available
++                    // via the expo-font config plugin (UIAppFonts). Proceed to render.
++                }
++                /* eslint-disable react/no-did-mount-set-state */
++                this._mounted && this.setState({ fontIsLoaded: true });
++            }
++        }
+         componentWillUnmount() {
+             this._mounted = false;
+         }

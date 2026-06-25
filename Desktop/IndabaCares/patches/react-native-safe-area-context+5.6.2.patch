@@ -1,0 +1,48 @@
+diff --git a/node_modules/react-native-safe-area-context/src/InitialWindow.native.ts b/node_modules/react-native-safe-area-context/src/InitialWindow.native.ts
+index 0000000..0000001 100644
+--- a/node_modules/react-native-safe-area-context/src/InitialWindow.native.ts
++++ b/node_modules/react-native-safe-area-context/src/InitialWindow.native.ts
+@@ -1,10 +1,12 @@
+ import type { Metrics } from './SafeArea.types';
+-import NativeSafeAreaContext from './specs/NativeSafeAreaContext';
+
+-export const initialWindowMetrics = (NativeSafeAreaContext?.getConstants?.()
+-  ?.initialWindowMetrics ?? null) as Metrics | null;
++// Patched: removed NativeSafeAreaContext import and eval-time getConstants() call.
++// TurboModuleRegistry.get('RNCSafeAreaContext') deadlocks on New Architecture
++// (Hermes background bundle-eval thread). initialWindowMetrics is set to null;
++// SafeAreaProvider receives actual inset values via the onInsetsChange event.
++export const initialWindowMetrics: Metrics | null = null;
+
+ /**
+  * @deprecated
+  */
+-export const initialWindowSafeAreaInsets = initialWindowMetrics?.insets;
++export const initialWindowSafeAreaInsets = null;
+diff --git a/node_modules/react-native-safe-area-context/src/specs/NativeSafeAreaContext.ts b/node_modules/react-native-safe-area-context/src/specs/NativeSafeAreaContext.ts
+index 0000000..0000001 100644
+--- a/node_modules/react-native-safe-area-context/src/specs/NativeSafeAreaContext.ts
++++ b/node_modules/react-native-safe-area-context/src/specs/NativeSafeAreaContext.ts
+@@ -20,4 +20,21 @@
+   };
+ }
+
+-export default TurboModuleRegistry.get<Spec>('RNCSafeAreaContext');
++// Patched: TurboModuleRegistry.get('RNCSafeAreaContext') at module-eval time
++// deadlocks on New Architecture (Hermes background bundle-eval thread cannot
++// instantiate native modules — requires main thread). Defer to first property
++// access via lazy Proxy (same pattern as expo-modules-core patch).
++let _m: Spec | null | undefined;
++function _get(): Spec | null {
++  if (_m === undefined) _m = TurboModuleRegistry.get<Spec>('RNCSafeAreaContext');
++  return _m;
++}
++export default new Proxy({} as Spec, {
++  get(_t, prop, receiver) {
++    const m = _get();
++    if (!m) return undefined;
++    const v = Reflect.get(m, prop, receiver);
++    return typeof v === 'function' ? v.bind(m) : v;
++  },
++  has(_t, prop) { return !!_get() && prop in _get()!; },
++}) as unknown as Spec | null;

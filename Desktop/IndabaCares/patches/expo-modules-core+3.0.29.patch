@@ -1,0 +1,205 @@
+diff --git a/node_modules/expo-modules-core/src/NativeModulesProxy.native.ts b/node_modules/expo-modules-core/src/NativeModulesProxy.native.ts
+index d34fa77..cafe123 100644
+--- a/node_modules/expo-modules-core/src/NativeModulesProxy.native.ts
++++ b/node_modules/expo-modules-core/src/NativeModulesProxy.native.ts
+@@ -7,80 +7,135 @@
+
+ import type { ProxyNativeModule } from './NativeModulesProxy.types';
+
+-const LegacyNativeProxy = NativeModules?.NativeUnimoduleProxy;
+-// Fixes `cannot find name 'global'.` in tests
+-// @ts-ignore
+-const ExpoNativeProxy = global.expo?.modules?.NativeModulesProxy;
++// Patched: NativeModules.NativeUnimoduleProxy accessed at module-eval time (or first use)
++// crashes on New Architecture (BridgelessNativeModuleProxy property access triggers
++// turbomodulemanager.queue dispatch → NSException → SIGABRT on iOS 26). Defer all
++// NativeModules property access to first use via lazy initialization, and NEVER access
++// NativeModules.* when running on New Architecture (detected via global.expo?.modules).
+
+ const modulesConstantsKey = 'modulesConstants';
+ const exportedMethodsKey = 'exportedMethods';
+
+-/**
+- * @deprecated `NativeModulesProxy` is deprecated and might be removed in the future releases.
+- * Use `requireNativeModule` or `requireOptionalNativeModule` instead.
+- */
+-const NativeModulesProxy: Record<string, ProxyNativeModule> = {};
++let _real: Record<string, ProxyNativeModule> | null = null;
++
++function _initialize(): Record<string, ProxyNativeModule> {
++  // Fixes `cannot find name 'global'.` in tests
++  // @ts-ignore
++  const ExpoNativeProxy = global.expo?.modules?.NativeModulesProxy;
++  // New Architecture is detected by the presence of global.expo.modules (the JSI module registry).
++  // IMPORTANT: global.expo?.modules?.NativeModulesProxy may be null even on New Architecture
++  // because NativeModulesProxy is a deprecated legacy API that may not be registered in the
++  // JSI module registry in newer Expo SDKs. Using only .NativeModulesProxy as the New Arch
++  // indicator causes a false-negative → falls through to NativeModules.* access → crash.
++  // @ts-ignore
++  const isNewArch = typeof global !== 'undefined' && !!global.expo?.modules;
++
++  if (_real !== null) {
++    // If previously cached as empty because ExpoNativeProxy was not yet available,
++    // and it is now available, reinitialize to pick up the real proxy.
++    if (ExpoNativeProxy && Object.keys(_real).length === 0) {
++      _real = null;
++    } else {
++      return _real;
++    }
++  }
++  _real = {};
++
++  // On New Architecture, NEVER access NativeModules.* — BridgelessNativeModuleProxy
++  // routes every property access through turbomodulemanager.queue → void method dispatch
++  // → NSException → SIGABRT on iOS 26. If ExpoNativeProxy is unavailable on New Arch,
++  // return an empty proxy (NativeModulesProxy is deprecated; modern SDK modules use
++  // requireNativeModule() directly and do not go through NativeModulesProxy at all).
++  const LegacyNativeProxy = (ExpoNativeProxy || isNewArch) ? null : (NativeModules?.NativeUnimoduleProxy ?? null);
+
+-if (LegacyNativeProxy) {
+-  // use JSI proxy if available, fallback to legacy RN proxy
+   const NativeProxy = ExpoNativeProxy ?? LegacyNativeProxy;
+
+-  Object.keys(NativeProxy[exportedMethodsKey]).forEach((moduleName) => {
+-    // copy constants
+-    NativeModulesProxy[moduleName] = NativeProxy[modulesConstantsKey][moduleName] || {};
+-
+-    // copy methods
+-    // TODO(@kitten): Annotate `NativeProxy` with abstract types to avoid implicit `any`
+-    NativeProxy[exportedMethodsKey][moduleName].forEach((methodInfo: any) => {
+-      NativeModulesProxy[moduleName][methodInfo.name] = (...args: unknown[]): Promise<any> => {
+-        // Use the new proxy to call methods on legacy modules, if possible.
+-        if (ExpoNativeProxy?.callMethod) {
+-          return ExpoNativeProxy.callMethod(moduleName, methodInfo.name, args);
+-        }
+-
+-        // Otherwise fall back to the legacy proxy.
+-        // This is deprecated and might be removed in SDK47 or later.
+-        const { key, argumentsCount } = methodInfo;
+-        if (argumentsCount !== args.length) {
+-          return Promise.reject(
+-            new Error(
+-              `Native method ${moduleName}.${methodInfo.name} expects ${argumentsCount} ${
+-                argumentsCount === 1 ? 'argument' : 'arguments'
+-              } but received ${args.length}`
+-            )
+-          );
+-        }
+-        return LegacyNativeProxy.callMethod(moduleName, key, args);
+-      };
++  if (NativeProxy) {
++    // use JSI proxy if available, fallback to legacy RN proxy
++
++    Object.keys(NativeProxy[exportedMethodsKey]).forEach((moduleName) => {
++      // copy constants
++      _real![moduleName] = NativeProxy[modulesConstantsKey][moduleName] || {};
++
++      // copy methods
++      // TODO(@kitten): Annotate `NativeProxy` with abstract types to avoid implicit `any`
++      NativeProxy[exportedMethodsKey][moduleName].forEach((methodInfo: any) => {
++        _real![moduleName][methodInfo.name] = (...args: unknown[]): Promise<any> => {
++          // Use the new proxy to call methods on legacy modules, if possible.
++          if (ExpoNativeProxy?.callMethod) {
++            return ExpoNativeProxy.callMethod(moduleName, methodInfo.name, args);
++          }
++
++          // Otherwise fall back to the legacy proxy.
++          // This is deprecated and might be removed in SDK47 or later.
++          const { key, argumentsCount } = methodInfo;
++          if (argumentsCount !== args.length) {
++            return Promise.reject(
++              new Error(
++                `Native method ${moduleName}.${methodInfo.name} expects ${argumentsCount} ${
++                  argumentsCount === 1 ? 'argument' : 'arguments'
++                } but received ${args.length}`
++              )
++            );
++          }
++          return LegacyNativeProxy!.callMethod(moduleName, key, args);
++        };
++      });
++
++      // These are called by EventEmitter (which is a wrapper for NativeEventEmitter)
++      // only on iOS, and they use iOS-specific native module, EXReactNativeEventEmitter.
++      //
++      // On Android only {start,stop}Observing are called on the native module
++      // and these should be exported as Expo methods.
++      //
++      // Before the RN 65, addListener/removeListeners weren't called on Android. However, it no longer stays true.
++      // See https://github.com/facebook/react-native/commit/f5502fbda9fe271ff6e1d0da773a3a8ee206a453.
++      // That's why, we check if the `EXReactNativeEventEmitter` exists and only if yes, we use it in the listener implementation.
++      // Otherwise, those methods are NOOP.
++      // NativeModules.EXReactNativeEventEmitter is only accessed on legacy arch (LegacyNativeProxy
++      // path) -- same turbomodulemanager.queue risk applies on New Architecture.
++      if (LegacyNativeProxy && NativeModules.EXReactNativeEventEmitter) {
++        _real![moduleName].addListener = (...args) =>
++          NativeModules.EXReactNativeEventEmitter.addProxiedListener(moduleName, ...args);
++        _real![moduleName].removeListeners = (...args) =>
++          NativeModules.EXReactNativeEventEmitter.removeProxiedListeners(moduleName, ...args);
++      } else {
++        // Fixes on Android:
++        // WARN  `new NativeEventEmitter()` was called with a non-null argument without the required `addListener` method.
++        // WARN  `new NativeEventEmitter()` was called with a non-null argument without the required `removeListeners` method.
++        _real![moduleName].addListener = () => {};
++        _real![moduleName].removeListeners = () => {};
++      }
+     });
++  } else {
++    console.warn(
++      `The "EXNativeModulesProxy" native module is not exported through NativeModules; verify that expo-modules-core's native code is linked properly`
++    );
++  }
+
+-    // These are called by EventEmitter (which is a wrapper for NativeEventEmitter)
+-    // only on iOS, and they use iOS-specific native module, EXReactNativeEventEmitter.
+-    //
+-    // On Android only {start,stop}Observing are called on the native module
+-    // and these should be exported as Expo methods.
+-    //
+-    // Before the RN 65, addListener/removeListeners weren't called on Android. However, it no longer stays true.
+-    // See https://github.com/facebook/react-native/commit/f5502fbda9fe271ff6e1d0da773a3a8ee206a453.
+-    // That's why, we check if the `EXReactNativeEventEmitter` exists and only if yes, we use it in the listener implementation.
+-    // Otherwise, those methods are NOOP.
+-    if (NativeModules.EXReactNativeEventEmitter) {
+-      NativeModulesProxy[moduleName].addListener = (...args) =>
+-        NativeModules.EXReactNativeEventEmitter.addProxiedListener(moduleName, ...args);
+-      NativeModulesProxy[moduleName].removeListeners = (...args) =>
+-        NativeModules.EXReactNativeEventEmitter.removeProxiedListeners(moduleName, ...args);
+-    } else {
+-      // Fixes on Android:
+-      // WARN  `new NativeEventEmitter()` was called with a non-null argument without the required `addListener` method.
+-      // WARN  `new NativeEventEmitter()` was called with a non-null argument without the required `removeListeners` method.
+-      NativeModulesProxy[moduleName].addListener = () => {};
+-      NativeModulesProxy[moduleName].removeListeners = () => {};
+-    }
+-  });
+-} else {
+-  console.warn(
+-    `The "EXNativeModulesProxy" native module is not exported through NativeModules; verify that expo-modules-core's native code is linked properly`
+-  );
++  return _real;
+ }
+
++/**
++ * @deprecated `NativeModulesProxy` is deprecated and might be removed in the future releases.
++ * Use `requireNativeModule` or `requireOptionalNativeModule` instead.
++ */
++const NativeModulesProxy: Record<string, ProxyNativeModule> = new Proxy(
++  {} as Record<string, ProxyNativeModule>,
++  {
++    get(_t, prop, receiver) {
++      return Reflect.get(_initialize(), prop, receiver);
++    },
++    has(_t, prop) {
++      return prop in _initialize();
++    },
++    ownKeys() {
++      return Reflect.ownKeys(_initialize());
++    },
++    getOwnPropertyDescriptor(_t, prop) {
++      return Reflect.getOwnPropertyDescriptor(_initialize(), prop);
++    },
++  }
++);
++
+ export default NativeModulesProxy;

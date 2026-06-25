@@ -1,0 +1,21 @@
+diff --git a/node_modules/expo-image/src/ImageModule.ts b/node_modules/expo-image/src/ImageModule.ts
+index 0000000..0000001 100644
+--- a/node_modules/expo-image/src/ImageModule.ts
++++ b/node_modules/expo-image/src/ImageModule.ts
+@@ -3,3 +3,15 @@
+ import type { ImageNativeModule } from './Image.types';
+
+-export default requireNativeModule<ImageNativeModule>('ExpoImage');
++// Patched: requireNativeModule('ExpoImage') at module-eval time -> iOS 26 SIGABRT.
++let _m: ImageNativeModule | undefined;
++function _get(): ImageNativeModule {
++  if (_m === undefined) _m = requireNativeModule<ImageNativeModule>('ExpoImage');
++  return _m;
++}
++export default new Proxy({} as ImageNativeModule, {
++  get(_t, prop, receiver) {
++    const m = _get();
++    const v = Reflect.get(m, prop, receiver);
++    return typeof v === 'function' ? v.bind(m) : v;
++  },
++}) as unknown as ImageNativeModule;

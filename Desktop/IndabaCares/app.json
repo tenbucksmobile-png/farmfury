@@ -1,0 +1,122 @@
+{
+  "expo": {
+    "name": "IndabaCares",
+    "slug": "indabacares",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/usedlogo.png",
+    "scheme": "indabacares",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.indabacares.app",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Allow IndabaCares to access your camera to take profile photos.",
+        "NSPhotoLibraryUsageDescription": "Allow IndabaCares to access your photos to upload your profile photo."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/usedlogo.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.indabacares.app",
+      "googleServicesFile": "./google-services.json",
+      "jsEngine": "hermes",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
+      ],
+      "allowBackup": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 24,
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.facebook.react.turbomodule.** { *; }\n-keep class com.facebook.react.fabric.** { *; }\n-keep class com.swmansion.reanimated.** { *; }\n-keep class com.swmansion.gesturehandler.** { *; }\n-dontwarn com.facebook.react.**\n-dontwarn okio.**\n-dontwarn okhttp3.**",
+            "enableMinifyInReleaseBuilds": true
+          }
+        }
+      ],
+      "expo-router",
+      "expo-secure-store",
+      "./plugins/withPrivacyManifest",
+      "./plugins/withNetworkSecurityConfig",
+      "./plugins/withAdiRegistration",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#7C3AED"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow IndabaCares to access your photos to upload your profile avatar.",
+          "cameraPermission": "Allow IndabaCares to use your camera to take profile photos.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2769acb0-54c1-4935-9da1-864c41506d37"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2769acb0-54c1-4935-9da1-864c41506d37",
+      "checkOnLaunch": "NEVER"
+    }
+  }
+}

@@ -17,6 +17,9 @@ public static class SceneSetup
         EnsureParents();     // BlockParent, RobotParent GameObjects
         EnsureGround();      // Static ground plane with collider + renderer
         EnsureEggPrefab();   // Create Egg prefab + wire into CluckAnimal prefab
+        EnsureHUD();         // HUDController GO (builds Canvas at runtime)
+        EnsureLevelSelect(); // LevelSelectController GO (Canvas sortingOrder 300)
+        EnsureMainMenu();    // MainMenuController GO (Canvas sortingOrder 400)
         WireGameManager();   // _levels array
         WireLevelLoader();   // 5 prefab refs + 2 parent transforms
         WireLauncher();      // CatapultLauncher + LevelLoader ref
@@ -25,6 +28,51 @@ public static class SceneSetup
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
         Debug.Log("[FarmFury] Scene wiring complete. Game.unity saved.");
+    }
+
+    // ── HUD: create GO + attach HUDController ────────────────────────────────
+
+    static void EnsureHUD()
+    {
+        var go = GameObject.Find("HUD");
+        if (go == null)
+        {
+            go = new GameObject("HUD");
+            Debug.Log("[FarmFury] Created 'HUD' GameObject.");
+        }
+        if (go.GetComponent<HUDController>() == null)
+            go.AddComponent<HUDController>();
+        Debug.Log("[FarmFury] HUD: HUDController component ensured.");
+    }
+
+    // ── MainMenuController ────────────────────────────────────────────────────────
+
+    static void EnsureMainMenu()
+    {
+        var go = GameObject.Find("MainMenu");
+        if (go == null)
+        {
+            go = new GameObject("MainMenu");
+            Debug.Log("[FarmFury] Created 'MainMenu' GameObject.");
+        }
+        if (go.GetComponent<MainMenuController>() == null)
+            go.AddComponent<MainMenuController>();
+        Debug.Log("[FarmFury] MainMenu: MainMenuController component ensured.");
+    }
+
+    // ── LevelSelectController ────────────────────────────────────────────────────
+
+    static void EnsureLevelSelect()
+    {
+        var go = GameObject.Find("LevelSelect");
+        if (go == null)
+        {
+            go = new GameObject("LevelSelect");
+            Debug.Log("[FarmFury] Created 'LevelSelect' GameObject.");
+        }
+        if (go.GetComponent<LevelSelectController>() == null)
+            go.AddComponent<LevelSelectController>();
+        Debug.Log("[FarmFury] LevelSelect: LevelSelectController component ensured.");
     }
 
     // ── GameManager: wire the levels array ────────────────────────────────────

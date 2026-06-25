@@ -1,0 +1,21 @@
+diff --git a/node_modules/react-native-svg/src/fabric/NativeSvgViewModule.ts b/node_modules/react-native-svg/src/fabric/NativeSvgViewModule.ts
+index 0000000..0000001 100644
+--- a/node_modules/react-native-svg/src/fabric/NativeSvgViewModule.ts
++++ b/node_modules/react-native-svg/src/fabric/NativeSvgViewModule.ts
+@@ -13,3 +13,15 @@
+ }
+
+-export default TurboModuleRegistry.getEnforcing<Spec>('RNSVGSvgViewModule');
++// Patched: TurboModuleRegistry.getEnforcing at module-eval time -> iOS 26 SIGABRT.
++let _m: Spec | undefined;
++function _get(): Spec {
++  if (_m === undefined) _m = TurboModuleRegistry.getEnforcing<Spec>('RNSVGSvgViewModule');
++  return _m;
++}
++export default new Proxy({} as Spec, {
++  get(_t, prop, receiver) {
++    const m = _get();
++    const v = Reflect.get(m, prop, receiver);
++    return typeof v === 'function' ? v.bind(m) : v;
++  },
++}) as unknown as Spec;

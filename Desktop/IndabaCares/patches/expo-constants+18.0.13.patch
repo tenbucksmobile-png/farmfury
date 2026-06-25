@@ -1,0 +1,51 @@
+diff --git a/node_modules/expo-constants/build/Constants.js b/node_modules/expo-constants/build/Constants.js
+index d14277e..df7df60 100644
+--- a/node_modules/expo-constants/build/Constants.js
++++ b/node_modules/expo-constants/build/Constants.js
+@@ -23,15 +23,9 @@ if (ExpoUpdates) {
+ }
+ // If dev-launcher defines a non-empty manifest, prefer that one
+ let rawDevLauncherManifest = null;
+-if (NativeModules.EXDevLauncher) {
+-    let devLauncherManifest;
+-    if (NativeModules.EXDevLauncher.manifestString) {
+-        devLauncherManifest = JSON.parse(NativeModules.EXDevLauncher.manifestString);
+-    }
+-    if (devLauncherManifest && Object.keys(devLauncherManifest).length > 0) {
+-        rawDevLauncherManifest = devLauncherManifest;
+-    }
+-}
++// Patched: NativeModules.EXDevLauncher at module-eval time deadlocks on New Architecture
++// (BridgelessNativeModuleProxy routes all property access through turbomodulemanager.queue
++// on Hermes BG thread). EXDevLauncher is only present in expo-dev-client; never in production.
+ // Fall back to ExponentConstants.manifest if we don't have one from Updates
+ let rawAppConfig = null;
+ if (ExponentConstants && ExponentConstants.manifest) {
+@@ -167,7 +161,27 @@ function isEmbeddedManifest(manifest) {
+ function isExpoUpdatesManifest(manifest) {
+     return 'metadata' in manifest;
+ }
++// Lazy-init flag: ExponentConstants returns null at bundle-eval time on the Hermes background
++// thread (TurboModuleRegistry not yet ready). getManifest() is only called from property getters,
++// which run on the main JS thread post-render — safe to call requireOptionalNativeModule there.
++let _nativeInitAttempted = false;
+ function getManifest(suppressWarning = false) {
++    if (!rawManifest && !_nativeInitAttempted) {
++        const ec = requireOptionalNativeModule('ExponentConstants');
++        if (ec) {
++            // Only lock the flag when we actually got the module. If ec is null (Hermes BG
++            // thread, module not yet registered), leave _nativeInitAttempted=false so the
++            // next call (always main-thread post-render) retries and succeeds.
++            _nativeInitAttempted = true;
++            if (ec.manifest) {
++                const appConfig = ec.manifest;
++                rawAppConfig = typeof appConfig === 'string' ? JSON.parse(appConfig) : appConfig;
++                rawManifest = rawUpdatesManifest ?? rawDevLauncherManifest ?? rawAppConfig;
++            }
++            const { name: _ecName, appOwnership: _ecAo, manifest: _ecManifest, ...ecNc } = ec;
++            Object.assign(constants, ecNc);
++        }
++    }
+     if (!rawManifest) {
+         const invalidManifestType = rawManifest === null ? 'null' : 'undefined';
+         if (nativeConstants.executionEnvironment === ExecutionEnvironment.Bare &&

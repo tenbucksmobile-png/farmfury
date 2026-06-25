@@ -1,0 +1,235 @@
+# =============================================================================
+# IndabaCares — Supabase Project Configuration
+# =============================================================================
+# This file configures the local Supabase development environment.
+# Apply to production via: supabase link && supabase db push
+project_id = "indabacares"
+
+# =============================================================================
+# API (PostgREST)
+# =============================================================================
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 100  # Default pagination limit
+
+[api.tls]
+enabled = false
+
+# =============================================================================
+# Database
+# =============================================================================
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+# =============================================================================
+# Realtime
+# =============================================================================
+[realtime]
+enabled = true
+# Tables added to supabase_realtime publication in migration 006:
+# recognitions, reactions, comments, notifications, leaderboard_cache
+
+# =============================================================================
+# Studio (local dashboard)
+# =============================================================================
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+openai_api_key = "env(OPENAI_API_KEY)"
+
+# =============================================================================
+# Email testing server (local dev)
+# =============================================================================
+[inbucket]
+enabled = true
+port = 54324
+
+# =============================================================================
+# Storage
+# =============================================================================
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[storage.s3_protocol]
+enabled = true
+
+[storage.analytics]
+enabled = false
+max_namespaces = 5
+max_tables = 10
+max_catalogs = 2
+
+[storage.vector]
+enabled = false
+max_buckets = 10
+max_indexes = 5
+
+# =============================================================================
+# Auth Configuration
+# =============================================================================
+[auth]
+enabled = true
+site_url = "http://localhost:3000"                    # Admin web (Next.js)
+additional_redirect_urls = [
+  "http://localhost:3000/**",                         # Admin web
+  "http://localhost:8081/**",                         # Expo dev (React Native)
+  "indabacares://auth/callback",                      # Mobile deep link (production)
+  "exp://localhost:8081/--/auth/callback",            # Expo Go dev
+  "https://tenbucks-mobile.co.za/**",                 # Production admin web
+]
+# The JWT carries app_metadata.company_id and app_metadata.role
+# which are used by every RLS policy.
+jwt_expiry = 3600                                     # 1 hour token lifetime
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+minimum_password_length = 8
+password_requirements = "letters_digits"
+
+# ── Rate Limiting (Supabase built-in) ───────────────────────────────────────
+# Our custom auth_rate_limits table provides additional application-level limiting.
+[auth.rate_limit]
+email_sent = 5
+sms_sent = 5
+anonymous_users = 30
+token_refresh = 150
+sign_in_sign_ups = 30
+token_verifications = 30
+web3 = 30
+
+# ── Email + Password ─────────────────────────────────────────────────────────
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true                            # Require email confirmation
+secure_password_change = false
+max_frequency = "1s"
+otp_length = 6
+otp_expiry = 3600
+
+# In production, configure SMTP:
+# [auth.email.smtp]
+# enabled = true
+# host = "smtp.sendgrid.net"
+# port = 587
+# user = "apikey"
+# pass = "env(SENDGRID_API_KEY)"
+# admin_email = "noreply@indabacares.com"
+# sender_name = "IndabaCares"
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+template = "Your code is {{ .Code }}"
+max_frequency = "5s"
+
+[auth.sms.twilio]
+enabled = false
+account_sid = ""
+message_service_sid = ""
+auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+
+# ── MFA ───────────────────────────────────────────────────────────────────────
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = false
+verify_enabled = false
+
+[auth.mfa.phone]
+enroll_enabled = false
+verify_enabled = false
+otp_length = 6
+template = "Your code is {{ .Code }}"
+max_frequency = "5s"
+
+# ── SSO / SAML (enterprise, future) ──────────────────────────────────────────
+# SSO is configured per-company via the Supabase Dashboard or CLI:
+#   supabase sso add --type saml \
+#     --metadata-url "https://idp.example.com/metadata" \
+#     --domains "example.com"
+#
+# SSO domain -> company mapping is stored in companies.settings:
+#   { "sso_domains": ["example.com"], "sso_provider_id": "..." }
+
+# ── External OAuth Providers (optional, future) ─────────────────────────────
+[auth.external.apple]
+enabled = false
+client_id = ""
+secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+redirect_uri = ""
+url = ""
+skip_nonce_check = false
+email_optional = false
+
+[auth.web3.solana]
+enabled = false
+
+[auth.third_party.firebase]
+enabled = false
+
+[auth.third_party.auth0]
+enabled = false
+
+[auth.third_party.aws_cognito]
+enabled = false
+
+[auth.third_party.clerk]
+enabled = false
+
+[auth.oauth_server]
+enabled = false
+authorization_url_path = "/oauth/consent"
+allow_dynamic_registration = false
+
+# =============================================================================
+# Edge Functions
+# =============================================================================
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+inspector_port = 8083
+deno_version = 2
+
+# =============================================================================
+# Analytics
+# =============================================================================
+[analytics]
+enabled = true
+port = 54327
+backend = "postgres"
+
+# =============================================================================
+# Experimental
+# =============================================================================
+[experimental]
+orioledb_version = ""
+s3_host = "env(S3_HOST)"
+s3_region = "env(S3_REGION)"
+s3_access_key = "env(S3_ACCESS_KEY)"
+s3_secret_key = "env(S3_SECRET_KEY)"

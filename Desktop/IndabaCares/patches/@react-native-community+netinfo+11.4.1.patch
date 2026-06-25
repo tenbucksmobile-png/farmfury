@@ -1,0 +1,23 @@
+diff --git a/node_modules/@react-native-community/netinfo/src/internal/nativeModule.ts b/node_modules/@react-native-community/netinfo/src/internal/nativeModule.ts
+index 0000000..0000001 100644
+--- a/node_modules/@react-native-community/netinfo/src/internal/nativeModule.ts
++++ b/node_modules/@react-native-community/netinfo/src/internal/nativeModule.ts
+@@ -11,5 +11,15 @@
+ import {NetInfoNativeModule} from './privateTypes';
+ 
+-const RNCNetInfo: NetInfoNativeModule = NativeModules.RNCNetInfo;
+-
+-export default RNCNetInfo;
++// Patched: NativeModules.RNCNetInfo at module-eval time on Hermes BG thread
++// causes void TurboModule dispatch on iOS 26 New Architecture -> SIGABRT.
++function _get(): NetInfoNativeModule { return (NativeModules as any).RNCNetInfo; }
++const RNCNetInfo = new Proxy({} as NetInfoNativeModule, {
++  get(_t, prop, receiver) {
++    const m = _get();
++    if (!m) return undefined;
++    const v = Reflect.get(m as any, prop, receiver);
++    return typeof v === 'function' ? v.bind(m) : v;
++  },
++}) as unknown as NetInfoNativeModule;
++
++export default RNCNetInfo;

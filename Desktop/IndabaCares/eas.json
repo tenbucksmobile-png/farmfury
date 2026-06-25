@@ -1,0 +1,49 @@
+{
+  "cli": {
+    "version": ">= 18.0.5",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "review": {
+      "extends": "production",
+      "env": {
+        "EXPO_ROUTER_IMPORT_MODE": "lazy",
+        "EXPO_PUBLIC_REVIEW_MODE": "true",
+        "EXPO_PUBLIC_DEMO_CODE": "DEMO01",
+        "EXPO_PUBLIC_DEMO_HOTEL": "Indaba Hotel",
+        "EXPO_PUBLIC_DEMO_PASSWORD": "DemoViewer1!"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_ROUTER_IMPORT_MODE": "lazy"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "channel": "production",
+      "env": {
+        "EXPO_ROUTER_IMPORT_MODE": "lazy"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "credentialsSource": "remote"
+      },
+      "ios": {
+        "buildConfiguration": "Release",
+        "credentialsSource": "remote"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

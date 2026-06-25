@@ -1,0 +1,23 @@
+diff --git a/node_modules/react-native-gesture-handler/src/specs/NativeRNGestureHandlerModule.ts b/node_modules/react-native-gesture-handler/src/specs/NativeRNGestureHandlerModule.ts
+index 0000000..0000001 100644
+--- a/node_modules/react-native-gesture-handler/src/specs/NativeRNGestureHandlerModule.ts
++++ b/node_modules/react-native-gesture-handler/src/specs/NativeRNGestureHandlerModule.ts
+@@ -24,3 +24,17 @@
+ }
+ 
+-export default TurboModuleRegistry.getEnforcing<Spec>('RNGestureHandlerModule');
++// Patched: TurboModuleRegistry.getEnforcing('RNGestureHandlerModule') at module-eval
++// time dispatches void TurboModule method on Hermes BG thread -> NSException -> SIGABRT
++// on iOS 26 New Architecture (Bridgeless). Defer to first property access via Proxy.
++let _m: Spec | undefined;
++function _get(): Spec {
++  if (_m === undefined) _m = TurboModuleRegistry.getEnforcing<Spec>('RNGestureHandlerModule');
++  return _m;
++}
++export default new Proxy({} as Spec, {
++  get(_t, prop, receiver) {
++    const m = _get();
++    const v = Reflect.get(m, prop, receiver);
++    return typeof v === 'function' ? v.bind(m) : v;
++  },
++}) as unknown as Spec;

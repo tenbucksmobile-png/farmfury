@@ -53,22 +53,69 @@ Full GDD: `C:\Users\Personel\Desktop\FarmFury_GDD_v2.docx`
 
 ### Phase 1 — Core Feel *(current)*
 1.1 **Slingshot fix** — drag the BIRD backward (click bird → pull back → release). ✅ DONE — arm tracks drag, rubber-band line, ArmSnap coroutine.
-1.2 Trajectory arc — dotted style, visible only while dragging, fades at midpoint on harder levels. **CURRENT TASK.**
-1.3 Destruction feedback — block crack states (3 stages), block burst on death, robot flash+explode, screen shake
-1.4 Audio — procedural sounds: launch, wood impact, stone impact, robot death, win fanfare, fail buzzer
-1.5 Camera — smooth follow → smooth pan-back to launcher after landing
+1.2 **Trajectory arc** — dotted style, visible only while dragging, fades at midpoint on harder levels. ✅ DONE — 20 pooled SpriteRenderer dots, physics-accurate (gravity + linearDrag), alpha fade over last 20% of visible window; Level 0 shows full arc, Level 17 fades at midpoint.
+1.3 **Destruction feedback** — block crack states (3 stages), block burst on death, robot flash+explode, screen shake. ✅ DONE — procedural Bresenham crack overlays (2 child SpriteRenderers, shared static sprites), procedural fragment burst (Rigidbody2D, no collider), robot white-flash + radial particle explosion, CameraShake singleton (auto-attached to Launcher GO).
+1.4 **Audio** — procedural sounds: launch, wood impact, stone impact, robot death, win fanfare, fail buzzer. ✅ DONE — AudioManager singleton (auto-attached to Launcher GO); 6 clips built at runtime from DSP primitives (Sine, Noise, Sweep, ADSR); Win/Fail triggered via GameManager.OnStateChanged; hit sounds throttled at 80ms cooldown per block type.
+1.5 **Camera** — smooth follow → smooth pan-back to launcher after landing. ✅ DONE — follow triggers on landing (IsInFlight=false, not fire-time); exponential-decay follow (frame-rate independent, 6 units/s); lands pause 0.8s then SmoothStep pan over 1.2s; _returnPending guards against duplicate coroutines. NOTE: new [SerializeField] camera fields won't take effect until Wire Scene References is re-run or values updated in Inspector.
 
 ### Phase 2 — UI/UX Shell
-2.1 HUD: score (top-center), bird queue (left, animated), pause button
-2.2 Level Complete panel: animated star pop-in (1→2→3 with bounce), score, next/replay
-2.3 Level Failed panel: try again / menu
-2.4 Pause menu: resume/restart/menu, music+SFX toggles
-2.5 Level select: scrollable grid, star counts, locked/unlocked states
-2.6 Main menu: logo, play button, animated farm background
+2.1 **HUD** — score (top-centre), bird queue (bottom-left, animated), pause button (top-right). ✅ DONE — HUDController singleton (auto-Canvas, ScreenSpaceOverlay, ScaleWithScreenSize 1920×1080); score via ScoreManager.OnScoreChanged; bird icons rebuilt via LevelLoader.OnBirdConsumed (+ catch-up if level already Playing in Start); staggered sine-wave bob animation using Time.unscaledTime; pause button toggles Time.timeScale + glyph ❚❚/▶; EventSystem created if missing (ENABLE_INPUT_SYSTEM aware). LevelLoader gained OnBirdConsumed event + BirdQueueSnapshot property. Wire Scene References adds HUD GO.
+2.2 **Level Complete panel** — animated star pop-in (1→2→3 with bounce), score, next/replay. ✅ DONE — panel built inside HUDController (full-screen dark overlay + cream card, sortingOrder=100 same canvas); 3 TMP ★ slots grey on open, earned stars bounce 1→1.42→1 + grey→gold over 0.38s via `PopStar()` coroutine; staggered 0.30s/0.75s/1.20s via `AnimateStars()`; score + "BEST X" / "★ NEW BEST!" populated from ScoreManager at LevelComplete state; REPLAY → `RestartLevel()`, NEXT ▶ → `LoadNextLevel()`; panel hides on any non-LevelComplete state. Added helpers: `MakeCentredText`, `MakePanelButton`, `MakeFullScreenRect`. `using System.Collections` added.
+2.3 **Level Failed panel** — try again / menu. ✅ DONE — panel built inside HUDController (480×300 card, same canvas/sortingOrder); "LEVEL FAILED!" title in deep red, score value, TRY AGAIN → `RestartLevel()`, MENU → `LoadMenu()`; `OnStateChanged` now uses a switch that shows exactly one result panel at a time and hides the other; no animation (instant show/hide).
+2.4 **Pause menu** — resume/restart/menu, music+SFX toggles. ✅ DONE — pause button now shows a 380×340 card overlay (60% dark) instead of just toggling timeScale; RESUME/RESTART/MENU buttons + ♪ MUSIC and ◎ SFX toggle buttons with dark-on / grey-off colour states; `SetPaused(false)` always hides the panel; toggle state persisted via `PlayerPrefs` (`ff_sfx_enabled`, `ff_music_enabled`). `AudioManager` gained `SfxEnabled`/`MusicEnabled` static properties (loaded from PlayerPrefs in Awake) + `SetSfxEnabled()`/`SetMusicEnabled()` methods; `Play()` early-outs if `!SfxEnabled`.
+2.5 **Level select** — scrollable grid, star counts, locked/unlocked states. ✅ DONE — `LevelSelectController` singleton; builds its own Canvas (sortingOrder 300, ScaleWithScreenSize 1920×1080); full-screen dark background + "SELECT LEVEL" title; `ScrollRect` + `GridLayoutGroup` (3 columns, 260×200 cards, 28px gap/padding) + `ContentSizeFitter` (grows content height for 18+ levels); `RefreshGrid()` destroys and rebuilds cards each show; unlocked cards are dark-navy Button (onClick → `ForceStartLevel`), locked cards are grey (no Button); stars shown as TMP rich-text "★★★" (gold/grey per count); level N locked if level N-1 has 0 stars. `GameManager.LoadMenu()` now guards with `SceneInBuild()` — stays in Game.unity when MainMenu isn't in build settings, letting `LevelSelectController` handle the Idle state. Wire Scene References now creates a "LevelSelect" GO.
+2.6 **Main menu** — logo, play button, animated farm background. ✅ DONE — `MainMenuController` singleton; Canvas sortingOrder 400; procedural animated background: two tiled `RawImage` hill layers (`TextureWrapMode.Repeat` + `uvRect` scrolling), bobbing sun circle, 3 drifting soft-edged cloud ellipses, bright-green grass strip; "FARM FURY" in 128pt bold gold TMP with dark offset shadow; subtitle; green "▶ PLAY" button → hides panel + calls `LevelSelectController.Instance.Show()`; "World 1 — Meadow Ruins" version label. Shows in `Start()` when `GameState.Idle`. `CatapultLauncher` defers `ForceStartLevel(0)` one frame via `DelayedAutoStart()` coroutine and skips if `MainMenuController.IsVisible`. Level select gains "← BACK" button → `MainMenuController.Instance.Show()`. Wire Scene References creates "MainMenu" GO.
 
 ### Phase 3 — Character Roster
 Add remaining 6 animals in GDD world-introduction order:
 Percy → Woolly → Ducky → Horace → Gerald → Billy
+
+#### Art Pipeline (Kling AI → Unity)
+
+Raw sprites live in `assets/<Name>_<Animal>/` — one PNG per pose, white background, generated via Kling AI.
+
+**Status (2026-06-24):**
+| Character | Art done | Sprites imported | Script done |
+|---|---|---|---|
+| Cluck (chicken) | ✅ | — | ✅ |
+| Bessie (cow) | ✅ | — | ✅ |
+| Percy (pig) | ✅ | — | — |
+| Woolly (sheep) | — | — | — |
+| Ducky (duck) | — | — | — |
+| Horace (horse) | — | — | — |
+| Gerald (turkey) | — | — | — |
+| Billy (goat) | — | — | — |
+
+**Pose set per character** (maps to game states):
+| File | When used |
+|---|---|
+| `Idle.png` / `Idle2.png` | Waiting in bird queue |
+| `Loaded.png` | Sitting in slingshot cup |
+| `Launch.png` / `Launch2.png` | Release frame (brief) |
+| `InFlight.png` | Main flight sprite |
+| `Impact.png` | On collision |
+| `Trigger.png` / `AbilityTrigger.png` | Ability activation |
+| `Celebrate.png` / `Celebration.png` | Level win |
+| `Defeat.png` | Level fail |
+
+**Sprite sizing spec for Kling AI generation:**
+- **Canvas**: 1024 × 1024 px, square (1:1)
+- **Character fill**: 75–80% of canvas height — character centred, black outline consistent
+- **Background**: white (batch-removed via Python/Pillow script before Unity import)
+- **All 8 characters at same spec** for consistency
+
+Physics radii driving the sizing (set in code, do NOT change):
+- Small animals (Cluck, Percy + most others): `_col.radius = 0.36f` → 0.72u hitbox diameter
+- Bessie: `_col.radius = 0.52f` → 1.04u hitbox diameter
+
+Unity import: PPU per character set so sprite visual ≈ hitbox diameter (handled when sprites are wired in).
+
+**Batch background-removal plan** (run once all 8 characters are done):
+```python
+# Python + Pillow — strips white/near-white backgrounds, saves transparent PNGs
+# Script will live at tools/remove_backgrounds.py
+```
+Output goes to `unity/Assets/Sprites/Characters/<Name>/`.
 
 ### Phase 4 — World 1 Completion
 All 18 Meadow Ruins levels + JSON level generator + validator + environment art + Robot Commander boss
@@ -103,7 +150,7 @@ python -m http.server 8080
 | Gravity | 1.4 |
 | MAX_VEL | 14 px/frame |
 
-### File Order (class order matters)
+### File Order (class order matters in this single-file build)
 1. Module helpers: `getStoredLevel`, `drawStarShape`, `genHillPts`
 2. `LEVELS` array
 3. `Block` → `Animal` → `CluckAnimal` → `BessieAnimal` → `Robot`
@@ -137,29 +184,75 @@ Open `unity/` in Unity Hub (Unity 6.5 / 6000.5.0f1). Open `Assets/Scenes/Game.un
 
 ### Script Architecture
 ```
-Core/
-  GameManager.cs      — singleton (DontDestroyOnLoad); states: Idle/Playing/LevelComplete/LevelFailed
-                        ForceStartLevel(int) boots a level without LoadScene (used for direct Editor play)
-Level/
-  LevelData.cs        — ScriptableObject; JSON-deserializable via FromJson()
-  LevelLoader.cs      — instantiates prefabs; owns bird queue (_birdQueue); TryConsumeBird / PeekNextBird
-Animals/
-  AnimalBase.cs       — abstract; Kinematic until Launch(); tap ability via Mouse.current (New Input System)
-  CluckAnimal.cs      — 5-egg cluster bomb
-  BessieAnimal.cs     — ground slam + shockwave (3.6u radius)
-  EggProjectile.cs    — damage on contact, layer 10
-Blocks/
-  BlockBase.cs        — abstract; spawns Static; wakes ALL blocks on first TakeDamage()
-  WoodBlock.cs / StoneBlock.cs
-Enemies/
-  RobotEnemy.cs       — HP=35, impulse damage
-Scoring/
-  ScoreManager.cs     — singleton, PlayerPrefs persistence
-Launcher/
-  CatapultLauncher.cs — drag-to-aim, trajectory preview, fire, arm animation, camera follow
-Editor/
-  SceneSetup.cs       — FarmFury > Wire Scene References (auto-wires all Inspector refs)
+unity/Assets/Scripts/
+  Core/
+    GameManager.cs      — singleton (DontDestroyOnLoad); states: Idle/Playing/LevelComplete/LevelFailed
+                          ForceStartLevel(int) boots a level without LoadScene (used for direct Editor play)
+  Level/
+    LevelData.cs        — ScriptableObject; birds[], blocks[], robots[] arrays; par bird count
+    LevelLoader.cs      — instantiates prefabs; owns bird queue (_birdQueue); TryConsumeBird / PeekNextBird
+                          notifies GameManager via DelayedLevelComplete / DelayedLevelFailed coroutines
+  Animals/
+    AnimalBase.cs       — abstract; Kinematic until Launch(); tap ability via Mouse.current (New Input System)
+                          DestroyAnimal() fires OnAnimalDestroyed event after _contactTimeout seconds
+    CluckAnimal.cs      — 5-egg cluster bomb in 120° spread; eggs spawned from _eggPrefab (wired by SceneSetup)
+    BessieAnimal.cs     — vy-18 slam on tap; shockwave 3.6u radius on Ground-tagged landing
+    EggProjectile.cs    — layer 10; flat _damage=15 on first contact only
+  Blocks/
+    BlockBase.cs        — abstract; spawns Static; wakes ALL blocks on first TakeDamage(); health = baseMaxHealth × area/stdArea
+    WoodBlock.cs        — baseMaxHealth=20, baseMass=5, bounciness=0.2; orange→red colour shift with health
+    StoneBlock.cs       — baseMaxHealth=50, baseMass=8, bounciness=0.1
+  Enemies/
+    RobotEnemy.cs       — HP=35, impulse damage × 2.5; calls LevelLoader.NotifyRobotDestroyed on death
+  Scoring/
+    ScoreManager.cs     — singleton; Robot +1000, Wood +100, Stone +200, Egg +50, bird-left bonus +500
+                          PlayerPrefs keys: ff_score_N, ff_stars_N
+  Launcher/
+    CatapultLauncher.cs — drag-to-aim slingshot; trajectory preview (LineRenderer); ArmSnap coroutine; camera follow
+
+unity/Assets/Scripts/UI/
+  HUDController.cs         — HUD singleton; Canvas built at runtime; score text, bird-queue icons, pause btn;
+                             Level Complete panel (animated stars, REPLAY/NEXT); Level Failed panel (TRY AGAIN/MENU);
+                             Pause menu (RESUME/RESTART/MENU + ♪ MUSIC / ◎ SFX toggles persisted via PlayerPrefs)
+  LevelSelectController.cs — Level select singleton; Canvas sortingOrder 300; ScrollRect + GridLayoutGroup 3-col grid;
+                             activates on GameState.Idle; ForceStartLevel on card click; RefreshGrid() rebuilds on show;
+                             "← BACK" button → MainMenuController.Instance.Show()
+  MainMenuController.cs    — Main menu singleton; Canvas sortingOrder 400; animated background (tiled RawImage hills,
+                             bobbing sun, drifting clouds); "FARM FURY" logo + "▶ PLAY" → LevelSelectController.Show();
+                             shows on startup (State==Idle); IsVisible guards CatapultLauncher.DelayedAutoStart()
+
+unity/Assets/Editor/
+  SceneSetup.cs         — FarmFury > Wire Scene References
+                          Wires: GameManager._levels, LevelLoader prefabs+parents, CatapultLauncher,
+                                 Camera, Ground, Egg prefab into CluckAnimal. Always recreates Egg prefab.
+  LevelDataGenerator.cs — FarmFury > Generate All Level Data
+                          Creates/overwrites LevelData assets in Assets/ScriptableObjects/Levels/ for all 6
+                          shipped levels. Level filenames must be alphabetical (L01 < L02 ...) — GameManager
+                          loads them in that order.
+  BuildScript.cs        — Batch-mode entry points: GenerateLevels, WireScene, BuildWindows, BuildWebGL, BuildAndroid
 ```
+
+### Editor Menu Items
+| Menu | When to run |
+|---|---|
+| **FarmFury → Wire Scene References** | After adding a new prefab, level, or after clean checkout. Wires all Inspector refs in Game.unity. |
+| **FarmFury → Generate All Level Data** | To recreate the 6 World 1 LevelData assets (overwrites existing). Run Wire Scene References after. |
+
+### Batch Build Commands (CI / command line)
+```bash
+# Compile check
+Unity.exe -batchmode -projectPath unity/ -executeMethod BuildScript.CompileCheck -quit
+
+# Generate levels + wire scene
+Unity.exe -batchmode -projectPath unity/ -executeMethod BuildScript.GenerateLevels -quit
+Unity.exe -batchmode -projectPath unity/ -executeMethod BuildScript.WireScene -quit
+
+# Build targets
+Unity.exe -batchmode -projectPath unity/ -executeMethod BuildScript.BuildWindows -quit
+Unity.exe -batchmode -projectPath unity/ -executeMethod BuildScript.BuildWebGL   -quit
+Unity.exe -batchmode -projectPath unity/ -executeMethod BuildScript.BuildAndroid -quit
+```
+Builds output to `unity/Builds/`. Scene order: Bootstrap → MainMenu → Game.
 
 ### Key Implementation Rules (Unity)
 - **Input System ONLY:** `using UnityEngine.InputSystem;` — `Mouse.current.leftButton.wasPressedThisFrame`, `.isPressed`, `.wasReleasedThisFrame`. `mouse.position.ReadValue()` → `Vector2`. `UnityEngine.Input` is incompatible with this project's Player Settings.
@@ -171,6 +264,7 @@ Editor/
 - **LevelLoader is auto-found:** `CatapultLauncher.Awake()` does `if (_levelLoader == null) _levelLoader = FindAnyObjectByType<LevelLoader>();` — Inspector wiring via Wire Scene References is optional.
 - **[SerializeField] stale value trap:** changing a `[SerializeField]` default in code does NOT affect already-serialised components. Use `private const` for values that must not be overridden (e.g. `BirdClickRadius`).
 - Ground collider maths: `localScale = (60,1,1)`, `BoxCollider2D.size = (1,1)` → world collider = 60×1. Never set both scale AND size to large values (60×60 = 3600 wide).
+- **Effective mass formula:** both dynamic → `(mA × mB) / (mA + mB)`; one static → `movingBody.mass × 0.6`. Impulse threshold for damage: `> 2`. Damage = `impulse × 2.5`.
 
 ### Physics Values (matching prototype)
 | Entity | mass | bounciness | linearDrag |
@@ -196,21 +290,21 @@ Ground            (Ground prefab, tag="Ground", layer=6)
 
 ### Prefabs
 ```
-Prefabs/Animals/    CluckAnimal, BessieAnimal, Egg
+Prefabs/Animals/    CluckAnimal (yellow), BessieAnimal (pink), Egg (cream)
 Prefabs/Blocks/     WoodBlock (brown), StoneBlock (grey)
-Prefabs/Enemies/    Robot (dark grey)
+Prefabs/Enemies/    Robot (dark grey, 0.6×0.8 scale)
 Prefabs/Environment/ Ground (green, static)
 ```
 
 ### Adding a New Animal
-1. Create class extending `AnimalBase`; override `Awake()` (set colour/radius/mass), `TriggerAbility()`
+1. Create class extending `AnimalBase`; override `Awake()` (set colour/radius/mass before `base.Awake()`), implement `TriggerAbility()`
 2. Add prefab to `Prefabs/Animals/`
 3. Add `AnimalType` enum value to `LevelData.cs`
-4. Handle in `LevelLoader.CreateNextAnimal()`, `CatapultLauncher.NextBirdFA()`
+4. Handle in `LevelLoader.CreateNextAnimal()` switch expression, `CatapultLauncher.NextBirdFA()` drag constant
 5. Run **FarmFury → Wire Scene References**
 
 ### Adding a New Level
-Add `LevelData` ScriptableObject in `Assets/ScriptableObjects/Levels/`. Run **Wire Scene References** to add to GameManager's `_levels` array.
+Add `LevelData` ScriptableObject in `Assets/ScriptableObjects/Levels/` with filename `LXX_<Name>.asset` (alphabetical order = load order). Run **Wire Scene References** to add to GameManager's `_levels` array. Or add a `Make(...)` call to `LevelDataGenerator` and run **FarmFury → Generate All Level Data**.
 
 ```
 Y convention: Ground = 0 in Unity. Robot center (h=0.8) → y=0.4.

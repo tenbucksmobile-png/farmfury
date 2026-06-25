@@ -1,0 +1,45 @@
+diff --git a/node_modules/expo-font/build/ExpoFontLoader.js b/node_modules/expo-font/build/ExpoFontLoader.js
+index 0000000..0000001 100644
+--- a/node_modules/expo-font/build/ExpoFontLoader.js
++++ b/node_modules/expo-font/build/ExpoFontLoader.js
+@@ -1,14 +1,29 @@
+ import { requireNativeModule } from 'expo-modules-core';
+-const m = typeof window === 'undefined'
+-    ? // React server mock
+-        {
+-            getLoadedFonts() {
+-                return [];
+-            },
+-            loadAsync() {
+-                return Promise.resolve();
+-            },
+-        }
+-    : requireNativeModule('ExpoFontLoader');
++// Patched: requireNativeModule('ExpoFontLoader') is called at eval time on React Native
++// (typeof window !== 'undefined' in RN/Hermes). On iOS 26 New Architecture (Bridgeless),
++// native module access on Hermes BG bundle-eval thread -> NSException -> SIGABRT.
++// Lazy Proxy defers the access to first property use (component render, main JS thread).
++let _fontMod = null;
++function _getFontMod() {
++  if (!_fontMod) _fontMod = requireNativeModule('ExpoFontLoader');
++  return _fontMod;
++}
++const m = typeof window === 'undefined'
++    ? // React server mock
++        {
++            getLoadedFonts() {
++                return [];
++            },
++            loadAsync() {
++                return Promise.resolve();
++            },
++        }
++    : new Proxy({}, {
++        get(_t, prop, receiver) {
++            const mod = _getFontMod();
++            const val = Reflect.get(mod, prop, receiver);
++            return typeof val === 'function' ? val.bind(mod) : val;
++        }
++    });
+ export default m;
+ //# sourceMappingURL=ExpoFontLoader.js.map

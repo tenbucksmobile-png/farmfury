@@ -22,12 +22,15 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private float _armRestAngle   = -140.4f;
 
     [Header("Camera")]
-    [SerializeField] private float   _returnDelay      = 2f;
-    [SerializeField] private Vector2 _cameraRestOffset = new Vector2(1.8f, 3f);
+    [SerializeField] private float   _returnDelay          = 0.8f;   // seconds after landing before pan-back starts
+    [SerializeField] private float   _cameraFollowSpeed    = 6f;     // exponential follow rate (units/s)
+    [SerializeField] private float   _cameraReturnDuration = 1.2f;   // seconds for the pan-back animation
+    [SerializeField] private Vector2 _cameraRestOffset     = new Vector2(1.8f, 3f);
 
     [Header("Trajectory")]
-    [SerializeField] private int _trajectoryDots     = 20;
-    [SerializeField] private int _trajectorySubsteps = 3;
+    [SerializeField] private int   _trajectoryDots      = 20;
+    [SerializeField] private int   _trajectorySubsteps  = 3;
+    [SerializeField] private float _trajectoryDotRadius = 0.08f;
 
     // Not serialized — value must come from code so Unity can't freeze a stale Inspector value
     private const float BirdClickRadius = 1.2f;
@@ -41,12 +44,14 @@ public class CatapultLauncher : MonoBehaviour
     private AnimalBase _activeAnimal;
     private AnimalBase _readyBird;
     private bool       _cameraFollowing;
+    private bool       _returnPending;    // true once ReturnCamera() has been started for this shot
     private Coroutine  _returnRoutine;
 
     // Renderers
-    private LineRenderer _armLine;
-    private LineRenderer _trajectoryLine;
-    private LineRenderer _rubberBandLine;
+    private LineRenderer   _armLine;
+    private LineRenderer   _rubberBandLine;
+    private SpriteRenderer[] _trajDotRenderers;
+    private static Sprite    _dotSprite;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -54,6 +59,8 @@ public class CatapultLauncher : MonoBehaviour
     {
         if (_camera == null) _camera = Camera.main;
         if (_levelLoader == null) _levelLoader = FindAnyObjectByType<LevelLoader>();
+        if (GetComponent<CameraShake>()   == null) gameObject.AddComponent<CameraShake>();
+        if (GetComponent<AudioManager>()  == null) gameObject.AddComponent<AudioManager>();
 
         // Ensure 2D orthographic view regardless of scene camera settings
         if (_camera != null)
@@ -64,9 +71,9 @@ public class CatapultLauncher : MonoBehaviour
 
         _armAngle = _armRestAngle;
 
-        _armLine        = MakeLine("ArmRenderer",        0.08f, new Color(0.42f, 0.23f, 0.06f));
-        _trajectoryLine = MakeLine("TrajectoryRenderer", 0.05f, new Color(1f, 1f, 0f, 0.75f));
-        _rubberBandLine = MakeLine("RubberBandRenderer", 0.05f, new Color(0.9f, 0.7f, 0.1f, 0.9f));
+        _armLine          = MakeLine("ArmRenderer",        0.08f, new Color(0.42f, 0.23f, 0.06f));
+        _rubberBandLine   = MakeLine("RubberBandRenderer", 0.05f, new Color(0.9f, 0.7f, 0.1f, 0.9f));
+        _trajDotRenderers = CreateDotPool(_trajectoryDots);
     }
 
     void OnEnable()
@@ -88,6 +95,16 @@ public class CatapultLauncher : MonoBehaviour
         DrawArmAt(_armRestAngle);
         SnapCameraToRest();
 
+        // Defer one frame so all Start() methods (including MainMenuController) have run.
+        StartCoroutine(DelayedAutoStart());
+    }
+
+    IEnumerator DelayedAutoStart()
+    {
+        yield return null;
+        // Skip auto-start when the main menu is visible — player navigates via UI.
+        if (MainMenuController.Instance != null && MainMenuController.Instance.IsVisible)
+            yield break;
         if (GameManager.Instance != null && GameManager.Instance.State == GameState.Idle)
             GameManager.Instance.ForceStartLevel(0);
     }
@@ -136,7 +153,19 @@ public class CatapultLauncher : MonoBehaviour
             _readyBird.transform.position = _isDragging ? _pocketPos : _launchPoint;
 
         if (_cameraFollowing && _activeAnimal != null && !_activeAnimal.IsDestroyed)
-            SmoothFollowAnimal();
+        {
+            if (_activeAnimal.IsInFlight)
+            {
+                SmoothFollowAnimal();
+            }
+            else if (!_returnPending)
+            {
+                // Bird has landed — begin the pan-back countdown
+                _returnPending = true;
+                if (_returnRoutine != null) StopCoroutine(_returnRoutine);
+                _returnRoutine = StartCoroutine(ReturnCamera());
+            }
+        }
     }
 
     // ── Input ─────────────────────────────────────────────────────────────────
@@ -191,7 +220,7 @@ public class CatapultLauncher : MonoBehaviour
         if (_isDragging && mouse.leftButton.wasReleasedThisFrame)
         {
             _isDragging = false;
-            _trajectoryLine.positionCount = 0;
+            HideTrajDots();
             _rubberBandLine.positionCount = 0;
             DrawArmAt(_armRestAngle);
             Fire();
@@ -220,19 +249,28 @@ public class CatapultLauncher : MonoBehaviour
         _activeAnimal = _levelLoader.CreateNextAnimal(birdType, _launchPoint);
         _activeAnimal.OnAnimalDestroyed += OnAnimalLanded;
         _activeAnimal.Launch(velocity);
+        AudioManager.Play(AudioManager.Sound.Launch);
 
         StartCoroutine(ArmSnap());
 
         if (_returnRoutine != null) StopCoroutine(_returnRoutine);
         _cameraFollowing = true;
-        _returnRoutine   = StartCoroutine(ReturnCamera());
+        _returnPending   = false;
     }
 
     void OnAnimalLanded(AnimalBase _)
     {
-        _activeAnimal    = null;
-        _cameraFollowing = false;
+        _activeAnimal = null;
         DrawArmAt(_armRestAngle);
+
+        // If the bird was destroyed before a landing was detected (rare edge case),
+        // start the pan-back now so the camera doesn't stay locked forever.
+        if (_cameraFollowing && !_returnPending)
+        {
+            _returnPending = true;
+            if (_returnRoutine != null) StopCoroutine(_returnRoutine);
+            _returnRoutine = StartCoroutine(ReturnCamera());
+        }
 
         if (_levelLoader != null && !_levelLoader.HasBirdsRemaining)
             _levelLoader.NotifyBirdsExhausted();
@@ -244,10 +282,11 @@ public class CatapultLauncher : MonoBehaviour
     {
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
         _activeAnimal                 = null;
-        _isDragging                   = false;
-        _cameraFollowing              = false;
-        _armAngle                     = _armRestAngle;
-        _trajectoryLine.positionCount = 0;
+        _isDragging      = false;
+        _cameraFollowing = false;
+        _returnPending   = false;
+        _armAngle        = _armRestAngle;
+        HideTrajDots();
         _rubberBandLine.positionCount = 0;
         if (_returnRoutine != null) StopCoroutine(_returnRoutine);
         RefreshRestPoint();
@@ -301,23 +340,28 @@ public class CatapultLauncher : MonoBehaviour
         DrawArmAt(_armRestAngle);
     }
 
-    // ── Trajectory preview ────────────────────────────────────────────────────
+    // ── Trajectory preview (dotted arc) ──────────────────────────────────────
 
     void DrawTrajectory()
     {
         Vector2 vel = LaunchVelocity();
-        if (vel.magnitude < 0.1f) { _trajectoryLine.positionCount = 0; return; }
+        if (vel.magnitude < 0.1f) { HideTrajDots(); return; }
 
-        float   grav = Physics2D.gravity.y;
-        float   fa   = NextBirdFA();
-        float   dt   = Time.fixedDeltaTime;
-        var     pts  = new Vector3[_trajectoryDots];
-        Vector2 pos  = _launchPoint;
-        Vector2 v    = vel;
+        float   grav    = Physics2D.gravity.y;
+        float   fa      = NextBirdFA();
+        float   dt      = Time.fixedDeltaTime;
+        float   visible = TrajectoryVisibleFraction();
+        Vector2 pos     = _launchPoint;
+        Vector2 v       = vel;
 
         for (int i = 0; i < _trajectoryDots; i++)
         {
-            pts[i] = new Vector3(pos.x, pos.y, 0f);
+            _trajDotRenderers[i].transform.position = new Vector3(pos.x, pos.y, 0f);
+
+            float t     = i / (float)(_trajectoryDots - 1);
+            float alpha = DotAlpha(t, visible);
+            _trajDotRenderers[i].color = new Color(1f, 1f, 0f, alpha);
+
             for (int s = 0; s < _trajectorySubsteps; s++)
             {
                 v.y += grav * dt;
@@ -325,9 +369,31 @@ public class CatapultLauncher : MonoBehaviour
                 pos += v * dt;
             }
         }
+    }
 
-        _trajectoryLine.positionCount = _trajectoryDots;
-        _trajectoryLine.SetPositions(pts);
+    void HideTrajDots()
+    {
+        if (_trajDotRenderers == null) return;
+        var hidden = new Color(1f, 1f, 0f, 0f);
+        foreach (var sr in _trajDotRenderers) sr.color = hidden;
+    }
+
+    // Dots fade out over the last 20% of the visible window; beyond that, invisible.
+    static float DotAlpha(float t, float visibleFraction)
+    {
+        const float FadeWindow = 0.2f;
+        float fadeStart = visibleFraction - FadeWindow;
+        if (t <= fadeStart)       return 0.85f;
+        if (t <= visibleFraction) return Mathf.InverseLerp(visibleFraction, fadeStart, t) * 0.85f;
+        return 0f;
+    }
+
+    // Earlier levels show the full arc; later levels fade out past the midpoint.
+    // Level 0 → 1.0, Level 17 → 0.5 (18 World-1 levels).
+    static float TrajectoryVisibleFraction()
+    {
+        int idx = GameManager.Instance?.CurrentLevelIndex ?? 0;
+        return Mathf.Lerp(1f, 0.5f, Mathf.Clamp01(idx / 17f));
     }
 
     // ── Camera ────────────────────────────────────────────────────────────────
@@ -336,11 +402,14 @@ public class CatapultLauncher : MonoBehaviour
     {
         Vector3 target = _activeAnimal.transform.position;
         target.z = _camera.transform.position.z;
-        _camera.transform.position = Vector3.Lerp(_camera.transform.position, target, 0.08f);
+        // Exponential decay: frame-rate independent, same feel at 30 fps and 120 fps
+        float alpha = 1f - Mathf.Exp(-_cameraFollowSpeed * Time.deltaTime);
+        _camera.transform.position = Vector3.Lerp(_camera.transform.position, target, alpha);
     }
 
     IEnumerator ReturnCamera()
     {
+        // Brief pause so the player can see where the bird landed before the camera moves
         yield return new WaitForSeconds(_returnDelay);
         _cameraFollowing = false;
 
@@ -349,12 +418,14 @@ public class CatapultLauncher : MonoBehaviour
             transform.position.y + _cameraRestOffset.y,
             _camera.transform.position.z);
 
-        Vector3 from = _camera.transform.position;
-        float   t    = 0f;
-        while (t < 1f)
+        // SmoothStep pan: ease-in/out over _cameraReturnDuration seconds
+        Vector3 from    = _camera.transform.position;
+        float   elapsed = 0f;
+        while (elapsed < _cameraReturnDuration)
         {
-            t += Time.deltaTime * 0.8f;
-            _camera.transform.position = Vector3.Lerp(from, rest, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t)));
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / _cameraReturnDuration);
+            _camera.transform.position = Vector3.Lerp(from, rest, t);
             yield return null;
         }
         _camera.transform.position = rest;
@@ -416,5 +487,38 @@ public class CatapultLauncher : MonoBehaviour
         lr.positionCount = 0;
         lr.sortingOrder  = 5;
         return lr;
+    }
+
+    SpriteRenderer[] CreateDotPool(int count)
+    {
+        _dotSprite ??= MakeDotSprite(16);
+        float diameter = _trajectoryDotRadius * 2f;
+        var pool = new SpriteRenderer[count];
+        for (int i = 0; i < count; i++)
+        {
+            var go = new GameObject($"TrajDot_{i}");
+            go.transform.SetParent(transform);
+            go.transform.localScale = new Vector3(diameter, diameter, 1f);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite       = _dotSprite;
+            sr.color        = new Color(1f, 1f, 0f, 0f);
+            sr.sortingOrder = 5;
+            pool[i] = sr;
+        }
+        return pool;
+    }
+
+    static Sprite MakeDotSprite(int size)
+    {
+        var   tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
+        float r   = size * 0.5f;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            float dx = x - r + 0.5f, dy = y - r + 0.5f;
+            tex.SetPixel(x, y, dx * dx + dy * dy <= r * r ? Color.white : Color.clear);
+        }
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), (float)size);
     }
 }

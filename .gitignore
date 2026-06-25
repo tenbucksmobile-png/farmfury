@@ -5,3 +5,64 @@ user_data/tradesv3.sqlite-shm
 user_data/tradesv3.sqlite-wal
 __pycache__/
 *.pyc
+# ─── Windows user-profile system directories ───────────────────────────────
+AppData/
+# Windows junction folders (symlinks to AppData sub-paths)
+Application Data/
+Cookies/
+Local Settings/
+My Documents/
+NetHood/
+PrintHood/
+Recent/
+SendTo/
+Start Menu/
+Templates/
+AppDataLocal/
+Contacts/
+Documents/
+Downloads/
+Favorites/
+IntelGraphicsProfiles/
+Links/
+Music/
+OneDrive/
+Pictures/
+Searches/
+Videos/
+"Saved Games"/
+
+# ─── System / registry files ────────────────────────────────────────────────
+NTUSER.DAT
+NTUSER.DAT*
+ntuser.dat*
+ntuser.ini
+*.TM.blf
+*.TMContainer*
+*.regtrans-ms
+bitmap.png
+easyFile-employer.exe
+
+# ─── Dev tool dotfiles (not project-related) ────────────────────────────────
+.android/
+.app-store/
+.cache/
+.config/
+.dbus-keyrings/
+.emulator_console_auth_token
+.expo/
+.gitconfig
+.gradle/
+.idlerc/
+.local/
+.ssh/
+.vscode/
+
+# ─── Claude Code local config (machine-specific) ────────────────────────────
+.claude.json
+
+# ─── Office / temp files that land on Desktop ───────────────────────────────
+*.lnk
+desktop.ini
+~$*
+*.tmp

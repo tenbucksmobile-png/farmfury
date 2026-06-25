@@ -1,0 +1,19 @@
+diff --git a/node_modules/expo-linking/build/ExpoLinking.js b/node_modules/expo-linking/build/ExpoLinking.js
+index 7ea4cb4..8178714 100644
+--- a/node_modules/expo-linking/build/ExpoLinking.js
++++ b/node_modules/expo-linking/build/ExpoLinking.js
+@@ -1,4 +1,13 @@
+ import { requireNativeModule } from 'expo-modules-core';
+-const ExpoLinking = requireNativeModule('ExpoLinking');
++// Lazy-init Proxy: defers requireNativeModule('ExpoLinking') to first property access.
++// Prevents TurboModule access at bundle-eval time on Hermes background thread
++// (called via: expo-router → exports.js → ... → expo-linking → ExpoLinking.js).
++let _expoLinking = null;
++const ExpoLinking = new Proxy({}, {
++    get(_, prop) {
++        if (!_expoLinking) _expoLinking = requireNativeModule('ExpoLinking');
++        return _expoLinking[prop];
++    }
++});
+ export default ExpoLinking;
+ //# sourceMappingURL=ExpoLinking.js.map

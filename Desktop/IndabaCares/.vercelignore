@@ -1,0 +1,11 @@
+node_modules
+.expo
+android
+ios
+assets
+/src
+/app
+/supabase
+*.ipa
+*.apk
+*.aab

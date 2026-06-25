@@ -1,0 +1,24 @@
+diff --git a/node_modules/react-native-screens/src/fabric/NativeScreensModule.ts b/node_modules/react-native-screens/src/fabric/NativeScreensModule.ts
+index 0000000..0000001 100644
+--- a/node_modules/react-native-screens/src/fabric/NativeScreensModule.ts
++++ b/node_modules/react-native-screens/src/fabric/NativeScreensModule.ts
+@@ -6,3 +6,18 @@
+ export interface Spec extends TurboModule {}
+ 
+-export default TurboModuleRegistry.get<Spec>('RNSModule');
++// Patched: TurboModuleRegistry.get('RNSModule') at module-eval time on Hermes BG thread
++// causes void TurboModule dispatch on iOS 26 New Architecture (Bridgeless) -> SIGABRT.
++// Defer to first property access via lazy Proxy.
++let _m: Spec | null | undefined;
++function _get(): Spec | null {
++  if (_m === undefined) _m = TurboModuleRegistry.get<Spec>('RNSModule');
++  return _m;
++}
++export default new Proxy({} as Spec, {
++  get(_t, prop, receiver) {
++    const m = _get();
++    if (!m) return undefined;
++    const v = Reflect.get(m, prop, receiver);
++    return typeof v === 'function' ? v.bind(m) : v;
++  },
++}) as unknown as Spec | null;

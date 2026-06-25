@@ -1,0 +1,105 @@
+diff --git a/node_modules/expo-router/build/utils/splash.js b/node_modules/expo-router/build/utils/splash.js
+index 404c889..c9ec48b 100644
+--- a/node_modules/expo-router/build/utils/splash.js
++++ b/node_modules/expo-router/build/utils/splash.js
+@@ -6,31 +6,51 @@ exports.preventAutoHideAsync = preventAutoHideAsync;
+ exports._internal_preventAutoHideAsync = _internal_preventAutoHideAsync;
+ exports._internal_maybeHideAsync = _internal_maybeHideAsync;
+ const expo_1 = require("expo");
+-const SplashModule = (0, expo_1.requireOptionalNativeModule)('ExpoSplashScreen');
++// Lazy-init: defers requireOptionalNativeModule('ExpoSplashScreen') to first call.
++// Prevents potential TurboModule access at bundle-eval time on Hermes background thread
++// (called via: expo-router → exports.js → views/Splash.js → utils/splash.js).
++let _splashModule;
++let _splashModuleLoaded = false;
++function _getSplashModule() {
++    if (!_splashModuleLoaded) {
++        _splashModule = (0, expo_1.requireOptionalNativeModule)('ExpoSplashScreen');
++        _splashModuleLoaded = true;
++    }
++    return _splashModule;
++}
+ let _initializedErrorHandler = false;
++// Guard: once the splash is dismissed (by hide() or _internal_maybeHideAsync), skip any
++// subsequent hide() call. SplashModule.hide() is a VOID TurboModule dispatch — if the splash
++// view is already gone, the dispatch throws NSException on turbomodulemanager.queue → SIGABRT.
++// The global error handler (installed below) calls hide() for ANY fatal JS error, including
++// errors thrown long after the splash was dismissed (e.g. from deferred hooks at 3–18 s).
++let _splashHidden = false;
+ function hide() {
++    if (_splashHidden) return;
++    const SplashModule = _getSplashModule();
+     if (!SplashModule) {
+         return;
+     }
++    _splashHidden = true;
+     SplashModule.hide();
+ }
+ async function hideAsync() {
+     hide();
+ }
+ async function preventAutoHideAsync() {
++    const SplashModule = _getSplashModule();
+     if (!SplashModule) {
+         return;
+     }
+     return SplashModule.preventAutoHideAsync();
+ }
+ async function _internal_preventAutoHideAsync() {
++    const SplashModule = _getSplashModule();
+     // The internal function might be missing if an app is using an older version of the SplashModule
+     if (!SplashModule || !SplashModule.internalPreventAutoHideAsync) {
+         return false;
+     }
+     if (!_initializedErrorHandler) {
+-        // Append error handling to ensure any uncaught exceptions result in the splash screen being hidden.
+-        // This prevents the splash screen from floating over error screens.
+         if (ErrorUtils?.getGlobalHandler) {
+             const originalHandler = ErrorUtils.getGlobalHandler();
+             ErrorUtils.setGlobalHandler((error, isFatal) => {
+@@ -43,10 +63,13 @@ async function _internal_preventAutoHideAsync() {
+     return SplashModule.internalPreventAutoHideAsync();
+ }
+ async function _internal_maybeHideAsync() {
++    const SplashModule = _getSplashModule();
+     // The internal function might be missing if an app is using an older version of the SplashModule
+     if (!SplashModule || !SplashModule.internalMaybeHideAsync) {
+         return false;
+     }
+-    return SplashModule.internalMaybeHideAsync();
++    const result = await SplashModule.internalMaybeHideAsync();
++    _splashHidden = true;
++    return result;
+ }
+ //# sourceMappingURL=splash.js.map
+diff --git a/node_modules/expo-router/build/utils/statusbar.js b/node_modules/expo-router/build/utils/statusbar.js
+index 47df11a..12ea227 100644
+--- a/node_modules/expo-router/build/utils/statusbar.js
++++ b/node_modules/expo-router/build/utils/statusbar.js
+@@ -7,7 +7,22 @@ exports.canOverrideStatusBarBehavior = void 0;
+ const expo_constants_1 = __importDefault(require("expo-constants"));
+ const react_native_1 = require("react-native");
+ const react_native_is_edge_to_edge_1 = require("react-native-is-edge-to-edge");
+-const hasViewControllerBasedStatusBarAppearance = react_native_1.Platform.OS === 'ios' &&
+-    !!expo_constants_1.default.expoConfig?.ios?.infoPlist?.UIViewControllerBasedStatusBarAppearance;
+-exports.canOverrideStatusBarBehavior = !(0, react_native_is_edge_to_edge_1.isEdgeToEdge)() && !hasViewControllerBasedStatusBarAppearance;
++// Lazy-init: defers Constants.expoConfig access from module-eval time to first property read.
++// Accessing Constants.expoConfig at module-eval time (Hermes BG thread) fires getManifest(),
++// which sets _nativeInitAttempted=true before ExponentConstants is registered — permanently
++// preventing the main-thread lazy-init retry in expo-constants → null expoConfig → resolveScheme
++// throws "expo-linking needs access to expo-constants manifest" → error handler → hide() VOID → SIGABRT.
++let _canOverrideStatusBarBehavior;
++Object.defineProperty(exports, 'canOverrideStatusBarBehavior', {
++    get: function () {
++        if (_canOverrideStatusBarBehavior === undefined) {
++            const hasVCBSA = react_native_1.Platform.OS === 'ios' &&
++                !!expo_constants_1.default.expoConfig?.ios?.infoPlist?.UIViewControllerBasedStatusBarAppearance;
++            _canOverrideStatusBarBehavior = !(0, react_native_is_edge_to_edge_1.isEdgeToEdge)() && !hasVCBSA;
++        }
++        return _canOverrideStatusBarBehavior;
++    },
++    enumerable: true,
++    configurable: true,
++});
+ //# sourceMappingURL=statusbar.js.map
+\ No newline at end of file

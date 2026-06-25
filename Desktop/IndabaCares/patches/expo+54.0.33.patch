@@ -1,0 +1,17 @@
+diff --git a/node_modules/expo/src/Expo.fx.tsx b/node_modules/expo/src/Expo.fx.tsx
+index 0000000..0000001 100644
+--- a/node_modules/expo/src/Expo.fx.tsx
++++ b/node_modules/expo/src/Expo.fx.tsx
+@@ -52,7 +52,11 @@
+ // Disable the "Open debugger to view warnings" React Native DevTools warning in
+ // Expo Go and expo-dev-client, because launching the debugger from there will not
+ // get the correct JS target.
+-const IS_RUNNING_IN_DEV_CLIENT = !!NativeModules.EXDevLauncher;
++// Patched: NativeModules.EXDevLauncher at module-eval time deadlocks on New
++// Architecture (BridgelessNativeModuleProxy routes all property access through
++// turbomodulemanager.queue on Hermes BG thread). This value is only used inside
++// __DEV__ blocks which are false in production Hermes builds.
++const IS_RUNNING_IN_DEV_CLIENT = false;
+ if (__DEV__ && LogBox?.ignoreLogs && (isRunningInExpoGo() || IS_RUNNING_IN_DEV_CLIENT)) {
+   LogBox.ignoreLogs([/Open debugger to view warnings/]);
+ }

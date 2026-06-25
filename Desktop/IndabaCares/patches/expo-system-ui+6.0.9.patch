@@ -1,0 +1,22 @@
+diff --git a/node_modules/expo-system-ui/build/ExpoSystemUI.js b/node_modules/expo-system-ui/build/ExpoSystemUI.js
+index 0000000..0000001 100644
+--- a/node_modules/expo-system-ui/build/ExpoSystemUI.js
++++ b/node_modules/expo-system-ui/build/ExpoSystemUI.js
+@@ -1,3 +1,16 @@
+ import { requireNativeModule } from 'expo-modules-core';
+-export default requireNativeModule('ExpoSystemUI');
++// Patched: requireNativeModule('ExpoSystemUI') at module-eval time on Hermes BG thread
++// causes void TurboModule dispatch on iOS 26 New Architecture (Bridgeless) -> SIGABRT.
++let _m;
++function _get() {
++  if (!_m) _m = requireNativeModule('ExpoSystemUI');
++  return _m;
++}
++export default new Proxy({}, {
++  get(_t, prop, receiver) {
++    const m = _get();
++    const v = Reflect.get(m, prop, receiver);
++    return typeof v === 'function' ? v.bind(m) : v;
++  },
++});
+ //# sourceMappingURL=ExpoSystemUI.js.map
