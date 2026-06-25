@@ -74,17 +74,17 @@ Percy → Woolly → Ducky → Horace → Gerald → Billy
 
 Raw sprites live in `assets/<Name>_<Animal>/` — one PNG per pose, white background, generated via Kling AI.
 
-**Status (2026-06-24):**
+**Status (2026-06-25):**
 | Character | Art done | Sprites imported | Script done |
 |---|---|---|---|
 | Cluck (chicken) | ✅ | — | ✅ |
 | Bessie (cow) | ✅ | — | ✅ |
 | Percy (pig) | ✅ | — | — |
-| Woolly (sheep) | — | — | — |
-| Ducky (duck) | — | — | — |
-| Horace (horse) | — | — | — |
-| Gerald (turkey) | — | — | — |
-| Billy (goat) | — | — | — |
+| Woolly (sheep) | ✅ | — | — |
+| Ducky (duck) | ✅ | — | — |
+| Horace (horse) | ✅ | — | — |
+| Gerald (turkey) | ✅ | — | — |
+| Billy (goat) | ✅ | — | — |
 
 **Pose set per character** (maps to game states):
 | File | When used |
@@ -116,6 +116,47 @@ Unity import: PPU per character set so sprite visual ≈ hitbox diameter (handle
 # Script will live at tools/remove_backgrounds.py
 ```
 Output goes to `unity/Assets/Sprites/Characters/<Name>/`.
+
+#### Environment Art Pipeline (Kling AI → Unity)
+
+All environment assets generated via Kling AI and stored in `assets/`. Same white-background → batch-removal pipeline as characters.
+
+**Backdrops** (`assets/Backdrops/` — 26 files) — sky paintings + launchers + World 1 props:
+
+| Asset | File | Status |
+|---|---|---|
+| **Sky — World 1 Meadow** | `SkyPainting.png` | ✅ |
+| **Sky — World 2 Frozen Tundra** | `FrozenTundra.png` | ✅ |
+| **Sky — World 3 Watermill Village** | `Watermill Village.png` | ✅ |
+| **Sky — World 4 Sky Islands** | `SkyIslands.png` | ✅ |
+| **Sky — World 5 Sunken City** | `SunkenCity.png` | ✅ |
+| **Sky — World 6 Robot Mothership** | `RobotMothership.png` | ✅ |
+| **Launcher — World 1 Barn Trebuchet** | `Trabuchet.png` | ✅ |
+| **Launcher — World 2 Ice Cannon** | `Ice Cannon.png` | ✅ |
+| **Launcher — World 3 Water Wheel** | `WaterWheel.png` | ✅ |
+| **Launcher — World 4 Airdrop Biplane** | `Plane.png` | ✅ |
+| **Launcher — World 5 Torpedo Tube** | `Submarine.png` | ✅ |
+| **Launcher — World 6 Gravity Sling** | `GravitySling.png` | ✅ |
+| World 1 props (14) | FarmSilo, StoneTower, OakTree, GnarledTree, StoneArch, RuinedStoneWall, StoneWall(Tall), Haybail, WoodenCart, Rock, Grass Tuft, WildFlowers, Wooden Barrel, WoodenFence | ✅ |
+
+**Robot Enemy** (`assets/RobotEnemy/` — 12 files):
+- Grunt: Idle, Alert, Hit, Explode, Defeated, ReferenceSheet
+- Commander: Commander, Commander_Alert, Commander_Defeated, Commander_Explode, Commander_Hit
+
+**World Props** (`assets/WorldProps/<World>/`):
+| World | Folder | Files | Status |
+|---|---|---|---|
+| 2 — Frozen Tundra | `IceTundra/` | 12 | ✅ |
+| 3 — Watermill Village | `WatermillVillage/` | 12 | ✅ |
+| 4 — Sky Islands | `SkyIslands/` | 12 | ✅ |
+| 5 — Sunken City | `SunkenCity/` | 13 | ✅ |
+| 6 — Robot Mothership | `RobotMothership/` | 11 | ✅ |
+
+**Sky spec:** 1920×1080 px, no alpha (full painted scene, no white bg).
+**Prop/launcher spec:** 1024×1024 px, white background, element fills 75% of canvas.
+**Robot spec:** 1024×1024 px, white background, pose-per-file.
+
+Unity import target: `unity/Assets/Sprites/` — mirroring the `assets/` folder structure.
 
 ### Phase 4 — World 1 Completion
 All 18 Meadow Ruins levels + JSON level generator + validator + environment art + Robot Commander boss
