@@ -14,20 +14,61 @@ public static class SceneSetup
     {
         var scene = EditorSceneManager.OpenScene("Assets/Scenes/Game.unity", OpenSceneMode.Single);
 
-        EnsureParents();     // BlockParent, RobotParent GameObjects
-        EnsureGround();      // Static ground plane with collider + renderer
-        EnsureEggPrefab();   // Create Egg prefab + wire into CluckAnimal prefab
-        EnsureHUD();         // HUDController GO (builds Canvas at runtime)
-        EnsureLevelSelect(); // LevelSelectController GO (Canvas sortingOrder 300)
-        EnsureMainMenu();    // MainMenuController GO (Canvas sortingOrder 400)
-        WireGameManager();   // _levels array
-        WireLevelLoader();   // 5 prefab refs + 2 parent transforms
-        WireLauncher();      // CatapultLauncher + LevelLoader ref
-        PositionCamera();    // Move camera to see the play area
+        EnsureParents();        // BlockParent, RobotParent GameObjects
+        EnsureGround();         // Static ground plane with collider + renderer
+        EnsureEggPrefab();      // Create Egg prefab + wire into CluckAnimal prefab
+        EnsureAnimalPrefabs();  // Create Percy/Woolly/Ducky/Horace/Gerald/Billy prefabs
+        EnsureHUD();            // HUDController GO (builds Canvas at runtime)
+        EnsureLevelSelect();    // LevelSelectController GO (Canvas sortingOrder 300)
+        EnsureMainMenu();       // MainMenuController GO (Canvas sortingOrder 400)
+        WireGameManager();      // _levels array
+        WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
+        WireLauncher();         // CatapultLauncher + LevelLoader ref
+        PositionCamera();       // Move camera to see the play area
 
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
         Debug.Log("[FarmFury] Scene wiring complete. Game.unity saved.");
+    }
+
+    // ── New animal prefabs (Percy, Woolly, Ducky, Horace, Gerald, Billy) ────────
+
+    static void EnsureAnimalPrefabs()
+    {
+        CreateAnimalPrefab("PercyAnimal",  typeof(PercyAnimal));
+        CreateAnimalPrefab("WoollyAnimal", typeof(WoollyAnimal));
+        CreateAnimalPrefab("DuckyAnimal",  typeof(DuckyAnimal));
+        CreateAnimalPrefab("HoraceAnimal", typeof(HoraceAnimal));
+        CreateAnimalPrefab("GeraldAnimal", typeof(GeraldAnimal));
+        CreateAnimalPrefab("BillyAnimal",  typeof(BillyAnimal));
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+    }
+
+    static void CreateAnimalPrefab(string name, System.Type scriptType)
+    {
+        const string folder = "Assets/Prefabs/Animals";
+        string path = $"{folder}/{name}.prefab";
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null)
+        {
+            Debug.Log($"[FarmFury] {name} prefab already exists — skipped.");
+            return;
+        }
+
+        var go = new GameObject(name);
+        go.layer = 7; // Animal layer
+        go.AddComponent<Rigidbody2D>();
+        go.AddComponent<CircleCollider2D>();
+        go.AddComponent<SpriteRenderer>();
+        go.AddComponent(scriptType);
+
+        // Ensure destination folder exists
+        if (!AssetDatabase.IsValidFolder(folder))
+            AssetDatabase.CreateFolder("Assets/Prefabs", "Animals");
+
+        PrefabUtility.SaveAsPrefabAsset(go, path);
+        Object.DestroyImmediate(go);
+        Debug.Log($"[FarmFury] Created {path}");
     }
 
     // ── HUD: create GO + attach HUDController ────────────────────────────────
@@ -113,6 +154,12 @@ public static class SceneSetup
         SetPrefab(so, "_stonePrefab",  "StoneBlock",   "Assets/Prefabs/Blocks");
         SetPrefab(so, "_cluckPrefab",  "CluckAnimal",  "Assets/Prefabs/Animals");
         SetPrefab(so, "_bessiePrefab", "BessieAnimal", "Assets/Prefabs/Animals");
+        SetPrefab(so, "_percyPrefab",  "PercyAnimal",  "Assets/Prefabs/Animals");
+        SetPrefab(so, "_woollyPrefab", "WoollyAnimal", "Assets/Prefabs/Animals");
+        SetPrefab(so, "_duckyPrefab",  "DuckyAnimal",  "Assets/Prefabs/Animals");
+        SetPrefab(so, "_horacePrefab", "HoraceAnimal", "Assets/Prefabs/Animals");
+        SetPrefab(so, "_geraldPrefab", "GeraldAnimal", "Assets/Prefabs/Animals");
+        SetPrefab(so, "_billyPrefab",  "BillyAnimal",  "Assets/Prefabs/Animals");
         SetPrefab(so, "_robotPrefab",  "Robot",        "Assets/Prefabs/Enemies");
 
         so.FindProperty("_blockParent").objectReferenceValue =

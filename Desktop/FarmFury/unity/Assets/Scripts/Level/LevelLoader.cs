@@ -12,6 +12,12 @@ public class LevelLoader : MonoBehaviour
     [Header("Animal Prefabs")]
     [SerializeField] private CluckAnimal  _cluckPrefab;
     [SerializeField] private BessieAnimal _bessiePrefab;
+    [SerializeField] private PercyAnimal  _percyPrefab;
+    [SerializeField] private WoollyAnimal _woollyPrefab;
+    [SerializeField] private DuckyAnimal  _duckyPrefab;
+    [SerializeField] private HoraceAnimal _horacePrefab;
+    [SerializeField] private GeraldAnimal _geraldPrefab;
+    [SerializeField] private BillyAnimal  _billyPrefab;
 
     [Header("Enemy Prefabs")]
     [SerializeField] private RobotEnemy _robotPrefab;
@@ -77,6 +83,12 @@ public class LevelLoader : MonoBehaviour
         AnimalBase prefab = type switch
         {
             AnimalType.Bessie => _bessiePrefab,
+            AnimalType.Percy  => _percyPrefab,
+            AnimalType.Woolly => _woollyPrefab,
+            AnimalType.Ducky  => _duckyPrefab,
+            AnimalType.Horace => _horacePrefab,
+            AnimalType.Gerald => _geraldPrefab,
+            AnimalType.Billy  => _billyPrefab,
             _                 => _cluckPrefab,
         };
         return Instantiate(prefab, spawnPosition, Quaternion.identity);

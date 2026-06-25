@@ -14,9 +14,9 @@ public abstract class AnimalBase : MonoBehaviour
     [Header("Flight")]
     [SerializeField] private float _contactTimeout = 3f;
 
-    public bool IsInFlight  { get; private set; }
+    public bool IsInFlight  { get; protected set; }
     public bool IsLaunched  { get; private set; }
-    public bool IsDestroyed { get; private set; }
+    public bool IsDestroyed { get; protected set; }
 
     public event Action<AnimalBase> OnAnimalDestroyed;
 
@@ -24,7 +24,7 @@ public abstract class AnimalBase : MonoBehaviour
     protected CircleCollider2D _col;
     protected SpriteRenderer   _sr;
 
-    private bool  _abilityUsed;
+    protected bool _abilityUsed;
     private bool  _contactStarted;
     private float _contactTimer;
 

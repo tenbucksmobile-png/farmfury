@@ -79,12 +79,12 @@ Raw sprites live in `assets/<Name>_<Animal>/` — one PNG per pose, white backgr
 |---|---|---|---|
 | Cluck (chicken) | ✅ | — | ✅ |
 | Bessie (cow) | ✅ | — | ✅ |
-| Percy (pig) | ✅ | — | — |
-| Woolly (sheep) | ✅ | — | — |
-| Ducky (duck) | ✅ | — | — |
-| Horace (horse) | ✅ | — | — |
-| Gerald (turkey) | ✅ | — | — |
-| Billy (goat) | ✅ | — | — |
+| Percy (pig) | ✅ | — | ✅ |
+| Woolly (sheep) | ✅ | — | ✅ |
+| Ducky (duck) | ✅ | — | ✅ |
+| Horace (horse) | ✅ | — | ✅ |
+| Gerald (turkey) | ✅ | — | ✅ |
+| Billy (goat) | ✅ | — | ✅ |
 
 **Pose set per character** (maps to game states):
 | File | When used |
