@@ -18,7 +18,7 @@ public class CluckAnimal : AnimalBase
         bounciness = 0.4f;
         linearDrag = 0.008f;
         base.Awake();
-        if (_sr) { _sr.color = Color.yellow; _sr.sortingOrder = 4; }
+        if (_sr) { if (!HasRealSprites) _sr.color = Color.yellow; _sr.sortingOrder = 4; }
         if (_col) _col.radius = 0.36f; // 18px / 50
     }
 
@@ -50,8 +50,8 @@ public class CluckAnimal : AnimalBase
 
     IEnumerator FlashWhite()
     {
-        if (_sr) _sr.color = Color.white;
+        if (_sr && !HasRealSprites) _sr.color = Color.white;
         yield return new WaitForSeconds(_flashDuration);
-        if (_sr) _sr.color = Color.yellow;
+        if (_sr && !HasRealSprites) _sr.color = Color.yellow;
     }
 }

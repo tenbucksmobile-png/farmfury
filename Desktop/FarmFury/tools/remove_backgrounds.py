@@ -92,7 +92,7 @@ def remove_white_bg(img: Image.Image) -> Image.Image:
 def save(img: Image.Image, out_path: str):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     img.save(out_path)
-    print(f"  → {out_path}")
+    print(f"  -> {out_path}")
 
 def copy_as_is(src: str, out_path: str):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -100,10 +100,14 @@ def copy_as_is(src: str, out_path: str):
         data = f.read()
     with open(out_path, "wb") as f:
         f.write(data)
-    print(f"  → {out_path}  (copied, no removal)")
+    print(f"  -> {out_path}  (copied, no removal)")
 
 def process_with_removal(src: str, out_path: str):
-    img = Image.open(src)
+    try:
+        img = Image.open(src)
+    except Exception as e:
+        print(f"  [SKIP] {src} - {e}")
+        return
     img = remove_white_bg(img)
     save(img, out_path)
 
@@ -159,7 +163,7 @@ if os.path.isdir(world_props_dir):
         if not os.path.isdir(src_dir):
             continue
         out_sub = WORLD_MAP.get(world_folder, world_folder)
-        print(f"  {world_folder} → {out_sub}")
+        print(f"  {world_folder} -> {out_sub}")
         for fname in os.listdir(src_dir):
             if not fname.lower().endswith(".png"):
                 continue

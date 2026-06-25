@@ -20,7 +20,7 @@ public class BillyAnimal : AnimalBase
         bounciness = 0.10f;
         linearDrag = 0.01f;
         base.Awake();
-        _sr.color        = new Color(0.80f, 0.80f, 0.80f); // light grey
+        if (!HasRealSprites) _sr.color = new Color(0.80f, 0.80f, 0.80f); // light grey
         _sr.sortingOrder = 4;
         _col.radius      = 0.36f;
     }
@@ -32,7 +32,7 @@ public class BillyAnimal : AnimalBase
         // Ensure minimum speed so Billy doesn't stall inside a structure
         if (_rb.linearVelocity.magnitude < _minSpeed)
             _rb.linearVelocity = _rb.linearVelocity.normalized * _minSpeed;
-        _sr.color = new Color(0.35f, 0.35f, 0.35f); // darker "charging" tint
+        if (!HasRealSprites) _sr.color = new Color(0.35f, 0.35f, 0.35f); // darker "charging" tint
     }
 
     IEnumerator PenetrateWindow()
@@ -42,7 +42,7 @@ public class BillyAnimal : AnimalBase
         yield return new WaitForSeconds(_penetrateDuration);
         _col.isTrigger  = false;
         _penetrating    = false;
-        _sr.color       = new Color(0.80f, 0.80f, 0.80f);
+        if (!HasRealSprites) _sr.color = new Color(0.80f, 0.80f, 0.80f);
     }
 
     // While trigger is active, deal damage to anything Billy overlaps.

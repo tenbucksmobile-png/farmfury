@@ -204,7 +204,7 @@ public class HUDController : MonoBehaviour
                       size:      new Vector2(58f, 58f));
 
         _pauseGlyph = MakeStretchText(btn.transform, "PauseGlyph",
-                          fontSize: 24f, text: "❚❚",
+                          fontSize: 24f, text: "II",
                           color: Color.white, align: TextAlignmentOptions.Center);
 
         var b   = btn.gameObject.AddComponent<Button>();
@@ -285,7 +285,7 @@ public class HUDController : MonoBehaviour
     {
         _isPaused          = pause;
         Time.timeScale     = pause ? 0f : 1f;
-        if (_pauseGlyph != null) _pauseGlyph.text = pause ? "▶" : "❚❚";
+        if (_pauseGlyph != null) _pauseGlyph.text = pause ? ">" : "II";
         if (!pause) HidePausePanel();
     }
 
@@ -324,7 +324,7 @@ public class HUDController : MonoBehaviour
             rt.anchoredPosition = new Vector2(xOff, 65f);
             rt.sizeDelta    = new Vector2(95f, 95f);
             var tmp         = starGO.AddComponent<TextMeshProUGUI>();
-            tmp.text        = "★";
+            tmp.text        = "●";
             tmp.fontSize    = 80f;
             tmp.color       = StarEmpty;
             tmp.alignment   = TextAlignmentOptions.Center;
@@ -350,7 +350,7 @@ public class HUDController : MonoBehaviour
                             new Vector2(-148f, -160f), new Vector2(196f, 56f));
         replayBtn.onClick.AddListener(OnReplayClicked);
 
-        var nextBtn = MakePanelButton(box.transform, "NextBtn", "NEXT ▶",
+        var nextBtn = MakePanelButton(box.transform, "NextBtn", "NEXT >",
                           new Vector2(+148f, -160f), new Vector2(196f, 56f));
         nextBtn.onClick.AddListener(OnNextClicked);
 
@@ -367,7 +367,7 @@ public class HUDController : MonoBehaviour
         int  best    = ScoreManager.GetBestScore(GameManager.Instance?.CurrentLevelIndex ?? 0);
 
         _lcScoreText.text = score.ToString("N0");
-        _lcBestText.text  = newBest ? "★  NEW BEST!" : $"BEST  {best:N0}";
+        _lcBestText.text  = newBest ? "●  NEW BEST!" : $"BEST  {best:N0}";
         _lcBestText.color = newBest ? StarFilled : new Color(0.50f, 0.50f, 0.54f);
 
         // Reset all stars to grey at normal scale before animating
@@ -510,12 +510,12 @@ public class HUDController : MonoBehaviour
               new Vector2(0.5f, 0.5f), new Vector2(0f, -120f), new Vector2(300f, 2f));
 
         // Toggle buttons
-        var musicBtn = MakePanelButton(box.transform, "MusicToggle", "♪ MUSIC",
+        var musicBtn = MakePanelButton(box.transform, "MusicToggle", "MUSIC",
                            new Vector2(-80f, -148f), new Vector2(130f, 44f));
         _musicToggleImg = musicBtn.targetGraphic as Image;
         musicBtn.onClick.AddListener(OnMusicToggleClicked);
 
-        var sfxBtn = MakePanelButton(box.transform, "SfxToggle", "◎ SFX",
+        var sfxBtn = MakePanelButton(box.transform, "SfxToggle", "SFX",
                          new Vector2(+80f, -148f), new Vector2(130f, 44f));
         _sfxToggleImg = sfxBtn.targetGraphic as Image;
         sfxBtn.onClick.AddListener(OnSfxToggleClicked);

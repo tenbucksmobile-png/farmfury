@@ -20,7 +20,7 @@ public class PercyAnimal : AnimalBase
         bounciness = 0.4f;
         linearDrag = 0.008f;
         base.Awake();
-        _sr.color        = new Color(1f, 0.6f, 0.65f); // salmon pink
+        if (!HasRealSprites) _sr.color = new Color(1f, 0.6f, 0.65f); // salmon pink
         _sr.sortingOrder = 4;
         _col.radius      = 0.36f;
 
@@ -33,7 +33,7 @@ public class PercyAnimal : AnimalBase
         _bouncesLeft  = _maxBounces;
         _rb.linearDamping = _rollDrag;
         _col.sharedMaterial = _rollMat;
-        _sr.color = new Color(1f, 0.85f, 0.2f); // golden "rolled up" tint
+        if (!HasRealSprites) _sr.color = new Color(1f, 0.85f, 0.2f); // golden "rolled up" tint
     }
 
     protected override void OnCollisionEnter2D(Collision2D col)

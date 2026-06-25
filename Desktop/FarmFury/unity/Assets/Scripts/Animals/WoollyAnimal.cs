@@ -51,7 +51,7 @@ public class WoollyAnimal : AnimalBase
     {
         if (IsDestroyed) return;
         IsDestroyed = true;
-        if (!_isClone) OnAnimalDestroyed?.Invoke(this);
+        if (!_isClone) FireOnAnimalDestroyed();
         Destroy(gameObject);
     }
 }

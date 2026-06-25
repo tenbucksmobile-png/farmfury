@@ -18,7 +18,7 @@ public class GeraldAnimal : AnimalBase
         bounciness = 0.2f;
         linearDrag = 0.008f;
         base.Awake();
-        _sr.color        = new Color(0.50f, 0.28f, 0.08f); // dark turkey brown
+        if (!HasRealSprites) _sr.color = new Color(0.50f, 0.28f, 0.08f); // dark turkey brown
         _sr.sortingOrder = 4;
         _col.radius      = 0.38f;
         _originalRadius  = _col.radius;
@@ -32,6 +32,6 @@ public class GeraldAnimal : AnimalBase
         transform.localScale = Vector3.one * _puffScale;
         _rb.mass             = mass * _puffMassMul;
         _rb.AddForce(_rb.linearVelocity.normalized * _puffImpulse, ForceMode2D.Impulse);
-        _sr.color            = new Color(0.85f, 0.45f, 0.10f); // bright orange puffed tint
+        if (!HasRealSprites) _sr.color = new Color(0.85f, 0.45f, 0.10f); // bright orange puffed tint
     }
 }

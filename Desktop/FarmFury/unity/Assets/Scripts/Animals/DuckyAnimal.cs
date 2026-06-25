@@ -19,7 +19,7 @@ public class DuckyAnimal : AnimalBase
         bounciness = 0.1f;
         linearDrag = 0.005f;
         base.Awake();
-        _sr.color        = new Color(1f, 0.85f, 0f); // bright yellow
+        if (!HasRealSprites) _sr.color = new Color(1f, 0.85f, 0f); // bright yellow
         _sr.sortingOrder = 4;
         _col.radius      = 0.30f;
     }
@@ -32,7 +32,7 @@ public class DuckyAnimal : AnimalBase
         _rb.linearVelocity = new Vector2(
             vel.x * _horizontalMul,
             -Mathf.Abs(vel.y) * _flattenY);
-        _sr.color = new Color(1f, 0.65f, 0f); // orange "skip mode" tint
+        if (!HasRealSprites) _sr.color = new Color(1f, 0.65f, 0f); // orange "skip mode" tint
     }
 
     protected override void OnCollisionEnter2D(Collision2D col)

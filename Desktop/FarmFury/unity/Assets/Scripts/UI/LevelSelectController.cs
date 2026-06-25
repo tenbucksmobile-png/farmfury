@@ -81,7 +81,6 @@ public class LevelSelectController : MonoBehaviour
             bool unlocked = i == 0 || ScoreManager.GetBestStars(i - 1) > 0;
             BuildCard(_contentRT, i, unlocked, ScoreManager.GetBestStars(i));
         }
-        LayoutRebuilder.ForceRebuildLayoutImmediate(_contentRT);
     }
 
     void BuildCard(Transform parent, int index, bool unlocked, int stars)
@@ -160,8 +159,8 @@ public class LevelSelectController : MonoBehaviour
         const string gold = "#FFD200";
         const string grey = "#4A4A58";
         string S(int i) => i < earned
-            ? $"<color={gold}>★</color>"
-            : $"<color={grey}>★</color>";
+            ? $"<color={gold}>●</color>"   // ● filled
+            : $"<color={grey}>○</color>";  // ○ empty
         return S(0) + "  " + S(1) + "  " + S(2);
     }
 
@@ -241,7 +240,11 @@ public class LevelSelectController : MonoBehaviour
         vpRT.anchorMax = Vector2.one;
         vpRT.offsetMin = Vector2.zero;
         vpRT.offsetMax = Vector2.zero;
-        vpGO.AddComponent<RectMask2D>();
+        var vpImg = vpGO.AddComponent<Image>();
+        vpImg.sprite = _squareSpr;
+        vpImg.color  = Color.white;           // Mask needs opaque alpha to clip content
+        var vpMask = vpGO.AddComponent<Mask>();
+        vpMask.showMaskGraphic = false;        // hide the white rect visually
 
         // Content — GridLayoutGroup arranges cards; ContentSizeFitter grows height
         var contentGO = new GameObject("Content");
