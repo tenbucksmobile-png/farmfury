@@ -35,3 +35,6 @@ crashlytics-build.properties
 # Art assets — large binary files regenerated from assets/ via tools/remove_backgrounds.py
 # Re-import with: FarmFury > Wire Sprites in Unity Editor
 Assets/Sprites/
+
+# Auto-modified by Unity editor on every session — not meaningful to track
+Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF - Fallback.asset

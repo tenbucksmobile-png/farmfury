@@ -168,8 +168,13 @@ Visual groundwork done this phase:
 - ✅ **Ground art** — brown earth fill + bright grass top strip, both procedural GOs in `SceneSetup.EnsureGround()`
 - ✅ **Main menu art** — `LandingPage.png` replaces procedural animated background in `MainMenuController`
 - ✅ **Two-part trebuchet** — `Trabuchet_Body.png` (static frame) + `Trabuchet_Arm.png` (rotating arm, pivot at fulcrum x=0.55); arm rotates `z = angleDeg − 190°` to match physics in `DrawArmAt()`
+- ✅ **Sprite PPU calibration** — Kling AI sprites are 2720×1536 (trimmed to ~1944×1481 by Unity). PPU formula: `trimmed_height / (collider_radius × 2)`. Cluck: 2057, Bessie: 1424, Percy/Woolly/Billy: 2057, Ducky: 2468, Horace: 1851, Gerald: 1949. `EditorAutoSetup` auto-applies on compile via sentinel check on Cluck/Loaded.png.
+- ✅ **Camera zoom** — `orthographicSize = 3.5` (was 5); camera rest offset `(2.8, 2.5)` relative to launcher; structures at x=15–17.5 now clearly visible right-of-center.
+- ✅ **Trebuchet arm alignment** — `_pivotHeight = 2.53` (was 2.35); arm GO now sits at 95% of body height, connecting at the metal cap of the body sprite.
+- ✅ **L01 structure redesign** — two towers (0.6u-tall blocks) with 2 robots: tower 1 at x=15.5 (3 wood + 1 stone cap, robot on top at y=2.8), tower 2 at x=17.5 (stone + wood, robot at y=1.6).
+- ✅ **Animal cards art** — 8 Kling AI card portraits generated (`assets/FarmCards/`). Farm-themed barnwood frame, character fills 65% of card interior, 1024×1024 px. Import to `unity/Assets/Sprites/UI/Cards/` and overlay damage numbers via TMP in HUDController. Card damage stats: Cluck 15, Bessie 50, Percy 20, Woolly 12, Ducky 18, Horace 35, Gerald 55, Billy 25.
 
-Still to do: all 18 Meadow Ruins levels (6 exist, 12 remaining) + World 1 props in scene + Robot Commander boss. Robot art sprites (`assets/RobotEnemy/`) not yet imported.
+Still to do: wire animal cards into HUDController bird-queue (replace icon circles with card Images + TMP damage labels) + all 18 Meadow Ruins levels (6 exist, 12 remaining) + World 1 props in scene + Robot Commander boss. Robot art sprites (`assets/RobotEnemy/`) not yet imported.
 
 ### Phase 5 — Worlds 2–6
 Each world: new launcher, world physics modifier, new animals, all levels, environment art, music, boss
