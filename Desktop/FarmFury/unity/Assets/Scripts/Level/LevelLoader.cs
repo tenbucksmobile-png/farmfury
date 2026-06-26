@@ -137,6 +137,7 @@ public class LevelLoader : MonoBehaviour
     void SpawnBlock(LevelData.BlockSpawnData data)
     {
         var prefab = data.type == BlockType.Wood ? _woodPrefab : _stonePrefab;
+        if (prefab == null) { Debug.LogWarning("[LevelLoader] Block prefab null — run Wire Scene References."); return; }
         var block  = Instantiate(prefab,
             new Vector3(data.position.x, data.position.y, 0f),
             Quaternion.identity,
@@ -147,6 +148,7 @@ public class LevelLoader : MonoBehaviour
 
     void SpawnRobot(LevelData.RobotSpawnData data)
     {
+        if (_robotPrefab == null) { Debug.LogWarning("[LevelLoader] Robot prefab null — run Wire Scene References."); return; }
         var robot = Instantiate(_robotPrefab,
             new Vector3(data.position.x, data.position.y, 0f),
             Quaternion.identity,

@@ -55,8 +55,14 @@ public class GameManager : MonoBehaviour
             return;
         }
         CurrentLevelIndex = Mathf.Clamp(index, 0, _levels.Length - 1);
+        var data = _levels[CurrentLevelIndex];
+        if (data == null)
+        {
+            Debug.LogError($"[GameManager] Level {CurrentLevelIndex} asset is null. Run FarmFury → Generate All Level Data, then Wire Scene References.");
+            return;
+        }
         TransitionTo(GameState.Playing);
-        OnLevelStarted?.Invoke(_levels[CurrentLevelIndex]);
+        OnLevelStarted?.Invoke(data);
     }
 
     public void CompleteLevel()
