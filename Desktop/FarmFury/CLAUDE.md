@@ -172,9 +172,10 @@ Visual groundwork done this phase:
 - ✅ **Camera zoom** — `orthographicSize = 3.5` (was 5); camera rest offset `(2.8, 2.5)` relative to launcher; structures at x=15–17.5 now clearly visible right-of-center.
 - ✅ **Trebuchet arm alignment** — `_pivotHeight = 2.53` (was 2.35); arm GO now sits at 95% of body height, connecting at the metal cap of the body sprite.
 - ✅ **L01 structure redesign** — two towers (0.6u-tall blocks) with 2 robots: tower 1 at x=15.5 (3 wood + 1 stone cap, robot on top at y=2.8), tower 2 at x=17.5 (stone + wood, robot at y=1.6).
-- ✅ **Animal cards art** — 8 Kling AI card portraits generated (`assets/FarmCards/`). Farm-themed barnwood frame, character fills 65% of card interior, 1024×1024 px. Import to `unity/Assets/Sprites/UI/Cards/` and overlay damage numbers via TMP in HUDController. Card damage stats: Cluck 15, Bessie 50, Percy 20, Woolly 12, Ducky 18, Horace 35, Gerald 55, Billy 25.
+- ✅ **Animal cards art** — 8 Kling AI card portraits in `assets/FarmCards/` (barnwood frame, 1024×1024). Files: `Cluck_Chicken.png`, `Bessie_Cow.png`, `Percy_Pig.png`, `Woolly_Sheep.png`, `Ducky_Duck.png`, `Horace_Horse.png`, `Gerald_Turkey.png`, `Billy_Goat.png`.
+- ✅ **Card HUD system** — `HUDController` now builds card widgets instead of flat circles. Active card: 108×142px (full brightness, larger bob), queue cards: 82×108px (dimmed). Each card has an orange damage badge (top-right, `⚡N`). `[SerializeField] Sprite[] _cardSprites` indexed by `AnimalType`. `EditorAutoSetup.AutoCopyCardSprites()` auto-copies `assets/FarmCards/*.png` → `Assets/Sprites/UI/Cards/` on compile. `SceneSetup.EnsureHUD()` wires sprites by keyword per animal. `SpriteAutoImporter` handles Cards/ at PPU=100 Single mode.
 
-Still to do: wire animal cards into HUDController bird-queue (replace icon circles with card Images + TMP damage labels) + all 18 Meadow Ruins levels (6 exist, 12 remaining) + World 1 props in scene + Robot Commander boss. Robot art sprites (`assets/RobotEnemy/`) not yet imported.
+Still to do: all 18 Meadow Ruins levels (6 exist, 12 remaining) + World 1 props in scene + Robot Commander boss. Robot art sprites (`assets/RobotEnemy/`) not yet imported.
 
 ### Phase 5 — Worlds 2–6
 Each world: new launcher, world physics modifier, new animals, all levels, environment art, music, boss

@@ -102,7 +102,20 @@ public static class SceneSetup
         Debug.Log($"[FarmFury] Created {path}");
     }
 
-    // ── HUD: create GO + attach HUDController ────────────────────────────────
+    // ── HUD: create GO + attach HUDController + wire card sprites ────────────
+
+    // Filename keywords that uniquely identify each card, indexed by AnimalType.
+    static readonly string[] CardKeywords =
+    {
+        "Cluck",   // 0 Cluck   → Cluck_Chicken.png
+        "Bessie",  // 1 Bessie  → Bessie_Cow.png
+        "Percy",   // 2 Percy   → Percy_Pig.png
+        "Woolly",  // 3 Woolly  → Woolly_Sheep.png
+        "Ducky",   // 4 Ducky   → Ducky_Duck.png
+        "Horace",  // 5 Horace  → Horace_Horse.png
+        "Gerald",  // 6 Gerald  → Gerald_Turkey.png
+        "Goat",    // 7 Billy   → Billy_Goat.png
+    };
 
     static void EnsureHUD()
     {
@@ -114,7 +127,41 @@ public static class SceneSetup
         }
         if (go.GetComponent<HUDController>() == null)
             go.AddComponent<HUDController>();
-        Debug.Log("[FarmFury] HUD: HUDController component ensured.");
+
+        // Wire card sprites into _cardSprites[]
+        const string cardsFolder = "Assets/Sprites/UI/Cards";
+        var hud = go.GetComponent<HUDController>();
+        var so  = new SerializedObject(hud);
+        var arr = so.FindProperty("_cardSprites");
+        arr.arraySize = CardKeywords.Length;
+
+        var guids = AssetDatabase.FindAssets("t:Sprite", new[] { cardsFolder });
+        int wired = 0;
+        for (int i = 0; i < CardKeywords.Length; i++)
+        {
+            string kw = CardKeywords[i].ToLower();
+            foreach (var g in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(g);
+                if (path.ToLower().Contains(kw))
+                {
+                    var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                    if (spr != null)
+                    {
+                        arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
+                        wired++;
+                        break;
+                    }
+                }
+            }
+        }
+        so.ApplyModifiedProperties();
+
+        if (wired > 0)
+            Debug.Log($"[FarmFury] HUD: wired {wired}/8 card sprites from {cardsFolder}.");
+        else
+            Debug.LogWarning($"[FarmFury] HUD: no card sprites found in {cardsFolder}. " +
+                             "Copy assets/FarmCards/*.png there first.");
     }
 
     // ── MainMenuController ────────────────────────────────────────────────────────

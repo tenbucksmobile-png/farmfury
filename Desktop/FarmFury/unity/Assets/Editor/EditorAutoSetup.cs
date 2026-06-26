@@ -3,6 +3,7 @@
 // sprites if their PPU or alpha settings are stale.
 // No manual menu steps required.
 
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -20,6 +21,7 @@ public static class EditorAutoSetup
         AutoGenerateLevels();
         AutoFixLauncherSprites();
         AutoWireCharacterSprites();
+        AutoCopyCardSprites();
     }
 
     static void AutoGenerateLevels()
@@ -43,6 +45,41 @@ public static class EditorAutoSetup
 
         SpriteWiring.WireAll();
         Debug.Log("[FarmFury] Auto-applied updated character sprite PPU values.");
+    }
+
+    static void AutoCopyCardSprites()
+    {
+        // Copy assets/FarmCards/*.png → Assets/Sprites/UI/Cards/ so SceneSetup can wire them.
+        // Source path is two directories above the Unity project root (repo root/assets/FarmCards).
+        string unityRoot = Path.GetFullPath(Application.dataPath + "/../..");
+        string srcDir    = Path.Combine(unityRoot, "assets", "FarmCards");
+        const string dstFolder = "Assets/Sprites/UI/Cards";
+
+        if (!Directory.Exists(srcDir)) return;  // nothing to copy yet
+
+        if (!AssetDatabase.IsValidFolder("Assets/Sprites/UI"))
+            AssetDatabase.CreateFolder("Assets/Sprites", "UI");
+        if (!AssetDatabase.IsValidFolder(dstFolder))
+            AssetDatabase.CreateFolder("Assets/Sprites/UI", "Cards");
+
+        bool anyCopied = false;
+        foreach (var srcPath in Directory.GetFiles(srcDir, "*.png"))
+        {
+            string filename = Path.GetFileName(srcPath);
+            string dstPath  = Path.Combine(Application.dataPath,
+                                 "Sprites/UI/Cards", filename).Replace('\\', '/');
+            if (!File.Exists(dstPath))
+            {
+                File.Copy(srcPath, dstPath);
+                anyCopied = true;
+            }
+        }
+
+        if (anyCopied)
+        {
+            AssetDatabase.Refresh();
+            Debug.Log($"[FarmFury] Copied card sprites from assets/FarmCards/ to {dstFolder}.");
+        }
     }
 
     static void AutoFixLauncherSprites()
