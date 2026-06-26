@@ -30,7 +30,33 @@ public class GameManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+#if UNITY_EDITOR
+        TryAutoLoadLevels();
+#endif
     }
+
+#if UNITY_EDITOR
+    void TryAutoLoadLevels()
+    {
+        if (_levels != null && _levels.Length > 0 && !System.Array.Exists(_levels, l => l == null))
+            return;
+        var guids = UnityEditor.AssetDatabase.FindAssets("t:LevelData",
+            new[] { "Assets/ScriptableObjects/Levels" });
+        var list = new System.Collections.Generic.List<LevelData>();
+        foreach (var g in guids)
+        {
+            var data = UnityEditor.AssetDatabase.LoadAssetAtPath<LevelData>(
+                UnityEditor.AssetDatabase.GUIDToAssetPath(g));
+            if (data != null) list.Add(data);
+        }
+        list.Sort((a, b) => string.Compare(a.name, b.name, System.StringComparison.Ordinal));
+        _levels = list.ToArray();
+        if (_levels.Length == 0)
+            Debug.LogWarning("[GameManager] No LevelData found — run FarmFury → Generate All Level Data.");
+        else
+            Debug.Log($"[GameManager] Auto-loaded {_levels.Length} level(s) from ScriptableObjects/Levels.");
+    }
+#endif
 
     public LevelData GetLevelData(int index) =>
         (index >= 0 && index < TotalLevels) ? _levels[index] : null;

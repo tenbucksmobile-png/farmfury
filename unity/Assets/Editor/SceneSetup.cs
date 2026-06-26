@@ -247,10 +247,8 @@ public static class SceneSetup
         so.FindProperty("_levelLoader").objectReferenceValue = ll;
         // Keep rest offset in sync with PositionCamera() — camera parks at launcher.x+1.8, launcher.y+2.5
         so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(1.8f, 2.5f);
-
-        // _pivotHeight / _armLongLength / _armShortLength are now private const in CatapultLauncher.
-        // _armRestAngle=190° → sprite z=0 → arm appears horizontal at rest.
-        so.FindProperty("_armRestAngle").floatValue = 190f;
+        // _pivotHeight / _armLongLength / _armShortLength / _armRestAngle are all private const
+        // in CatapultLauncher — never serialized, no writes needed here.
 
         // ── Trebuchet body sprite (static frame + wheels) ────────────────────
         const string bodyPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Body.png";
@@ -440,7 +438,7 @@ public static class SceneSetup
         var cam = Object.FindAnyObjectByType<Camera>();
         if (cam == null) return;
         cam.orthographic     = true;
-        cam.orthographicSize = 3.5f; // 7u tall — structures fill mid-screen, launcher visible left
+        cam.orthographicSize = 5f;   // 10u tall — matches CatapultLauncher runtime override
         cam.transform.position = new Vector3(13f, 2.5f, -10f);
         cam.backgroundColor    = new Color(0.38f, 0.65f, 0.90f); // sky-blue fallback if sprite absent
         Debug.Log("[FarmFury] Camera positioned at (13, 1.5, -10), orthoSize=3.5.");

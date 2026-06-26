@@ -16,12 +16,12 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private float _maxLaunchSpeed  = 16.8f;  // 14 px/frame × 60 fps / 50
 
     [Header("Arm Geometry")]
-    // Consts (not [SerializeField]) — derived from sprite PPU=384 so they must not be
-    // overridden by stale Inspector values. Pivot at body apex ≈ 87% of 2.667u sprite.
-    private const float _pivotHeight    = 2.1f;
+    // All arm geometry is private const — derived from sprite PPU=384, must never be
+    // overridden by stale Inspector/scene-file values.
+    private const float _pivotHeight    = 2.35f;  // metal cap on body sprite ≈ 88% of 2.667u
     private const float _armLongLength  = 1.15f;
     private const float _armShortLength = 0.95f;
-    [SerializeField] private float _armRestAngle   = 190f;    // 190° → sprite z=0 → arm horizontal
+    private const float _armRestAngle   = 190f;   // z=0 in DrawArmAt → arm sprite appears horizontal
 
     [Header("Camera")]
     [SerializeField] private float   _returnDelay          = 0.8f;   // seconds after landing before pan-back starts
