@@ -204,7 +204,18 @@ public static class SceneSetup
         }
     }
 
-    // ── LevelSelectController ────────────────────────────────────────────────────
+    // ── LevelSelectController + world card sprite wiring ─────────────────────────
+
+    // World card filenames (case-insensitive keyword, index = world number 0-5).
+    static readonly string[] WorldCardKeywords =
+    {
+        "Meadow",    // 0 — World 1 Meadow Ruins
+        "Frozen",    // 1 — World 2 Frozen Tundra
+        "Watermill", // 2 — World 3 Watermill Village
+        "Sky",       // 3 — World 4 Sky Islands
+        "Sunken",    // 4 — World 5 Sunken City
+        "Mothership",// 5 — World 6 Robot Mothership
+    };
 
     static void EnsureLevelSelect()
     {
@@ -216,7 +227,41 @@ public static class SceneSetup
         }
         if (go.GetComponent<LevelSelectController>() == null)
             go.AddComponent<LevelSelectController>();
-        Debug.Log("[FarmFury] LevelSelect: LevelSelectController component ensured.");
+
+        // Wire world card sprites into _worldCardSprites[]
+        const string cardsFolder = "Assets/Sprites/UI/LevelCards";
+        var lsc = go.GetComponent<LevelSelectController>();
+        var so  = new SerializedObject(lsc);
+        var arr = so.FindProperty("_worldCardSprites");
+        arr.arraySize = WorldCardKeywords.Length;
+
+        var guids = AssetDatabase.FindAssets("t:Sprite", new[] { cardsFolder });
+        int wired = 0;
+        for (int i = 0; i < WorldCardKeywords.Length; i++)
+        {
+            string kw = WorldCardKeywords[i].ToLower();
+            foreach (var g in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(g);
+                if (path.ToLower().Contains(kw))
+                {
+                    var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                    if (spr != null)
+                    {
+                        arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
+                        wired++;
+                        break;
+                    }
+                }
+            }
+        }
+        so.ApplyModifiedProperties();
+
+        if (wired > 0)
+            Debug.Log($"[FarmFury] LevelSelect: wired {wired}/6 world card sprites from {cardsFolder}.");
+        else
+            Debug.LogWarning($"[FarmFury] LevelSelect: no world card art found in {cardsFolder}. " +
+                             "Add Kling AI card art there and re-run Wire Scene References.");
     }
 
     // ── GameManager: wire the levels array ────────────────────────────────────
