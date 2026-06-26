@@ -22,6 +22,9 @@ public static class EditorAutoSetup
         AutoFixLauncherSprites();
         AutoWireCharacterSprites();
         AutoCopyCardSprites();
+        // Scan for any PNGs modified outside Unity (e.g., by remove_backgrounds.py)
+        // and reimport them so the latest content is visible in-game.
+        AssetDatabase.Refresh();
     }
 
     static void AutoGenerateLevels()

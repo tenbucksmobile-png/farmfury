@@ -28,12 +28,23 @@ public class RobotEnemy : MonoBehaviour
         _rb = GetComponent<Rigidbody2D>();
         _sr = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
+
         bool hasArt      = _robotSprite != null;
         _sr.sprite       = hasArt ? _robotSprite : MakeSquareSprite();
         _restColor       = hasArt ? Color.white : BaseColor;
         _sr.color        = _restColor;
         _sr.sortingOrder = 3;
+
         transform.localScale = new Vector3(0.7f, 0.8f, 1f);
+
+        // Prefab BoxCollider2D size is near-zero — set it here so robots land on blocks
+        var col = GetComponent<BoxCollider2D>();
+        if (col == null) col = gameObject.AddComponent<BoxCollider2D>();
+        col.size = new Vector2(1f, 1f); // local; world = 0.7 × 0.8 u after scale
+
+        // Prefab mass defaults to 1; override to match design spec
+        _rb.mass = 20f;
+
         if (!hasArt) AddEyes();
     }
 
