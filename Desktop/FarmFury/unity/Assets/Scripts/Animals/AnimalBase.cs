@@ -33,6 +33,8 @@ public abstract class AnimalBase : MonoBehaviour
 
     protected bool HasRealSprites => _sprIdle != null;
 
+    public Sprite IdleSprite => _sprIdle;
+
     protected bool _abilityUsed;
     private bool  _contactStarted;
     private float _contactTimer;

@@ -236,8 +236,9 @@ public class HUDController : MonoBehaviour
             iconGO.transform.SetParent(_birdQueueRoot, false);
 
             var img         = iconGO.AddComponent<Image>();
-            img.sprite      = _circleSpr;
-            img.color       = BirdColor(queue[i]);
+            var animalSpr   = _levelLoader?.GetAnimalIdleSprite(queue[i]);
+            img.sprite      = animalSpr != null ? animalSpr : _circleSpr;
+            img.color       = animalSpr != null ? Color.white : BirdColor(queue[i]);
 
             var rt          = img.rectTransform;
             rt.anchorMin    = new Vector2(0f, 0.5f);

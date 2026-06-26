@@ -21,7 +21,7 @@ public class CatapultLauncher : MonoBehaviour
     private const float _pivotHeight    = 2.1f;
     private const float _armLongLength  = 1.15f;
     private const float _armShortLength = 0.95f;
-    [SerializeField] private float _armRestAngle   = -140.4f;
+    [SerializeField] private float _armRestAngle   = 190f;    // 190° → sprite z=0 → arm horizontal
 
     [Header("Camera")]
     [SerializeField] private float   _returnDelay          = 0.8f;   // seconds after landing before pan-back starts
@@ -341,7 +341,7 @@ public class CatapultLauncher : MonoBehaviour
     {
         // Snap forward from wherever the arm was pulled, then return to rest
         float start   = _dragAngle;
-        float forward = _armRestAngle + 74.4f;
+        float forward = _armRestAngle - 74.4f;  // barrel swings upward-left after firing
         float t = 0f;
         while (t < 1f)
         {
