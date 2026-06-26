@@ -340,8 +340,8 @@ public static class SceneSetup
         so.FindProperty("_levelLoader").objectReferenceValue = ll;
         // Keep rest offset in sync with PositionCamera() — camera parks at launcher.x+2.8, launcher.y+2.5
         so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(2.8f, 2.5f);
-        // _pivotHeight / _armLongLength / _armShortLength / _armRestAngle are all private const
-        // in CatapultLauncher — never serialized, no writes needed here.
+        // _pivotHeight (2.35) / _armLongLength / _armShortLength / _armRestAngle / MaxLoadAngle
+        // are all private const in CatapultLauncher — never serialized, no writes needed here.
 
         // ── Trebuchet body sprite (static frame + wheels) ────────────────────
         const string bodyPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Body.png";
