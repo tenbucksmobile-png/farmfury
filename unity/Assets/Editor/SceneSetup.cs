@@ -353,10 +353,11 @@ public static class SceneSetup
                 bool dirty = false;
                 // Both sprites are 2048×2048 — PPU=768 gives 2.667u (same as 1024px@384).
                 // Body pivot = bottom-centre (0.5, 0.0) so the body stands on Y=0 ground.
-                if (imp.textureType            != TextureImporterType.Sprite)         { imp.textureType            = TextureImporterType.Sprite;         dirty = true; }
-                if (imp.spritePixelsPerUnit    != 768)                                 { imp.spritePixelsPerUnit    = 768;                                dirty = true; }
-                if (!imp.alphaIsTransparency)                                          { imp.alphaIsTransparency    = true;                               dirty = true; }
-                if (imp.alphaSource            != TextureImporterAlphaSource.FromInput){ imp.alphaSource            = TextureImporterAlphaSource.FromInput; dirty = true; }
+                if (imp.textureType         != TextureImporterType.Sprite)          { imp.textureType         = TextureImporterType.Sprite;          dirty = true; }
+                if (imp.spritePixelsPerUnit != 768)                                  { imp.spritePixelsPerUnit = 768;                                 dirty = true; }
+                if (!imp.alphaIsTransparency)                                        { imp.alphaIsTransparency = true;                                dirty = true; }
+                if (imp.alphaSource         != TextureImporterAlphaSource.FromInput) { imp.alphaSource         = TextureImporterAlphaSource.FromInput; dirty = true; }
+                if (imp.spriteImportMode    != SpriteImportMode.Single)              { imp.spriteImportMode    = SpriteImportMode.Single;             dirty = true; }
                 var bodySettings = new TextureImporterSettings();
                 imp.ReadTextureSettings(bodySettings);
                 var bodyPivot = new Vector2(0.50f, 0.00f);
@@ -376,7 +377,8 @@ public static class SceneSetup
             Debug.LogWarning("[FarmFury] Trabuchet_Body.png not found — run remove_backgrounds.py then re-run Wire Scene References.");
 
         // ── Trebuchet arm sprite (rotates with arm angle) ────────────────────
-        // Sprite pivot MUST be at the fulcrum: x≈0.55 (bracket center), y=0.50
+        // MUST be Single mode — Multiple mode creates sub-sprites breaking LoadAssetAtPath<Sprite>
+        // Pivot bolt pixel-measured in sprite art: ~40% from left, ~56% from bottom
         const string armPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Arm.png";
         if (AssetDatabase.LoadAssetAtPath<Texture2D>(armPath) != null)
         {
@@ -384,15 +386,15 @@ public static class SceneSetup
             if (imp != null)
             {
                 bool dirty = false;
-                if (imp.textureType            != TextureImporterType.Sprite)          { imp.textureType            = TextureImporterType.Sprite;          dirty = true; }
-                if (imp.spritePixelsPerUnit    != 768)                                  { imp.spritePixelsPerUnit    = 768;                                 dirty = true; }
-                if (!imp.alphaIsTransparency)                                           { imp.alphaIsTransparency    = true;                                dirty = true; }
-                if (imp.alphaSource            != TextureImporterAlphaSource.FromInput) { imp.alphaSource            = TextureImporterAlphaSource.FromInput; dirty = true; }
+                if (imp.textureType         != TextureImporterType.Sprite)          { imp.textureType         = TextureImporterType.Sprite;          dirty = true; }
+                if (imp.spritePixelsPerUnit != 768)                                  { imp.spritePixelsPerUnit = 768;                                 dirty = true; }
+                if (!imp.alphaIsTransparency)                                        { imp.alphaIsTransparency = true;                                dirty = true; }
+                if (imp.alphaSource         != TextureImporterAlphaSource.FromInput) { imp.alphaSource         = TextureImporterAlphaSource.FromInput; dirty = true; }
+                if (imp.spriteImportMode    != SpriteImportMode.Single)              { imp.spriteImportMode    = SpriteImportMode.Single;             dirty = true; }
 
-                // Custom pivot via TextureImporterSettings (spriteAlignment was removed in Unity 6)
                 var settings = new TextureImporterSettings();
                 imp.ReadTextureSettings(settings);
-                var desiredPivot = new Vector2(0.38f, 0.53f); // bracket at 38% left, 53% bottom
+                var desiredPivot = new Vector2(0.40f, 0.56f); // bolt: 40% left, 56% bottom (pixel-measured)
                 if (settings.spriteAlignment != (int)SpriteAlignment.Custom || settings.spritePivot != desiredPivot)
                 {
                     settings.spriteAlignment = (int)SpriteAlignment.Custom;
@@ -404,7 +406,7 @@ public static class SceneSetup
                 if (dirty) imp.SaveAndReimport();
             }
             so.FindProperty("_trebuchetArmSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(armPath);
-            Debug.Log("[FarmFury] Launcher: trebuchet arm sprite wired (pivot 0.55, 0.50).");
+            Debug.Log("[FarmFury] Launcher: arm sprite wired (Single mode, pivot 0.40/0.56).");
         }
         else
             Debug.LogWarning("[FarmFury] Trabuchet_Arm.png not found — run remove_backgrounds.py then re-run Wire Scene References.");

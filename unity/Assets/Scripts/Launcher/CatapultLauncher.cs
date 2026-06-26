@@ -18,7 +18,10 @@ public class CatapultLauncher : MonoBehaviour
     [Header("Arm Geometry")]
     // All arm geometry is private const — derived from sprite PPU=384, must never be
     // overridden by stale Inspector/scene-file values.
-    private const float _pivotHeight    = 2.29f;  // measured: body content apex at 2.415u from canvas bottom, body localPos.y=-0.126 → world Y=2.289
+    // Pixel-measured (Python/Pillow on 2048×2048 canvas, PPU=768 → 2.667u):
+    // Body: content-bottom=0.026u → localPos.y=-0.026 (wheels at Y=0); content-top=2.667u → screw at world Y=2.641
+    // Arm:  pivot-bolt at ~56% from canvas-bottom; arm GO at pivotHeight → bolt at 2.641 ≈ body screw ✓
+    private const float _pivotHeight    = 2.64f;
     private const float _armLongLength  = 1.15f;
     private const float _armShortLength = 0.95f;
     private const float _armRestAngle   = 190f;   // z=0 in DrawArmAt → arm sprite appears horizontal
@@ -506,9 +509,9 @@ public class CatapultLauncher : MonoBehaviour
         {
             var bodyGO = new GameObject("TrebuchetBody");
             bodyGO.transform.SetParent(transform);
-            // Bottom-centre pivot (0.5, 0.0). Sprite has 193px top pad and 96px bottom pad.
-            // Bottom pad = 96/768 = 0.125u → offset by -0.126 so wheel content sits on Y=0.
-            bodyGO.transform.localPosition = new Vector3(0f, -0.126f, 0f);
+            // Bottom-centre pivot (0.5, 0.0). Pixel-measured: content-bottom at 0.026u from canvas bottom
+            // → offset -0.026 so wheel content sits exactly on Y=0.
+            bodyGO.transform.localPosition = new Vector3(0f, -0.026f, 0f);
             var bodySR          = bodyGO.AddComponent<SpriteRenderer>();
             bodySR.sprite       = _trebuchetBodySprite;
             bodySR.sortingOrder = 3;

@@ -101,28 +101,33 @@ public static class EditorAutoSetup
 
     static void AutoFixLauncherSprites()
     {
-        // Both sprites are 2048×2048 px. PPU=768 gives 2048/768=2.667u — same physical
-        // size as the 1024px spec at PPU=384. Body pivot bottom-centre so it sits on Y=0.
+        // Both sprites are 2048×2048 px. PPU=768 gives 2048/768=2.667u.
+        // MUST be Single mode — Multiple mode (spriteMode:2) splits the canvas into sub-sprites
+        // breaking LoadAssetAtPath<Sprite> and causing arm/body to appear disconnected in-game.
         bool anyFixed = false;
         anyFixed |= FixSprite("Assets/Sprites/Environment/Launchers/Trabuchet_Body.png", 768,
-                              customPivot: new Vector2(0.50f, 0.00f));
-        // Arm pivot measured from sprite: stand bracket is at ~38% from left, 53% from bottom
-        anyFixed |= FixSprite("Assets/Sprites/Environment/Launchers/Trabuchet_Arm.png",  768,
-                              customPivot: new Vector2(0.38f, 0.53f));
+                              customPivot: new Vector2(0.50f, 0.00f),
+                              mode: SpriteImportMode.Single);
+        // Arm pivot bolt pixel-measured: ~40% from left, ~56% from bottom of 2048px canvas
+        anyFixed |= FixSprite("Assets/Sprites/Environment/Launchers/Trabuchet_Arm.png", 768,
+                              customPivot: new Vector2(0.40f, 0.56f),
+                              mode: SpriteImportMode.Single);
         if (anyFixed)
-            Debug.Log("[FarmFury] Auto-fixed launcher sprite import settings (PPU=768, pivots corrected).");
+            Debug.Log("[FarmFury] Auto-fixed launcher sprites (Single mode, PPU=768, pivots).");
     }
 
-    static bool FixSprite(string path, int ppu, Vector2? customPivot = null)
+    static bool FixSprite(string path, int ppu, Vector2? customPivot = null,
+                          SpriteImportMode mode = SpriteImportMode.Single)
     {
         var imp = AssetImporter.GetAtPath(path) as TextureImporter;
         if (imp == null) return false;
 
         bool dirty = false;
-        if (imp.textureType != TextureImporterType.Sprite)         { imp.textureType = TextureImporterType.Sprite;         dirty = true; }
-        if (imp.spritePixelsPerUnit != ppu)                        { imp.spritePixelsPerUnit = ppu;                        dirty = true; }
-        if (!imp.alphaIsTransparency)                              { imp.alphaIsTransparency = true;                       dirty = true; }
-        if (imp.alphaSource != TextureImporterAlphaSource.FromInput){ imp.alphaSource = TextureImporterAlphaSource.FromInput; dirty = true; }
+        if (imp.textureType != TextureImporterType.Sprite)           { imp.textureType = TextureImporterType.Sprite;           dirty = true; }
+        if (imp.spritePixelsPerUnit != ppu)                          { imp.spritePixelsPerUnit = ppu;                          dirty = true; }
+        if (!imp.alphaIsTransparency)                                { imp.alphaIsTransparency = true;                         dirty = true; }
+        if (imp.alphaSource != TextureImporterAlphaSource.FromInput) { imp.alphaSource = TextureImporterAlphaSource.FromInput; dirty = true; }
+        if (imp.spriteImportMode != mode)                            { imp.spriteImportMode = mode;                            dirty = true; }
 
         if (customPivot.HasValue)
         {
