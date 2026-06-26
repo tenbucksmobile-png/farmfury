@@ -55,8 +55,35 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning("[GameManager] No LevelData found — run FarmFury → Generate All Level Data.");
         else
             Debug.Log($"[GameManager] Auto-loaded {_levels.Length} level(s) from ScriptableObjects/Levels.");
+
+        if (_levels.Length == 0)
+            _levels = new[] { BuildFallbackLevel() };
     }
 #endif
+
+    // Procedural fallback — runs in editor AND in builds when no assets are wired.
+    static LevelData BuildFallbackLevel()
+    {
+        Debug.Log("[GameManager] Using built-in fallback level (no LevelData assets found).");
+        var d = ScriptableObject.CreateInstance<LevelData>();
+        d.levelName = "First Contact";
+        d.parBirds  = 2;
+        d.birds     = new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck };
+        d.blocks    = new[]
+        {
+            new LevelData.BlockSpawnData { type = BlockType.Wood,  position = new Vector2(16.0f, 0.2f), size = new Vector2(1.0f, 0.4f) },
+            new LevelData.BlockSpawnData { type = BlockType.Wood,  position = new Vector2(16.0f, 0.6f), size = new Vector2(1.0f, 0.4f) },
+            new LevelData.BlockSpawnData { type = BlockType.Wood,  position = new Vector2(16.0f, 1.0f), size = new Vector2(1.0f, 0.4f) },
+            new LevelData.BlockSpawnData { type = BlockType.Stone, position = new Vector2(17.6f, 0.2f), size = new Vector2(0.8f, 0.4f) },
+            new LevelData.BlockSpawnData { type = BlockType.Stone, position = new Vector2(17.6f, 0.6f), size = new Vector2(0.8f, 0.4f) },
+        };
+        d.robots    = new[]
+        {
+            new LevelData.RobotSpawnData { position = new Vector2(16.5f, 1.6f) },
+            new LevelData.RobotSpawnData { position = new Vector2(17.6f, 1.2f) },
+        };
+        return d;
+    }
 
     public LevelData GetLevelData(int index) =>
         (index >= 0 && index < TotalLevels) ? _levels[index] : null;
