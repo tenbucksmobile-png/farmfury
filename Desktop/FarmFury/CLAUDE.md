@@ -64,7 +64,7 @@ Full GDD: `C:\Users\Personel\Desktop\FarmFury_GDD_v2.docx`
 2.3 **Level Failed panel** — try again / menu. ✅ DONE — panel built inside HUDController (480×300 card, same canvas/sortingOrder); "LEVEL FAILED!" title in deep red, score value, TRY AGAIN → `RestartLevel()`, MENU → `LoadMenu()`; `OnStateChanged` now uses a switch that shows exactly one result panel at a time and hides the other; no animation (instant show/hide).
 2.4 **Pause menu** — resume/restart/menu, music+SFX toggles. ✅ DONE — pause button now shows a 380×340 card overlay (60% dark) instead of just toggling timeScale; RESUME/RESTART/MENU buttons + ♪ MUSIC and ◎ SFX toggle buttons with dark-on / grey-off colour states; `SetPaused(false)` always hides the panel; toggle state persisted via `PlayerPrefs` (`ff_sfx_enabled`, `ff_music_enabled`). `AudioManager` gained `SfxEnabled`/`MusicEnabled` static properties (loaded from PlayerPrefs in Awake) + `SetSfxEnabled()`/`SetMusicEnabled()` methods; `Play()` early-outs if `!SfxEnabled`.
 2.5 **Level select** — scrollable grid, star counts, locked/unlocked states. ✅ DONE — `LevelSelectController` singleton; builds its own Canvas (sortingOrder 300, ScaleWithScreenSize 1920×1080); full-screen dark background + "SELECT LEVEL" title; `ScrollRect` + `GridLayoutGroup` (3 columns, 260×200 cards, 28px gap/padding) + `ContentSizeFitter` (grows content height for 18+ levels); `RefreshGrid()` destroys and rebuilds cards each show; unlocked cards are dark-navy Button (onClick → `ForceStartLevel`), locked cards are grey (no Button); stars shown as TMP rich-text "★★★" (gold/grey per count); level N locked if level N-1 has 0 stars. `GameManager.LoadMenu()` now guards with `SceneInBuild()` — stays in Game.unity when MainMenu isn't in build settings, letting `LevelSelectController` handle the Idle state. Wire Scene References now creates a "LevelSelect" GO.
-2.6 **Main menu** — logo, play button, animated farm background. ✅ DONE — `MainMenuController` singleton; Canvas sortingOrder 400; procedural animated background: two tiled `RawImage` hill layers (`TextureWrapMode.Repeat` + `uvRect` scrolling), bobbing sun circle, 3 drifting soft-edged cloud ellipses, bright-green grass strip; "FARM FURY" in 128pt bold gold TMP with dark offset shadow; subtitle; green "▶ PLAY" button → hides panel + calls `LevelSelectController.Instance.Show()`; "World 1 — Meadow Ruins" version label. Shows in `Start()` when `GameState.Idle`. `CatapultLauncher` defers `ForceStartLevel(0)` one frame via `DelayedAutoStart()` coroutine and skips if `MainMenuController.IsVisible`. Level select gains "← BACK" button → `MainMenuController.Instance.Show()`. Wire Scene References creates "MainMenu" GO.
+2.6 **Main menu** — landing page art + PLAY button. ✅ DONE (updated) — `MainMenuController` singleton; Canvas sortingOrder 400; full-screen `LandingPage.png` splash image (all 8 animals, burning barns, "FARM FURY" logo baked into art) via `[SerializeField] _landingSprite`; dark vignette band at bottom; orange "▶ PLAY" button (360×100); version label bottom-right. Procedural animated background removed. Shows on `GameState.Idle`. Wire Scene References wires `_landingSprite` from `Assets/Sprites/UI/LandingPage.png`.
 
 ### Phase 3 — Character Roster ✅ DONE
 All 8 animals scripted, all Kling AI art generated, backgrounds batch-removed via `tools/remove_backgrounds.py`, sprites imported to `unity/Assets/Sprites/Characters/<Name>/`, pose sprites wired into all 8 animal prefabs via **FarmFury → Wire Sprites**.
@@ -132,7 +132,10 @@ All environment assets generated via Kling AI and stored in `assets/`. Same whit
 | **Sky — World 4 Sky Islands** | `SkyIslands.png` | ✅ |
 | **Sky — World 5 Sunken City** | `SunkenCity.png` | ✅ |
 | **Sky — World 6 Robot Mothership** | `RobotMothership.png` | ✅ |
-| **Launcher — World 1 Barn Trebuchet** | `Trabuchet.png` | ✅ |
+| **Launcher — World 1 Barn Trebuchet (body)** | `Trabuchet_Body.png` | ✅ |
+| **Launcher — World 1 Barn Trebuchet (arm)** | `Trabuchet_Arm.png` | ✅ |
+| **Main Menu splash** | `LandingPage.png` → `unity/Assets/Sprites/UI/` | ✅ |
+| ~~Trabuchet.png~~ (legacy single sprite, superseded) | `Trabuchet.png` | — |
 | **Launcher — World 2 Ice Cannon** | `Ice Cannon.png` | ✅ |
 | **Launcher — World 3 Water Wheel** | `WaterWheel.png` | ✅ |
 | **Launcher — World 4 Airdrop Biplane** | `Plane.png` | ✅ |
@@ -160,7 +163,13 @@ All environment assets generated via Kling AI and stored in `assets/`. Same whit
 Unity import target: `unity/Assets/Sprites/` — mirroring the `assets/` folder structure.
 
 ### Phase 4 — World 1 Completion *(current)*
-All 18 Meadow Ruins levels (6 exist, 12 remaining) + environment art (sky backdrop, launcher sprite, World 1 props) + Robot Commander boss. Robot art sprites (`assets/RobotEnemy/`) not yet imported.
+Visual groundwork done this phase:
+- ✅ **Sky backdrop** — `BackgroundController.cs` (sortingOrder −100, camera-follow, cover-scale); `SkyPainting.png` wired via SceneSetup
+- ✅ **Ground art** — brown earth fill + bright grass top strip, both procedural GOs in `SceneSetup.EnsureGround()`
+- ✅ **Main menu art** — `LandingPage.png` replaces procedural animated background in `MainMenuController`
+- ✅ **Two-part trebuchet** — `Trabuchet_Body.png` (static frame) + `Trabuchet_Arm.png` (rotating arm, pivot at fulcrum x=0.55); arm rotates `z = angleDeg − 190°` to match physics in `DrawArmAt()`
+
+Still to do: all 18 Meadow Ruins levels (6 exist, 12 remaining) + World 1 props in scene + Robot Commander boss. Robot art sprites (`assets/RobotEnemy/`) not yet imported.
 
 ### Phase 5 — Worlds 2–6
 Each world: new launcher, world physics modifier, new animals, all levels, environment art, music, boss
@@ -219,7 +228,7 @@ Open `unity/` in Unity Hub (Unity 6.5 / 6000.5.0f1). Open `Assets/Scenes/Game.un
 - 1 Unity unit = 50 Phaser pixels
 - `x_unity = x_phaser / 50`
 - `y_unity = -(y_phaser - 770) / 50`
-- Ground surface at Y = 0 (Unity world). Ground GO centre at (14, −0.5). Trebuchet base at (11.2, 0, 0). Camera at (13, 1.5, −10), orthoSize = 3.5 (7u tall — structures fill mid-screen). _cameraRestOffset = (1.8, 1.5) relative to launcher.
+- Ground surface at Y = 0 (Unity world). Ground GO centre at (14, −0.5). Trebuchet base at (11.2, 0, 0). Camera at (13, 2.5, −10), orthoSize = 5 (10u tall). _cameraRestOffset = (1.8, 2.5) relative to launcher.
 
 ### Physics Settings
 - Gravity Y: −20. Layers: Ground=6, Animal=7, Block=8, Robot=9, Egg=10
@@ -230,6 +239,8 @@ unity/Assets/Scripts/
   Core/
     GameManager.cs      — singleton (DontDestroyOnLoad); states: Idle/Playing/LevelComplete/LevelFailed
                           ForceStartLevel(int) boots a level without LoadScene (used for direct Editor play)
+    BackgroundController.cs — sky painting backdrop; sortingOrder=−100; ScaleToFillCamera() cover-scale in Start();
+                          LateUpdate() follows camera so backdrop appears infinite during flight
   Level/
     LevelData.cs        — ScriptableObject; birds[], blocks[], robots[] arrays; par bird count
     LevelLoader.cs      — instantiates prefabs; owns bird queue (_birdQueue); TryConsumeBird / PeekNextBird
@@ -262,6 +273,10 @@ unity/Assets/Scripts/
                           PlayerPrefs keys: ff_score_N, ff_stars_N
   Launcher/
     CatapultLauncher.cs — drag-to-aim slingshot; trajectory preview (LineRenderer); ArmSnap coroutine; camera follow
+                          Two-part trebuchet: _trebuchetBodySprite (static frame GO at localPos 0,1.18) +
+                          _trebuchetArmSprite (rotating GO at localPos 0,_pivotHeight; pivot set to fulcrum x=0.55
+                          in TextureImporter). DrawArmAt() rotates arm sprite z = angleDeg − 190°; hides _armLine
+                          when arm sprite is present. Physics: _pivotHeight=2.3, _armLongLength=1.15, _armShortLength=0.95
 
 unity/Assets/Scripts/UI/
   HUDController.cs         — HUD singleton; Canvas built at runtime; score text, bird-queue icons, pause btn;
@@ -270,15 +285,19 @@ unity/Assets/Scripts/UI/
   LevelSelectController.cs — Level select singleton; Canvas sortingOrder 300; ScrollRect + GridLayoutGroup 3-col grid;
                              activates on GameState.Idle; ForceStartLevel on card click; RefreshGrid() rebuilds on show;
                              "← BACK" button → MainMenuController.Instance.Show()
-  MainMenuController.cs    — Main menu singleton; Canvas sortingOrder 400; animated background (tiled RawImage hills,
-                             bobbing sun, drifting clouds); "FARM FURY" logo + "▶ PLAY" → LevelSelectController.Show();
-                             shows on startup (State==Idle); IsVisible guards CatapultLauncher.DelayedAutoStart()
+  MainMenuController.cs    — Main menu singleton; Canvas sortingOrder 400; full-screen LandingPage.png image +
+                             dark bottom vignette + orange "▶ PLAY" button; [SerializeField] _landingSprite wired
+                             by SceneSetup; shows on startup (State==Idle); IsVisible guards DelayedAutoStart()
 
 unity/Assets/Editor/
   SceneSetup.cs         — FarmFury > Wire Scene References
                           Wires: GameManager._levels, LevelLoader prefabs+parents, CatapultLauncher,
-                                 Camera (pos+orthoSize), _cameraRestOffset, Ground, Egg prefab into CluckAnimal.
-                          Always recreates Egg prefab. Sets camera to (13,1.5,-10) orthoSize=3.5.
+                                 Camera (pos+orthoSize), _cameraRestOffset, Ground, Egg prefab into CluckAnimal,
+                                 BackgroundController._skySprite, MainMenuController._landingSprite,
+                                 CatapultLauncher._trebuchetBodySprite + _trebuchetArmSprite (PPU=384, arm pivot=(0.55,0.5)).
+                          Sets camera to (13,2.5,-10) orthoSize=5. Updates _pivotHeight/armLongLength/armShortLength.
+                          NOTE: TextureImporter.spriteAlignment was removed in Unity 6 — use TextureImporterSettings
+                          (ReadTextureSettings / SetTextureSettings) to set custom sprite pivots.
   LevelDataGenerator.cs — FarmFury > Generate All Level Data
                           Creates/overwrites LevelData assets in Assets/ScriptableObjects/Levels/ for all 6
                           shipped levels. Level filenames must be alphabetical (L01 < L02 ...) — GameManager

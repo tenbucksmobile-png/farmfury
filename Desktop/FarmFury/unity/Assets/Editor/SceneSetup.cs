@@ -16,6 +16,7 @@ public static class SceneSetup
 
         EnsureParents();        // BlockParent, RobotParent GameObjects
         EnsureGround();         // Static ground plane with collider + renderer
+        EnsureBackground();     // Sky painting backdrop behind all game objects
         EnsureEggPrefab();      // Create Egg prefab + wire into CluckAnimal prefab
         EnsureAnimalPrefabs();  // Create Percy/Woolly/Ducky/Horace/Gerald/Billy prefabs
         EnsureHUD();            // HUDController GO (builds Canvas at runtime)
@@ -29,6 +30,36 @@ public static class SceneSetup
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
         Debug.Log("[FarmFury] Scene wiring complete. Game.unity saved.");
+    }
+
+    // ── Sky backdrop ─────────────────────────────────────────────────────────────
+
+    static void EnsureBackground()
+    {
+        var go = GameObject.Find("Background");
+        if (go == null)
+        {
+            go = new GameObject("Background");
+            Debug.Log("[FarmFury] Created 'Background' GameObject.");
+        }
+
+        var bc = go.GetComponent<BackgroundController>();
+        if (bc == null) bc = go.AddComponent<BackgroundController>();
+
+        const string skyPath = "Assets/Sprites/Environment/Skies/SkyPainting.png";
+        var skySprite = AssetDatabase.LoadAssetAtPath<Sprite>(skyPath);
+        if (skySprite != null)
+        {
+            var so = new SerializedObject(bc);
+            so.FindProperty("_skySprite").objectReferenceValue = skySprite;
+            so.ApplyModifiedProperties();
+            Debug.Log("[FarmFury] Background: SkyPainting wired.");
+        }
+        else
+        {
+            Debug.LogWarning($"[FarmFury] SkyPainting.png not found at {skyPath}. " +
+                             "Copy assets/Backdrops/SkyPainting.png there and re-run Wire Scene References.");
+        }
     }
 
     // ── New animal prefabs (Percy, Woolly, Ducky, Horace, Gerald, Billy) ────────
@@ -98,7 +129,32 @@ public static class SceneSetup
         }
         if (go.GetComponent<MainMenuController>() == null)
             go.AddComponent<MainMenuController>();
-        Debug.Log("[FarmFury] MainMenu: MainMenuController component ensured.");
+
+        // Wire landing page sprite (1920×1080 full-scene art, no bg removal needed)
+        const string landingPath = "Assets/Sprites/UI/LandingPage.png";
+        if (AssetDatabase.LoadAssetAtPath<Texture2D>(landingPath) != null)
+        {
+            var importer = AssetImporter.GetAtPath(landingPath) as TextureImporter;
+            if (importer != null)
+            {
+                bool changed = false;
+                if (importer.textureType != TextureImporterType.Sprite)
+                { importer.textureType = TextureImporterType.Sprite; changed = true; }
+                if (importer.spritePixelsPerUnit != 100)
+                { importer.spritePixelsPerUnit = 100; changed = true; }
+                if (changed) importer.SaveAndReimport();
+            }
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(landingPath);
+            var mc = go.GetComponent<MainMenuController>();
+            var so = new SerializedObject(mc);
+            so.FindProperty("_landingSprite").objectReferenceValue = sprite;
+            so.ApplyModifiedProperties();
+            Debug.Log("[FarmFury] MainMenu: landing page sprite wired.");
+        }
+        else
+        {
+            Debug.LogWarning("[FarmFury] LandingPage.png not found at Assets/Sprites/UI/LandingPage.png.");
+        }
     }
 
     // ── LevelSelectController ────────────────────────────────────────────────────
@@ -189,8 +245,66 @@ public static class SceneSetup
         var so = new SerializedObject(launcher);
         var ll = Object.FindAnyObjectByType<LevelLoader>();
         so.FindProperty("_levelLoader").objectReferenceValue = ll;
-        // Keep rest offset in sync with PositionCamera() — camera parks at launcher.x+1.8, launcher.y+1.5
-        so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(1.8f, 1.5f);
+        // Keep rest offset in sync with PositionCamera() — camera parks at launcher.x+1.8, launcher.y+2.5
+        so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(1.8f, 2.5f);
+
+        // Physics geometry — scaled to match sprite proportions at PPU=384
+        // _pivotHeight: shaft of body sprite is ~2.3u above ground at PPU=384
+        // _armLongLength: bucket end of arm sprite is ~1.15u from the fulcrum pivot
+        so.FindProperty("_pivotHeight").floatValue    = 2.3f;
+        so.FindProperty("_armLongLength").floatValue  = 1.15f;
+        so.FindProperty("_armShortLength").floatValue = 0.95f;
+
+        // ── Trebuchet body sprite (static frame + wheels) ────────────────────
+        const string bodyPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Body.png";
+        if (AssetDatabase.LoadAssetAtPath<Texture2D>(bodyPath) != null)
+        {
+            var imp = AssetImporter.GetAtPath(bodyPath) as TextureImporter;
+            if (imp != null)
+            {
+                bool dirty = false;
+                if (imp.textureType         != TextureImporterType.Sprite) { imp.textureType         = TextureImporterType.Sprite; dirty = true; }
+                if (imp.spritePixelsPerUnit != 384)                        { imp.spritePixelsPerUnit = 384;                       dirty = true; }
+                if (dirty) imp.SaveAndReimport();
+            }
+            so.FindProperty("_trebuchetBodySprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(bodyPath);
+            Debug.Log("[FarmFury] Launcher: trebuchet body sprite wired.");
+        }
+        else
+            Debug.LogWarning("[FarmFury] Trabuchet_Body.png not found — run remove_backgrounds.py then re-run Wire Scene References.");
+
+        // ── Trebuchet arm sprite (rotates with arm angle) ────────────────────
+        // Sprite pivot MUST be at the fulcrum: x≈0.55 (bracket center), y=0.50
+        const string armPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Arm.png";
+        if (AssetDatabase.LoadAssetAtPath<Texture2D>(armPath) != null)
+        {
+            var imp = AssetImporter.GetAtPath(armPath) as TextureImporter;
+            if (imp != null)
+            {
+                bool dirty = false;
+                if (imp.textureType         != TextureImporterType.Sprite) { imp.textureType         = TextureImporterType.Sprite; dirty = true; }
+                if (imp.spritePixelsPerUnit != 384)                        { imp.spritePixelsPerUnit = 384;                       dirty = true; }
+
+                // Set custom pivot via TextureImporterSettings (spriteAlignment was removed in Unity 6)
+                var settings = new TextureImporterSettings();
+                imp.ReadTextureSettings(settings);
+                var desiredPivot = new Vector2(0.55f, 0.50f);
+                if (settings.spriteAlignment != (int)SpriteAlignment.Custom || settings.spritePivot != desiredPivot)
+                {
+                    settings.spriteAlignment = (int)SpriteAlignment.Custom;
+                    settings.spritePivot     = desiredPivot;
+                    imp.SetTextureSettings(settings);
+                    dirty = true;
+                }
+
+                if (dirty) imp.SaveAndReimport();
+            }
+            so.FindProperty("_trebuchetArmSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(armPath);
+            Debug.Log("[FarmFury] Launcher: trebuchet arm sprite wired (pivot 0.55, 0.50).");
+        }
+        else
+            Debug.LogWarning("[FarmFury] Trabuchet_Arm.png not found — run remove_backgrounds.py then re-run Wire Scene References.");
+
         so.ApplyModifiedProperties();
 
         Debug.Log("[FarmFury] Launcher: wired LevelLoader reference.");
@@ -258,6 +372,10 @@ public static class SceneSetup
         // Always destroy-and-recreate to wipe any previously-broken ground object.
         var existing = GameObject.Find("Ground");
         if (existing != null) Object.DestroyImmediate(existing);
+        var existingGrass = GameObject.Find("GrassTop");
+        if (existingGrass != null) Object.DestroyImmediate(existingGrass);
+        var existingFill = GameObject.Find("GroundFill");
+        if (existingFill != null) Object.DestroyImmediate(existingFill);
 
         var go = new GameObject("Ground");
         go.tag   = "Ground";
@@ -272,15 +390,38 @@ public static class SceneSetup
         var col  = go.AddComponent<BoxCollider2D>();
         col.size = new Vector2(1f, 1f);   // 1×1 local → 60×1 world
 
+        // Dark earthy brown — looks like soil/dirt rather than a solid colour
         var sr        = go.AddComponent<SpriteRenderer>();
         sr.sprite     = MakeGroundSprite();
-        sr.color      = new Color(0.25f, 0.65f, 0.15f);
+        sr.color      = new Color(0.40f, 0.26f, 0.09f);
         sr.sortingOrder = 0;
 
         var rb      = go.AddComponent<Rigidbody2D>();
         rb.bodyType = RigidbodyType2D.Static;
 
-        Debug.Log("[FarmFury] Ground created: centre (14,-0.5), surface at Y=0.");
+        // Grass-top strip: thin bright green band sitting right at the surface (Y=0).
+        // Purely visual — no collider. Gives the ground a clear terrain edge.
+        var grassGo = new GameObject("GrassTop");
+        grassGo.transform.position   = new Vector3(14f, 0.12f, 0f);
+        grassGo.transform.localScale = new Vector3(60f, 0.25f, 1f);
+
+        var grassSr = grassGo.AddComponent<SpriteRenderer>();
+        grassSr.sprite       = MakeGroundSprite();
+        grassSr.color        = new Color(0.22f, 0.65f, 0.10f);
+        grassSr.sortingOrder = 1;
+
+        // Deep soil fill — covers all camera space below Y=0 so the sky isn't
+        // visible underground. 24 units tall fills any realistic orthoSize value.
+        var fillGo = new GameObject("GroundFill");
+        fillGo.transform.position   = new Vector3(14f, -12f, 0f);
+        fillGo.transform.localScale = new Vector3(60f,  24f, 1f);
+
+        var fillSr = fillGo.AddComponent<SpriteRenderer>();
+        fillSr.sprite       = MakeGroundSprite();
+        fillSr.color        = new Color(0.40f, 0.26f, 0.09f);
+        fillSr.sortingOrder = 0;
+
+        Debug.Log("[FarmFury] Ground created: brown soil + grass-top strip + deep fill.");
     }
 
     static Sprite MakeGroundSprite()
@@ -299,7 +440,8 @@ public static class SceneSetup
         if (cam == null) return;
         cam.orthographic     = true;
         cam.orthographicSize = 3.5f; // 7u tall — structures fill mid-screen, launcher visible left
-        cam.transform.position = new Vector3(13f, 1.5f, -10f);
+        cam.transform.position = new Vector3(13f, 2.5f, -10f);
+        cam.backgroundColor    = new Color(0.38f, 0.65f, 0.90f); // sky-blue fallback if sprite absent
         Debug.Log("[FarmFury] Camera positioned at (13, 1.5, -10), orthoSize=3.5.");
     }
 
