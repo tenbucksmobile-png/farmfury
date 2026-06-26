@@ -72,8 +72,14 @@ def remove_white_bg(img: Image.Image) -> Image.Image:
         r, g, b, _ = px[x, y]
         return r >= THRESHOLD and g >= THRESHOLD and b >= THRESHOLD
 
-    # Seed from all four corners
-    for sx, sy in [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)]:
+    # Seed from all four border edges for thorough removal
+    border = (
+        [(x, 0) for x in range(w)] +
+        [(x, h - 1) for x in range(w)] +
+        [(0, y) for y in range(h)] +
+        [(w - 1, y) for y in range(h)]
+    )
+    for sx, sy in border:
         if not visited[sx][sy] and is_white(sx, sy):
             q.append((sx, sy))
             visited[sx][sy] = True
