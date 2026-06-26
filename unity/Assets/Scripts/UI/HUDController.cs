@@ -17,7 +17,7 @@ public class HUDController : MonoBehaviour
     private TextMeshProUGUI _pauseGlyph;
     private RectTransform   _birdQueueRoot;
 
-    // Parallel lists: icon RectTransforms + their base X positions
+    // Parallel lists: card RectTransforms + their base X positions
     private readonly List<RectTransform> _birdIcons   = new();
     private readonly List<float>         _birdIconsX  = new();
 
@@ -28,10 +28,18 @@ public class HUDController : MonoBehaviour
     private Sprite _circleSpr;
     private Sprite _squareSpr;
 
-    private const float IconSize   = 52f;
-    private const float IconStride = 60f;  // icon size + gap
-    private const float BobAmp    = 3.5f;  // pixels
-    private const float BobFreq   = 1.8f;  // Hz
+    // Card sprites: indexed by (int)AnimalType, wired via SceneSetup
+    [SerializeField] private Sprite[] _cardSprites = new Sprite[8];
+
+    // Card layout constants
+    private const float CardActiveW  = 108f;
+    private const float CardActiveH  = 142f;
+    private const float CardQueueW   = 82f;
+    private const float CardQueueH   = 108f;
+    private const float CardGap      = 10f;
+
+    private const float BobAmp  = 3.5f;  // pixels
+    private const float BobFreq = 1.8f;  // Hz
 
     // ── Level Complete panel (Phase 2.2) ──────────────────────────────────────
 
@@ -183,14 +191,14 @@ public class HUDController : MonoBehaviour
                          color: Color.white, align: TextAlignmentOptions.Center);
     }
 
-    // Bird queue container: bottom-left, icons are created dynamically.
+    // Bird queue container: bottom-left, tall enough for card widgets.
     void BuildBirdQueueArea(Transform canvas)
     {
         var rt         = MakeRect(canvas, "BirdQueue",
                              anchorMin: new Vector2(0f, 0f), anchorMax: new Vector2(0f, 0f),
                              pivot:     new Vector2(0f, 0f),
-                             pos:       new Vector2(20f, 60f),
-                             size:      new Vector2(500f, 70f));
+                             pos:       new Vector2(14f, 14f),
+                             size:      new Vector2(520f, 150f));
         _birdQueueRoot = rt;
     }
 
@@ -216,7 +224,7 @@ public class HUDController : MonoBehaviour
         b.onClick.AddListener(OnPauseClicked);
     }
 
-    // ── Bird queue ────────────────────────────────────────────────────────────
+    // ── Bird queue (card widgets) ─────────────────────────────────────────────
 
     void RefreshBirdIcons()
     {
@@ -227,33 +235,84 @@ public class HUDController : MonoBehaviour
         if (_levelLoader == null) return;
 
         var queue = _levelLoader.BirdQueueSnapshot;
+        float cursorX = 0f;
+
         for (int i = 0; i < queue.Length; i++)
         {
-            float x     = i * IconStride;
-            bool  first = (i == 0);
+            bool  active = (i == 0);
+            float w = active ? CardActiveW : CardQueueW;
+            float h = active ? CardActiveH : CardQueueH;
+            float x = cursorX + w * 0.5f;
 
-            var iconGO      = new GameObject($"BirdIcon_{i}");
-            iconGO.transform.SetParent(_birdQueueRoot, false);
+            AnimalType atype = queue[i];
 
-            var img         = iconGO.AddComponent<Image>();
-            var animalSpr   = _levelLoader?.GetAnimalIdleSprite(queue[i]);
-            img.sprite      = animalSpr != null ? animalSpr : _circleSpr;
-            img.color       = animalSpr != null ? Color.white : BirdColor(queue[i]);
-
-            var rt          = img.rectTransform;
-            rt.anchorMin    = new Vector2(0f, 0.5f);
-            rt.anchorMax    = new Vector2(0f, 0.5f);
-            rt.pivot        = new Vector2(0.5f, 0.5f);
+            // Slot container — anchored left-centre of queue root
+            var slot   = new GameObject($"Card_{i}");
+            slot.transform.SetParent(_birdQueueRoot, false);
+            var rt     = slot.AddComponent<RectTransform>();
+            rt.anchorMin        = new Vector2(0f, 0.5f);
+            rt.anchorMax        = new Vector2(0f, 0.5f);
+            rt.pivot            = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = new Vector2(x, 0f);
-            rt.sizeDelta    = new Vector2(first ? IconSize * 1.2f : IconSize,
-                                          first ? IconSize * 1.2f : IconSize);
+            rt.sizeDelta        = new Vector2(w, h);
+
+            // Card face image
+            var cardImg   = slot.AddComponent<Image>();
+            Sprite cardSpr = GetCardSprite(atype);
+            cardImg.sprite = cardSpr != null ? cardSpr : _squareSpr;
+            cardImg.color  = cardSpr != null ? Color.white : BirdColor(atype);
+
+            // Damage badge: top-right corner, orange pill with lightning + number
+            BuildDamageBadge(rt, atype, active);
+
+            // Dim inactive cards so the active one pops
+            if (!active) cardImg.color = new Color(0.72f, 0.72f, 0.72f, 1f);
 
             _birdIcons.Add(rt);
             _birdIconsX.Add(x);
+            cursorX += w + CardGap;
         }
     }
 
-    // Staggered sine-wave bob; first icon gets larger amplitude.
+    void BuildDamageBadge(RectTransform parent, AnimalType type, bool large)
+    {
+        float bw = large ? 54f : 42f;
+        float bh = large ? 26f : 21f;
+
+        var badge = MakeImage(parent, "DamageBadge", _squareSpr,
+                        new Color(0.96f, 0.56f, 0.07f, 0.93f),
+                        anchorMin: new Vector2(1f, 1f), anchorMax: new Vector2(1f, 1f),
+                        pivot: new Vector2(1f, 1f),
+                        pos: new Vector2(-3f, -3f),
+                        size: new Vector2(bw, bh));
+
+        MakeStretchText(badge.transform, "DmgText",
+            fontSize: large ? 17f : 13f,
+            text: $"⚡{GetDamage(type)}",
+            color: Color.white,
+            align: TextAlignmentOptions.Center);
+    }
+
+    Sprite GetCardSprite(AnimalType type)
+    {
+        int idx = (int)type;
+        return (_cardSprites != null && idx < _cardSprites.Length) ? _cardSprites[idx] : null;
+    }
+
+    static int GetDamage(AnimalType type) => type switch
+    {
+        AnimalType.Cluck  => 15,
+        AnimalType.Bessie => 50,
+        AnimalType.Percy  => 20,
+        AnimalType.Woolly => 12,
+        AnimalType.Ducky  => 18,
+        AnimalType.Horace => 35,
+        AnimalType.Gerald => 55,
+        AnimalType.Billy  => 25,
+        _                 => 10,
+    };
+
+    // Staggered sine-wave bob; active card (first) gets larger amplitude.
     void AnimateBirdIcons()
     {
         int n = _birdIcons.Count;

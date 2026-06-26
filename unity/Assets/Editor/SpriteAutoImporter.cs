@@ -50,6 +50,14 @@ public class SpriteAutoImporter : AssetPostprocessor
         {
             ConfigureSprite(imp, 384, alphaTransparency: true);
         }
+        // ── HUD animal cards (1024x1024 Kling AI portraits, PPU=100 for UI) ──
+        else if (assetPath.Contains("Sprites/UI/Cards/"))
+        {
+            ConfigureSprite(imp, 100, alphaTransparency: true);
+            // Single-sprite mode so each PNG maps to one Sprite asset
+            if (imp.spriteImportMode != SpriteImportMode.Single)
+                imp.spriteImportMode = SpriteImportMode.Single;
+        }
         // ── Character sprites (PPU already managed per-character by SpriteWiring) ─
         // Only fix alpha — leave PPU alone so SpriteWiring stays authoritative.
         else if (assetPath.Contains("Sprites/Characters/") || assetPath.Contains("Sprites/Enemies/"))
