@@ -49,25 +49,42 @@ public static class EditorAutoSetup
 
     static void AutoCopyCardSprites()
     {
-        // Copy assets/FarmCards/*.png → Assets/Sprites/UI/Cards/ so SceneSetup can wire them.
-        // Source path is two directories above the Unity project root (repo root/assets/FarmCards).
         string unityRoot = Path.GetFullPath(Application.dataPath + "/../..");
-        string srcDir    = Path.Combine(unityRoot, "assets", "FarmCards");
-        const string dstFolder = "Assets/Sprites/UI/Cards";
+        CopySpritesFolder(
+            srcRelative: "assets/FarmCards",
+            dstParent:   "Assets/Sprites/UI",
+            dstFolder:   "Assets/Sprites/UI/Cards",
+            folderName:  "Cards",
+            logLabel:    "HUD animal card");
+        CopySpritesFolder(
+            srcRelative: "assets/LevelCards",
+            dstParent:   "Assets/Sprites/UI",
+            dstFolder:   "Assets/Sprites/UI/LevelCards",
+            folderName:  "LevelCards",
+            logLabel:    "level select world card");
+    }
 
-        if (!Directory.Exists(srcDir)) return;  // nothing to copy yet
+    static void CopySpritesFolder(string srcRelative, string dstParent,
+                                   string dstFolder, string folderName, string logLabel)
+    {
+        string unityRoot = Path.GetFullPath(Application.dataPath + "/../..");
+        string srcDir    = Path.Combine(unityRoot, srcRelative);
+        if (!Directory.Exists(srcDir)) return;
 
-        if (!AssetDatabase.IsValidFolder("Assets/Sprites/UI"))
-            AssetDatabase.CreateFolder("Assets/Sprites", "UI");
+        if (!AssetDatabase.IsValidFolder(dstParent))
+        {
+            var parts = dstParent.Split('/');
+            AssetDatabase.CreateFolder(string.Join("/", parts[..^1]), parts[^1]);
+        }
         if (!AssetDatabase.IsValidFolder(dstFolder))
-            AssetDatabase.CreateFolder("Assets/Sprites/UI", "Cards");
+            AssetDatabase.CreateFolder(dstParent, folderName);
 
         bool anyCopied = false;
         foreach (var srcPath in Directory.GetFiles(srcDir, "*.png"))
         {
             string filename = Path.GetFileName(srcPath);
             string dstPath  = Path.Combine(Application.dataPath,
-                                 "Sprites/UI/Cards", filename).Replace('\\', '/');
+                                 dstFolder.Replace("Assets/", ""), filename);
             if (!File.Exists(dstPath))
             {
                 File.Copy(srcPath, dstPath);
@@ -78,7 +95,7 @@ public static class EditorAutoSetup
         if (anyCopied)
         {
             AssetDatabase.Refresh();
-            Debug.Log($"[FarmFury] Copied card sprites from assets/FarmCards/ to {dstFolder}.");
+            Debug.Log($"[FarmFury] Copied {logLabel} sprites from {srcRelative}/ to {dstFolder}.");
         }
     }
 

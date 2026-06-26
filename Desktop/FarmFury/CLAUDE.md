@@ -175,7 +175,9 @@ Visual groundwork done this phase:
 - ✅ **Animal cards art** — 8 Kling AI card portraits in `assets/FarmCards/` (barnwood frame, 1024×1024). Files: `Cluck_Chicken.png`, `Bessie_Cow.png`, `Percy_Pig.png`, `Woolly_Sheep.png`, `Ducky_Duck.png`, `Horace_Horse.png`, `Gerald_Turkey.png`, `Billy_Goat.png`.
 - ✅ **Card HUD system** — `HUDController` now builds card widgets instead of flat circles. Active card: 108×142px (full brightness, larger bob), queue cards: 82×108px (dimmed). Each card has an orange damage badge (top-right, `⚡N`). `[SerializeField] Sprite[] _cardSprites` indexed by `AnimalType`. `EditorAutoSetup.AutoCopyCardSprites()` auto-copies `assets/FarmCards/*.png` → `Assets/Sprites/UI/Cards/` on compile. `SceneSetup.EnsureHUD()` wires sprites by keyword per animal. `SpriteAutoImporter` handles Cards/ at PPU=100 Single mode.
 
-Still to do: all 18 Meadow Ruins levels (6 exist, 12 remaining) + World 1 props in scene + Robot Commander boss. Robot art sprites (`assets/RobotEnemy/`) not yet imported.
+- ✅ **Level select redesign** — `LevelSelectController` rewritten: world-art thumbnails (`_worldCardSprites[0..5]`), bottom dark gradient overlay for legibility, W# world label (top-left), large level number, gold/grey ★★★ stars, lock veil for locked cards. Falls back to 6 world-tinted solid colours if no art. `assets/LevelCards/` → `Assets/Sprites/UI/LevelCards/` auto-copy on compile; `SceneSetup.EnsureLevelSelect()` wires sprites by keyword (Meadow/Frozen/Watermill/Sky/Sunken/Mothership). Kling AI level card prompts: 6 landscape-orientation (800×600) painted scenes, one per world, full-bleed, no text.
+
+Still to do: generate 6 world level card images via Kling AI and drop into `assets/LevelCards/` → all 18 Meadow Ruins levels (6 exist, 12 remaining) + World 1 props in scene + Robot Commander boss. Robot art sprites (`assets/RobotEnemy/`) not yet imported.
 
 ### Phase 5 — Worlds 2–6
 Each world: new launcher, world physics modifier, new animals, all levels, environment art, music, boss

@@ -2,21 +2,44 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// Phase 2.5 — Level select: scrollable 3-column grid, star counts, locked/unlocked state.
+// Phase 4 — Level select: world-art card thumbnails, star rating, lock overlay.
 // Self-contained: builds its own Canvas (sortingOrder 300) in Awake().
 // Activates on GameState.Idle; hides on any other state.
-// In Game.unity, CatapultLauncher.Start() immediately calls ForceStartLevel(0),
-// so the panel is NOT shown on startup — it only appears when the player clicks MENU.
+// _worldCardSprites[0..5] wired by SceneSetup from Assets/Sprites/UI/LevelCards/.
 public class LevelSelectController : MonoBehaviour
 {
     public static LevelSelectController Instance { get; private set; }
+
+    // World card backgrounds indexed by world number (0 = Meadow Ruins … 5 = Mothership).
+    // Wired by SceneSetup; falls back to a tinted solid when null.
+    [SerializeField] private Sprite[] _worldCardSprites = new Sprite[6];
 
     private GameObject    _panel;
     private RectTransform _contentRT;
     private Sprite        _squareSpr;
 
-    private const float CardW   = 260f;
-    private const float CardH   = 200f;
+    // World colour tints used when no art sprite is wired yet
+    private static readonly Color[] WorldTints =
+    {
+        new Color(0.16f, 0.28f, 0.13f),   // W1 meadow green
+        new Color(0.13f, 0.22f, 0.35f),   // W2 ice blue
+        new Color(0.30f, 0.20f, 0.10f),   // W3 watermill amber
+        new Color(0.10f, 0.18f, 0.32f),   // W4 sky blue
+        new Color(0.08f, 0.20f, 0.30f),   // W5 ocean teal
+        new Color(0.15f, 0.08f, 0.28f),   // W6 mothership purple
+    };
+
+    private static readonly string[] WorldNames =
+    {
+        "MEADOW RUINS", "FROZEN TUNDRA", "WATERMILL VILLAGE",
+        "SKY ISLANDS",  "SUNKEN CITY",   "ROBOT MOTHERSHIP",
+    };
+
+    // Levels per world — used to map level index → world index
+    private static readonly int[] LevelsPerWorld = { 18, 22, 22, 24, 22, 16 };
+
+    private const float CardW   = 280f;
+    private const float CardH   = 210f;
     private const int   Columns = 3;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -33,14 +56,9 @@ public class LevelSelectController : MonoBehaviour
     {
         if (GameManager.Instance == null) return;
         GameManager.Instance.OnStateChanged += OnStateChanged;
-        // Auto-show only when in the menu scene (no CatapultLauncher present).
-        // In Game.unity, ForceStartLevel(0) fires from CatapultLauncher.Start()
-        // and transitions to Playing — no need to show the panel here.
         if (GameManager.Instance.State == GameState.Idle &&
             FindAnyObjectByType<CatapultLauncher>() == null)
-        {
             ShowPanel();
-        }
     }
 
     void OnDestroy()
@@ -57,15 +75,9 @@ public class LevelSelectController : MonoBehaviour
         else                         HidePanel();
     }
 
-    // Called by MainMenuController when the player clicks PLAY.
     public void Show() => ShowPanel();
 
-    void ShowPanel()
-    {
-        RefreshGrid();
-        _panel.SetActive(true);
-    }
-
+    void ShowPanel() { RefreshGrid(); _panel.SetActive(true); }
     void HidePanel() => _panel.SetActive(false);
 
     // ── Grid ──────────────────────────────────────────────────────────────────
@@ -83,85 +95,155 @@ public class LevelSelectController : MonoBehaviour
         }
     }
 
+    // Returns which world this level belongs to (0-based).
+    static int WorldIndex(int levelIndex)
+    {
+        int remaining = levelIndex;
+        for (int w = 0; w < LevelsPerWorld.Length; w++)
+        {
+            if (remaining < LevelsPerWorld[w]) return w;
+            remaining -= LevelsPerWorld[w];
+        }
+        return LevelsPerWorld.Length - 1;
+    }
+
     void BuildCard(Transform parent, int index, bool unlocked, int stars)
     {
-        var cardGO  = new GameObject($"Level_{index + 1}");
-        cardGO.transform.SetParent(parent, false);
-        cardGO.AddComponent<RectTransform>(); // GridLayoutGroup controls size
+        int worldIdx = WorldIndex(index);
 
-        var cardImg  = cardGO.AddComponent<Image>();
-        cardImg.sprite = _squareSpr;
-        cardImg.color  = unlocked
-            ? new Color(0.13f, 0.15f, 0.23f)
-            : new Color(0.25f, 0.25f, 0.28f);
+        // ── Root ─────────────────────────────────────────────────────────────
+        var card   = new GameObject($"Level_{index + 1}");
+        card.transform.SetParent(parent, false);
+        var cardRT = card.AddComponent<RectTransform>(); // size set by GridLayoutGroup
 
+        // ── Art background ───────────────────────────────────────────────────
+        var artImg   = card.AddComponent<Image>();
+        Sprite worldSpr = worldIdx < _worldCardSprites.Length ? _worldCardSprites[worldIdx] : null;
+        artImg.sprite   = worldSpr != null ? worldSpr : _squareSpr;
+        artImg.color    = worldSpr != null
+            ? (unlocked ? Color.white : new Color(0.5f, 0.5f, 0.5f, 1f))
+            : (unlocked ? WorldTints[worldIdx] : new Color(0.22f, 0.22f, 0.25f));
+
+        // ── Bottom gradient — dark strip for text legibility ─────────────────
+        AddOverlay(card.transform, "Gradient",
+            anchorMin: new Vector2(0f, 0f), anchorMax: new Vector2(1f, 0.55f),
+            color: new Color(0f, 0f, 0f, 0.72f));
+
+        // ── Top-left world label ─────────────────────────────────────────────
+        AddLabel(card.transform, "WorldLabel",
+            text:     $"W{worldIdx + 1}",
+            anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(0f, 1f),
+            pivot:     new Vector2(0f, 1f),
+            pos:       new Vector2(8f, -6f),
+            size:      new Vector2(60f, 24f),
+            fontSize:  13f,
+            color:     new Color(1f, 1f, 1f, 0.70f));
+
+        // ── Level number ─────────────────────────────────────────────────────
+        AddLabel(card.transform, "LevelNum",
+            text:     (index + 1).ToString(),
+            anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
+            pivot:     new Vector2(0.5f, 0.5f),
+            pos:       new Vector2(0f, 20f),
+            size:      new Vector2(240f, 90f),
+            fontSize:  unlocked ? 72f : 52f,
+            color:     unlocked ? Color.white : new Color(0.60f, 0.60f, 0.65f));
+
+        // ── Stars or LOCKED ──────────────────────────────────────────────────
+        if (unlocked)
+        {
+            AddLabel(card.transform, "Stars",
+                text:     StarText(stars),
+                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+                pivot:     new Vector2(0.5f, 0f),
+                pos:       new Vector2(0f, 12f),
+                size:      new Vector2(200f, 34f),
+                fontSize:  26f,
+                color:     Color.white);
+        }
+        else
+        {
+            // Dark veil over entire card for locked state
+            AddOverlay(card.transform, "LockVeil",
+                anchorMin: Vector2.zero, anchorMax: Vector2.one,
+                color: new Color(0f, 0f, 0f, 0.48f));
+
+            AddLabel(card.transform, "LockLabel",
+                text:     "🔒 LOCKED",
+                anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+                pivot:     new Vector2(0.5f, 0f),
+                pos:       new Vector2(0f, 10f),
+                size:      new Vector2(200f, 30f),
+                fontSize:  16f,
+                color:     new Color(0.72f, 0.72f, 0.76f));
+        }
+
+        // ── Button (unlocked only) ───────────────────────────────────────────
         if (unlocked)
         {
             int idx  = index;
-            var btn  = cardGO.AddComponent<Button>();
-            btn.targetGraphic = cardImg;
+            var btn  = card.AddComponent<Button>();
+            btn.targetGraphic = artImg;
             var cols = btn.colors;
             cols.normalColor      = Color.white;
-            cols.highlightedColor = new Color(0.80f, 0.80f, 0.80f);
-            cols.pressedColor     = new Color(0.58f, 0.58f, 0.58f);
+            cols.highlightedColor = new Color(0.88f, 0.92f, 1.00f);
+            cols.pressedColor     = new Color(0.60f, 0.64f, 0.72f);
             btn.colors = cols;
             btn.onClick.AddListener(() => OnLevelSelected(idx));
         }
-
-        // Level number (larger when unlocked)
-        AddText(cardGO.transform, "Num",
-            text:     (index + 1).ToString(),
-            pos:      new Vector2(0f, 32f),
-            size:     new Vector2(220f, 88f),
-            fontSize: unlocked ? 68f : 46f,
-            color:    unlocked ? Color.white : new Color(0.52f, 0.52f, 0.56f));
-
-        // Stars (unlocked) or LOCKED label
-        if (unlocked)
-            AddText(cardGO.transform, "Stars",
-                text:     StarRichText(stars),
-                pos:      new Vector2(0f, -54f),
-                size:     new Vector2(220f, 36f),
-                fontSize: 24f,
-                color:    Color.white);
-        else
-            AddText(cardGO.transform, "LockLabel",
-                text:     "LOCKED",
-                pos:      new Vector2(0f, -58f),
-                size:     new Vector2(220f, 32f),
-                fontSize: 18f,
-                color:    new Color(0.50f, 0.50f, 0.54f));
     }
 
-    static void AddText(Transform parent, string name,
-        string text, Vector2 pos, Vector2 size, float fontSize, Color color)
+    static void AddOverlay(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Color color)
     {
-        var go       = new GameObject(name);
+        var go   = new GameObject(name);
         go.transform.SetParent(parent, false);
-        var rt       = go.AddComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 0.5f);
-        rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot     = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = pos;
-        rt.sizeDelta = size;
-        var tmp      = go.AddComponent<TextMeshProUGUI>();
-        tmp.text      = text;
-        tmp.fontSize  = fontSize;
-        tmp.color     = color;
-        tmp.alignment = TextAlignmentOptions.Center;
-        tmp.enableWordWrapping = false;
-        tmp.richText  = true;
+        var rt   = go.AddComponent<RectTransform>();
+        rt.anchorMin = anchorMin;
+        rt.anchorMax = anchorMax;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        var img  = go.AddComponent<Image>();
+        img.sprite = null;
+        img.color  = color;
+        img.raycastTarget = false;
     }
 
-    // 3 gold or grey stars via TMP rich text.
-    static string StarRichText(int earned)
+    static void AddLabel(Transform parent, string name,
+        string text, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
+        Vector2 pos, Vector2 size, float fontSize, Color color)
+    {
+        var go   = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt   = go.AddComponent<RectTransform>();
+        rt.anchorMin        = anchorMin;
+        rt.anchorMax        = anchorMax;
+        rt.pivot            = pivot;
+        rt.anchoredPosition = pos;
+        rt.sizeDelta        = size;
+        var tmp  = go.AddComponent<TextMeshProUGUI>();
+        tmp.text               = text;
+        tmp.fontSize           = fontSize;
+        tmp.color              = color;
+        tmp.alignment          = TextAlignmentOptions.Center;
+        tmp.enableWordWrapping = false;
+        tmp.richText           = true;
+        tmp.raycastTarget      = false;
+    }
+
+    // ★★★ in gold/grey via TMP rich text.
+    static string StarText(int earned)
     {
         const string gold = "#FFD200";
-        const string grey = "#4A4A58";
-        string S(int i) => i < earned
-            ? $"<color={gold}>●</color>"   // ● filled
-            : $"<color={grey}>○</color>";  // ○ empty
-        return S(0) + "  " + S(1) + "  " + S(2);
+        const string grey = "#3A3A48";
+        System.Text.StringBuilder sb = new();
+        for (int i = 0; i < 3; i++)
+        {
+            if (i > 0) sb.Append("  ");
+            sb.Append(i < earned
+                ? $"<color={gold}>★</color>"
+                : $"<color={grey}>★</color>");
+        }
+        return sb.ToString();
     }
 
     void OnLevelSelected(int index)
@@ -180,27 +262,26 @@ public class LevelSelectController : MonoBehaviour
 
     void BuildUI()
     {
-        // Canvas — sortingOrder 300 sits above HUD (100) and all result panels
-        var cvGO              = new GameObject("LevelSelectCanvas");
+        var cvGO               = new GameObject("LevelSelectCanvas");
         cvGO.transform.SetParent(transform, false);
-        var cv                = cvGO.AddComponent<Canvas>();
-        cv.renderMode         = RenderMode.ScreenSpaceOverlay;
-        cv.sortingOrder       = 300;
-        var cs                = cvGO.AddComponent<CanvasScaler>();
-        cs.uiScaleMode        = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        var cv                 = cvGO.AddComponent<Canvas>();
+        cv.renderMode          = RenderMode.ScreenSpaceOverlay;
+        cv.sortingOrder        = 300;
+        var cs                 = cvGO.AddComponent<CanvasScaler>();
+        cs.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         cs.referenceResolution = new Vector2(1920f, 1080f);
-        cs.screenMatchMode    = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        cs.screenMatchMode     = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
         cs.matchWidthOrHeight  = 0.5f;
         cvGO.AddComponent<GraphicRaycaster>();
         _panel = cvGO;
 
         Transform root = cvGO.transform;
 
-        // Background
-        var bg      = FullScreenGO(root, "BG");
-        var bgImg   = bg.AddComponent<Image>();
+        // Background — rich dark blue-grey
+        var bg    = FullScreenGO(root, "BG");
+        var bgImg = bg.AddComponent<Image>();
         bgImg.sprite = _squareSpr;
-        bgImg.color  = new Color(0.07f, 0.09f, 0.06f);
+        bgImg.color  = new Color(0.05f, 0.06f, 0.10f);
 
         // Title
         var titleGO  = new GameObject("Title");
@@ -209,30 +290,29 @@ public class LevelSelectController : MonoBehaviour
         titleRT.anchorMin        = new Vector2(0.5f, 1f);
         titleRT.anchorMax        = new Vector2(0.5f, 1f);
         titleRT.pivot            = new Vector2(0.5f, 1f);
-        titleRT.anchoredPosition = new Vector2(0f, -30f);
-        titleRT.sizeDelta        = new Vector2(700f, 76f);
+        titleRT.anchoredPosition = new Vector2(0f, -28f);
+        titleRT.sizeDelta        = new Vector2(800f, 72f);
         var titleTMP             = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text      = "SELECT LEVEL";
-        titleTMP.fontSize  = 54f;
-        titleTMP.color     = new Color(0.96f, 0.90f, 0.70f);
-        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.text              = "SELECT LEVEL";
+        titleTMP.fontSize          = 52f;
+        titleTMP.color             = new Color(0.98f, 0.88f, 0.52f);
+        titleTMP.alignment         = TextAlignmentOptions.Center;
         titleTMP.enableWordWrapping = false;
 
-        // Scroll root
+        // Scroll area
         var scrollGO = new GameObject("ScrollArea");
         scrollGO.transform.SetParent(root, false);
         var scrollRT = scrollGO.AddComponent<RectTransform>();
         scrollRT.anchorMin        = new Vector2(0.5f, 0.5f);
         scrollRT.anchorMax        = new Vector2(0.5f, 0.5f);
         scrollRT.pivot            = new Vector2(0.5f, 0.5f);
-        scrollRT.anchoredPosition = new Vector2(0f, -50f); // shift down to give title room
-        scrollRT.sizeDelta        = new Vector2(960f, 620f);
-        // Transparent image so raycasts hit this layer (blocks clicks to game behind)
-        var scrollBg   = scrollGO.AddComponent<Image>();
+        scrollRT.anchoredPosition = new Vector2(0f, -46f);
+        scrollRT.sizeDelta        = new Vector2(1020f, 640f);
+        var scrollBg  = scrollGO.AddComponent<Image>();
         scrollBg.sprite = _squareSpr;
-        scrollBg.color  = new Color(0f, 0f, 0f, 0f);
+        scrollBg.color  = Color.clear;
 
-        // Viewport — clips content
+        // Viewport
         var vpGO = new GameObject("Viewport");
         vpGO.transform.SetParent(scrollGO.transform, false);
         var vpRT = vpGO.AddComponent<RectTransform>();
@@ -240,55 +320,54 @@ public class LevelSelectController : MonoBehaviour
         vpRT.anchorMax = Vector2.one;
         vpRT.offsetMin = Vector2.zero;
         vpRT.offsetMax = Vector2.zero;
-        var vpImg = vpGO.AddComponent<Image>();
+        var vpImg  = vpGO.AddComponent<Image>();
         vpImg.sprite = _squareSpr;
-        vpImg.color  = Color.white;           // Mask needs opaque alpha to clip content
+        vpImg.color  = Color.white;
         var vpMask = vpGO.AddComponent<Mask>();
-        vpMask.showMaskGraphic = false;        // hide the white rect visually
+        vpMask.showMaskGraphic = false;
 
-        // Content — GridLayoutGroup arranges cards; ContentSizeFitter grows height
+        // Content grid
         var contentGO = new GameObject("Content");
         contentGO.transform.SetParent(vpGO.transform, false);
         _contentRT    = contentGO.AddComponent<RectTransform>();
         _contentRT.anchorMin = new Vector2(0f, 1f);
         _contentRT.anchorMax = new Vector2(1f, 1f);
         _contentRT.pivot     = new Vector2(0.5f, 1f);
-        _contentRT.sizeDelta = Vector2.zero; // width from anchors; height from ContentSizeFitter
+        _contentRT.sizeDelta = Vector2.zero;
 
         var grid             = contentGO.AddComponent<GridLayoutGroup>();
         grid.cellSize        = new Vector2(CardW, CardH);
-        grid.spacing         = new Vector2(28f, 28f);
-        grid.padding         = new RectOffset(28, 28, 28, 28);
+        grid.spacing         = new Vector2(24f, 24f);
+        grid.padding         = new RectOffset(24, 24, 24, 24);
         grid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
         grid.constraintCount = Columns;
         grid.startCorner     = GridLayoutGroup.Corner.UpperLeft;
         grid.startAxis       = GridLayoutGroup.Axis.Horizontal;
         grid.childAlignment  = TextAnchor.UpperCenter;
 
-        var csf          = contentGO.AddComponent<ContentSizeFitter>();
-        csf.verticalFit  = ContentSizeFitter.FitMode.PreferredSize;
+        var csf         = contentGO.AddComponent<ContentSizeFitter>();
+        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        var scroll              = scrollGO.AddComponent<ScrollRect>();
-        scroll.viewport         = vpRT;
-        scroll.content          = _contentRT;
-        scroll.horizontal       = false;
-        scroll.vertical         = true;
+        var scroll               = scrollGO.AddComponent<ScrollRect>();
+        scroll.viewport          = vpRT;
+        scroll.content           = _contentRT;
+        scroll.horizontal        = false;
+        scroll.vertical          = true;
         scroll.scrollSensitivity = 35f;
-        scroll.movementType     = ScrollRect.MovementType.Clamped;
+        scroll.movementType      = ScrollRect.MovementType.Clamped;
 
-        // BACK button — bottom-centre, returns to main menu
+        // BACK button
         var backGO  = new GameObject("BackBtn");
         backGO.transform.SetParent(root, false);
         var backRT  = backGO.AddComponent<RectTransform>();
         backRT.anchorMin        = new Vector2(0.5f, 0f);
         backRT.anchorMax        = new Vector2(0.5f, 0f);
         backRT.pivot            = new Vector2(0.5f, 0f);
-        backRT.anchoredPosition = new Vector2(0f, 30f);
+        backRT.anchoredPosition = new Vector2(0f, 28f);
         backRT.sizeDelta        = new Vector2(200f, 52f);
         var backImg = backGO.AddComponent<Image>();
         backImg.sprite = _squareSpr;
         backImg.color  = new Color(0.12f, 0.14f, 0.22f);
-        // Label
         var lblGO  = new GameObject("Label");
         lblGO.transform.SetParent(backGO.transform, false);
         var lblRT  = lblGO.AddComponent<RectTransform>();
@@ -302,7 +381,6 @@ public class LevelSelectController : MonoBehaviour
         lblTMP.color     = Color.white;
         lblTMP.alignment = TextAlignmentOptions.Center;
         lblTMP.enableWordWrapping = false;
-        // Button component
         var backBtn = backGO.AddComponent<Button>();
         backBtn.targetGraphic = backImg;
         var bc      = backBtn.colors;
@@ -315,12 +393,11 @@ public class LevelSelectController : MonoBehaviour
         _panel.SetActive(false);
     }
 
-    // Full-screen RectTransform child (anchors 0→1 on both axes, no offset).
     static GameObject FullScreenGO(Transform parent, string name)
     {
-        var go       = new GameObject(name);
+        var go   = new GameObject(name);
         go.transform.SetParent(parent, false);
-        var rt       = go.AddComponent<RectTransform>();
+        var rt   = go.AddComponent<RectTransform>();
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
         rt.offsetMin = Vector2.zero;
