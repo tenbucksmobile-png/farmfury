@@ -43,6 +43,7 @@ public abstract class AnimalBase : MonoBehaviour
         _col = GetComponent<CircleCollider2D>();
         _sr  = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
+        _sr.sortingOrder = 5;   // in front of trebuchet body (3) and arm (4)
 
         _rb.mass                   = mass;
         _rb.linearDamping          = linearDrag;

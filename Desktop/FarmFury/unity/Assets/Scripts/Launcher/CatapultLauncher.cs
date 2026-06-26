@@ -16,9 +16,11 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private float _maxLaunchSpeed  = 16.8f;  // 14 px/frame × 60 fps / 50
 
     [Header("Arm Geometry")]
-    [SerializeField] private float _pivotHeight    = 1.6f;    // 80 px / 50
-    [SerializeField] private float _armLongLength  = 1.76f;   // 88 px / 50
-    [SerializeField] private float _armShortLength = 0.52f;   // 26 px / 50
+    // Consts (not [SerializeField]) — derived from sprite PPU=384 so they must not be
+    // overridden by stale Inspector values. Pivot at body apex ≈ 87% of 2.667u sprite.
+    private const float _pivotHeight    = 2.1f;
+    private const float _armLongLength  = 1.15f;
+    private const float _armShortLength = 0.95f;
     [SerializeField] private float _armRestAngle   = -140.4f;
 
     [Header("Camera")]

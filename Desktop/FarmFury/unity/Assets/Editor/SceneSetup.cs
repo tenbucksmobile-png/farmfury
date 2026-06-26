@@ -248,12 +248,8 @@ public static class SceneSetup
         // Keep rest offset in sync with PositionCamera() — camera parks at launcher.x+1.8, launcher.y+2.5
         so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(1.8f, 2.5f);
 
-        // Physics geometry — scaled to match sprite proportions at PPU=384
-        // _pivotHeight: shaft of body sprite is ~2.3u above ground at PPU=384
-        // _armLongLength: bucket end of arm sprite is ~1.15u from the fulcrum pivot
-        so.FindProperty("_pivotHeight").floatValue    = 2.3f;
-        so.FindProperty("_armLongLength").floatValue  = 1.15f;
-        so.FindProperty("_armShortLength").floatValue = 0.95f;
+        // _pivotHeight / _armLongLength / _armShortLength are now private const in CatapultLauncher
+        // — no longer set here. _cameraRestOffset and _armRestAngle remain [SerializeField].
 
         // ── Trebuchet body sprite (static frame + wheels) ────────────────────
         const string bodyPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Body.png";
@@ -263,8 +259,10 @@ public static class SceneSetup
             if (imp != null)
             {
                 bool dirty = false;
-                if (imp.textureType         != TextureImporterType.Sprite) { imp.textureType         = TextureImporterType.Sprite; dirty = true; }
-                if (imp.spritePixelsPerUnit != 384)                        { imp.spritePixelsPerUnit = 384;                       dirty = true; }
+                if (imp.textureType            != TextureImporterType.Sprite)         { imp.textureType            = TextureImporterType.Sprite;         dirty = true; }
+                if (imp.spritePixelsPerUnit    != 384)                                 { imp.spritePixelsPerUnit    = 384;                                dirty = true; }
+                if (!imp.alphaIsTransparency)                                          { imp.alphaIsTransparency    = true;                               dirty = true; }
+                if (imp.alphaSource            != TextureImporterAlphaSource.FromInput){ imp.alphaSource            = TextureImporterAlphaSource.FromInput; dirty = true; }
                 if (dirty) imp.SaveAndReimport();
             }
             so.FindProperty("_trebuchetBodySprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(bodyPath);
@@ -282,10 +280,12 @@ public static class SceneSetup
             if (imp != null)
             {
                 bool dirty = false;
-                if (imp.textureType         != TextureImporterType.Sprite) { imp.textureType         = TextureImporterType.Sprite; dirty = true; }
-                if (imp.spritePixelsPerUnit != 384)                        { imp.spritePixelsPerUnit = 384;                       dirty = true; }
+                if (imp.textureType            != TextureImporterType.Sprite)          { imp.textureType            = TextureImporterType.Sprite;          dirty = true; }
+                if (imp.spritePixelsPerUnit    != 384)                                  { imp.spritePixelsPerUnit    = 384;                                 dirty = true; }
+                if (!imp.alphaIsTransparency)                                           { imp.alphaIsTransparency    = true;                                dirty = true; }
+                if (imp.alphaSource            != TextureImporterAlphaSource.FromInput) { imp.alphaSource            = TextureImporterAlphaSource.FromInput; dirty = true; }
 
-                // Set custom pivot via TextureImporterSettings (spriteAlignment was removed in Unity 6)
+                // Custom pivot via TextureImporterSettings (spriteAlignment was removed in Unity 6)
                 var settings = new TextureImporterSettings();
                 imp.ReadTextureSettings(settings);
                 var desiredPivot = new Vector2(0.55f, 0.50f);
