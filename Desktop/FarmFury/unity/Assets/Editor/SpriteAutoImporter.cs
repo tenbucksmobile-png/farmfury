@@ -33,22 +33,28 @@ public class SpriteAutoImporter : AssetPostprocessor
         if (imp == null) return;
 
         // Both trebuchet sprites are 2048×2048 px → PPU=768 gives 2.667u (same as 1024px@384).
+        // MUST be Single mode — Multiple mode (spriteMode:2) splits the sprite into sub-sprites
+        // which Unity's LoadAssetAtPath<Sprite> can't fully load, causing visual disconnects.
         // ── Trebuchet body (static frame, bottom-centre pivot so it stands on Y=0) ──
         if (assetPath.Contains("Launchers/Trabuchet_Body"))
         {
             ConfigureSprite(imp, 768, alphaTransparency: true);
+            if (imp.spriteImportMode != SpriteImportMode.Single) imp.spriteImportMode = SpriteImportMode.Single;
             SetCustomPivot(imp, new Vector2(0.50f, 0.00f));
         }
-        // ── Trebuchet arm (rotating, pivot at fulcrum ~55% from left) ─────────
+        // ── Trebuchet arm (rotating, pivot measured at fulcrum bolt in sprite art) ──
         else if (assetPath.Contains("Launchers/Trabuchet_Arm"))
         {
             ConfigureSprite(imp, 768, alphaTransparency: true);
-            SetCustomPivot(imp, new Vector2(0.38f, 0.53f)); // bracket: 38% from left, 53% from bottom
+            if (imp.spriteImportMode != SpriteImportMode.Single) imp.spriteImportMode = SpriteImportMode.Single;
+            // Pivot measured: pivot-stand bolt at ~40% from left, ~56% from bottom of canvas
+            SetCustomPivot(imp, new Vector2(0.40f, 0.56f));
         }
         // ── All other launcher sprites (PPU=384, alpha fix) ──────────────────
         else if (assetPath.Contains("Sprites/Environment/Launchers/"))
         {
             ConfigureSprite(imp, 384, alphaTransparency: true);
+            if (imp.spriteImportMode != SpriteImportMode.Single) imp.spriteImportMode = SpriteImportMode.Single;
         }
         // ── HUD animal cards + level select world cards (UI sprites, PPU=100) ──
         else if (assetPath.Contains("Sprites/UI/Cards/") ||
