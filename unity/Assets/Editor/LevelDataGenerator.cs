@@ -8,7 +8,9 @@ using UnityEditor;
 public static class LevelDataGenerator
 {
     [MenuItem("FarmFury/Generate All Level Data")]
-    public static void GenerateAll()
+    public static void GenerateAll() => GenerateAll(silent: false);
+
+    public static void GenerateAll(bool silent)
     {
         const string folder = "Assets/ScriptableObjects/Levels";
         EnsureFolder("Assets/ScriptableObjects", "Levels");
@@ -107,8 +109,9 @@ public static class LevelDataGenerator
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        EditorUtility.DisplayDialog("FarmFury",
-            "Generated 6 LevelData assets in\nAssets/ScriptableObjects/Levels", "OK");
+        if (!silent)
+            EditorUtility.DisplayDialog("FarmFury",
+                "Generated 6 LevelData assets in\nAssets/ScriptableObjects/Levels", "OK");
         Debug.Log("[FarmFury] Level data generation complete.");
     }
 
