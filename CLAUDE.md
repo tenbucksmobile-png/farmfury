@@ -170,12 +170,15 @@ Visual groundwork done this phase:
 - ✅ **Two-part trebuchet** — `Trabuchet_Body.png` (static frame) + `Trabuchet_Arm.png` (rotating arm, pivot at fulcrum x=0.55); arm rotates `z = angleDeg − 190°` to match physics in `DrawArmAt()`
 - ✅ **Sprite PPU calibration** — Kling AI sprites are 2720×1536 (trimmed to ~1944×1481 by Unity). PPU formula: `trimmed_height / (collider_radius × 2)`. Cluck: 2057, Bessie: 1424, Percy/Woolly/Billy: 2057, Ducky: 2468, Horace: 1851, Gerald: 1949. `EditorAutoSetup` auto-applies on compile via sentinel check on Cluck/Loaded.png.
 - ✅ **Camera zoom** — `orthographicSize = 3.5` (was 5); camera rest offset `(2.8, 2.5)` relative to launcher; structures at x=15–17.5 now clearly visible right-of-center.
-- ✅ **Trebuchet arm alignment** — `_pivotHeight = 2.53` (was 2.35); arm GO now sits at 95% of body height, connecting at the metal cap of the body sprite.
+- ✅ **Trebuchet arm alignment** — `_pivotHeight = 2.35`; arm stand is seated inside the body frame so the beam emerges naturally from the A-frame top without floating above it.
 - ✅ **L01 structure redesign** — two towers (0.6u-tall blocks) with 2 robots: tower 1 at x=15.5 (3 wood + 1 stone cap, robot on top at y=2.8), tower 2 at x=17.5 (stone + wood, robot at y=1.6).
 - ✅ **Animal cards art** — 8 Kling AI card portraits in `assets/FarmCards/` (barnwood frame, 1024×1024). Files: `Cluck_Chicken.png`, `Bessie_Cow.png`, `Percy_Pig.png`, `Woolly_Sheep.png`, `Ducky_Duck.png`, `Horace_Horse.png`, `Gerald_Turkey.png`, `Billy_Goat.png`.
 - ✅ **Card HUD system** — `HUDController` now builds card widgets instead of flat circles. Active card: 108×142px (full brightness, larger bob), queue cards: 82×108px (dimmed). Each card has an orange damage badge (top-right, `⚡N`). `[SerializeField] Sprite[] _cardSprites` indexed by `AnimalType`. `EditorAutoSetup.AutoCopyCardSprites()` auto-copies `assets/FarmCards/*.png` → `Assets/Sprites/UI/Cards/` on compile. `SceneSetup.EnsureHUD()` wires sprites by keyword per animal. `SpriteAutoImporter` handles Cards/ at PPU=100 Single mode.
 
 - ✅ **Level select redesign** — `LevelSelectController` rewritten: world-art thumbnails (`_worldCardSprites[0..5]`), bottom dark gradient overlay for legibility, W# world label (top-left), large level number, gold/grey ★★★ stars, lock veil for locked cards. Falls back to 6 world-tinted solid colours if no art. `assets/LevelCards/` → `Assets/Sprites/UI/LevelCards/` auto-copy on compile; `SceneSetup.EnsureLevelSelect()` wires sprites by keyword (Meadow/Frozen/Watermill/Sky/Sunken/Mothership). Kling AI level card prompts: 6 landscape-orientation (800×600) painted scenes, one per world, full-bleed, no text.
+
+- ✅ **Trebuchet drag mechanic** — arm angle follows mouse from pivot; bird locked to `BucketWorldPos(dragAngle)`; load fraction drives 20°–50° forward-upward launch at 7–13 m/s; arm rotation is the only visual feedback (no rubber band).
+- ✅ **Robot visibility fix** — `BoxCollider2D.size=(1,1)` and `mass=20` set in `RobotEnemy.Awake()`; robots land on blocks and take damage correctly.
 
 Still to do: generate 6 world level card images via Kling AI and drop into `assets/LevelCards/` → all 18 Meadow Ruins levels (6 exist, 12 remaining) + World 1 props in scene + Robot Commander boss. Robot art sprites (`assets/RobotEnemy/`) not yet imported.
 
@@ -280,11 +283,13 @@ unity/Assets/Scripts/
     ScoreManager.cs     — singleton; Robot +1000, Wood +100, Stone +200, Egg +50, bird-left bonus +500
                           PlayerPrefs keys: ff_score_N, ff_stars_N
   Launcher/
-    CatapultLauncher.cs — drag-to-aim slingshot; trajectory preview (LineRenderer); ArmSnap coroutine; camera follow
-                          Two-part trebuchet: _trebuchetBodySprite (static frame GO at localPos 0,1.18) +
-                          _trebuchetArmSprite (rotating GO at localPos 0,_pivotHeight; pivot set to fulcrum x=0.55
-                          in TextureImporter). DrawArmAt() rotates arm sprite z = angleDeg − 190°; hides _armLine
-                          when arm sprite is present. Physics: _pivotHeight=2.3, _armLongLength=1.15, _armShortLength=0.95
+    CatapultLauncher.cs — trebuchet drag mechanic: click bird-in-bucket, drag to rotate arm, release to fire.
+                          Bird is always at BucketWorldPos(armAngle) — rotated offset from pivot — so it stays
+                          locked in the visual bucket throughout the drag. LaunchVelocity() uses load fraction
+                          (dragAngle−190°)/50° → speed 7–13 m/s at angle 20°–50° (forward-upward).
+                          Two-part trebuchet: _trebuchetBodySprite (static frame) + _trebuchetArmSprite
+                          (rotating GO at localPos 0,_pivotHeight=2.35). DrawArmAt() rotates arm sprite
+                          z = angleDeg − 190°. Physics: MaxLoadAngle=50°, _armLongLength=1.15, _armShortLength=0.95
 
 unity/Assets/Scripts/UI/
   HUDController.cs         — HUD singleton; Canvas built at runtime; score text, bird-queue icons, pause btn;
@@ -302,8 +307,9 @@ unity/Assets/Editor/
                           Wires: GameManager._levels, LevelLoader prefabs+parents, CatapultLauncher,
                                  Camera (pos+orthoSize), _cameraRestOffset, Ground, Egg prefab into CluckAnimal,
                                  BackgroundController._skySprite, MainMenuController._landingSprite,
-                                 CatapultLauncher._trebuchetBodySprite + _trebuchetArmSprite (PPU=384, arm pivot=(0.55,0.5)).
-                          Sets camera to (13,2.5,-10) orthoSize=5. Updates _pivotHeight/armLongLength/armShortLength.
+                                 CatapultLauncher._trebuchetBodySprite + _trebuchetArmSprite (PPU=768, arm pivot=(0.40,0.56)).
+                          Sets camera to (13,2.5,-10) orthoSize=3.5. _pivotHeight/armLongLength/armShortLength/MaxLoadAngle
+                          are private const — SceneSetup does not write them.
                           NOTE: TextureImporter.spriteAlignment was removed in Unity 6 — use TextureImporterSettings
                           (ReadTextureSettings / SetTextureSettings) to set custom sprite pivots.
   LevelDataGenerator.cs — FarmFury > Generate All Level Data
