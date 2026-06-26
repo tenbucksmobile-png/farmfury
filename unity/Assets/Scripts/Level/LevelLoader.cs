@@ -79,6 +79,22 @@ public class LevelLoader : MonoBehaviour
             _spawnedRobots.Count);
     }
 
+    public Sprite GetAnimalIdleSprite(AnimalType type)
+    {
+        AnimalBase prefab = type switch
+        {
+            AnimalType.Bessie => _bessiePrefab,
+            AnimalType.Percy  => _percyPrefab,
+            AnimalType.Woolly => _woollyPrefab,
+            AnimalType.Ducky  => _duckyPrefab,
+            AnimalType.Horace => _horacePrefab,
+            AnimalType.Gerald => _geraldPrefab,
+            AnimalType.Billy  => _billyPrefab,
+            _                 => _cluckPrefab,
+        };
+        return prefab != null ? prefab.IdleSprite : null;
+    }
+
     public AnimalBase CreateNextAnimal(AnimalType type, Vector3 spawnPosition)
     {
         AnimalBase prefab = type switch

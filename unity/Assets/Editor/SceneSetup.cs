@@ -248,8 +248,9 @@ public static class SceneSetup
         // Keep rest offset in sync with PositionCamera() — camera parks at launcher.x+1.8, launcher.y+2.5
         so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(1.8f, 2.5f);
 
-        // _pivotHeight / _armLongLength / _armShortLength are now private const in CatapultLauncher
-        // — no longer set here. _cameraRestOffset and _armRestAngle remain [SerializeField].
+        // _pivotHeight / _armLongLength / _armShortLength are now private const in CatapultLauncher.
+        // _armRestAngle=190° → sprite z=0 → arm appears horizontal at rest.
+        so.FindProperty("_armRestAngle").floatValue = 190f;
 
         // ── Trebuchet body sprite (static frame + wheels) ────────────────────
         const string bodyPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Body.png";
