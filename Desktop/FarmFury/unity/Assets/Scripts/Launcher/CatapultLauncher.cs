@@ -209,6 +209,12 @@ public class CatapultLauncher : MonoBehaviour
         {
             Vector3 world = ScreenToWorld(mouse.position.ReadValue());
             Vector3 delta = world - _launchPoint;
+
+            // Only allow pulling AWAY from the structure (leftward / downward).
+            // Clamping x ≤ 0 prevents the arm from spinning past vertical and
+            // the bird from being launched backward toward the launcher.
+            delta.x = Mathf.Min(delta.x, 0f);
+
             if (delta.magnitude > _maxDragDistance)
                 delta = delta.normalized * _maxDragDistance;
             _pocketPos = _launchPoint + delta;
@@ -223,8 +229,7 @@ public class CatapultLauncher : MonoBehaviour
             _rubberBandLine.positionCount = 2;
             _rubberBandLine.SetPosition(0, _launchPoint);
             _rubberBandLine.SetPosition(1, _pocketPos);
-
-            DrawTrajectory();
+            // Trajectory dots removed — aiming is skill-based
         }
 
         // ── Release: fire ────────────────────────────────────────────────────
@@ -501,9 +506,10 @@ public class CatapultLauncher : MonoBehaviour
         {
             var bodyGO = new GameObject("TrebuchetBody");
             bodyGO.transform.SetParent(transform);
-            // Center of 1024×1024 canvas sits at 1.18u above launcher origin so
-            // the wheel bottom rests at Y≈0 and the shaft apex is at Y≈_pivotHeight.
-            bodyGO.transform.localPosition = new Vector3(0f, 1.18f, 0f);
+            // Bottom-centre pivot (0.5, 0.0) means localPos.y is where the wheels
+            // touch the ground. Y=0 places wheels on the ground plane.
+            // Body top = 2048/768 = 2.667u, bracket at ~95% ≈ _pivotHeight ✓
+            bodyGO.transform.localPosition = new Vector3(0f, 0f, 0f);
             var bodySR          = bodyGO.AddComponent<SpriteRenderer>();
             bodySR.sprite       = _trebuchetBodySprite;
             bodySR.sortingOrder = 3;

@@ -24,8 +24,9 @@ public class RobotEnemy : MonoBehaviour
         _rb = GetComponent<Rigidbody2D>();
         _sr = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
-        if (_sr.sprite == null) _sr.sprite = MakeSquareSprite();
-        _sr.color        = BaseColor;
+        // Always reassign — prefab may have a stale character sprite from SpriteWiring
+        _sr.sprite = MakeSquareSprite();
+        _sr.color  = BaseColor;
         _sr.sortingOrder = 3;
         transform.localScale = new Vector3(0.7f, 0.8f, 1f);
         AddEyes();
