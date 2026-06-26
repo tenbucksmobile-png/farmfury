@@ -27,7 +27,7 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private float   _returnDelay          = 0.8f;   // seconds after landing before pan-back starts
     [SerializeField] private float   _cameraFollowSpeed    = 6f;     // exponential follow rate (units/s)
     [SerializeField] private float   _cameraReturnDuration = 1.2f;   // seconds for the pan-back animation
-    [SerializeField] private Vector2 _cameraRestOffset     = new Vector2(1.8f, 3f);
+    [SerializeField] private Vector2 _cameraRestOffset     = new Vector2(2.8f, 2.5f);
 
     [Header("Trebuchet Art")]
     [SerializeField] private Sprite _trebuchetBodySprite;
@@ -75,7 +75,7 @@ public class CatapultLauncher : MonoBehaviour
         if (_camera != null)
         {
             _camera.orthographic     = true;
-            _camera.orthographicSize = 5f;
+            _camera.orthographicSize = 3.5f;
         }
 
         _armAngle = _armRestAngle;

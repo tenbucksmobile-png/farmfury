@@ -245,8 +245,8 @@ public static class SceneSetup
         var so = new SerializedObject(launcher);
         var ll = Object.FindAnyObjectByType<LevelLoader>();
         so.FindProperty("_levelLoader").objectReferenceValue = ll;
-        // Keep rest offset in sync with PositionCamera() — camera parks at launcher.x+1.8, launcher.y+2.5
-        so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(1.8f, 2.5f);
+        // Keep rest offset in sync with PositionCamera() — camera parks at launcher.x+2.8, launcher.y+2.5
+        so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(2.8f, 2.5f);
         // _pivotHeight / _armLongLength / _armShortLength / _armRestAngle are all private const
         // in CatapultLauncher — never serialized, no writes needed here.
 
@@ -258,14 +258,26 @@ public static class SceneSetup
             if (imp != null)
             {
                 bool dirty = false;
+                // Both sprites are 2048×2048 — PPU=768 gives 2.667u (same as 1024px@384).
+                // Body pivot = bottom-centre (0.5, 0.0) so the body stands on Y=0 ground.
                 if (imp.textureType            != TextureImporterType.Sprite)         { imp.textureType            = TextureImporterType.Sprite;         dirty = true; }
-                if (imp.spritePixelsPerUnit    != 384)                                 { imp.spritePixelsPerUnit    = 384;                                dirty = true; }
+                if (imp.spritePixelsPerUnit    != 768)                                 { imp.spritePixelsPerUnit    = 768;                                dirty = true; }
                 if (!imp.alphaIsTransparency)                                          { imp.alphaIsTransparency    = true;                               dirty = true; }
                 if (imp.alphaSource            != TextureImporterAlphaSource.FromInput){ imp.alphaSource            = TextureImporterAlphaSource.FromInput; dirty = true; }
+                var bodySettings = new TextureImporterSettings();
+                imp.ReadTextureSettings(bodySettings);
+                var bodyPivot = new Vector2(0.50f, 0.00f);
+                if (bodySettings.spriteAlignment != (int)SpriteAlignment.Custom || bodySettings.spritePivot != bodyPivot)
+                {
+                    bodySettings.spriteAlignment = (int)SpriteAlignment.Custom;
+                    bodySettings.spritePivot     = bodyPivot;
+                    imp.SetTextureSettings(bodySettings);
+                    dirty = true;
+                }
                 if (dirty) imp.SaveAndReimport();
             }
             so.FindProperty("_trebuchetBodySprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(bodyPath);
-            Debug.Log("[FarmFury] Launcher: trebuchet body sprite wired.");
+            Debug.Log("[FarmFury] Launcher: trebuchet body sprite wired (PPU=768, bottom pivot).");
         }
         else
             Debug.LogWarning("[FarmFury] Trabuchet_Body.png not found — run remove_backgrounds.py then re-run Wire Scene References.");
@@ -280,7 +292,7 @@ public static class SceneSetup
             {
                 bool dirty = false;
                 if (imp.textureType            != TextureImporterType.Sprite)          { imp.textureType            = TextureImporterType.Sprite;          dirty = true; }
-                if (imp.spritePixelsPerUnit    != 384)                                  { imp.spritePixelsPerUnit    = 384;                                 dirty = true; }
+                if (imp.spritePixelsPerUnit    != 768)                                  { imp.spritePixelsPerUnit    = 768;                                 dirty = true; }
                 if (!imp.alphaIsTransparency)                                           { imp.alphaIsTransparency    = true;                                dirty = true; }
                 if (imp.alphaSource            != TextureImporterAlphaSource.FromInput) { imp.alphaSource            = TextureImporterAlphaSource.FromInput; dirty = true; }
 
@@ -438,10 +450,10 @@ public static class SceneSetup
         var cam = Object.FindAnyObjectByType<Camera>();
         if (cam == null) return;
         cam.orthographic     = true;
-        cam.orthographicSize = 5f;   // 10u tall — matches CatapultLauncher runtime override
-        cam.transform.position = new Vector3(13f, 2.5f, -10f);
+        cam.orthographicSize = 3.5f;  // 7u tall — matches CatapultLauncher runtime override
+        cam.transform.position = new Vector3(14f, 2.5f, -10f);
         cam.backgroundColor    = new Color(0.38f, 0.65f, 0.90f); // sky-blue fallback if sprite absent
-        Debug.Log("[FarmFury] Camera positioned at (13, 1.5, -10), orthoSize=3.5.");
+        Debug.Log("[FarmFury] Camera positioned at (14, 2.5, -10), orthoSize=3.5.");
     }
 
     // ── Ensure parent holder GameObjects exist in scene ───────────────────────
