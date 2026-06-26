@@ -2,8 +2,8 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Phase 1.1 — Slingshot mechanic: click the BIRD, drag backward, release to fire.
-// The arm rotates to track the drag; a rubber-band line shows the pull.
+// Phase 1.1 — Trebuchet mechanic: click the bird in the bucket, drag to rotate the arm,
+// release to launch. The bird stays locked in the visual bucket throughout the drag.
 // Place on a GameObject at world position (11.2, 0, 0).
 public class CatapultLauncher : MonoBehaviour
 {
@@ -20,11 +20,12 @@ public class CatapultLauncher : MonoBehaviour
     // overridden by stale Inspector/scene-file values.
     // Pixel-measured (Python/Pillow on 2048×2048 canvas, PPU=768 → 2.667u):
     // Body: content-bottom=0.026u → localPos.y=-0.026 (wheels at Y=0); content-top=2.667u → screw at world Y=2.641
-    // Arm:  pivot-bolt at ~56% from canvas-bottom; arm GO at pivotHeight → bolt at 2.641 ≈ body screw ✓
-    private const float _pivotHeight    = 2.64f;
+    // Arm:  pivot-bolt at ~56% from canvas-bottom; pivotHeight=2.35 seats arm stand inside the body frame
+    private const float _pivotHeight    = 2.35f;
     private const float _armLongLength  = 1.15f;
     private const float _armShortLength = 0.95f;
     private const float _armRestAngle   = 190f;   // z=0 in DrawArmAt → arm sprite appears horizontal
+    private const float MaxLoadAngle    = 50f;    // degrees arm can be pulled past rest angle
 
     [Header("Camera")]
     [SerializeField] private float   _returnDelay          = 0.8f;   // seconds after landing before pan-back starts
@@ -44,16 +45,17 @@ public class CatapultLauncher : MonoBehaviour
     // Not serialized — value must come from code so Unity can't freeze a stale Inspector value
     private const float BirdClickRadius = 1.2f;
 
-    // Pixel-measured offset from physics arm-tip (_launchPoint) to the visual bucket center.
-    // At rest the bird is displayed at _launchPoint + this offset so it sits inside the bucket.
-    // The offset is not applied during drag — the arm sprite already follows the mouse.
-    private static readonly Vector3 BucketOffset = new Vector3(0.39f, 0.04f, 0f);
+    // Bucket visual center relative to the arm pivot in the arm's rest orientation.
+    // Derived from: bucket world pos at rest = _launchPoint + (0.39, 0.04), pivot at PivotPos().
+    // arm-tip at rest = pivot + (cos190°×1.15, sin190°×1.15) = pivot + (-1.132, -0.200).
+    // bucket = arm-tip + (0.39, 0.04) = pivot + (-0.742, -0.160).
+    private static readonly Vector2 BucketFromPivot = new Vector2(-0.742f, -0.160f);
 
     // Runtime state
     private float      _armAngle;
     private float      _dragAngle;      // arm angle while dragging (for snap start)
     private bool       _isDragging;
-    private Vector3    _pocketPos;      // where the bird lives during drag
+    private Vector3    _pocketPos;      // unused — kept to avoid serialisation churn
     private Vector3    _launchPoint;    // arm tip at rest angle — the physical fire origin
     private AnimalBase _activeAnimal;
     private AnimalBase _readyBird;
@@ -167,9 +169,9 @@ public class CatapultLauncher : MonoBehaviour
     {
         HandleInput();
 
-        // Bird sits at pocket while dragging; at rest it displays at the visual bucket center
+        // Bird is always locked to the visual bucket — it rotates with the arm during drag
         if (_readyBird != null)
-            _readyBird.transform.position = _isDragging ? _pocketPos : _launchPoint + BucketOffset;
+            _readyBird.transform.position = BucketWorldPos(_isDragging ? _dragAngle : _armRestAngle);
 
         if (_cameraFollowing && _activeAnimal != null && !_activeAnimal.IsDestroyed)
         {
@@ -200,7 +202,7 @@ public class CatapultLauncher : MonoBehaviour
                     && _levelLoader.HasBirdsRemaining
                     && GameManager.Instance?.State == GameState.Playing;
 
-        // ── Press: must click ON the bird ───────────────────────────────────
+        // ── Press: must click ON the bird (which sits in the bucket) ───────
         if (mouse.leftButton.wasPressedThisFrame && canFire && !_isDragging)
         {
             Vector3 world = ScreenToWorld(mouse.position.ReadValue());
@@ -208,36 +210,25 @@ public class CatapultLauncher : MonoBehaviour
             {
                 _isDragging = true;
                 _dragAngle  = _armRestAngle;
-                _pocketPos  = _launchPoint;
             }
         }
 
-        // ── Hold: bird follows mouse, clamped by max drag distance ───────────
+        // ── Hold: arm angle follows mouse from pivot; bird stays in bucket ──
         if (_isDragging && mouse.leftButton.isPressed)
         {
             Vector3 world = ScreenToWorld(mouse.position.ReadValue());
-            Vector3 delta = world - _launchPoint;
+            Vector3 pivot = PivotPos();
 
-            // Only allow pulling AWAY from the structure (leftward / downward).
-            // Clamping x ≤ 0 prevents the arm from spinning past vertical and
-            // the bird from being launched backward toward the launcher.
-            delta.x = Mathf.Min(delta.x, 0f);
+            float angle = Mathf.Atan2(world.y - pivot.y, world.x - pivot.x) * Mathf.Rad2Deg;
+            // Normalise to [0, 360] so the clamp against _armRestAngle (190°) works correctly.
+            if (angle < 0f) angle += 360f;
 
-            if (delta.magnitude > _maxDragDistance)
-                delta = delta.normalized * _maxDragDistance;
-            _pocketPos = _launchPoint + delta;
-
-            // Arm tracks the pocket direction from pivot
-            Vector3 pivot  = PivotPos();
-            Vector2 dir    = (Vector2)(_pocketPos - pivot);
-            _dragAngle     = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            // Only allow the bucket side to pull DOWN and back (angle from rest up to MaxLoadAngle).
+            _dragAngle = Mathf.Clamp(angle, _armRestAngle, _armRestAngle + MaxLoadAngle);
             DrawArmAt(_dragAngle);
 
-            // Rubber band from rest tip to bird
-            _rubberBandLine.positionCount = 2;
-            _rubberBandLine.SetPosition(0, _launchPoint);
-            _rubberBandLine.SetPosition(1, _pocketPos);
-            // Trajectory dots removed — aiming is skill-based
+            // Arm rotation is the visual feedback; no rubber band needed
+            _rubberBandLine.positionCount = 0;
         }
 
         // ── Release: fire ────────────────────────────────────────────────────
@@ -271,7 +262,7 @@ public class CatapultLauncher : MonoBehaviour
 
         ScoreManager.Instance?.OnBirdFired();
 
-        _activeAnimal = _levelLoader.CreateNextAnimal(birdType, _launchPoint);
+        _activeAnimal = _levelLoader.CreateNextAnimal(birdType, BucketWorldPos(_dragAngle));
         _activeAnimal.OnAnimalDestroyed += OnAnimalLanded;
         _activeAnimal.Launch(velocity);
         AudioManager.Play(AudioManager.Sound.Launch);
@@ -488,13 +479,29 @@ public class CatapultLauncher : MonoBehaviour
     Vector3 PivotPos() =>
         transform.position + new Vector3(0f, _pivotHeight, 0f);
 
+    // Returns the world position of the visual bucket for any arm angle.
+    // BucketFromPivot is the bucket offset from pivot in the arm's default (rest) orientation.
+    // Rotating that offset by (armAngle − restAngle) gives the bucket position at any arm angle.
+    Vector3 BucketWorldPos(float armAngle)
+    {
+        float rotRad = (armAngle - _armRestAngle) * Mathf.Deg2Rad;
+        float cos    = Mathf.Cos(rotRad), sin = Mathf.Sin(rotRad);
+        return PivotPos() + new Vector3(
+            BucketFromPivot.x * cos - BucketFromPivot.y * sin,
+            BucketFromPivot.x * sin + BucketFromPivot.y * cos, 0f);
+    }
+
     Vector2 LaunchVelocity()
     {
-        // Velocity opposes the pull: drag LEFT-DOWN → launch RIGHT-UP
-        Vector3 delta = _pocketPos - _launchPoint;
-        float   dist  = Mathf.Min(delta.magnitude, _maxDragDistance);
-        if (dist < 0.05f) return Vector2.zero;
-        return -(Vector2)delta.normalized * (dist / _maxDragDistance * _maxLaunchSpeed);
+        // Load fraction: how far the arm was pulled (0 = rest, 1 = MaxLoadAngle)
+        float loadFrac = Mathf.Clamp01((_dragAngle - _armRestAngle) / MaxLoadAngle);
+        if (loadFrac < 0.05f) return Vector2.zero;
+        // Speed 7–13 m/s gives range 4–8 u from the launch point at the given angles,
+        // which puts the bird in the structure zone (x≈15–18) for World 1.
+        float speed    = Mathf.Lerp(7f, 13f, loadFrac);
+        float angleDeg = Mathf.Lerp(20f, 50f, loadFrac);
+        float rad      = angleDeg * Mathf.Deg2Rad;
+        return new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)) * speed;
     }
 
     float NextBirdFA() =>
