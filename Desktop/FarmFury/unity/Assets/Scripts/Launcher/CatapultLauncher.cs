@@ -44,6 +44,11 @@ public class CatapultLauncher : MonoBehaviour
     // Not serialized — value must come from code so Unity can't freeze a stale Inspector value
     private const float BirdClickRadius = 1.2f;
 
+    // Pixel-measured offset from physics arm-tip (_launchPoint) to the visual bucket center.
+    // At rest the bird is displayed at _launchPoint + this offset so it sits inside the bucket.
+    // The offset is not applied during drag — the arm sprite already follows the mouse.
+    private static readonly Vector3 BucketOffset = new Vector3(0.39f, 0.04f, 0f);
+
     // Runtime state
     private float      _armAngle;
     private float      _dragAngle;      // arm angle while dragging (for snap start)
@@ -162,9 +167,9 @@ public class CatapultLauncher : MonoBehaviour
     {
         HandleInput();
 
-        // Bird sits at pocket while dragging, at arm tip otherwise
+        // Bird sits at pocket while dragging; at rest it displays at the visual bucket center
         if (_readyBird != null)
-            _readyBird.transform.position = _isDragging ? _pocketPos : _launchPoint;
+            _readyBird.transform.position = _isDragging ? _pocketPos : _launchPoint + BucketOffset;
 
         if (_cameraFollowing && _activeAnimal != null && !_activeAnimal.IsDestroyed)
         {
