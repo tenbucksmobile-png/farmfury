@@ -27,6 +27,8 @@ SKIES = {
 # ── Launcher filenames (white bg, separate output folder) ─────────────────────
 LAUNCHERS = {
     "Trabuchet.png",
+    "Trabuchet_Body.png",
+    "Trabuchet_Arm.png",
     "Ice Cannon.png",
     "WaterWheel.png",
     "Plane.png",

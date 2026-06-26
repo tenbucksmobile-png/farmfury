@@ -27,6 +27,10 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private float   _cameraReturnDuration = 1.2f;   // seconds for the pan-back animation
     [SerializeField] private Vector2 _cameraRestOffset     = new Vector2(1.8f, 3f);
 
+    [Header("Trebuchet Art")]
+    [SerializeField] private Sprite _trebuchetBodySprite;
+    [SerializeField] private Sprite _trebuchetArmSprite;
+
     [Header("Trajectory")]
     [SerializeField] private int   _trajectoryDots      = 20;
     [SerializeField] private int   _trajectorySubsteps  = 3;
@@ -48,10 +52,13 @@ public class CatapultLauncher : MonoBehaviour
     private Coroutine  _returnRoutine;
 
     // Renderers
-    private LineRenderer   _armLine;
-    private LineRenderer   _rubberBandLine;
+    private LineRenderer     _armLine;
+    private LineRenderer     _rubberBandLine;
     private SpriteRenderer[] _trajDotRenderers;
     private static Sprite    _dotSprite;
+
+    // Trebuchet sprite GOs (built at runtime if sprites are wired)
+    private GameObject _armSpriteGO;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -74,6 +81,8 @@ public class CatapultLauncher : MonoBehaviour
         _armLine          = MakeLine("ArmRenderer",        0.08f, new Color(0.42f, 0.23f, 0.06f));
         _rubberBandLine   = MakeLine("RubberBandRenderer", 0.05f, new Color(0.9f, 0.7f, 0.1f, 0.9f));
         _trajDotRenderers = CreateDotPool(_trajectoryDots);
+
+        if (_trebuchetBodySprite != null || _trebuchetArmSprite != null) BuildTrebuchetBody();
     }
 
     void OnEnable()
@@ -311,10 +320,19 @@ public class CatapultLauncher : MonoBehaviour
             Mathf.Cos(rad + Mathf.PI) * _armShortLength,
             Mathf.Sin(rad + Mathf.PI) * _armShortLength, 0f);
 
-        _armLine.positionCount = 3;
-        _armLine.SetPosition(0, cw);
-        _armLine.SetPosition(1, pivot);
-        _armLine.SetPosition(2, tip);
+        if (_armLine.enabled)
+        {
+            _armLine.positionCount = 3;
+            _armLine.SetPosition(0, cw);
+            _armLine.SetPosition(1, pivot);
+            _armLine.SetPosition(2, tip);
+        }
+
+        // Rotate arm sprite to match physics angle.
+        // The arm sprite has the bucket end (left side) at ~190° in its unrotated local frame.
+        // Setting z = angleDeg - 190° maps that local direction to the desired world direction.
+        if (_armSpriteGO != null)
+            _armSpriteGO.transform.localEulerAngles = new Vector3(0f, 0f, angleDeg - 190f);
     }
 
     IEnumerator ArmSnap()
@@ -472,6 +490,37 @@ public class CatapultLauncher : MonoBehaviour
     {
         Vector3 s = new Vector3(screen.x, screen.y, Mathf.Abs(_camera.transform.position.z));
         return _camera.ScreenToWorldPoint(s);
+    }
+
+    void BuildTrebuchetBody()
+    {
+        // ── Static frame (wheels + A-frame) ──────────────────────────────────
+        if (_trebuchetBodySprite != null)
+        {
+            var bodyGO = new GameObject("TrebuchetBody");
+            bodyGO.transform.SetParent(transform);
+            // Center of 1024×1024 canvas sits at 1.18u above launcher origin so
+            // the wheel bottom rests at Y≈0 and the shaft apex is at Y≈_pivotHeight.
+            bodyGO.transform.localPosition = new Vector3(0f, 1.18f, 0f);
+            var bodySR          = bodyGO.AddComponent<SpriteRenderer>();
+            bodySR.sprite       = _trebuchetBodySprite;
+            bodySR.sortingOrder = 3;
+        }
+
+        // ── Rotating arm (pivot = sprite fulcrum, set in TextureImporter) ────
+        if (_trebuchetArmSprite != null)
+        {
+            _armSpriteGO = new GameObject("TrebuchetArm");
+            _armSpriteGO.transform.SetParent(transform);
+            // Arm pivot aligned with the physics pivot (PivotPos offset).
+            _armSpriteGO.transform.localPosition = new Vector3(0f, _pivotHeight, 0f);
+            var armSR          = _armSpriteGO.AddComponent<SpriteRenderer>();
+            armSR.sprite       = _trebuchetArmSprite;
+            armSR.sortingOrder = 4;  // renders over frame, under rubber-band line
+
+            // Hide the procedural arm line — sprite art replaces it
+            _armLine.enabled = false;
+        }
     }
 
     LineRenderer MakeLine(string goName, float width, Color color)

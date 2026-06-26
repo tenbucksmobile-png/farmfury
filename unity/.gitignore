@@ -31,3 +31,7 @@ Thumbs.db
 
 # Crashlytics
 crashlytics-build.properties
+
+# Art assets — large binary files regenerated from assets/ via tools/remove_backgrounds.py
+# Re-import with: FarmFury > Wire Sprites in Unity Editor
+Assets/Sprites/
