@@ -33,12 +33,15 @@ public static class EditorAutoSetup
 
     static void AutoFixLauncherSprites()
     {
+        // Both sprites are 2048×2048 px. PPU=768 gives 2048/768=2.667u — same physical
+        // size as the 1024px spec at PPU=384. Body pivot bottom-centre so it sits on Y=0.
         bool anyFixed = false;
-        anyFixed |= FixSprite("Assets/Sprites/Environment/Launchers/Trabuchet_Body.png", 384);
-        anyFixed |= FixSprite("Assets/Sprites/Environment/Launchers/Trabuchet_Arm.png",  384,
+        anyFixed |= FixSprite("Assets/Sprites/Environment/Launchers/Trabuchet_Body.png", 768,
+                              customPivot: new Vector2(0.50f, 0.00f));
+        anyFixed |= FixSprite("Assets/Sprites/Environment/Launchers/Trabuchet_Arm.png",  768,
                               customPivot: new Vector2(0.55f, 0.50f));
         if (anyFixed)
-            Debug.Log("[FarmFury] Auto-fixed launcher sprite import settings.");
+            Debug.Log("[FarmFury] Auto-fixed launcher sprite import settings (PPU=768, pivots corrected).");
     }
 
     static bool FixSprite(string path, int ppu, Vector2? customPivot = null)

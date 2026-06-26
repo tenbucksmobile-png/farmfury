@@ -32,18 +32,20 @@ public class SpriteAutoImporter : AssetPostprocessor
         var imp = assetImporter as TextureImporter;
         if (imp == null) return;
 
-        // ── Trebuchet body (static frame, PPU=384, alpha from PNG) ──────────
+        // Both trebuchet sprites are 2048×2048 px → PPU=768 gives 2.667u (same as 1024px@384).
+        // ── Trebuchet body (static frame, bottom-centre pivot so it stands on Y=0) ──
         if (assetPath.Contains("Launchers/Trabuchet_Body"))
         {
-            ConfigureSprite(imp, 384, alphaTransparency: true);
+            ConfigureSprite(imp, 768, alphaTransparency: true);
+            SetCustomPivot(imp, new Vector2(0.50f, 0.00f));
         }
-        // ── Trebuchet arm (rotating, PPU=384, custom pivot at fulcrum) ──────
+        // ── Trebuchet arm (rotating, pivot at fulcrum ~55% from left) ─────────
         else if (assetPath.Contains("Launchers/Trabuchet_Arm"))
         {
-            ConfigureSprite(imp, 384, alphaTransparency: true);
+            ConfigureSprite(imp, 768, alphaTransparency: true);
             SetCustomPivot(imp, new Vector2(0.55f, 0.50f));
         }
-        // ── All other launcher sprites (same alpha fix, PPU=384) ─────────────
+        // ── All other launcher sprites (PPU=384, alpha fix) ──────────────────
         else if (assetPath.Contains("Sprites/Environment/Launchers/"))
         {
             ConfigureSprite(imp, 384, alphaTransparency: true);
