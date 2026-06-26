@@ -43,7 +43,7 @@ public class SpriteAutoImporter : AssetPostprocessor
         else if (assetPath.Contains("Launchers/Trabuchet_Arm"))
         {
             ConfigureSprite(imp, 768, alphaTransparency: true);
-            SetCustomPivot(imp, new Vector2(0.55f, 0.50f));
+            SetCustomPivot(imp, new Vector2(0.38f, 0.53f)); // bracket: 38% from left, 53% from bottom
         }
         // ── All other launcher sprites (PPU=384, alpha fix) ──────────────────
         else if (assetPath.Contains("Sprites/Environment/Launchers/"))

@@ -392,7 +392,7 @@ public static class SceneSetup
                 // Custom pivot via TextureImporterSettings (spriteAlignment was removed in Unity 6)
                 var settings = new TextureImporterSettings();
                 imp.ReadTextureSettings(settings);
-                var desiredPivot = new Vector2(0.55f, 0.50f);
+                var desiredPivot = new Vector2(0.38f, 0.53f); // bracket at 38% left, 53% bottom
                 if (settings.spriteAlignment != (int)SpriteAlignment.Custom || settings.spritePivot != desiredPivot)
                 {
                     settings.spriteAlignment = (int)SpriteAlignment.Custom;
@@ -418,40 +418,46 @@ public static class SceneSetup
 
     static void WireRobotSprite()
     {
-        const string prefabPath  = "Assets/Prefabs/Enemies/Robot.prefab";
-        const string spritePath  = "Assets/Sprites/Enemies/Robot/Robot_Idle.png";
+        const string prefabPath = "Assets/Prefabs/Enemies/Robot.prefab";
+        const string spritePath = "Assets/Sprites/Enemies/Robot/Robot_Idle.png";
 
-        var prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-        if (prefabAsset == null) { Debug.LogWarning("[FarmFury] Robot prefab not found — skip robot sprite wiring."); return; }
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+        {
+            Debug.LogWarning("[FarmFury] Robot prefab not found — skipping robot sprite wiring.");
+            return;
+        }
 
         var spriteAsset = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
         if (spriteAsset == null)
         {
-            Debug.LogWarning("[FarmFury] Robot_Idle.png not found in Assets/Sprites/Enemies/Robot/. " +
-                             "Run tools/remove_backgrounds.py then re-run Wire Scene References.");
+            Debug.LogWarning("[FarmFury] Robot_Idle.png not found. Run tools/remove_backgrounds.py first.");
             return;
         }
 
-        // Ensure correct import settings before wiring
+        // Ensure PPU=1746 on the robot sprite
         var imp = AssetImporter.GetAtPath(spritePath) as TextureImporter;
         if (imp != null)
         {
             bool dirty = false;
-            if (imp.textureType != TextureImporterType.Sprite)  { imp.textureType = TextureImporterType.Sprite;  dirty = true; }
-            if (imp.spritePixelsPerUnit != 1746)                 { imp.spritePixelsPerUnit = 1746;                dirty = true; }
-            if (!imp.alphaIsTransparency)                        { imp.alphaIsTransparency = true;                dirty = true; }
-            if (imp.spriteImportMode != SpriteImportMode.Single) { imp.spriteImportMode = SpriteImportMode.Single; dirty = true; }
+            if (imp.textureType         != TextureImporterType.Sprite)         { imp.textureType         = TextureImporterType.Sprite;         dirty = true; }
+            if (imp.spritePixelsPerUnit != 1746)                                { imp.spritePixelsPerUnit = 1746;                               dirty = true; }
+            if (!imp.alphaIsTransparency)                                        { imp.alphaIsTransparency = true;                               dirty = true; }
+            if (imp.spriteImportMode    != SpriteImportMode.Single)             { imp.spriteImportMode    = SpriteImportMode.Single;            dirty = true; }
             if (dirty) { imp.SaveAndReimport(); spriteAsset = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath); }
         }
 
-        using var scope = new PrefabUtility.EditPrefabContentsScope(prefabPath);
-        var root = scope.prefabContentsRoot;
-        var sr   = root.GetComponent<SpriteRenderer>();
-        if (sr == null) sr = root.AddComponent<SpriteRenderer>();
-        sr.sprite       = spriteAsset;
-        sr.color        = Color.white;
-        sr.sortingOrder = 3;
-        Debug.Log("[FarmFury] Robot: wired Robot_Idle.png sprite (PPU=1746).");
+        // Wire into RobotEnemy._robotSprite via LoadPrefabContents (no EditPrefabContentsScope)
+        var go = PrefabUtility.LoadPrefabContents(prefabPath);
+        var robot = go.GetComponent<RobotEnemy>();
+        if (robot != null)
+        {
+            var so = new SerializedObject(robot);
+            so.FindProperty("_robotSprite").objectReferenceValue = spriteAsset;
+            so.ApplyModifiedProperties();
+        }
+        PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+        PrefabUtility.UnloadPrefabContents(go);
+        Debug.Log("[FarmFury] Robot: wired Robot_Idle.png into _robotSprite (PPU=1746).");
     }
 
     // ── Egg prefab: create if missing, wire into CluckAnimal prefab ─────────────

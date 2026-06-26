@@ -106,8 +106,9 @@ public static class EditorAutoSetup
         bool anyFixed = false;
         anyFixed |= FixSprite("Assets/Sprites/Environment/Launchers/Trabuchet_Body.png", 768,
                               customPivot: new Vector2(0.50f, 0.00f));
+        // Arm pivot measured from sprite: stand bracket is at ~38% from left, 53% from bottom
         anyFixed |= FixSprite("Assets/Sprites/Environment/Launchers/Trabuchet_Arm.png",  768,
-                              customPivot: new Vector2(0.55f, 0.50f));
+                              customPivot: new Vector2(0.38f, 0.53f));
         if (anyFixed)
             Debug.Log("[FarmFury] Auto-fixed launcher sprite import settings (PPU=768, pivots corrected).");
     }

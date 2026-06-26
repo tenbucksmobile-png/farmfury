@@ -12,26 +12,29 @@ public class RobotEnemy : MonoBehaviour
     public float Health      { get; private set; }
     public bool  IsDestroyed { get; private set; }
 
+    // Wired by SceneSetup from Assets/Sprites/Enemies/Robot/Robot_Idle.png
+    [SerializeField] private Sprite _robotSprite;
+
     // Steel blue-grey fallback when no art sprite is wired
     private static readonly Color BaseColor = new Color(0.38f, 0.44f, 0.54f);
 
     private Rigidbody2D    _rb;
     private SpriteRenderer _sr;
     private LevelLoader    _loader;
-    private Color          _restColor;  // base tint — white for art, grey for procedural
+    private Color          _restColor;
 
     void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
         _sr = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
-        bool hasArt = _sr.sprite != null;
-        if (!hasArt) _sr.sprite = MakeSquareSprite();
+        bool hasArt      = _robotSprite != null;
+        _sr.sprite       = hasArt ? _robotSprite : MakeSquareSprite();
         _restColor       = hasArt ? Color.white : BaseColor;
         _sr.color        = _restColor;
         _sr.sortingOrder = 3;
         transform.localScale = new Vector3(0.7f, 0.8f, 1f);
-        if (!hasArt) AddEyes(); // sprite art includes eyes; only add procedural ones as fallback
+        if (!hasArt) AddEyes();
     }
 
     void AddEyes()
