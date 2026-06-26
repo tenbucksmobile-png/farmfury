@@ -51,6 +51,45 @@ public class LevelLoader : MonoBehaviour
     public event Action OnAllRobotsDestroyed;
     public event Action OnBirdsExhausted;
 
+    void Awake()
+    {
+#if UNITY_EDITOR
+        AutoLoadPrefabs();
+#endif
+    }
+
+#if UNITY_EDITOR
+    void AutoLoadPrefabs()
+    {
+        if (_woodPrefab   == null) _woodPrefab   = LoadPrefabComponent<WoodBlock>("WoodBlock");
+        if (_stonePrefab  == null) _stonePrefab  = LoadPrefabComponent<StoneBlock>("StoneBlock");
+        if (_robotPrefab  == null) _robotPrefab  = LoadPrefabComponent<RobotEnemy>("Robot");
+        if (_cluckPrefab  == null) _cluckPrefab  = LoadPrefabComponent<CluckAnimal>("CluckAnimal");
+        if (_bessiePrefab == null) _bessiePrefab = LoadPrefabComponent<BessieAnimal>("BessieAnimal");
+        if (_percyPrefab  == null) _percyPrefab  = LoadPrefabComponent<PercyAnimal>("PercyAnimal");
+        if (_woollyPrefab == null) _woollyPrefab = LoadPrefabComponent<WoollyAnimal>("WoollyAnimal");
+        if (_duckyPrefab  == null) _duckyPrefab  = LoadPrefabComponent<DuckyAnimal>("DuckyAnimal");
+        if (_horacePrefab == null) _horacePrefab = LoadPrefabComponent<HoraceAnimal>("HoraceAnimal");
+        if (_geraldPrefab == null) _geraldPrefab = LoadPrefabComponent<GeraldAnimal>("GeraldAnimal");
+        if (_billyPrefab  == null) _billyPrefab  = LoadPrefabComponent<BillyAnimal>("BillyAnimal");
+        if (_blockParent  == null) _blockParent  = (GameObject.Find("BlockParent") ?? new GameObject("BlockParent")).transform;
+        if (_robotParent  == null) _robotParent  = (GameObject.Find("RobotParent") ?? new GameObject("RobotParent")).transform;
+    }
+
+    static T LoadPrefabComponent<T>(string name) where T : Component
+    {
+        var guids = UnityEditor.AssetDatabase.FindAssets($"{name} t:Prefab", new[] { "Assets/Prefabs" });
+        foreach (var g in guids)
+        {
+            var go   = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                           UnityEditor.AssetDatabase.GUIDToAssetPath(g));
+            var comp = go != null ? go.GetComponent<T>() : null;
+            if (comp != null) return comp;
+        }
+        return null;
+    }
+#endif
+
     void OnEnable()
     {
         if (GameManager.Instance != null)
