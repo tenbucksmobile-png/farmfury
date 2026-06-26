@@ -58,6 +58,13 @@ public class SpriteAutoImporter : AssetPostprocessor
             if (imp.spriteImportMode != SpriteImportMode.Single)
                 imp.spriteImportMode = SpriteImportMode.Single;
         }
+        // ── Robot enemy sprites (PPU=1746 → content 1746px = 1u; at scale 0.8 → 0.8u world) ──
+        else if (assetPath.Contains("Sprites/Enemies/Robot/"))
+        {
+            ConfigureSprite(imp, 1746, alphaTransparency: true);
+            if (imp.spriteImportMode != SpriteImportMode.Single)
+                imp.spriteImportMode = SpriteImportMode.Single;
+        }
         // ── Character sprites (PPU already managed per-character by SpriteWiring) ─
         // Only fix alpha — leave PPU alone so SpriteWiring stays authoritative.
         else if (assetPath.Contains("Sprites/Characters/") || assetPath.Contains("Sprites/Enemies/"))

@@ -25,6 +25,7 @@ public static class SceneSetup
         WireGameManager();      // _levels array
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
         WireLauncher();         // CatapultLauncher + LevelLoader ref
+        WireRobotSprite();      // Robot_Idle.png → Robot prefab SpriteRenderer
         PositionCamera();       // Move camera to see the play area
 
         EditorSceneManager.SaveScene(scene);
@@ -411,6 +412,46 @@ public static class SceneSetup
         so.ApplyModifiedProperties();
 
         Debug.Log("[FarmFury] Launcher: wired LevelLoader reference.");
+    }
+
+    // ── Robot sprite: wire Robot_Idle into Robot prefab SpriteRenderer ──────────
+
+    static void WireRobotSprite()
+    {
+        const string prefabPath  = "Assets/Prefabs/Enemies/Robot.prefab";
+        const string spritePath  = "Assets/Sprites/Enemies/Robot/Robot_Idle.png";
+
+        var prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if (prefabAsset == null) { Debug.LogWarning("[FarmFury] Robot prefab not found — skip robot sprite wiring."); return; }
+
+        var spriteAsset = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+        if (spriteAsset == null)
+        {
+            Debug.LogWarning("[FarmFury] Robot_Idle.png not found in Assets/Sprites/Enemies/Robot/. " +
+                             "Run tools/remove_backgrounds.py then re-run Wire Scene References.");
+            return;
+        }
+
+        // Ensure correct import settings before wiring
+        var imp = AssetImporter.GetAtPath(spritePath) as TextureImporter;
+        if (imp != null)
+        {
+            bool dirty = false;
+            if (imp.textureType != TextureImporterType.Sprite)  { imp.textureType = TextureImporterType.Sprite;  dirty = true; }
+            if (imp.spritePixelsPerUnit != 1746)                 { imp.spritePixelsPerUnit = 1746;                dirty = true; }
+            if (!imp.alphaIsTransparency)                        { imp.alphaIsTransparency = true;                dirty = true; }
+            if (imp.spriteImportMode != SpriteImportMode.Single) { imp.spriteImportMode = SpriteImportMode.Single; dirty = true; }
+            if (dirty) { imp.SaveAndReimport(); spriteAsset = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath); }
+        }
+
+        using var scope = new PrefabUtility.EditPrefabContentsScope(prefabPath);
+        var root = scope.prefabContentsRoot;
+        var sr   = root.GetComponent<SpriteRenderer>();
+        if (sr == null) sr = root.AddComponent<SpriteRenderer>();
+        sr.sprite       = spriteAsset;
+        sr.color        = Color.white;
+        sr.sortingOrder = 3;
+        Debug.Log("[FarmFury] Robot: wired Robot_Idle.png sprite (PPU=1746).");
     }
 
     // ── Egg prefab: create if missing, wire into CluckAnimal prefab ─────────────

@@ -12,24 +12,26 @@ public class RobotEnemy : MonoBehaviour
     public float Health      { get; private set; }
     public bool  IsDestroyed { get; private set; }
 
-    // Steel blue-grey — clearly readable as "enemy" without blending into blocks
+    // Steel blue-grey fallback when no art sprite is wired
     private static readonly Color BaseColor = new Color(0.38f, 0.44f, 0.54f);
 
     private Rigidbody2D    _rb;
     private SpriteRenderer _sr;
     private LevelLoader    _loader;
+    private Color          _restColor;  // base tint — white for art, grey for procedural
 
     void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
         _sr = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
-        // Always reassign — prefab may have a stale character sprite from SpriteWiring
-        _sr.sprite = MakeSquareSprite();
-        _sr.color  = BaseColor;
+        bool hasArt = _sr.sprite != null;
+        if (!hasArt) _sr.sprite = MakeSquareSprite();
+        _restColor       = hasArt ? Color.white : BaseColor;
+        _sr.color        = _restColor;
         _sr.sortingOrder = 3;
         transform.localScale = new Vector3(0.7f, 0.8f, 1f);
-        AddEyes();
+        if (!hasArt) AddEyes(); // sprite art includes eyes; only add procedural ones as fallback
     }
 
     void AddEyes()
@@ -85,7 +87,7 @@ public class RobotEnemy : MonoBehaviour
         if (_sr == null) yield break;
         _sr.color = Color.white;
         yield return new WaitForSeconds(0.07f);
-        if (!IsDestroyed && _sr != null) _sr.color = BaseColor;
+        if (!IsDestroyed && _sr != null) _sr.color = _restColor;
     }
 
     void Die()
