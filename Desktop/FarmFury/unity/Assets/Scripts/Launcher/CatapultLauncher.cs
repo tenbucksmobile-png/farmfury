@@ -18,7 +18,7 @@ public class CatapultLauncher : MonoBehaviour
     [Header("Arm Geometry")]
     // All arm geometry is private const — derived from sprite PPU=384, must never be
     // overridden by stale Inspector/scene-file values.
-    private const float _pivotHeight    = 2.35f;  // metal cap on body sprite ≈ 88% of 2.667u
+    private const float _pivotHeight    = 2.53f;  // metal cap on body sprite ≈ 95% of 2.667u
     private const float _armLongLength  = 1.15f;
     private const float _armShortLength = 0.95f;
     private const float _armRestAngle   = 190f;   // z=0 in DrawArmAt → arm sprite appears horizontal

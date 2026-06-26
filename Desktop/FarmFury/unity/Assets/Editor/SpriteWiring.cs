@@ -10,18 +10,18 @@ using UnityEngine;
 public static class SpriteWiring
 {
     // PPU computed so visual diameter ≈ physics collider diameter.
-    // Formula: (canvas_px * fill_pct) / (collider_radius * 2)
-    // All sprites: 1024px canvas, ~75% character fill = ~768px character height.
+    // Sprites are Kling AI 2720×1536 (landscape), Unity smart-trims them to ~1944×1481.
+    // Formula: trimmed_height_px / (collider_radius * 2)  e.g. 1481 / 0.72 = 2057
     static readonly Dictionary<string, int> CharPPU = new()
     {
-        { "Cluck",   1067 },  // radius 0.36 → diam 0.72u  →  768/0.72
-        { "Bessie",   740 },  // radius 0.52 → diam 1.04u  →  768/1.04
-        { "Percy",   1067 },  // radius 0.36 → diam 0.72u
-        { "Woolly",  1067 },  // radius 0.36 → diam 0.72u
-        { "Ducky",   1280 },  // radius 0.30 → diam 0.60u  →  768/0.60
-        { "Horace",   960 },  // radius 0.40 → diam 0.80u  →  768/0.80
-        { "Gerald",  1010 },  // radius 0.38 → diam 0.76u  →  768/0.76
-        { "Billy",   1067 },  // radius 0.36 → diam 0.72u
+        { "Cluck",   2057 },  // radius 0.36 → diam 0.72u  →  1481/0.72
+        { "Bessie",  1424 },  // radius 0.52 → diam 1.04u  →  1481/1.04
+        { "Percy",   2057 },  // radius 0.36 → diam 0.72u
+        { "Woolly",  2057 },  // radius 0.36 → diam 0.72u
+        { "Ducky",   2468 },  // radius 0.30 → diam 0.60u  →  1481/0.60
+        { "Horace",  1851 },  // radius 0.40 → diam 0.80u  →  1481/0.80
+        { "Gerald",  1949 },  // radius 0.38 → diam 0.76u  →  1481/0.76
+        { "Billy",   2057 },  // radius 0.36 → diam 0.72u
     };
 
     static readonly Dictionary<string, string> CharPrefab = new()

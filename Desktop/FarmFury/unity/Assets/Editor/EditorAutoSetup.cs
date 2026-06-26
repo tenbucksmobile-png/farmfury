@@ -19,6 +19,7 @@ public static class EditorAutoSetup
     {
         AutoGenerateLevels();
         AutoFixLauncherSprites();
+        AutoWireCharacterSprites();
     }
 
     static void AutoGenerateLevels()
@@ -29,6 +30,19 @@ public static class EditorAutoSetup
 
         LevelDataGenerator.GenerateAll(silent: true);
         Debug.Log("[FarmFury] Auto-generated 6 level assets.");
+    }
+
+    static void AutoWireCharacterSprites()
+    {
+        // Only reimport if the sentinel sprite is still on the old PPU value.
+        // This prevents wiring 40+ sprites on every compile after the first fix.
+        const string sentinel = "Assets/Sprites/Characters/Cluck/Loaded.png";
+        const int    targetPpu = 2057;
+        var imp = AssetImporter.GetAtPath(sentinel) as TextureImporter;
+        if (imp == null || imp.spritePixelsPerUnit == targetPpu) return;
+
+        SpriteWiring.WireAll();
+        Debug.Log("[FarmFury] Auto-applied updated character sprite PPU values.");
     }
 
     static void AutoFixLauncherSprites()

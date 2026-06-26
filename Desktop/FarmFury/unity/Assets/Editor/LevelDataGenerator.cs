@@ -16,17 +16,20 @@ public static class LevelDataGenerator
         EnsureFolder("Assets/ScriptableObjects", "Levels");
 
         // ── W1_L01  First Contact ─────────────────────────────────────────────
-        // Structure placed at x≈16 so it's clearly visible on launch and gives a satisfying hit.
+        // Two towers with taller blocks (0.6u) visible at orthoSize=3.5, 2 robots.
         Make(folder, "L01_FirstContact",
             id: "W1_L01", name: "First Contact", par: 1,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood,  16.0f, 0.2f, 1.0f, 0.4f),   // 3 wood stacked
-                B(BlockType.Wood,  16.0f, 0.6f, 1.0f, 0.4f),
-                B(BlockType.Wood,  16.0f, 1.0f, 1.0f, 0.4f),
+                B(BlockType.Wood,  15.5f, 0.3f, 1.2f, 0.6f),
+                B(BlockType.Wood,  15.5f, 0.9f, 1.2f, 0.6f),
+                B(BlockType.Wood,  15.5f, 1.5f, 1.2f, 0.6f),
+                B(BlockType.Stone, 15.5f, 2.1f, 1.2f, 0.6f),
+                B(BlockType.Stone, 17.5f, 0.3f, 1.0f, 0.6f),
+                B(BlockType.Wood,  17.5f, 0.9f, 1.0f, 0.6f),
             },
-            robots: new[] { R(16.5f, 1.6f) });  // robot perched on top
+            robots: new[] { R(15.5f, 2.8f), R(17.5f, 1.6f) });
 
         // ── W1_L02  Stone Wall ────────────────────────────────────────────────
         Make(folder, "L02_StoneWall",
