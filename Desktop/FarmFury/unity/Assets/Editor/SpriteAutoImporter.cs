@@ -14,6 +14,7 @@ public class SpriteAutoImporter : AssetPostprocessor
         string[] folders =
         {
             "Assets/Sprites/Environment/Launchers",
+            "Assets/Sprites/Environment/World1Props",
             "Assets/Sprites/Characters",
             "Assets/Sprites/Enemies",
         };
@@ -55,6 +56,15 @@ public class SpriteAutoImporter : AssetPostprocessor
         {
             ConfigureSprite(imp, 384, alphaTransparency: true);
             if (imp.spriteImportMode != SpriteImportMode.Single) imp.spriteImportMode = SpriteImportMode.Single;
+        }
+        // ── World 1 prop sprites (decorative scenery, PPU=512 → 1024px canvas = 2u at scale 1) ──
+        // Sprites have transparent backgrounds after remove_backgrounds.py.
+        // Centre pivot (default) — SceneryBuilder uses pivot.y/PPU to bottom-anchor each prop.
+        else if (assetPath.Contains("Sprites/Environment/World1Props/"))
+        {
+            ConfigureSprite(imp, 512, alphaTransparency: true);
+            if (imp.spriteImportMode != SpriteImportMode.Single)
+                imp.spriteImportMode = SpriteImportMode.Single;
         }
         // ── HUD animal cards + level select world cards (UI sprites, PPU=100) ──
         else if (assetPath.Contains("Sprites/UI/Cards/") ||

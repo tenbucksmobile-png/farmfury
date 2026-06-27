@@ -19,7 +19,7 @@ public abstract class AnimalBase : MonoBehaviour
     [SerializeField] private Sprite _sprAbility;
 
     [Header("Flight")]
-    [SerializeField] private float _contactTimeout = 3f;
+    [SerializeField] private float _contactTimeout = 1f;
 
     public bool IsInFlight  { get; protected set; }
     public bool IsLaunched  { get; private set; }
@@ -100,6 +100,7 @@ public abstract class AnimalBase : MonoBehaviour
     {
         IsInFlight = false;
         if (_sprImpact != null) _sr.sprite = _sprImpact;
+        _sr.enabled = false;   // hide immediately — no dead bird lying on the ground
         if (!_contactStarted)
         {
             _contactStarted = true;

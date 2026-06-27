@@ -22,6 +22,7 @@ public static class EditorAutoSetup
         AutoFixLauncherSprites();
         AutoWireCharacterSprites();
         AutoCopyCardSprites();
+        AutoFixWorld1Props();
         // Scan for any PNGs modified outside Unity (e.g., by remove_backgrounds.py)
         // and reimport them so the latest content is visible in-game.
         AssetDatabase.Refresh();
@@ -100,6 +101,20 @@ public static class EditorAutoSetup
             AssetDatabase.Refresh();
             Debug.Log($"[FarmFury] Copied {logLabel} sprites from {srcRelative}/ to {dstFolder}.");
         }
+    }
+
+    // Force-reimport World1Props if PPU is not yet 512 (happens after first compile with new SpriteAutoImporter rule).
+    static void AutoFixWorld1Props()
+    {
+        const string sentinel = "Assets/Sprites/Environment/World1Props/Grass Tuft.png";
+        var imp = AssetImporter.GetAtPath(sentinel) as TextureImporter;
+        if (imp == null || imp.spritePixelsPerUnit == 512) return;
+
+        var guids = AssetDatabase.FindAssets("t:Texture2D",
+            new[] { "Assets/Sprites/Environment/World1Props" });
+        foreach (var g in guids)
+            AssetDatabase.ImportAsset(AssetDatabase.GUIDToAssetPath(g), ImportAssetOptions.ForceUpdate);
+        Debug.Log("[FarmFury] Auto-reimported World1Props at PPU=512.");
     }
 
     static void AutoFixLauncherSprites()

@@ -18,12 +18,13 @@ public class CatapultLauncher : MonoBehaviour
     [Header("Arm Geometry")]
     // All arm geometry is private const — derived from sprite PPU=384, must never be
     // overridden by stale Inspector/scene-file values.
-    // Pixel-measured (Python/Pillow on 2048×2048 canvas, PPU=768 → 2.667u):
-    // Body: content-bottom=0.026u → localPos.y=-0.026 (wheels at Y=0); content-top=2.667u → screw at world Y=2.641
-    // Arm:  pivot-bolt at ~56% from canvas-bottom; pivotHeight=2.35 seats arm stand inside the body frame
-    private const float _pivotHeight    = 2.35f;
-    private const float _armLongLength  = 1.15f;
-    private const float _armShortLength = 0.95f;
+    // Pixel-measured (Python/Pillow on 2048×2048 canvas, PPU=768 → 2.667u), then scaled ×0.75
+    // so the trebuchet reads correctly in the 3.5-orthoSize viewport.
+    // Body: content-bottom at localPos.y=-0.020 (wheels at Y≈0); body top at Y≈1.97
+    // Arm:  pivot-bolt at ~56% from canvas-bottom; pivotHeight=1.76 seats arm inside the body frame
+    private const float _pivotHeight    = 1.76f;
+    private const float _armLongLength  = 0.86f;
+    private const float _armShortLength = 0.71f;
     private const float _armRestAngle   = 190f;   // z=0 in DrawArmAt → arm sprite appears horizontal
     private const float MaxLoadAngle    = 50f;    // degrees arm can be pulled past rest angle
 
@@ -45,11 +46,10 @@ public class CatapultLauncher : MonoBehaviour
     // Not serialized — value must come from code so Unity can't freeze a stale Inspector value
     private const float BirdClickRadius = 1.2f;
 
-    // Bucket visual center relative to the arm pivot in the arm's rest orientation.
-    // Derived from: bucket world pos at rest = _launchPoint + (0.39, 0.04), pivot at PivotPos().
-    // arm-tip at rest = pivot + (cos190°×1.15, sin190°×1.15) = pivot + (-1.132, -0.200).
-    // bucket = arm-tip + (0.39, 0.04) = pivot + (-0.742, -0.160).
-    private static readonly Vector2 BucketFromPivot = new Vector2(-0.742f, -0.160f);
+    // Bucket visual center relative to the arm pivot in the arm's rest orientation (values ×0.75 from original).
+    // arm-tip at rest = pivot + (cos190°×0.86, sin190°×0.86) = pivot + (-0.847, -0.150).
+    // bucket = arm-tip + (0.293, 0.030) = pivot + (-0.554, -0.120).
+    private static readonly Vector2 BucketFromPivot = new Vector2(-0.55f, -0.12f);
 
     // Runtime state
     private float      _armAngle;
@@ -521,9 +521,10 @@ public class CatapultLauncher : MonoBehaviour
         {
             var bodyGO = new GameObject("TrebuchetBody");
             bodyGO.transform.SetParent(transform);
-            // Bottom-centre pivot (0.5, 0.0). Pixel-measured: content-bottom at 0.026u from canvas bottom
-            // → offset -0.026 so wheel content sits exactly on Y=0.
-            bodyGO.transform.localPosition = new Vector3(0f, -0.026f, 0f);
+            // Bottom-centre pivot (0.5, 0.0). At ×0.75 scale: content-bottom 0.026×0.75=0.020u
+            // above canvas-bottom → offset -0.020 so wheel content sits exactly on Y=0.
+            bodyGO.transform.localPosition = new Vector3(0f, -0.020f, 0f);
+            bodyGO.transform.localScale    = new Vector3(0.75f, 0.75f, 1f);
             var bodySR          = bodyGO.AddComponent<SpriteRenderer>();
             bodySR.sprite       = _trebuchetBodySprite;
             bodySR.sortingOrder = 3;
@@ -534,8 +535,9 @@ public class CatapultLauncher : MonoBehaviour
         {
             _armSpriteGO = new GameObject("TrebuchetArm");
             _armSpriteGO.transform.SetParent(transform);
-            // Arm pivot aligned with the physics pivot (PivotPos offset).
+            // Arm pivot aligned with the physics pivot (PivotPos offset). Scaled ×0.75 to match body.
             _armSpriteGO.transform.localPosition = new Vector3(0f, _pivotHeight, 0f);
+            _armSpriteGO.transform.localScale    = new Vector3(0.75f, 0.75f, 1f);
             var armSR          = _armSpriteGO.AddComponent<SpriteRenderer>();
             armSR.sprite       = _trebuchetArmSprite;
             armSR.sortingOrder = 4;  // renders over frame, under rubber-band line

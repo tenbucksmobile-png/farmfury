@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
-    public enum Sound { Launch, WoodHit, StoneHit, RobotDeath, Win, Fail }
+    public enum Sound { Launch, WoodHit, StoneHit, RobotDeath, Win, Fail, BlockDestroy, RobotHit }
 
     public static AudioManager Instance { get; private set; }
 
@@ -48,6 +48,8 @@ public class AudioManager : MonoBehaviour
             BuildRobotDeath(),
             BuildWinFanfare(),
             BuildFailBuzzer(),
+            BuildBlockDestroy(),
+            BuildRobotHit(),
         };
         _lastPlayTime = new float[_clips.Length];
     }
@@ -93,6 +95,28 @@ public class AudioManager : MonoBehaviour
         burst = Adsr(burst, a: 0.001f, d: 0.03f, s: 0f, r: 0.29f);
 
         return Clip("Launch", Mix(Scale(sweep, 0.8f), burst));
+    }
+
+    // Heavy wooden crash on block death: deep thud + crack burst + falling tone
+    static AudioClip BuildBlockDestroy()
+    {
+        var thud  = Sweep(160f, 50f, 0.40f, 0.9f);
+        thud  = Adsr(thud,  a: 0.001f, d: 0.05f, s: 0.25f, r: 0.30f);
+        var crack = Noise(0.40f, 0.80f);
+        crack = Adsr(crack, a: 0.001f, d: 0.03f, s: 0f,    r: 0.37f);
+        var tone  = Sine(95f, 0.40f, 0.55f);
+        tone  = Adsr(tone,  a: 0.001f, d: 0.07f, s: 0.15f, r: 0.28f);
+        return Clip("BlockDestroy", Mix(Mix(Scale(thud, 0.70f), Scale(crack, 0.65f)), Scale(tone, 0.40f)));
+    }
+
+    // Metallic clank when a robot takes a hit
+    static AudioClip BuildRobotHit()
+    {
+        var ping  = Sine(380f, 0.20f, 0.80f);
+        ping  = Adsr(ping,  a: 0.001f, d: 0.02f, s: 0.20f, r: 0.17f);
+        var crack = Noise(0.20f, 0.40f);
+        crack = Adsr(crack, a: 0.001f, d: 0.04f, s: 0f,    r: 0.16f);
+        return Clip("RobotHit", Mix(Scale(ping, 0.65f), Scale(crack, 0.45f)));
     }
 
     // Low-frequency thud + short noise crack

@@ -8,7 +8,7 @@ public abstract class BlockBase : MonoBehaviour
     [Header("Health")]
     [SerializeField] protected float baseMaxHealth           = 20f;
     [SerializeField] protected float impulseDamageMultiplier = 2.5f;
-    [SerializeField] protected float minDamageImpulse        = 2f;
+    [SerializeField] protected float minDamageImpulse        = 1.5f;
 
     [Header("Physics")]
     [SerializeField] protected float baseMass   = 5f;
@@ -97,7 +97,11 @@ public abstract class BlockBase : MonoBehaviour
         TakeDamage(impulse * impulseDamageMultiplier);
     }
 
-    protected virtual void PlayHitSound() { }
+    protected virtual void PlayHitSound()
+    {
+        var s = this is StoneBlock ? AudioManager.Sound.StoneHit : AudioManager.Sound.WoodHit;
+        AudioManager.Play(s, 0.08f);
+    }
 
     protected virtual void OnHealthChanged()
     {
@@ -125,11 +129,26 @@ public abstract class BlockBase : MonoBehaviour
     {
         if (IsDestroyed) return;
         IsDestroyed = true;
-        CameraShake.Shake(0.12f, 0.15f);
+        CameraShake.Shake(0.22f, 0.20f);
         SpawnFragments();
+        SpawnImpactFlash();
+        AudioManager.Play(AudioManager.Sound.BlockDestroy, 0.05f);
         OnBlockDestroyed?.Invoke(this);
         ScoreManager.Instance?.AddBlockScore(this);
         Destroy(gameObject);
+    }
+
+    void SpawnImpactFlash()
+    {
+        var go = new GameObject("BlockFlash");
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite       = MakeSquareSprite();
+        sr.color        = new Color(1f, 0.88f, 0.55f, 0.55f);
+        sr.sortingOrder = 15;
+        float sz = _col.bounds.size.x * 1.6f;
+        go.transform.position   = transform.position;
+        go.transform.localScale = new Vector3(sz, sz, 1f);
+        Destroy(go, 0.12f);
     }
 
     protected virtual void SpawnFragments()
@@ -155,28 +174,28 @@ public abstract class BlockBase : MonoBehaviour
         Color col = _sr != null
             ? new Color(_sr.color.r, _sr.color.g, _sr.color.b)
             : Color.grey;
-        int count = UnityEngine.Random.Range(4, 7);
+        int count = UnityEngine.Random.Range(8, 14);
         for (int i = 0; i < count; i++)
         {
             var go = new GameObject("Frag");
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = MakeSquareSprite();
-            float dim = UnityEngine.Random.Range(0.55f, 0.95f);
+            float dim = UnityEngine.Random.Range(0.50f, 0.95f);
             sr.color = new Color(col.r * dim, col.g * dim, col.b * dim);
             sr.sortingOrder = 10;
 
             go.transform.position = transform.position +
-                                    (Vector3)(UnityEngine.Random.insideUnitCircle * 0.15f);
-            float s = UnityEngine.Random.Range(0.06f, 0.22f);
+                                    (Vector3)(UnityEngine.Random.insideUnitCircle * 0.20f);
+            float s = UnityEngine.Random.Range(0.05f, 0.25f);
             go.transform.localScale = new Vector3(s, s, 1f);
 
             var rb = go.AddComponent<Rigidbody2D>();
-            rb.gravityScale    = 2f;
+            rb.gravityScale    = 3f;
             rb.linearVelocity  = UnityEngine.Random.insideUnitCircle.normalized *
-                                 UnityEngine.Random.Range(3f, 7f);
-            rb.angularVelocity = UnityEngine.Random.Range(-400f, 400f);
+                                 UnityEngine.Random.Range(5f, 14f);
+            rb.angularVelocity = UnityEngine.Random.Range(-600f, 600f);
 
-            Destroy(go, 1.2f);
+            Destroy(go, 1.8f);
         }
     }
 
