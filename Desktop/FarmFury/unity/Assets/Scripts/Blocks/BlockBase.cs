@@ -7,7 +7,7 @@ public abstract class BlockBase : MonoBehaviour
 {
     [Header("Health")]
     [SerializeField] protected float baseMaxHealth           = 20f;
-    [SerializeField] protected float impulseDamageMultiplier = 2.5f;
+    [SerializeField] protected float impulseDamageMultiplier = 1.0f;
     [SerializeField] protected float minDamageImpulse        = 1.5f;
 
     [Header("Physics")]
@@ -108,21 +108,21 @@ public abstract class BlockBase : MonoBehaviour
         if (_sr == null) return;
         float t = Health / MaxHealth;
 
-        // Healthy (material colour) → orange at 67% → red-orange at 33% → red at 0%
+        // Healthy (material colour) → orange at 50% → red-orange at 25% → red at 0%
         var orange    = new Color(1f, 0.55f, 0f);
         var redOrange = new Color(0.9f, 0.15f, 0f);
-        _sr.color = t > 0.67f
-            ? Color.Lerp(orange,    _baseColor, (t - 0.67f) / 0.33f)
-            : t > 0.33f
-            ? Color.Lerp(redOrange, orange,     (t - 0.33f) / 0.33f)
-            : Color.Lerp(Color.red, redOrange,  t           / 0.33f);
+        _sr.color = t > 0.50f
+            ? Color.Lerp(orange,    _baseColor, (t - 0.50f) / 0.50f)
+            : t > 0.25f
+            ? Color.Lerp(redOrange, orange,     (t - 0.25f) / 0.25f)
+            : Color.Lerp(Color.red, redOrange,  t           / 0.25f);
 
-        // Crack stage 1: <67% health shows light cracks
-        // Crack stage 2: <33% health shows heavy cracks on top
+        // Crack stage 1: <50% health shows light cracks (damaged sprite swap)
+        // Crack stage 2: <25% health shows heavy cracks on top
         if (_crackSR1 != null)
-            _crackSR1.color = t < 0.67f ? new Color(0f, 0f, 0f, 0.7f) : Color.clear;
+            _crackSR1.color = t < 0.50f ? new Color(0f, 0f, 0f, 0.7f) : Color.clear;
         if (_crackSR2 != null)
-            _crackSR2.color = t < 0.33f ? new Color(0f, 0f, 0f, 0.9f) : Color.clear;
+            _crackSR2.color = t < 0.25f ? new Color(0f, 0f, 0f, 0.9f) : Color.clear;
     }
 
     protected virtual void DestroyBlock()
@@ -170,32 +170,34 @@ public abstract class BlockBase : MonoBehaviour
             return;
         }
 
-        // Procedural: tiny squares tinted from the block's current colour, no collider
+        // 4 procedural fragments that fly outward and fade over 0.6 seconds
         Color col = _sr != null
             ? new Color(_sr.color.r, _sr.color.g, _sr.color.b)
             : Color.grey;
-        int count = UnityEngine.Random.Range(8, 14);
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < 4; i++)
         {
             var go = new GameObject("Frag");
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = MakeSquareSprite();
-            float dim = UnityEngine.Random.Range(0.50f, 0.95f);
+            float dim = UnityEngine.Random.Range(0.55f, 0.90f);
             sr.color = new Color(col.r * dim, col.g * dim, col.b * dim);
             sr.sortingOrder = 10;
 
-            go.transform.position = transform.position +
-                                    (Vector3)(UnityEngine.Random.insideUnitCircle * 0.20f);
-            float s = UnityEngine.Random.Range(0.05f, 0.25f);
+            go.transform.position   = transform.position +
+                                      (Vector3)(UnityEngine.Random.insideUnitCircle * 0.15f);
+            float s = UnityEngine.Random.Range(0.06f, 0.22f);
             go.transform.localScale = new Vector3(s, s, 1f);
 
+            float angle = i * 90f + UnityEngine.Random.Range(-30f, 30f);
+            float speed = UnityEngine.Random.Range(4f, 10f);
             var rb = go.AddComponent<Rigidbody2D>();
-            rb.gravityScale    = 3f;
-            rb.linearVelocity  = UnityEngine.Random.insideUnitCircle.normalized *
-                                 UnityEngine.Random.Range(5f, 14f);
-            rb.angularVelocity = UnityEngine.Random.Range(-600f, 600f);
+            rb.gravityScale    = 2.5f;
+            rb.linearVelocity  = new Vector2(
+                Mathf.Cos(angle * Mathf.Deg2Rad) * speed,
+                Mathf.Sin(angle * Mathf.Deg2Rad) * speed);
+            rb.angularVelocity = UnityEngine.Random.Range(-400f, 400f);
 
-            Destroy(go, 1.8f);
+            go.AddComponent<FragmentFader>(); // fades alpha 1→0 over 0.6s then self-destructs
         }
     }
 
@@ -288,5 +290,25 @@ public abstract class BlockBase : MonoBehaviour
             if (!block.IsDestroyed && block._rb.bodyType == RigidbodyType2D.Static)
                 block._rb.bodyType = RigidbodyType2D.Dynamic;
         }
+    }
+}
+
+// Runs on each fragment GO — fades SpriteRenderer alpha from 1 to 0 over 0.6s then destroys
+sealed class FragmentFader : MonoBehaviour
+{
+    System.Collections.IEnumerator Start()
+    {
+        var sr = GetComponent<SpriteRenderer>();
+        if (sr == null) { Destroy(gameObject); yield break; }
+        const float duration = 0.6f;
+        Color c = sr.color;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            sr.color = new Color(c.r, c.g, c.b, Mathf.Lerp(1f, 0f, elapsed / duration));
+            yield return null;
+        }
+        Destroy(gameObject);
     }
 }

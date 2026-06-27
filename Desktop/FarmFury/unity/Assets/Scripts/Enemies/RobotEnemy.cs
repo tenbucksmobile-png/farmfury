@@ -6,7 +6,7 @@ using UnityEngine;
 public class RobotEnemy : MonoBehaviour
 {
     [SerializeField] private float _maxHealth               = 35f;
-    [SerializeField] private float _impulseDamageMultiplier = 2.5f;
+    [SerializeField] private float _impulseDamageMultiplier = 1.0f;
     [SerializeField] private float _minDamageImpulse        = 1.5f;
 
     public float Health      { get; private set; }
@@ -36,12 +36,12 @@ public class RobotEnemy : MonoBehaviour
         _sr.color        = _restColor;
         _sr.sortingOrder = 3;
 
-        transform.localScale = new Vector3(0.7f, 0.8f, 1f);
+        transform.localScale = new Vector3(0.6f, 0.9f, 1f);
 
         // Prefab BoxCollider2D size is near-zero — set it here so robots land on blocks
         var col = GetComponent<BoxCollider2D>();
         if (col == null) col = gameObject.AddComponent<BoxCollider2D>();
-        col.size = new Vector2(1f, 1f); // local; world = 0.7 × 0.8 u after scale
+        col.size = new Vector2(1f, 1f); // local; world = 0.6 × 0.9 u after scale
 
         // Prefab mass defaults to 1; override to match design spec
         _rb.mass = 20f;
