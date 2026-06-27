@@ -106,7 +106,7 @@ Then open Unity — `EditorAutoSetup` and `SpriteAutoImporter` handle re-import 
 1.2 Trajectory arc — 20 pooled SpriteRenderer dots, physics-accurate, alpha fade over last 20%; Level 0 full arc, Level 17 fades at midpoint.
 1.3 Destruction feedback — procedural crack overlays (Bresenham, 2 child SRs), fragment burst, robot white-flash + radial particles, CameraShake singleton.
 1.4 Audio — AudioManager singleton; 6 DSP-generated clips (Sine/Noise/Sweep/ADSR); hit sounds throttled at 80ms per block type.
-1.5 Camera — exponential-decay follow (6u/s); 0.8s landing pause then SmoothStep pan back over 1.2s.
+1.5 Camera — exponential-decay follow (6u/s); 2.5s landing pause then SmoothStep pan back over 1.2s.
 
 ### Phase 2 — UI/UX Shell ✅ DONE
 2.1 HUD — score, bird-queue card widgets with bob animation, pause button.
@@ -141,24 +141,31 @@ Raw art in `assets/` → `python tools/remove_backgrounds.py` → `unity/Assets/
 **`assets/` folder layout:**
 ```
 assets/
-  Backdrops/          sky paintings (6), launcher sprites, World 1 props (14)
+  Backdrops/          sky painting, trebuchet reference sheets + component PNGs
   <Name>_<Animal>/    per-character pose PNGs (e.g., Cluck_Chicken/)
   FarmCards/          HUD card portraits — Cluck_Chicken.png … Billy_Goat.png
   LevelCards/         6 world card images — Meadow.png, Frozen.png, WaterMill.png,
                       Sky.png, Sunken.png, Mothership.png  ← all 6 exist
-  RobotEnemy/         Grunt + Commander pose PNGs (12 files total)
+  RobotEnemy/         Robot_Idle.png, HarvesterRobot.png (new)
+  Buildingblocks/     Cement.png, Metal.png, Wood.png — future block types (not yet wired)
   WorldProps/         per-world prop PNGs: IceTundra/, WatermillVillage/,
                       SkyIslands/, SunkenCity/, RobotMothership/
   FrameSprites/       VFX spritesheets: DustCloud, EggSplat, Explosion,
                       FeatherBurst, ImpactStars, Shockwave, StoneDebris, ScoreStar
 ```
 
+**World 1 props live in Unity directly** (not in assets/): `unity/Assets/Sprites/Environment/World1Props/` — 15 PNGs including 5 new ruins/barn props not yet wired. Filenames: no spaces (GrassTuft, WoodenBarrel — note: old names had spaces, now fixed).
+
 **Sky spec:** 1920×1080 px, no alpha. **Prop/launcher spec:** 1024×1024 px, white bg, element 75% of canvas.
 
 ### Phase 4 — World 1 Completion *(current)*
-✅ Sky backdrop, ground art (5-layer terrain), main menu art, two-part trebuchet sprites, sprite PPU calibration, camera zoom (orthoSize=3.5, rest offset 2.8/2.5), trebuchet arm alignment (_pivotHeight=2.35), L01 redesign (two towers, 2 robots), animal card HUD, level select redesign with world thumbnails, trebuchet drag mechanic, robot visibility fix, all 6 world level cards, SceneryBuilder (deterministic-RNG World 1 props per level), destruction improvements (bigger fragments/sounds/flash), all-wood early levels (L01–L03).
+✅ Sky backdrop, ground art (5-layer terrain), main menu art, trebuchet sprites, sprite PPU calibration, camera zoom (orthoSize=4.5, rest offset 5.5/2.5), trebuchet arm alignment (_pivotHeight=1.76), L01 redesign (two-tier cage, 2 robots), animal card HUD, level select redesign with world thumbnails, trebuchet drag mechanic, robot visibility fix, all 6 world level cards, SceneryBuilder (deterministic-RNG World 1 props per level), destruction improvements (4 fading fragments, damage at 50% health), all-wood early levels (L01–L03), full coordinate system rebuild (ground Y=−2.5, launcher X=−5.5), retuned block health (wood=80, stone=220), robot scale (0.6×0.9).
 
-**Still to do:** import robot art sprites (`assets/RobotEnemy/` → `Assets/Sprites/Enemies/Robot/`); add remaining 12 Meadow Ruins levels (L07–L18); Robot Commander boss.
+**New World 1 prop sprites added** (not yet wired to SceneryBuilder): `RuinedStoneWall.png`, `StoneTower.png`, `StoneWall(Tall).png`, `OldBarn.png`, `DamagedBarn.png`.
+
+**New trebuchet sprite kit** (multi-part, not yet fully wired): `Trabuchet_Base.png` (static frame), `Trabuchet_Arm.png` (rotating), `Trabuchet_Counterweight.png`, `Trabuchet_Sling.png`, `Trabuchet_Loaded.png`, `Trabuchet_MidSwing.png`, `Trabuchet_Fired.png`. Future-world launchers also present but unwired: GravitySling, Ice Cannon, Plane, Submarine, WaterWheel.
+
+**Still to do:** wire 5 new World 1 props into SceneryBuilder; decide trebuchet sprite approach (sprite-swap vs multi-part assembly); add remaining 12 Meadow Ruins levels (L07–L18); Robot Commander boss.
 
 ### Phase 5 — Worlds 2–6
 Each world: new launcher, world physics modifier, new animals, all levels, environment art, music, boss.
@@ -180,6 +187,9 @@ python -m http.server 8080
 
 ### Stack
 Phaser 3.60 (CDN), Matter.js (bundled), WebAudio API (procedural sound), localStorage.
+
+### History
+`PROGRESS.txt` at the repo root is the prompt-by-prompt changelog for the Phaser prototype (Prompts 1–12). Read it for precise physics constants, level coordinate calculations, and the rationale behind tuning decisions (e.g., why MAX_VEL was reduced from 18→14 in Prompt 12).
 
 ### World Constants
 | Constant | Value |
@@ -214,7 +224,8 @@ Unity 6.5 (6000.5.0f1), URP 2D, Physics2D, New Input System, TextMeshPro.
 - 1 Unity unit = 50 Phaser pixels
 - `x_unity = x_phaser / 50`
 - `y_unity = -(y_phaser - 770) / 50`
-- Ground surface at Y = 0. Trebuchet base at (11.2, 0, 0). Camera at (13, 2.5, −10), orthoSize = 3.5. `_cameraRestOffset = (2.8, 2.5)` relative to launcher.
+- **Ground surface at Y = −2.5** (world space). Trebuchet base at (−5.5, −2.5, 0). Camera at (0, 0, −10), orthoSize = 4.5. `_cameraRestOffset = (5.5, 2.5)` → camera parks at (0, 0).
+- **Level block/robot Y** = surface_offset − 2.5 (e.g. spec pos(3.0, 0.2) → world Y = −2.3, bottom at −2.5 = ground). World X is direct (spec X = world X).
 
 ### Physics Settings
 - Gravity Y: −20. Layers: Ground=6, Animal=7, Block=8, Robot=9, Egg=10.
@@ -225,7 +236,10 @@ unity/Assets/Scripts/
   Core/
     GameManager.cs          — singleton (DontDestroyOnLoad); states: Idle/Playing/LevelComplete/LevelFailed
                               ForceStartLevel(int) boots a level without LoadScene (used for direct Editor play)
-                              TryAutoLoadLevels() runs in Editor builds to auto-find LevelData assets
+                              TryAutoLoadLevels() auto-discovers LevelData assets in Editor builds
+                              BuildFallbackLevel() creates a hardcoded procedural level when no assets found
+                              LoadMenu() is scene-optional: only loads MainMenu if it's in Build Settings;
+                              otherwise LevelSelectController handles the Idle state in-scene
     BackgroundController.cs — sortingOrder=−100; cover-scale in Start(); LateUpdate() follows camera
     AudioManager.cs         — 6 DSP-generated clips; SfxEnabled/MusicEnabled from PlayerPrefs
     CameraShake.cs          — singleton, auto-attached to Launcher GO
@@ -234,6 +248,8 @@ unity/Assets/Scripts/
     LevelLoader.cs          — instantiates prefabs; TryConsumeBird / PeekNextBird; fires
                               OnBirdConsumed event; BirdQueueSnapshot property;
                               DelayedLevelComplete / DelayedLevelFailed coroutines → GameManager
+                              AutoLoadPrefabs() runs in Awake() (Editor only) — auto-finds all prefabs
+                              from Assets/Prefabs/ by type, so Inspector wiring is not required in Editor
   Animals/
     AnimalBase.cs           — abstract; Kinematic until Launch(); Mouse.current (New Input System);
                               5 pose sprites; HasRealSprites property; DestroyAnimal() fires OnAnimalDestroyed
@@ -248,11 +264,13 @@ unity/Assets/Scripts/
     EggProjectile.cs        — layer 10; flat _damage=15 on first contact only
   Blocks/
     BlockBase.cs            — spawns Static; wakes ALL blocks on first TakeDamage();
-                              health = baseMaxHealth × area/stdArea; colour tints at 67%/33%/0% health
-    WoodBlock.cs            — baseMaxHealth=20, baseMass=5, bounciness=0.2
-    StoneBlock.cs           — baseMaxHealth=50, baseMass=8, bounciness=0.1
+                              health = baseMaxHealth × area/stdArea; colour tints at 50%/25%/0% health;
+                              damage = impulse × 1.0 (no multiplier); on death: 4 fragments fly outward,
+                              FragmentFader coroutine fades alpha 1→0 over 0.6s then destroys
+    WoodBlock.cs            — baseMaxHealth=80, baseMass=5, bounciness=0.2
+    StoneBlock.cs           — baseMaxHealth=220, baseMass=8, bounciness=0.1
   Enemies/
-    RobotEnemy.cs           — HP=35, impulse damage ×2.5; BoxCollider2D.size=(1,1), mass=20;
+    RobotEnemy.cs           — HP=35, impulse damage ×1.0; scale=(0.6,0.9); BoxCollider2D.size=(1,1), mass=20;
                               2 red eye child GOs in Awake; calls LevelLoader.NotifyRobotDestroyed
   Scoring/
     ScoreManager.cs         — Robot +1000, Wood +100, Stone +200, Egg +50, bird-left bonus +500
@@ -261,8 +279,9 @@ unity/Assets/Scripts/
     CatapultLauncher.cs     — click bird-in-bucket → drag to rotate arm → release to fire;
                               bird locked to BucketWorldPos(armAngle) throughout drag;
                               load fraction (dragAngle−190°)/50° → speed 7–13 m/s at 20°–50°;
-                              DrawArmAt(): arm z = angleDeg − 190°; _pivotHeight=2.35,
-                              _armLongLength=1.15, _armShortLength=0.95, MaxLoadAngle=50°
+                              DrawArmAt(): arm z = angleDeg − 190°; _pivotHeight=1.76,
+                              _armLongLength=0.86, _armShortLength=0.71, MaxLoadAngle=50°;
+                              _returnDelay=2.5s; orthoSize=4.5; EnsureGroundExists() validates Y≈−2.5
   UI/
     HUDController.cs        — Canvas built at runtime; card widgets (active 108×142, queue 82×108);
                               orange ⚡N damage badge; Level Complete/Failed/Pause panels
@@ -272,9 +291,10 @@ unity/Assets/Scripts/
 
 unity/Assets/Editor/
   SceneSetup.cs         — FarmFury > Wire Scene References; wires all Inspector refs;
-                          sets camera (13,2.5,-10) orthoSize=3.5; NOTE: use TextureImporterSettings
-                          (ReadTextureSettings/SetTextureSettings) for pivots — spriteAlignment
-                          property was removed in Unity 6
+                          sets camera (0,0,-10) orthoSize=4.5; launcher at (-5.5,-2.5,0);
+                          ground center (0,-2.75,0) scale (60,0.5,1) → top at Y=-2.5;
+                          NOTE: use TextureImporterSettings (ReadTextureSettings/SetTextureSettings)
+                          for pivots — spriteAlignment property was removed in Unity 6
   LevelDataGenerator.cs — FarmFury > Generate All Level Data; LXX_ filenames must sort alphabetically
   SpriteWiring.cs       — FarmFury > Wire Sprites; sets per-character PPU; wires pose sprites
   BuildScript.cs        — batch-mode entry points called by Run-Unity.ps1
@@ -284,20 +304,33 @@ unity/Assets/Editor/
                           FarmFury > Reimport Sprites to force-apply
 ```
 
+### Runtime Event Flow
+
+Understanding how a level start/end propagates through the singletons:
+
+**Level start:**
+`GameManager.ForceStartLevel(idx)` (Editor play) or `GameManager.StartLevel(idx)` (menu) → `TransitionTo(Playing)` → fires `OnLevelStarted` → `LevelLoader.HandleLevelStarted(data)` → `LoadLevel()` spawns blocks/robots/birds → `ScoreManager.InitLevel()` resets counters → `CatapultLauncher` loads the first bird.
+
+**Level complete:**
+All robots destroyed → `LevelLoader.NotifyRobotDestroyed()` → `_spawnedRobots.Count == 0` → `DelayedLevelComplete()` (2s wait) → `ScoreManager.FinaliseLevel()` → `GameManager.CompleteLevel()` → `TransitionTo(LevelComplete)` → `HUDController` shows panel.
+
+**Level failed:**
+`CatapultLauncher` detects no more birds and calls `LevelLoader.NotifyBirdsExhausted()` → `DelayedLevelFailed()` (1.5s wait) → `GameManager.FailLevel()` → `TransitionTo(LevelFailed)` → `HUDController` shows panel.
+
 ### Key Implementation Rules (Unity)
 - **Input System ONLY:** `using UnityEngine.InputSystem;` — `Mouse.current.leftButton.wasPressedThisFrame`, `.isPressed`, `.wasReleasedThisFrame`. `mouse.position.ReadValue()` → `Vector2`. `UnityEngine.Input` is incompatible.
 - Blocks spawn `RigidbodyType2D.Static`; first `TakeDamage()` calls `WakeAllStaticBlocks()` → `FindObjectsByType<BlockBase>()` (Unity 6 API).
 - Animals start Kinematic → Dynamic on `Launch(velocity)`.
 - Never destroy physics body in collision callback — defer with coroutine.
 - **SpriteRenderer is auto-added:** both `BlockBase.Awake()` and `AnimalBase.Awake()` add one if null — prefabs don't need SpriteRenderer pre-added.
-- **Ground is recreated at runtime:** `CatapultLauncher.Start()` calls `EnsureGroundExists()` — validates surface near Y=0, width>5, recreates if stale. The authoritative visual ground is built by `SceneSetup.EnsureGround()` (5 layers: deep fill, soil, soil-edge, GrassBase, GrassTips) and saved into the scene file. Run **Wire Scene References** to regenerate it.
+- **Ground is recreated at runtime:** `CatapultLauncher.Start()` calls `EnsureGroundExists()` — validates surface near Y=−2.5, width>5, recreates if stale. The authoritative visual ground is built by `SceneSetup.EnsureGround()` (5 layers: deep fill, soil, soil-edge, GrassBase, GrassTips; center at (0,−2.75,0), scale (60,0.5,1)) and saved into the scene file. Run **Wire Scene References** to regenerate it.
 - **LevelLoader is auto-found:** `CatapultLauncher.Awake()` does `FindAnyObjectByType<LevelLoader>()` — Inspector wiring optional.
 - **[SerializeField] stale value trap:** changing a `[SerializeField]` default in code does NOT affect already-serialised components. Use `private const` for values that must not be overridden.
-- Ground collider: `localScale=(60,1,1)`, `BoxCollider2D.size=(1,1)` → world collider 60×1. Never set both scale AND size to large values.
-- **Effective mass formula:** both dynamic → `(mA × mB) / (mA + mB)`; one static → `movingBody.mass × 0.6`. Damage threshold impulse > 2. Damage = `impulse × 2.5`.
+- Ground collider: `localScale=(60,0.5,1)`, `BoxCollider2D.size=(1,1)` → world collider 60×0.5, top edge at Y=−2.5. Never set both scale AND size to large values.
+- **Effective mass formula:** both dynamic → `(mA × mB) / (mA + mB)`; one static → `movingBody.mass × 0.6`. Damage threshold impulse > 1.5. Damage = `impulse × 1.0` (no multiplier — blocks and robots both use ×1.0).
 - **Robot spawn invincibility:** `RobotEnemy.Initialise()` sets `_invincibleUntil = Time.time + 0.8f`. `OnCollisionEnter2D` returns early while invincible — prevents instant death from fall-settling onto blocks when levels load.
 - **Scenery sortingOrder rule:** decorative props (SceneryBuilder) must use `sortingOrder ≤ 1`. Blocks are `sortingOrder=2`, robots `3`. Props with white-background PNGs (before `remove_backgrounds.py`) at sortingOrder=2 visually cover blocks, making structures appear missing. Always keep props behind gameplay elements.
-- **SceneryBuilder** (`Scripts/Core/SceneryBuilder.cs`): subscribes to `GameManager.OnLevelStarted` in `Start()`. Uses deterministic `System.Random(levelIdx × 137 + 42)` so replays produce the same layout. `Place()` bottom-anchors sprites via `pivot.y / pixelsPerUnit * scale`. Avoids x=14–20 (structure zone) for ground-clutter props.
+- **SceneryBuilder** (`Scripts/Core/SceneryBuilder.cs`): subscribes to `GameManager.OnLevelStarted` in `Start()`. Uses deterministic `System.Random(levelIdx × 137 + 42)` so replays produce the same layout. `Place()` bottom-anchors sprites via `pivot.y / pixelsPerUnit * scale`. Avoids x=1–5 (structure zone) for ground-clutter props.
 
 ### Physics Values
 | Entity | mass | bounciness | linearDrag |
@@ -315,11 +348,11 @@ Global Light 2D
 GameManager       (GameManager.cs, DontDestroyOnLoad)
 LevelLoader       (LevelLoader.cs)
 ScoreManager      (ScoreManager.cs)
-Launcher          (CatapultLauncher.cs, at world pos 11.2, 0, 0)
+Launcher          (CatapultLauncher.cs, at world pos −5.5, −2.5, 0)
 Scenery           (SceneryBuilder.cs — 10 World1Prop sprite refs, rebuilt on OnLevelStarted)
 BlockParent       (empty holder)
 RobotParent       (empty holder)
-Ground            (tag="Ground", layer=6; top edge at Y=0; 5 visual layers below)
+Ground            (tag="Ground", layer=6; top edge at Y=−2.5; 5 visual layers below)
 ```
 
 ### Prefabs
@@ -327,7 +360,7 @@ Ground            (tag="Ground", layer=6; top edge at Y=0; 5 visual layers below
 Prefabs/Animals/     CluckAnimal, BessieAnimal, PercyAnimal, WoollyAnimal,
                      DuckyAnimal, HoraceAnimal, GeraldAnimal, BillyAnimal, Egg
 Prefabs/Blocks/      WoodBlock, StoneBlock
-Prefabs/Enemies/     Robot (0.7×0.8 scale, red eye child GOs)
+Prefabs/Enemies/     Robot (0.6×0.9 scale, red eye child GOs)
 Prefabs/Environment/ Ground (static)
 ```
 
@@ -335,14 +368,15 @@ Prefabs/Environment/ Ground (static)
 1. Create class extending `AnimalBase`; override `Awake()` (set colour/radius/mass before `base.Awake()`), implement `TriggerAbility()`
 2. Add prefab to `Prefabs/Animals/`
 3. Add `AnimalType` enum value to `LevelData.cs`
-4. Handle in `LevelLoader.CreateNextAnimal()` switch expression, `CatapultLauncher.NextBirdFA()` drag constant
+4. Handle in `LevelLoader.CreateNextAnimal()` switch expression and `GetAnimalIdleSprite()`, `CatapultLauncher.NextBirdFA()` drag constant
 5. Run **FarmFury → Wire Scene References**
 
 ### Adding a New Level
 Add `LevelData` ScriptableObject in `Assets/ScriptableObjects/Levels/` with filename `LXX_<Name>.asset` (alphabetical order = load order). Run **Wire Scene References**. Or add a `Make(...)` call to `LevelDataGenerator` and run **FarmFury → Generate All Level Data**.
 
 ```
-Y convention: Ground = 0. Robot center (h=0.8, scale 0.7×0.8) → y=0.4.
-              Wood center (h=0.4) → y=0.2. Stack upward by block height.
-X convention: Structure zone ≈ x=12–18.
+Y convention: Ground surface = −2.5. Block/robot Y = surface_offset − 2.5.
+              Robot center (h=0.9, scale 0.6×0.9) → world y = −2.05 (sits on ground).
+              Wood plank (h=0.4) → center at world y = −2.3. Stack upward by block height.
+X convention: Structure zone ≈ x=2–4 (L01). Launcher bucket at x≈−6.
 ```

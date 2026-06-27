@@ -50,12 +50,12 @@ public static class SceneSetup
         const string propsFolder = "Assets/Sprites/Environment/World1Props";
 
         var so = new SerializedObject(sb);
-        WireProp(so, "_sprGrassTuft",     "Grass Tuft.png",    propsFolder);
+        WireProp(so, "_sprGrassTuft",     "GrassTuft.png",     propsFolder);
         WireProp(so, "_sprWildFlowers",   "WildFlowers.png",   propsFolder);
         WireProp(so, "_sprRock",          "Rock.png",          propsFolder);
         WireProp(so, "_sprWoodenFence",   "WoodenFence.png",   propsFolder);
         WireProp(so, "_sprHaybail",       "Haybail.png",       propsFolder);
-        WireProp(so, "_sprWoodenBarrel",  "Wooden Barrel.png", propsFolder);
+        WireProp(so, "_sprWoodenBarrel",  "WoodenBarrel.png",  propsFolder);
         WireProp(so, "_sprWoodenCart",    "WoodenCart.png",    propsFolder);
         WireProp(so, "_sprFarmSilo",      "FarmSilo.png",      propsFolder);
         WireProp(so, "_sprOakTree",       "OakTree.png",       propsFolder);
@@ -384,9 +384,9 @@ public static class SceneSetup
         if (go == null)
         {
             go = new GameObject("Launcher");
-            go.transform.position = new Vector3(11.2f, 0f, 0f); // 560px / 50
-            Debug.Log("[FarmFury] Created 'Launcher' GameObject at (11.2, 0, 0).");
+            Debug.Log("[FarmFury] Created 'Launcher' GameObject.");
         }
+        go.transform.position = new Vector3(-5.5f, -2.5f, 0f);
 
         var launcher = go.GetComponent<CatapultLauncher>();
         if (launcher == null) launcher = go.AddComponent<CatapultLauncher>();
@@ -394,8 +394,9 @@ public static class SceneSetup
         var so = new SerializedObject(launcher);
         var ll = Object.FindAnyObjectByType<LevelLoader>();
         so.FindProperty("_levelLoader").objectReferenceValue = ll;
-        // Keep rest offset in sync with PositionCamera() — camera parks at launcher.x+2.8, launcher.y+2.5
-        so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(2.8f, 2.5f);
+        // Camera parks at launcher + offset = (-5.5+5.5, -2.5+2.5) = (0,0)
+        so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(5.5f, 2.5f);
+        so.FindProperty("_returnDelay").floatValue        = 2.5f;
         // _pivotHeight (2.35) / _armLongLength / _armShortLength / _armRestAngle / MaxLoadAngle
         // are all private const in CatapultLauncher — never serialized, no writes needed here.
 
@@ -591,13 +592,13 @@ public static class SceneSetup
         if (oldGrass != null) Object.DestroyImmediate(oldGrass);
 
         // ── Physics collider + base soil ─────────────────────────────────────
-        // scale=(60,1,1), col.size=(1,1) → world collider 60×1.
-        // Centre at (14,-0.5) → top edge at Y=0 (ground surface).
+        // scale=(60,0.5,1), col.size=(1,1) → world collider 60×0.5.
+        // Centre at (0,-2.75) → top edge at Y=-2.5 (ground surface).
         var go = new GameObject("Ground");
         go.tag   = "Ground";
         go.layer = 6;
-        go.transform.position   = new Vector3(14f, -0.5f, 0f);
-        go.transform.localScale = new Vector3(60f,  1f,   1f);
+        go.transform.position   = new Vector3(0f, -2.75f, 0f);
+        go.transform.localScale = new Vector3(60f,  0.5f,  1f);
         var col  = go.AddComponent<BoxCollider2D>();
         col.size = new Vector2(1f, 1f);
         var sr   = go.AddComponent<SpriteRenderer>();
@@ -609,13 +610,13 @@ public static class SceneSetup
 
         // ── Visual layers (no colliders, purely decorative) ───────────────────
         // Deep fill — covers the void below the camera so sky isn't visible underground
-        MakeGroundLayer("GroundFill", 14f, -12f,  60f, 24f,   new Color(0.25f, 0.14f, 0.04f), 0);
+        MakeGroundLayer("GroundFill", 0f, -14.5f, 60f, 24f,   new Color(0.25f, 0.14f, 0.04f), 0);
         // Soil highlight — lighter band just below grass gives soil depth
-        MakeGroundLayer("SoilEdge",   14f, -0.02f, 60f, 0.08f, new Color(0.44f, 0.28f, 0.10f), 1);
+        MakeGroundLayer("SoilEdge",   0f, -2.52f,  60f, 0.08f, new Color(0.44f, 0.28f, 0.10f), 1);
         // Main grass body — deep, rich green (not neon)
-        MakeGroundLayer("GrassBase",  14f,  0.11f,  60f, 0.26f, new Color(0.15f, 0.44f, 0.08f), 1);
+        MakeGroundLayer("GrassBase",  0f, -2.39f,  60f, 0.26f, new Color(0.15f, 0.44f, 0.08f), 1);
         // Grass tip highlight — bright stripe at the very top simulates lit blades
-        MakeGroundLayer("GrassTips",  14f,  0.25f,  60f, 0.07f, new Color(0.28f, 0.62f, 0.14f), 2);
+        MakeGroundLayer("GrassTips",  0f, -2.25f,  60f, 0.07f, new Color(0.28f, 0.62f, 0.14f), 2);
 
         Debug.Log("[FarmFury] Ground created: 5-layer terrain (soil + grass).");
     }
@@ -647,10 +648,10 @@ public static class SceneSetup
         var cam = Object.FindAnyObjectByType<Camera>();
         if (cam == null) return;
         cam.orthographic     = true;
-        cam.orthographicSize = 3.5f;  // 7u tall — matches CatapultLauncher runtime override
-        cam.transform.position = new Vector3(14f, 2.5f, -10f);
+        cam.orthographicSize = 4.5f;  // 9u tall — matches CatapultLauncher runtime override
+        cam.transform.position = new Vector3(0f, 0f, -10f);
         cam.backgroundColor    = new Color(0.38f, 0.65f, 0.90f); // sky-blue fallback if sprite absent
-        Debug.Log("[FarmFury] Camera positioned at (14, 2.5, -10), orthoSize=3.5.");
+        Debug.Log("[FarmFury] Camera positioned at (0, 0, -10), orthoSize=4.5.");
     }
 
     // ── Ensure parent holder GameObjects exist in scene ───────────────────────

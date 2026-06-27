@@ -18,14 +18,14 @@ MonoBehaviour:
   birds: 00000000010000000000000000000000
   blocks:
   - type: 0
-    position: {x: 14, y: 0.2}
+    position: {x: -2.7, y: -2.3}
     size: {x: 2.4, y: 0.4}
   - type: 0
-    position: {x: 14, y: 0.6}
+    position: {x: -2.7, y: -1.9}
     size: {x: 2.4, y: 0.4}
   - type: 0
-    position: {x: 14, y: 1}
+    position: {x: -2.7, y: -1.5}
     size: {x: 1.6, y: 0.4}
   robots:
-  - position: {x: 15.6, y: 0.4}
-  - position: {x: 14, y: 1.6}
+  - position: {x: -1.1, y: -2.1}
+  - position: {x: -2.7, y: -0.9}

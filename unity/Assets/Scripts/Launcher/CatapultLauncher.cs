@@ -29,10 +29,10 @@ public class CatapultLauncher : MonoBehaviour
     private const float MaxLoadAngle    = 50f;    // degrees arm can be pulled past rest angle
 
     [Header("Camera")]
-    [SerializeField] private float   _returnDelay          = 0.8f;   // seconds after landing before pan-back starts
+    [SerializeField] private float   _returnDelay          = 2.5f;   // seconds after landing before pan-back starts
     [SerializeField] private float   _cameraFollowSpeed    = 6f;     // exponential follow rate (units/s)
     [SerializeField] private float   _cameraReturnDuration = 1.2f;   // seconds for the pan-back animation
-    [SerializeField] private Vector2 _cameraRestOffset     = new Vector2(2.8f, 2.5f);
+    [SerializeField] private Vector2 _cameraRestOffset     = new Vector2(5.5f, 2.5f);
 
     [Header("Trebuchet Art")]
     [SerializeField] private Sprite _trebuchetBodySprite;
@@ -85,7 +85,7 @@ public class CatapultLauncher : MonoBehaviour
         if (_camera != null)
         {
             _camera.orthographic     = true;
-            _camera.orthographicSize = 3.5f;
+            _camera.orthographicSize = 4.5f;
         }
 
         _armAngle = _armRestAngle;
@@ -137,8 +137,8 @@ public class CatapultLauncher : MonoBehaviour
         if (existing != null)
         {
             var check = existing.GetComponent<BoxCollider2D>();
-            // Valid ground: surface near Y=0 and wide enough to catch robots
-            if (check != null && check.bounds.max.y >= -0.2f && check.bounds.size.x > 5f)
+            // Valid ground: surface near Y=-2.5 and wide enough to catch robots
+            if (check != null && Mathf.Abs(check.bounds.max.y + 2.5f) < 0.5f && check.bounds.size.x > 5f)
                 return;
             Object.Destroy(existing); // buggy/old ground — recreate below
         }
@@ -146,10 +146,10 @@ public class CatapultLauncher : MonoBehaviour
         var go = new GameObject("Ground");
         go.tag   = "Ground";
         go.layer = 6;
-        go.transform.position   = new Vector3(14f, -0.5f, 0f);
-        go.transform.localScale = new Vector3(60f,  1f,   1f);
+        go.transform.position   = new Vector3(0f, -2.75f, 0f);
+        go.transform.localScale = new Vector3(60f,  0.5f,  1f);
 
-        // 1×1 local col × (60,1) scale = 60×1 world, top edge at Y=0
+        // 1×1 local col × (60,0.5) scale = 60×0.5 world, top edge at Y=-2.5
         var col  = go.AddComponent<BoxCollider2D>();
         col.size = new Vector2(1f, 1f);
 
@@ -496,8 +496,8 @@ public class CatapultLauncher : MonoBehaviour
         // Load fraction: how far the arm was pulled (0 = rest, 1 = MaxLoadAngle)
         float loadFrac = Mathf.Clamp01((_dragAngle - _armRestAngle) / MaxLoadAngle);
         if (loadFrac < 0.05f) return Vector2.zero;
-        // Speed 7–13 m/s gives range 4–8 u from the launch point at the given angles,
-        // which puts the bird in the structure zone (x≈15–18) for World 1.
+        // Speed 7–13 m/s; full power (~45°, 13 m/s) gives range ~9.8 u from bucket,
+        // reaching structure zone (x≈2.5–3.5) for World 1 from launcher at x=-5.5.
         float speed    = Mathf.Lerp(7f, 13f, loadFrac);
         float angleDeg = Mathf.Lerp(20f, 50f, loadFrac);
         float rad      = angleDeg * Mathf.Deg2Rad;
