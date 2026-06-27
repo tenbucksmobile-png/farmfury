@@ -20,7 +20,7 @@ MonoBehaviour:
   - type: 0
     position: {x: 14, y: 0.2}
     size: {x: 2.4, y: 0.4}
-  - type: 1
+  - type: 0
     position: {x: 14, y: 0.6}
     size: {x: 2.4, y: 0.4}
   - type: 0

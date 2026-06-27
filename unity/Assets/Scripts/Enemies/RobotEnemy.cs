@@ -7,7 +7,7 @@ public class RobotEnemy : MonoBehaviour
 {
     [SerializeField] private float _maxHealth               = 35f;
     [SerializeField] private float _impulseDamageMultiplier = 2.5f;
-    [SerializeField] private float _minDamageImpulse        = 2f;
+    [SerializeField] private float _minDamageImpulse        = 1.5f;
 
     public float Health      { get; private set; }
     public bool  IsDestroyed { get; private set; }
@@ -22,6 +22,7 @@ public class RobotEnemy : MonoBehaviour
     private SpriteRenderer _sr;
     private LevelLoader    _loader;
     private Color          _restColor;
+    private float          _invincibleUntil; // ignores collision damage for 0.8s after spawn
 
     void Awake()
     {
@@ -68,8 +69,9 @@ public class RobotEnemy : MonoBehaviour
 
     public void Initialise(LevelLoader loader)
     {
-        _loader = loader;
-        Health  = _maxHealth;
+        _loader          = loader;
+        Health           = _maxHealth;
+        _invincibleUntil = Time.time + 0.8f; // ignore spawn-settling impacts
     }
 
     public void TakeDamage(float amount)
@@ -77,6 +79,7 @@ public class RobotEnemy : MonoBehaviour
         if (IsDestroyed) return;
         Health = Mathf.Max(0f, Health - amount);
         StartCoroutine(FlashDamage());
+        AudioManager.Play(AudioManager.Sound.RobotHit, 0.10f);
         if (Health <= 0f) Die();
     }
 
@@ -84,6 +87,7 @@ public class RobotEnemy : MonoBehaviour
     {
         if (IsDestroyed) return;
         if (col.rigidbody == null) return;
+        if (Time.time < _invincibleUntil) return; // settling after spawn — no fall damage
 
         float effMass = col.rigidbody.bodyType == RigidbodyType2D.Static
             ? _rb.mass * 0.6f
@@ -107,42 +111,63 @@ public class RobotEnemy : MonoBehaviour
     void Die()
     {
         IsDestroyed = true;
-        AudioManager.Play(AudioManager.Sound.RobotDeath);
-        CameraShake.Shake(0.28f, 0.22f);
-        SpawnDeathParticles();
         _loader?.NotifyRobotDestroyed(this);
+        StartCoroutine(DeathSequence());
+    }
+
+    IEnumerator DeathSequence()
+    {
+        AudioManager.Play(AudioManager.Sound.RobotDeath);
+        CameraShake.Shake(0.35f, 0.30f);
+        SpawnDeathParticles();
+
+        // Squish: flatten robot into the ground, then disappear
+        Vector3 startScale = transform.localScale;   // (0.7, 0.8, 1)
+        float t = 0f;
+        const float squishDur = 0.14f;
+        while (t < squishDur)
+        {
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / squishDur);
+            transform.localScale = new Vector3(
+                Mathf.Lerp(startScale.x, 1.3f,  p),
+                Mathf.Lerp(startScale.y, 0.04f, p),
+                1f);
+            yield return null;
+        }
+
+        yield return new WaitForSeconds(0.06f);
         Destroy(gameObject);
     }
 
     void SpawnDeathParticles()
     {
-        int count = Random.Range(6, 10);
+        int count = Random.Range(12, 18);
         for (int i = 0; i < count; i++)
         {
             var go = new GameObject("RobotFrag");
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = MakeSquareSprite();
-            // 35% chance of a bright spark, rest are dark metal fragments
-            sr.color = Random.value > 0.65f
-                ? new Color(1f, 0.75f + Random.value * 0.25f, 0.1f)
-                : new Color(0.35f, 0.35f, 0.42f);
+            // 40% bright sparks, rest dark metal shards
+            sr.color = Random.value > 0.60f
+                ? new Color(1f, 0.80f + Random.value * 0.20f, 0.05f)
+                : new Color(0.30f, 0.32f, 0.40f);
             sr.sortingOrder = 10;
 
-            go.transform.position  = transform.position + (Vector3)(Random.insideUnitCircle * 0.12f);
-            float s = Random.Range(0.04f, 0.14f);
+            go.transform.position  = transform.position + (Vector3)(Random.insideUnitCircle * 0.18f);
+            float s = Random.Range(0.04f, 0.18f);
             go.transform.localScale = new Vector3(s, s, 1f);
 
-            // Fan outward evenly with random jitter so nothing shoots straight up or down
-            float angle = (i / (float)count) * 360f + Random.Range(-30f, 30f);
-            float speed = Random.Range(4f, 9f);
+            float angle = (i / (float)count) * 360f + Random.Range(-25f, 25f);
+            float speed = Random.Range(6f, 14f);
             var rb = go.AddComponent<Rigidbody2D>();
-            rb.gravityScale    = 1.8f;
+            rb.gravityScale    = 2.2f;
             rb.linearVelocity  = new Vector2(
                 Mathf.Cos(angle * Mathf.Deg2Rad) * speed,
                 Mathf.Sin(angle * Mathf.Deg2Rad) * speed);
-            rb.angularVelocity = Random.Range(-500f, 500f);
+            rb.angularVelocity = Random.Range(-600f, 600f);
 
-            Destroy(go, 1.5f);
+            Destroy(go, 1.8f);
         }
     }
 

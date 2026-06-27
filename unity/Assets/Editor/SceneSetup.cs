@@ -17,6 +17,7 @@ public static class SceneSetup
         EnsureParents();        // BlockParent, RobotParent GameObjects
         EnsureGround();         // Static ground plane with collider + renderer
         EnsureBackground();     // Sky painting backdrop behind all game objects
+        EnsureScenery();        // SceneryBuilder GO + World1Props sprite refs
         EnsureEggPrefab();      // Create Egg prefab + wire into CluckAnimal prefab
         EnsureAnimalPrefabs();  // Create Percy/Woolly/Ducky/Horace/Gerald/Billy prefabs
         EnsureHUD();            // HUDController GO (builds Canvas at runtime)
@@ -31,6 +32,61 @@ public static class SceneSetup
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
         Debug.Log("[FarmFury] Scene wiring complete. Game.unity saved.");
+    }
+
+    // ── Scenery: World 1 decorative prop sprites ──────────────────────────────────
+
+    static void EnsureScenery()
+    {
+        var go = GameObject.Find("Scenery");
+        if (go == null)
+        {
+            go = new GameObject("Scenery");
+            Debug.Log("[FarmFury] Created 'Scenery' GameObject.");
+        }
+        var sb = go.GetComponent<SceneryBuilder>();
+        if (sb == null) sb = go.AddComponent<SceneryBuilder>();
+
+        const string propsFolder = "Assets/Sprites/Environment/World1Props";
+
+        var so = new SerializedObject(sb);
+        WireProp(so, "_sprGrassTuft",     "Grass Tuft.png",    propsFolder);
+        WireProp(so, "_sprWildFlowers",   "WildFlowers.png",   propsFolder);
+        WireProp(so, "_sprRock",          "Rock.png",          propsFolder);
+        WireProp(so, "_sprWoodenFence",   "WoodenFence.png",   propsFolder);
+        WireProp(so, "_sprHaybail",       "Haybail.png",       propsFolder);
+        WireProp(so, "_sprWoodenBarrel",  "Wooden Barrel.png", propsFolder);
+        WireProp(so, "_sprWoodenCart",    "WoodenCart.png",    propsFolder);
+        WireProp(so, "_sprFarmSilo",      "FarmSilo.png",      propsFolder);
+        WireProp(so, "_sprOakTree",       "OakTree.png",       propsFolder);
+        WireProp(so, "_sprGnarledTree",   "GnarledTree.png",   propsFolder);
+        so.ApplyModifiedProperties();
+    }
+
+    static void WireProp(SerializedObject so, string field, string filename, string folder)
+    {
+        string path = $"{folder}/{filename}";
+        // Force PPU=512 / Single mode on import so bottom-anchor maths in SceneryBuilder is correct.
+        var imp = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (imp != null)
+        {
+            bool dirty = false;
+            if (imp.textureType         != TextureImporterType.Sprite)          { imp.textureType         = TextureImporterType.Sprite;          dirty = true; }
+            if (imp.spritePixelsPerUnit != 512)                                  { imp.spritePixelsPerUnit = 512;                                 dirty = true; }
+            if (!imp.alphaIsTransparency)                                        { imp.alphaIsTransparency = true;                                dirty = true; }
+            if (imp.alphaSource         != TextureImporterAlphaSource.FromInput) { imp.alphaSource         = TextureImporterAlphaSource.FromInput; dirty = true; }
+            if (imp.spriteImportMode    != SpriteImportMode.Single)              { imp.spriteImportMode    = SpriteImportMode.Single;             dirty = true; }
+            if (dirty) imp.SaveAndReimport();
+        }
+
+        var sp = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (sp == null)
+        {
+            Debug.LogWarning($"[FarmFury] Scenery: prop not found at {path}");
+            return;
+        }
+        so.FindProperty(field).objectReferenceValue = sp;
+        Debug.Log($"[FarmFury] Scenery: {field} → {filename}");
     }
 
     // ── Sky backdrop ─────────────────────────────────────────────────────────────
@@ -517,63 +573,63 @@ public static class SceneSetup
         PrefabUtility.UnloadPrefabContents(contents);
     }
 
-    // ── Ground: static collider + green visual ────────────────────────────────
+    // ── Ground: static collider + layered terrain visual ─────────────────────
+
+    static readonly string[] GroundGoNames =
+        { "Ground", "GroundFill", "GrassBase", "GrassTips", "SoilEdge" };
 
     static void EnsureGround()
     {
-        // Always destroy-and-recreate to wipe any previously-broken ground object.
-        var existing = GameObject.Find("Ground");
-        if (existing != null) Object.DestroyImmediate(existing);
-        var existingGrass = GameObject.Find("GrassTop");
-        if (existingGrass != null) Object.DestroyImmediate(existingGrass);
-        var existingFill = GameObject.Find("GroundFill");
-        if (existingFill != null) Object.DestroyImmediate(existingFill);
+        // Destroy-and-recreate to wipe any previously-broken ground objects.
+        foreach (var n in GroundGoNames)
+        {
+            var old = GameObject.Find(n);
+            if (old != null) Object.DestroyImmediate(old);
+        }
+        // Also clean up old "GrassTop" name from earlier builds
+        var oldGrass = GameObject.Find("GrassTop");
+        if (oldGrass != null) Object.DestroyImmediate(oldGrass);
 
+        // ── Physics collider + base soil ─────────────────────────────────────
+        // scale=(60,1,1), col.size=(1,1) → world collider 60×1.
+        // Centre at (14,-0.5) → top edge at Y=0 (ground surface).
         var go = new GameObject("Ground");
         go.tag   = "Ground";
         go.layer = 6;
-
-        // Key maths: localScale drives BOTH collider and sprite.
-        // scale=(60,1,1), col.size=(1,1) → world collider = 60×1.
-        // GO center at (14,-0.5) → top edge at Y=0  (the ground surface).
         go.transform.position   = new Vector3(14f, -0.5f, 0f);
         go.transform.localScale = new Vector3(60f,  1f,   1f);
-
         var col  = go.AddComponent<BoxCollider2D>();
-        col.size = new Vector2(1f, 1f);   // 1×1 local → 60×1 world
-
-        // Dark earthy brown — looks like soil/dirt rather than a solid colour
-        var sr        = go.AddComponent<SpriteRenderer>();
-        sr.sprite     = MakeGroundSprite();
-        sr.color      = new Color(0.40f, 0.26f, 0.09f);
+        col.size = new Vector2(1f, 1f);
+        var sr   = go.AddComponent<SpriteRenderer>();
+        sr.sprite       = MakeGroundSprite();
+        sr.color        = new Color(0.34f, 0.20f, 0.06f);  // rich dark soil
         sr.sortingOrder = 0;
-
-        var rb      = go.AddComponent<Rigidbody2D>();
+        var rb   = go.AddComponent<Rigidbody2D>();
         rb.bodyType = RigidbodyType2D.Static;
 
-        // Grass-top strip: thin bright green band sitting right at the surface (Y=0).
-        // Purely visual — no collider. Gives the ground a clear terrain edge.
-        var grassGo = new GameObject("GrassTop");
-        grassGo.transform.position   = new Vector3(14f, 0.12f, 0f);
-        grassGo.transform.localScale = new Vector3(60f, 0.25f, 1f);
+        // ── Visual layers (no colliders, purely decorative) ───────────────────
+        // Deep fill — covers the void below the camera so sky isn't visible underground
+        MakeGroundLayer("GroundFill", 14f, -12f,  60f, 24f,   new Color(0.25f, 0.14f, 0.04f), 0);
+        // Soil highlight — lighter band just below grass gives soil depth
+        MakeGroundLayer("SoilEdge",   14f, -0.02f, 60f, 0.08f, new Color(0.44f, 0.28f, 0.10f), 1);
+        // Main grass body — deep, rich green (not neon)
+        MakeGroundLayer("GrassBase",  14f,  0.11f,  60f, 0.26f, new Color(0.15f, 0.44f, 0.08f), 1);
+        // Grass tip highlight — bright stripe at the very top simulates lit blades
+        MakeGroundLayer("GrassTips",  14f,  0.25f,  60f, 0.07f, new Color(0.28f, 0.62f, 0.14f), 2);
 
-        var grassSr = grassGo.AddComponent<SpriteRenderer>();
-        grassSr.sprite       = MakeGroundSprite();
-        grassSr.color        = new Color(0.22f, 0.65f, 0.10f);
-        grassSr.sortingOrder = 1;
+        Debug.Log("[FarmFury] Ground created: 5-layer terrain (soil + grass).");
+    }
 
-        // Deep soil fill — covers all camera space below Y=0 so the sky isn't
-        // visible underground. 24 units tall fills any realistic orthoSize value.
-        var fillGo = new GameObject("GroundFill");
-        fillGo.transform.position   = new Vector3(14f, -12f, 0f);
-        fillGo.transform.localScale = new Vector3(60f,  24f, 1f);
-
-        var fillSr = fillGo.AddComponent<SpriteRenderer>();
-        fillSr.sprite       = MakeGroundSprite();
-        fillSr.color        = new Color(0.40f, 0.26f, 0.09f);
-        fillSr.sortingOrder = 0;
-
-        Debug.Log("[FarmFury] Ground created: brown soil + grass-top strip + deep fill.");
+    static void MakeGroundLayer(string name, float cx, float cy,
+                                float scaleX, float scaleY, Color color, int order)
+    {
+        var go = new GameObject(name);
+        go.transform.position   = new Vector3(cx, cy, 0f);
+        go.transform.localScale = new Vector3(scaleX, scaleY, 1f);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite       = MakeGroundSprite();
+        sr.color        = color;
+        sr.sortingOrder = order;
     }
 
     static Sprite MakeGroundSprite()
