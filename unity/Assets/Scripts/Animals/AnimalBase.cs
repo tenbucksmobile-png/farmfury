@@ -64,7 +64,7 @@ public abstract class AnimalBase : MonoBehaviour
     {
         if (!IsLaunched || IsDestroyed) return;
 
-        if (!_abilityUsed && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        if (!_abilityUsed && Pointer.current != null && Pointer.current.press.wasPressedThisFrame)
         {
             _abilityUsed = true;
             TriggerAbility();
@@ -88,6 +88,7 @@ public abstract class AnimalBase : MonoBehaviour
     public void Launch(Vector2 velocity)
     {
         _rb.bodyType       = RigidbodyType2D.Dynamic;
+        _rb.gravityScale   = 0.4f; // floaty arc — slower, more visible trajectory
         _rb.linearVelocity = velocity;
         IsLaunched         = true;
         IsInFlight         = true;

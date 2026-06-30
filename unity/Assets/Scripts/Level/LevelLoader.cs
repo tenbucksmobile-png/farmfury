@@ -22,6 +22,7 @@ public class LevelLoader : MonoBehaviour
 
     [Header("Enemy Prefabs")]
     [SerializeField] private RobotEnemy _robotPrefab;
+    [SerializeField] private RobotEnemy _harvesterPrefab;
 
     [Header("Parents")]
     [SerializeField] private Transform _blockParent;
@@ -61,9 +62,10 @@ public class LevelLoader : MonoBehaviour
 #if UNITY_EDITOR
     void AutoLoadPrefabs()
     {
-        if (_woodPrefab   == null) _woodPrefab   = LoadPrefabComponent<WoodBlock>("WoodBlock");
-        if (_stonePrefab  == null) _stonePrefab  = LoadPrefabComponent<StoneBlock>("StoneBlock");
-        if (_robotPrefab  == null) _robotPrefab  = LoadPrefabComponent<RobotEnemy>("Robot");
+        if (_woodPrefab       == null) _woodPrefab       = LoadPrefabComponent<WoodBlock>("WoodBlock");
+        if (_stonePrefab      == null) _stonePrefab      = LoadPrefabComponent<StoneBlock>("StoneBlock");
+        if (_robotPrefab      == null) _robotPrefab      = LoadPrefabComponent<RobotEnemy>("Robot");
+        if (_harvesterPrefab  == null) _harvesterPrefab  = LoadPrefabComponent<RobotEnemy>("HarvesterRobot");
         if (_cluckPrefab  == null) _cluckPrefab  = LoadPrefabComponent<CluckAnimal>("CluckAnimal");
         if (_bessiePrefab == null) _bessiePrefab = LoadPrefabComponent<BessieAnimal>("BessieAnimal");
         if (_percyPrefab  == null) _percyPrefab  = LoadPrefabComponent<PercyAnimal>("PercyAnimal");
@@ -187,11 +189,16 @@ public class LevelLoader : MonoBehaviour
 
     void SpawnRobot(LevelData.RobotSpawnData data)
     {
-        if (_robotPrefab == null) { Debug.LogWarning("[LevelLoader] Robot prefab null — run Wire Scene References."); return; }
-        var robot = Instantiate(_robotPrefab,
+        var prefab = data.robotType == RobotType.Harvester && _harvesterPrefab != null
+            ? _harvesterPrefab
+            : _robotPrefab;
+        if (prefab == null) { Debug.LogWarning("[LevelLoader] Robot prefab null — run Wire Scene References."); return; }
+        var robot = Instantiate(prefab,
             new Vector3(data.position.x, data.position.y, 0f),
             Quaternion.identity,
             _robotParent);
+        if (data.scale != Vector2.zero)
+            robot.transform.localScale = new Vector3(data.scale.x, data.scale.y, 1f);
         robot.Initialise(this);
         _spawnedRobots.Add(robot);
     }

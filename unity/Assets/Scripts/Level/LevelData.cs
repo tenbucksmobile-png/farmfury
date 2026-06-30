@@ -30,9 +30,12 @@ public class LevelData : ScriptableObject
     [Serializable]
     public struct RobotSpawnData
     {
-        public Vector2 position;
+        public RobotType robotType;
+        public Vector2   position;
+        public Vector2   scale;     // (0,0) = use prefab default; non-zero overrides localScale
     }
 }
 
 public enum AnimalType { Cluck, Bessie, Percy, Woolly, Ducky, Horace, Gerald, Billy }
 public enum BlockType  { Wood,  Stone  }
+public enum RobotType  { Basic, Harvester }

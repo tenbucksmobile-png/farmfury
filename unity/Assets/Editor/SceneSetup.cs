@@ -30,10 +30,24 @@ public static class SceneSetup
         WireGameManager();      // _levels array
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
         WireLauncher();         // CatapultLauncher + LevelLoader ref + counterweight sprite
-        WireRobotSprite();            // Robot_Idle.png → Robot prefab SpriteRenderer (fallback)
-        WireHarvesterRobotSprite();   // HarvesterRobot.png → overrides for Level 1 enemy
+        WireRobotSprite();                // Robot_Idle.png → Robot prefab SpriteRenderer
+        EnsureHarvesterRobotPrefab();  // Create/update HarvesterRobot.prefab (separate from Robot)
         WireBlockSprites();     // Art sprites into WoodBlock + StoneBlock prefabs
         PositionCamera();       // Move camera to see the play area
+        SpriteWiring.WireAll(); // Wire character pose sprites into all 8 animal prefabs
+
+        // Delete visual-only placeholder GOs that duplicate code-spawned gameplay objects.
+        // These are scene GOs pasted in for reference during layout — they must be gone
+        // before Play mode so the code-spawned prefabs are the only instances.
+        foreach (var placeholderName in new[] { "Cluck_Loaded_0", "HarvesterRobot" })
+        {
+            var ph = GameObject.Find(placeholderName);
+            if (ph != null)
+            {
+                Object.DestroyImmediate(ph);
+                Debug.Log($"[FarmFury] Deleted visual placeholder '{placeholderName}'.");
+            }
+        }
 
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
@@ -73,7 +87,10 @@ public static class SceneSetup
         // _sprStoneWallTall intentionally not wired — StoneWall_Tall.png was renamed to StoneTower.png above
         WireProp(so, "_sprOldBarn",          "OldBarn_Right.png",    propsFolder); // FIXED: actual filename
         WireProp(so, "_sprDamagedBarn",      "DamagedBarn.png",      propsFolder);
+        // Level 1 scenery is hand-authored as scene GOs — skip all code-spawning for level 0
+        so.FindProperty("_useExactPlacement").boolValue = true;
         so.ApplyModifiedProperties();
+        Debug.Log("[FarmFury] Scenery: _useExactPlacement = true (Level 1 props are scene-authored, not code-generated).");
     }
 
     static void WireProp(SerializedObject so, string field, string filename, string folder)
@@ -106,11 +123,27 @@ public static class SceneSetup
 
     static void EnsureBackground()
     {
-        var go = GameObject.Find("Background");
-        if (go == null)
+        // Prefer the user's authored sky GO; delete any stale code-created duplicate.
+        var skyVariant = GameObject.Find("Background_SkyV1")
+                      ?? GameObject.Find("Background_Sky");
+        var codeBg     = GameObject.Find("Background");
+
+        GameObject go;
+        if (skyVariant != null)
+        {
+            if (codeBg != null && codeBg != skyVariant) Object.DestroyImmediate(codeBg);
+            go      = skyVariant;
+            go.name = "Background";
+            Debug.Log("[FarmFury] Background: merged Background_SkyV1 → 'Background'.");
+        }
+        else if (codeBg != null)
+        {
+            go = codeBg;
+        }
+        else
         {
             go = new GameObject("Background");
-            Debug.Log("[FarmFury] Created 'Background' GameObject.");
+            Debug.Log("[FarmFury] Created 'Background' GO — no existing sky sprite found.");
         }
 
         var bc = go.GetComponent<BackgroundController>();
@@ -394,7 +427,8 @@ public static class SceneSetup
         SetPrefab(so, "_horacePrefab", "HoraceAnimal", "Assets/Prefabs/Animals",  typeof(HoraceAnimal));
         SetPrefab(so, "_geraldPrefab", "GeraldAnimal", "Assets/Prefabs/Animals",  typeof(GeraldAnimal));
         SetPrefab(so, "_billyPrefab",  "BillyAnimal",  "Assets/Prefabs/Animals",  typeof(BillyAnimal));
-        SetPrefab(so, "_robotPrefab",  "Robot",        "Assets/Prefabs/Enemies",  typeof(RobotEnemy));
+        SetPrefab(so, "_robotPrefab",      "Robot",           "Assets/Prefabs/Enemies", typeof(RobotEnemy));
+        SetPrefab(so, "_harvesterPrefab",  "HarvesterRobot",  "Assets/Prefabs/Enemies", typeof(RobotEnemy));
 
         so.FindProperty("_blockParent").objectReferenceValue =
             GameObject.Find("BlockParent")?.transform;
@@ -415,7 +449,10 @@ public static class SceneSetup
             go = new GameObject("Launcher");
             Debug.Log("[FarmFury] Created 'Launcher' GameObject.");
         }
-        go.transform.position = new Vector3(-5.5f, -2.5f, 0f);
+        // Launcher sits at the base of the trebuchet (ground surface Y = -6.60).
+        // PivotPos() = (-2.327, -6.60 + 1.914) = (-2.327, -4.686) — Trabuchet_Arm Inspector position.
+        // Camera rest = launcher + (2.327, 4.60) = (0, -2) matching the scene camera position.
+        go.transform.position = new Vector3(-2.327f, -6.60f, 0f);
 
         var launcher = go.GetComponent<CatapultLauncher>();
         if (launcher == null) launcher = go.AddComponent<CatapultLauncher>();
@@ -423,13 +460,43 @@ public static class SceneSetup
         var so = new SerializedObject(launcher);
         var ll = Object.FindAnyObjectByType<LevelLoader>();
         so.FindProperty("_levelLoader").objectReferenceValue = ll;
-        // Camera parks at launcher + offset = (-5.5+5.5, -2.5+2.5) = (0,0)
-        so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(5.5f, 2.5f);
+        so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(2.327f, 4.60f);
         so.FindProperty("_returnDelay").floatValue        = 2.5f;
-        // _pivotHeight (2.35) / _armLongLength / _armShortLength / _armRestAngle / MaxLoadAngle
-        // are all private const in CatapultLauncher — never serialized, no writes needed here.
 
-        // ── Trebuchet body sprite (static frame + wheels) ────────────────────
+        // Wire the existing Trabuchet_Arm and Trabuchet_Swing scene GOs so CatapultLauncher
+        // controls them directly instead of creating new sprite children.
+        var armGO   = GameObject.Find("Trabuchet_Arm");
+        var swingGO = GameObject.Find("Trabuchet_Swing");
+        so.FindProperty("_armSpriteGO").objectReferenceValue   = armGO;
+        so.FindProperty("_swingSpriteGO").objectReferenceValue = swingGO;
+
+        // Position and scale arm GO to Inspector-verified values:
+        //   pos (-2.327, -4.686) = pivot (launch GO pos + pivotHeight 1.914)
+        //   scale (1.891186, 1.785115) = user-calibrated sprite scale
+        if (armGO != null)
+        {
+            armGO.transform.position   = new Vector3(-2.327f, -4.686f, 0f);
+            armGO.transform.localScale = new Vector3(1.891186f, 1.785115f, 1f);
+            Debug.Log("[FarmFury] Launcher: Trabuchet_Arm set to pos (-2.327, -4.686) scale (1.891186, 1.785115).");
+        }
+        else Debug.LogWarning("[FarmFury] Launcher: Trabuchet_Arm not found in scene.");
+
+        // Position and scale swing GO (bucket visual) to Inspector-verified values:
+        //   pos (-2.777, -5.017) = arm tip at rest (pivot + 0.571 at 218°)
+        //   scale (1.007133, 1.474944) = user-calibrated sprite scale
+        if (swingGO != null)
+        {
+            swingGO.transform.position   = new Vector3(-2.777f, -5.017f, 0f);
+            swingGO.transform.localScale = new Vector3(1.007133f, 1.474944f, 1f);
+            Debug.Log("[FarmFury] Launcher: Trabuchet_Swing set to pos (-2.777, -5.017) scale (1.007133, 1.474944).");
+        }
+        else Debug.LogWarning("[FarmFury] Launcher: Trabuchet_Swing not found in scene.");
+
+        // ── Trebuchet body sprite ─────────────────────────────────────────────
+        // NOT wired here — the user's Trabuchet_Body scene GO is the authoritative visual.
+        // Wiring _trebuchetBodySprite would cause BuildTrebuchetBody() to create a duplicate
+        // "TrebuchetBody" child on the Launcher GO in Play mode.
+        // Import settings are still enforced so the asset stays correct for other uses.
         const string bodyPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Body.png";
         if (AssetDatabase.LoadAssetAtPath<Texture2D>(bodyPath) != null)
         {
@@ -437,30 +504,17 @@ public static class SceneSetup
             if (imp != null)
             {
                 bool dirty = false;
-                // Both sprites are 2048×2048 — PPU=768 gives 2.667u (same as 1024px@384).
-                // Body pivot = bottom-centre (0.5, 0.0) so the body stands on Y=0 ground.
                 if (imp.textureType         != TextureImporterType.Sprite)          { imp.textureType         = TextureImporterType.Sprite;          dirty = true; }
                 if (imp.spritePixelsPerUnit != 768)                                  { imp.spritePixelsPerUnit = 768;                                 dirty = true; }
                 if (!imp.alphaIsTransparency)                                        { imp.alphaIsTransparency = true;                                dirty = true; }
                 if (imp.alphaSource         != TextureImporterAlphaSource.FromInput) { imp.alphaSource         = TextureImporterAlphaSource.FromInput; dirty = true; }
                 if (imp.spriteImportMode    != SpriteImportMode.Single)              { imp.spriteImportMode    = SpriteImportMode.Single;             dirty = true; }
-                var bodySettings = new TextureImporterSettings();
-                imp.ReadTextureSettings(bodySettings);
-                var bodyPivot = new Vector2(0.50f, 0.00f);
-                if (bodySettings.spriteAlignment != (int)SpriteAlignment.Custom || bodySettings.spritePivot != bodyPivot)
-                {
-                    bodySettings.spriteAlignment = (int)SpriteAlignment.Custom;
-                    bodySettings.spritePivot     = bodyPivot;
-                    imp.SetTextureSettings(bodySettings);
-                    dirty = true;
-                }
                 if (dirty) imp.SaveAndReimport();
             }
-            so.FindProperty("_trebuchetBodySprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(bodyPath);
-            Debug.Log("[FarmFury] Launcher: trebuchet body sprite wired (PPU=768, bottom pivot).");
+            // _trebuchetBodySprite intentionally NOT assigned — scene GO Trabuchet_Body handles the visual.
+            // Explicitly null it out to clear any stale serialised value from previous runs.
+            so.FindProperty("_trebuchetBodySprite").objectReferenceValue = null;
         }
-        else
-            Debug.LogWarning("[FarmFury] Trabuchet_Body.png not found — run remove_backgrounds.py then re-run Wire Scene References.");
 
         // ── Trebuchet arm sprite (rotates with arm angle) ────────────────────
         // MUST be Single mode — Multiple mode creates sub-sprites breaking LoadAssetAtPath<Sprite>
@@ -497,26 +551,9 @@ public static class SceneSetup
         else
             Debug.LogWarning("[FarmFury] Trabuchet_Arm.png not found — run remove_backgrounds.py then re-run Wire Scene References.");
 
-        // ── Trebuchet counterweight sprite (pendulum that swings when arm fires) ─
-        const string cwPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Counter.png"; // FIXED: actual filename is Counter not Counterweight
-        if (AssetDatabase.LoadAssetAtPath<Texture2D>(cwPath) != null)
-        {
-            var imp = AssetImporter.GetAtPath(cwPath) as TextureImporter;
-            if (imp != null)
-            {
-                bool dirty = false;
-                if (imp.textureType         != TextureImporterType.Sprite)          { imp.textureType         = TextureImporterType.Sprite;          dirty = true; }
-                if (imp.spritePixelsPerUnit != 768)                                  { imp.spritePixelsPerUnit = 768;                                 dirty = true; }
-                if (!imp.alphaIsTransparency)                                        { imp.alphaIsTransparency = true;                                dirty = true; }
-                if (imp.spriteImportMode    != SpriteImportMode.Single)             { imp.spriteImportMode    = SpriteImportMode.Single;             dirty = true; }
-                if (dirty) imp.SaveAndReimport();
-            }
-            so.FindProperty("_trebuchetCounterweightSprite").objectReferenceValue =
-                AssetDatabase.LoadAssetAtPath<Sprite>(cwPath);
-            Debug.Log("[FarmFury] Launcher: counterweight sprite wired.");
-        }
-        else
-            Debug.LogWarning("[FarmFury] Trabuchet_Counterweight.png not found — run remove_backgrounds.py then re-run Wire Scene References.");
+        // Counterweight removed by design — visual is part of the Trabuchet_Body scene art.
+        so.FindProperty("_trebuchetCounterweightSprite").objectReferenceValue = null;
+        Debug.Log("[FarmFury] Launcher: counterweight sprite nulled (removed by design).");
 
         so.ApplyModifiedProperties();
 
@@ -641,28 +678,18 @@ public static class SceneSetup
         Debug.Log("[FarmFury] Robot: wired Robot_Idle.png into _robotSprite (PPU=1746).");
     }
 
-    // ── HarvesterRobot sprite: wire HarvesterRobot.png into Robot prefab ────────
-    // Called after WireRobotSprite() so this overrides Robot_Idle for Level 1.
-    // When multiple robot types are needed, add a RobotType enum to RobotSpawnData
-    // and instantiate separate prefabs per type in LevelLoader.
+    // ── HarvesterRobot: create a SEPARATE prefab (distinct from Robot.prefab) ───
+    // LevelLoader picks this prefab when RobotSpawnData.robotType == RobotType.Harvester.
 
-    static void WireHarvesterRobotSprite()
+    static void EnsureHarvesterRobotPrefab()
     {
-        const string prefabPath  = "Assets/Prefabs/Enemies/Robot.prefab";
-        const string spritePath  = "Assets/Sprites/Enemies/Robot/HarvesterRobot.png";
+        const string prefabPath = "Assets/Prefabs/Enemies/HarvesterRobot.prefab";
+        const string spritePath = "Assets/Sprites/Enemies/Robot/HarvesterRobot.png";
 
-        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
-        {
-            Debug.LogWarning("[FarmFury] Robot prefab not found — skipping HarvesterRobot wiring.");
-            return;
-        }
-
-        // Ensure import settings match Robot_Idle (PPU=1746, Single, alpha)
         var imp = AssetImporter.GetAtPath(spritePath) as TextureImporter;
         if (imp == null)
         {
-            Debug.LogWarning($"[FarmFury] HarvesterRobot.png not found at {spritePath}. " +
-                             "Copy it to Assets/Sprites/Enemies/Robot/ and re-run Wire Scene References.");
+            Debug.LogWarning($"[FarmFury] HarvesterRobot.png not found at {spritePath}.");
             return;
         }
         bool dirty = false;
@@ -670,12 +697,29 @@ public static class SceneSetup
         if (imp.spritePixelsPerUnit != 1746)                                { imp.spritePixelsPerUnit = 1746;                               dirty = true; }
         if (!imp.alphaIsTransparency)                                       { imp.alphaIsTransparency = true;                               dirty = true; }
         if (imp.spriteImportMode    != SpriteImportMode.Single)            { imp.spriteImportMode    = SpriteImportMode.Single;            dirty = true; }
-        if (dirty) { imp.SaveAndReimport(); }
+        if (dirty) imp.SaveAndReimport();
 
         var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
         if (sprite == null) { Debug.LogWarning("[FarmFury] HarvesterRobot.png failed to load as Sprite."); return; }
 
-        var go    = PrefabUtility.LoadPrefabContents(prefabPath);
+        bool exists = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null;
+        GameObject go;
+        if (exists)
+        {
+            go = PrefabUtility.LoadPrefabContents(prefabPath);
+        }
+        else
+        {
+            go       = new GameObject("HarvesterRobot");
+            go.layer = 9;
+            var rb   = go.AddComponent<Rigidbody2D>();
+            rb.mass  = 20f;
+            var bc   = go.AddComponent<BoxCollider2D>();
+            bc.size  = new Vector2(1f, 1f);
+            go.AddComponent<SpriteRenderer>();
+            go.AddComponent<RobotEnemy>();
+        }
+
         var robot = go.GetComponent<RobotEnemy>();
         if (robot != null)
         {
@@ -683,9 +727,19 @@ public static class SceneSetup
             so.FindProperty("_robotSprite").objectReferenceValue = sprite;
             so.ApplyModifiedProperties();
         }
-        PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
-        PrefabUtility.UnloadPrefabContents(go);
-        Debug.Log("[FarmFury] Robot: wired HarvesterRobot.png into _robotSprite (PPU=1746).");
+
+        if (exists)
+        {
+            PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+            PrefabUtility.UnloadPrefabContents(go);
+        }
+        else
+        {
+            PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+            Object.DestroyImmediate(go);
+        }
+        AssetDatabase.Refresh();
+        Debug.Log("[FarmFury] HarvesterRobot.prefab created with HarvesterRobot.png (PPU=1746).");
     }
 
     // ── Egg prefab: create if missing, wire into CluckAnimal prefab ─────────────
@@ -745,69 +799,41 @@ public static class SceneSetup
 
     // ── Ground: static collider + layered terrain visual ─────────────────────
 
-    static readonly string[] GroundGoNames =
-        { "Ground", "GroundFill", "GrassBase", "GrassTips", "SoilEdge" };
-
     static void EnsureGround()
     {
-        // Destroy-and-recreate to wipe any previously-broken ground objects.
-        foreach (var n in GroundGoNames)
+        // Delete old code-generated visual layers from previous Wire Scene References runs.
+        // The user authors ground/grass visuals directly in the scene — we don't create them.
+        foreach (var n in new[] { "GroundFill", "GrassBase", "GrassTips", "SoilEdge", "GrassTop" })
         {
             var old = GameObject.Find(n);
-            if (old != null) Object.DestroyImmediate(old);
+            if (old != null) { Object.DestroyImmediate(old); Debug.Log($"[FarmFury] Deleted old visual layer '{n}'."); }
         }
-        // Also clean up old "GrassTop" name from earlier builds
-        var oldGrass = GameObject.Find("GrassTop");
-        if (oldGrass != null) Object.DestroyImmediate(oldGrass);
 
-        // ── Physics collider + base soil ─────────────────────────────────────
-        // scale=(60,0.5,1), col.size=(1,1) → world collider 60×0.5.
-        // Centre at (0,-2.75) → top edge at Y=-2.5 (ground surface).
-        var go = new GameObject("Ground");
+        // Physics collider only — invisible, no SpriteRenderer.
+        // Surface Y = -6.60; centre at (0, -6.85); scale (60,0.5,1) → collider top edge at -6.60.
+        const float GroundSurface = -6.60f;
+        var go = GameObject.Find("Ground");
+        if (go == null) { go = new GameObject("Ground"); Debug.Log("[FarmFury] Created 'Ground' physics collider."); }
         go.tag   = "Ground";
         go.layer = 6;
-        go.transform.position   = new Vector3(0f, -2.75f, 0f);
-        go.transform.localScale = new Vector3(60f,  0.5f,  1f);
-        var col  = go.AddComponent<BoxCollider2D>();
-        col.size = new Vector2(1f, 1f);
-        var sr   = go.AddComponent<SpriteRenderer>();
-        sr.sprite       = MakeGroundSprite();
-        sr.color        = new Color(0.34f, 0.20f, 0.06f);  // rich dark soil
-        sr.sortingOrder = 0;
-        var rb   = go.AddComponent<Rigidbody2D>();
-        rb.bodyType = RigidbodyType2D.Static;
+        go.transform.position   = new Vector3(0f, GroundSurface - 0.25f, 0f);
+        go.transform.localScale = new Vector3(60f, 0.5f, 1f);
 
-        // ── Visual layers (no colliders, purely decorative) ───────────────────
-        // Deep fill — covers the void below the camera so sky isn't visible underground
-        MakeGroundLayer("GroundFill", 0f, -14.5f, 60f, 24f,   new Color(0.25f, 0.14f, 0.04f), 0);
-        // Soil highlight — lighter band just below grass gives soil depth
-        MakeGroundLayer("SoilEdge",   0f, -2.52f,  60f, 0.08f, new Color(0.44f, 0.28f, 0.10f), 1);
-        // Main grass body — deep, rich green (not neon)
-        MakeGroundLayer("GrassBase",  0f, -2.39f,  60f, 0.26f, new Color(0.15f, 0.44f, 0.08f), 1);
-        // Grass tip highlight — bright stripe at the very top simulates lit blades
-        MakeGroundLayer("GrassTips",  0f, -2.25f,  60f, 0.07f, new Color(0.28f, 0.62f, 0.14f), 2);
+        // Remove any old SpriteRenderer — ground is physics-only from now on
+        var oldSr = go.GetComponent<SpriteRenderer>();
+        if (oldSr != null) Object.DestroyImmediate(oldSr);
 
-        Debug.Log("[FarmFury] Ground created: 5-layer terrain (soil + grass).");
-    }
-
-    static void MakeGroundLayer(string name, float cx, float cy,
-                                float scaleX, float scaleY, Color color, int order)
-    {
-        var go = new GameObject(name);
-        go.transform.position   = new Vector3(cx, cy, 0f);
-        go.transform.localScale = new Vector3(scaleX, scaleY, 1f);
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite       = MakeGroundSprite();
-        sr.color        = color;
-        sr.sortingOrder = order;
-    }
-
-    static Sprite MakeGroundSprite()
-    {
-        var tex = new Texture2D(1, 1);
-        tex.SetPixel(0, 0, Color.white);
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
+        if (go.GetComponent<BoxCollider2D>() == null)
+        {
+            var col  = go.AddComponent<BoxCollider2D>();
+            col.size = new Vector2(1f, 1f);
+        }
+        if (go.GetComponent<Rigidbody2D>() == null)
+        {
+            var rb   = go.AddComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Static;
+        }
+        Debug.Log("[FarmFury] Ground physics collider at surface Y=-6.60 (ground/grass visuals are scene-authored, not code-generated).");
     }
 
     // ── Camera: position to see launcher + structures ─────────────────────────
@@ -817,10 +843,10 @@ public static class SceneSetup
         var cam = Object.FindAnyObjectByType<Camera>();
         if (cam == null) return;
         cam.orthographic     = true;
-        cam.orthographicSize = 4.5f;  // 9u tall — matches CatapultLauncher runtime override
-        cam.transform.position = new Vector3(0f, 0f, -10f);
-        cam.backgroundColor    = new Color(0.38f, 0.65f, 0.90f); // sky-blue fallback if sprite absent
-        Debug.Log("[FarmFury] Camera positioned at (0, 0, -10), orthoSize=4.5.");
+        cam.orthographicSize = 4.5f;
+        cam.transform.position = new Vector3(0f, -2f, -10f);  // rest pos = launcher(-2.327,-6.60) + offset(2.327,4.60)
+        cam.backgroundColor    = new Color(0.38f, 0.65f, 0.90f);
+        Debug.Log("[FarmFury] Camera positioned at (0, -2, -10), orthoSize=4.5.");
     }
 
     // ── Ensure parent holder GameObjects exist in scene ───────────────────────

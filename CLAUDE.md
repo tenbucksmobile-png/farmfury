@@ -159,13 +159,11 @@ assets/
 **Sky spec:** 1920×1080 px, no alpha. **Prop/launcher spec:** 1024×1024 px, white bg, element 75% of canvas.
 
 ### Phase 4 — World 1 Completion *(current)*
-✅ Sky backdrop, ground art (5-layer terrain), main menu art, trebuchet sprites, sprite PPU calibration, camera zoom (orthoSize=4.5, rest offset 5.5/2.5), trebuchet arm alignment (_pivotHeight=1.76), animal card HUD, level select redesign with world thumbnails, trebuchet drag mechanic, robot visibility fix, all 6 world level cards, SceneryBuilder (deterministic-RNG World 1 props per level), destruction improvements (4 fading fragments, damage at 50% health), all-wood early levels (L01–L03), full coordinate system rebuild (ground Y=−2.5, launcher X=−5.5), retuned block health (wood=80, stone=220), robot scale (0.6×0.9), HarvesterRobot.png wired to Robot prefab, Cluck pass-through mechanic (hay bale `_passThrough` flag, 70% velocity carry-through), sky painting import fixed (re-imports SkyPainting.png as Sprite PPU=100 in EnsureBackground), L01 redesigned as tutorial (3× Cluck / 4 hay bales / 1 HarvesterRobot), SceneryBuilder exact placement mode (`_useExactPlacement=true` → skips L1 entirely), PlaceExact() native-size correction, ParallaxScroller component.
+✅ Sky backdrop, ground art (5-layer terrain), main menu art, trebuchet sprites, sprite PPU calibration, camera zoom (orthoSize=4.5), trebuchet arm alignment, animal card HUD, level select redesign with world thumbnails, trebuchet drag+swing animation mechanic, robot visibility fix, all 6 world level cards, SceneryBuilder (deterministic-RNG World 1 props per level), destruction improvements (4 fading fragments, damage at 50% health), all-wood early levels (L01–L03), **coordinate system rebuild (ground Y=−6.60, launcher X=−2.327, camera Y=−2)**, retuned block health (wood=80, stone=220), robot scale (0.6×0.9), **HarvesterRobot.prefab** (separate from Robot.prefab — spawned when `robotType=Harvester`), **RobotType enum** in LevelData, **_swingSpriteGO** in CatapultLauncher (tracked to arm tip, always visible), Cluck pass-through mechanic, sky painting import fixed, **L01 redesigned: 3 Cluck birds vs 1 HarvesterRobot (x=5.155, y=−6.25)**, SceneryBuilder exact placement mode, PlaceExact() native-size correction, ParallaxScroller component, **trebuchet geometry recalibrated** (armRestAngle=218°, armLongLength=0.571, pivotHeight=1.914 — derived from user Inspector values), **Cluck visual scale (2.2676, 2.5454)**, **bird gravityScale=0.4** (slower arc), **HUD cards moved to top-left** (anchorMin 0.02,1).
 
-**Level 1 scenery** — hand-authored in the Unity scene as permanent GameObjects under `Scenery_L1` (not code-generated). Elements to place: OldBarn_Right (far left, large), OakTree (center-left), Windmill (center-right, small), WoodenFence ×4 (mid-ground row), GnarledTree (far right), ground clutter (GrassTuft, Rock, WildFlowers). sortingOrder: background elements −15 to −12; ground clutter 1. FarmSilo excluded from all World 1 scenery.
+**Level 1 layout** — the user designed L01 as a 3-story wooden cage: stone base, 3 floors of wood posts + planks, one HarvesterRobot per floor. All scenery (OldBarn_Right, OakTree, Haybails ×4, WoodenFence ×4, GnarledTree, Windmill, GrassTuft ×5, Rock ×2, WildFlowers) is hand-authored as permanent GameObjects in the scene. The `Trabuchet_Body`, `Trabuchet_Arm`, `Trabuchet_Swing` are also hand-placed scene GOs; CatapultLauncher references them via `_armSpriteGO` / `_swingSpriteGO` [SerializeField] fields wired by **Wire Scene References**.
 
-**New trebuchet sprite kit** (multi-part, not yet fully wired): `Trabuchet_Base.png` (static frame), `Trabuchet_Arm.png` (rotating), `Trabuchet_Counterweight.png`, `Trabuchet_Sling.png`, `Trabuchet_Loaded.png`, `Trabuchet_MidSwing.png`, `Trabuchet_Fired.png`. Future-world launchers also present but unwired: GravitySling, Ice Cannon, Plane, Submarine, WaterWheel.
-
-**Still to do:** complete Scenery_L1 hand-authoring in scene; add remaining 12 Meadow Ruins levels (L07–L18); Robot Commander boss; decide trebuchet multi-part sprite assembly.
+**Still to do:** add remaining Meadow Ruins levels (L02–L18); Robot Commander boss; Wire Scene References run to wire the new Launcher GO and HarvesterRobot prefab.
 
 ### Phase 5 — Worlds 2–6
 Each world: new launcher, world physics modifier, new animals, all levels, environment art, music, boss.
@@ -224,8 +222,8 @@ Unity 6.5 (6000.5.0f1), URP 2D, Physics2D, New Input System, TextMeshPro.
 - 1 Unity unit = 50 Phaser pixels
 - `x_unity = x_phaser / 50`
 - `y_unity = -(y_phaser - 770) / 50`
-- **Ground surface at Y = −2.5** (world space). Trebuchet base at (−5.5, −2.5, 0). Camera at (0, 0, −10), orthoSize = 4.5. `_cameraRestOffset = (5.5, 2.5)` → camera parks at (0, 0).
-- **Level block/robot Y** = surface_offset − 2.5 (e.g. spec pos(3.0, 0.2) → world Y = −2.3, bottom at −2.5 = ground). World X is direct (spec X = world X).
+- **Ground surface at Y = −6.60** (world space). Launcher GO at (−2.327, −6.60, 0). `_pivotHeight = 1.914` → arm pivot at (−2.327, −4.686) which is where `Trabuchet_Arm` scene GO sits. Camera at (0, −2, −10), orthoSize = 4.5. `_cameraRestOffset = (2.327, 4.60)` → camera parks at (0, −2).
+- **Level block/robot Y** = position − 6.60 (old Y system used ground = −2.5; new offset = −4.1 applied to all L01 values). World X is unchanged (spec X = world X).
 
 ### Physics Settings
 - Gravity Y: −20. Layers: Ground=6, Animal=7, Block=8, Robot=9, Egg=10.
@@ -287,12 +285,15 @@ unity/Assets/Scripts/
   Launcher/
     CatapultLauncher.cs     — click bird-in-bucket → drag to rotate arm → release to fire;
                               bird locked to BucketWorldPos(armAngle) throughout drag;
-                              load fraction (dragAngle−190°)/50° → speed 7–13 m/s at 20°–50°;
-                              DrawArmAt(): arm z = angleDeg − 190°; _pivotHeight=1.76,
-                              _armLongLength=0.86, _armShortLength=0.71, MaxLoadAngle=50°;
-                              _returnDelay=2.5s; orthoSize=4.5; EnsureGroundExists() validates Y≈−2.5
+                              load fraction (dragAngle−218°)/50° → speed 6–9 m/s, angle 45°–22°;
+                              DrawArmAt(): arm z = angleDeg − 218°; _pivotHeight=1.914,
+                              _armLongLength=0.571, _armShortLength=0.471, _armRestAngle=218°, MaxLoadAngle=50°;
+                              BucketFromPivot=(−0.450, −0.352); bird gravityScale=0.4 for visible arc;
+                              Cluck spawns at localScale (2.2676, 2.5454); _returnDelay=2.5s;
+                              EnsureGroundExists() validates Y≈−2.5
   UI/
-    HUDController.cs        — Canvas built at runtime; card widgets (active 108×142, queue 82×108);
+    HUDController.cs        — Canvas built at runtime; card widgets (active 200×260, queue 155×202, gap −55);
+                              cards anchored top-left (anchorMin 0.02,1 pivot 0,1 pos 0,−12);
                               orange ⚡N damage badge; Level Complete/Failed/Pause panels
     LevelSelectController.cs — ScrollRect + GridLayoutGroup 3-col; RefreshGrid() rebuilds on show;
                               world-art thumbnails with gradient overlay; lock veil
@@ -300,7 +301,9 @@ unity/Assets/Scripts/
 
 unity/Assets/Editor/
   SceneSetup.cs         — FarmFury > Wire Scene References; wires all Inspector refs;
-                          sets camera (0,0,-10) orthoSize=4.5; launcher at (-5.5,-2.5,0);
+                          sets camera (0,0,-10) orthoSize=4.5; launcher at (-2.327,-6.60,0);
+                          Trabuchet_Arm pos (-2.327,-4.686) scale (1.891,1.785);
+                          Trabuchet_Swing pos (-2.777,-5.017) scale (1.007,1.475);
                           ground center (0,-2.75,0) scale (60,0.5,1) → top at Y=-2.5;
                           EnsureBackground() re-imports SkyPainting.png as Sprite PPU=100 if needed,
                           then wires it into BackgroundController._skySprite;
@@ -355,17 +358,25 @@ All robots destroyed → `LevelLoader.NotifyRobotDestroyed()` → `_spawnedRobot
 
 ### Scene Structure (Game.unity)
 ```
-Main Camera
+Main Camera           (at 0, −2, −10; orthoSize=4.5)
 Global Light 2D
-GameManager       (GameManager.cs, DontDestroyOnLoad)
-LevelLoader       (LevelLoader.cs)
-ScoreManager      (ScoreManager.cs)
-Launcher          (CatapultLauncher.cs, at world pos −5.5, −2.5, 0)
-Scenery           (SceneryBuilder.cs — World1Prop sprite refs; _useExactPlacement=true skips L1)
-Scenery_L1        (permanent hand-authored Level 1 background props — in progress)
-BlockParent       (empty holder)
-RobotParent       (empty holder)
-Ground            (tag="Ground", layer=6; top edge at Y=−2.5; 5 visual layers below)
+GameManager           (GameManager.cs, DontDestroyOnLoad)
+LevelLoader           (LevelLoader.cs)
+ScoreManager          (ScoreManager.cs)
+HUD                   (HUDController.cs)
+Background_SkyV1      (SpriteRenderer — sky painting)
+Launcher              (CatapultLauncher.cs, at world pos −2.395, −6.60, 0)
+                        _armSpriteGO  → Trabuchet_Arm scene GO
+                        _swingSpriteGO → Trabuchet_Swing scene GO
+Trabuchet_Body        (visual only, SpriteRenderer, at −2.1085, −6.42)
+Trabuchet_Arm         (visual, rotated by CatapultLauncher via _armSpriteGO, at −2.395, −4.84)
+Trabuchet_Swing       (visual, shown at fire apex by ArmSnap(), hidden at rest)
+Scenery               (SceneryBuilder.cs — World1Prop sprite refs; _useExactPlacement=true skips L1)
+[L1 scenery GOs]      OldBarn_Right, OakTree, GnarledTree, Windmill, WoodenFence×4,
+                        Haybail×4, Rock×2, GrassTuft×5, WildFlowers
+BlockParent           (empty holder for code-spawned blocks)
+RobotParent           (empty holder for code-spawned robots)
+Ground                (tag="Ground", layer=6; top edge at Y=−6.60; 5 visual layers below)
 ```
 
 ### Prefabs
@@ -388,8 +399,8 @@ Prefabs/Environment/ Ground (static)
 Add `LevelData` ScriptableObject in `Assets/ScriptableObjects/Levels/` with filename `LXX_<Name>.asset` (alphabetical order = load order). Run **Wire Scene References**. Or add a `Make(...)` call to `LevelDataGenerator` and run **FarmFury → Generate All Level Data**.
 
 ```
-Y convention: Ground surface = −2.5. Block/robot Y = surface_offset − 2.5.
-              Robot center (h=0.9, scale 0.6×0.9) → world y = −2.05 (sits on ground).
+Y convention: Ground surface = −6.60. Block/robot Y = surface_offset − 6.60.
+              Robot center (h=0.9, scale 0.6×0.9) → world y = −6.15 (sits on ground).
               Wood plank (h=0.4) → center at world y = −2.3. Stack upward by block height.
 X convention: Structure zone ≈ x=2–4 (L01). Launcher bucket at x≈−6.
 ```

@@ -112,12 +112,15 @@ public static class SpriteWiring
         string charKey = prefabName.Replace("Animal", "").ToLower();
 
         var so = new SerializedObject(animal);
-        AssignSprite(so, "_sprIdle",     spriteDir, "idle");
-        AssignSprite(so, "_sprLoaded",   spriteDir, "loaded");
-        // Try character-prefixed variant first (e.g. Cluck_InFlight.png) then generic InFlight.png
-        AssignSprite(so, "_sprInFlight", spriteDir, charKey + "_inflight", "inflight", "in flight");
-        AssignSprite(so, "_sprImpact",   spriteDir, "impact");
-        AssignSprite(so, "_sprAbility",  spriteDir, "abilitytrigger", "trigger", "trigger1", "ability");
+        // Try charKey-prefixed filename first (e.g. "cluck_idle") then generic ("idle").
+        // Kling AI output uses <Name>_<Pose>.png convention throughout.
+        AssignSprite(so, "_sprIdle",     spriteDir, charKey + "_idle",    "idle");
+        AssignSprite(so, "_sprLoaded",   spriteDir, charKey + "_loaded",  "loaded");
+        AssignSprite(so, "_sprInFlight", spriteDir, charKey + "_inflight","inflight", "in flight");
+        AssignSprite(so, "_sprImpact",   spriteDir, charKey + "_impact",  "impact");
+        AssignSprite(so, "_sprAbility",  spriteDir,
+            charKey + "_abilitytrigger", charKey + "_trigger1", charKey + "_trigger",
+            "abilitytrigger", "trigger", "trigger1", "ability");
         so.ApplyModifiedProperties();
 
         PrefabUtility.SaveAsPrefabAsset(contents, path);

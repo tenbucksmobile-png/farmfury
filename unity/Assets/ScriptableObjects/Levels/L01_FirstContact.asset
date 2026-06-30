@@ -15,39 +15,12 @@ MonoBehaviour:
   levelId: W1_L01
   levelName: First Contact
   parBirds: 2
-  birds: 00000000000000000000000000000000
-  blocks:
-  - type: 1
-    position: {x: 3, y: -2.35}
-    size: {x: 1.5, y: 0.3}
-  - type: 0
-    position: {x: 2.35, y: -1.6}
-    size: {x: 0.25, y: 1.2}
-  - type: 0
-    position: {x: 3.65, y: -1.6}
-    size: {x: 0.25, y: 1.2}
-  - type: 0
-    position: {x: 3, y: -0.875}
-    size: {x: 1.5, y: 0.25}
-  - type: 0
-    position: {x: 2.35, y: -0.25}
-    size: {x: 0.25, y: 1}
-  - type: 0
-    position: {x: 3.65, y: -0.25}
-    size: {x: 0.25, y: 1}
-  - type: 0
-    position: {x: 3, y: 0.375}
-    size: {x: 1.5, y: 0.25}
-  - type: 0
-    position: {x: 2.35, y: 1}
-    size: {x: 0.25, y: 1}
-  - type: 0
-    position: {x: 3.65, y: 1}
-    size: {x: 0.25, y: 1}
-  - type: 0
-    position: {x: 3, y: 1.625}
-    size: {x: 1.5, y: 0.25}
+  birds:
+  - 0
+  - 0
+  - 0
+  blocks: []
   robots:
-  - position: {x: 3, y: -1.75}
-  - position: {x: 3, y: -0.3}
-  - position: {x: 3, y: 0.95}
+  - robotType: 1
+    position: {x: 5.15509, y: -6.25}
+    scale: {x: 4.3565, y: 4.69371}

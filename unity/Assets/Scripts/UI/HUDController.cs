@@ -31,12 +31,12 @@ public class HUDController : MonoBehaviour
     // Card sprites: indexed by (int)AnimalType, wired via SceneSetup
     [SerializeField] private Sprite[] _cardSprites = new Sprite[8];
 
-    // Card layout constants
-    private const float CardActiveW  = 108f;
-    private const float CardActiveH  = 142f;
-    private const float CardQueueW   = 82f;
-    private const float CardQueueH   = 108f;
-    private const float CardGap      = 10f;
+    // Card layout constants — Angry Birds style: big active card, overlapping queue cards
+    private const float CardActiveW  = 200f;
+    private const float CardActiveH  = 260f;
+    private const float CardQueueW   = 155f;
+    private const float CardQueueH   = 202f;
+    private const float CardGap      = -55f;  // negative = cards overlap each other
 
     private const float BobAmp  = 3.5f;  // pixels
     private const float BobFreq = 1.8f;  // Hz
@@ -191,14 +191,16 @@ public class HUDController : MonoBehaviour
                          color: Color.white, align: TextAlignmentOptions.Center);
     }
 
-    // Bird queue container: bottom-left, tall enough for card widgets.
+    // Bird queue: anchored 2% from left edge and 4% from bottom edge of actual screen —
+    // works at any landscape resolution / DPI without pixel-offset guesswork.
     void BuildBirdQueueArea(Transform canvas)
     {
         var rt         = MakeRect(canvas, "BirdQueue",
-                             anchorMin: new Vector2(0f, 0f), anchorMax: new Vector2(0f, 0f),
-                             pivot:     new Vector2(0f, 0f),
-                             pos:       new Vector2(14f, 14f),
-                             size:      new Vector2(520f, 150f));
+                             anchorMin: new Vector2(0.02f, 1f),
+                             anchorMax: new Vector2(0.02f, 1f),
+                             pivot:     new Vector2(0f, 1f),    // top-left corner anchors to top-left of screen
+                             pos:       new Vector2(0f, -12f),  // 12px inset from top edge
+                             size:      new Vector2(700f, 280f));
         _birdQueueRoot = rt;
     }
 
@@ -272,6 +274,11 @@ public class HUDController : MonoBehaviour
             _birdIconsX.Add(x);
             cursorX += w + CardGap;
         }
+
+        // Active card (index 0) must render on top of overlapping queue cards.
+        // In Canvas, last sibling renders in front — move it to the end.
+        if (_birdIcons.Count > 0 && _birdIcons[0] != null)
+            _birdIcons[0].SetAsLastSibling();
     }
 
     void BuildDamageBadge(RectTransform parent, AnimalType type, bool large)
