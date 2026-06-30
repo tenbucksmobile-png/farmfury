@@ -42,7 +42,7 @@ public class SceneryBuilder : MonoBehaviour
 
     private readonly List<GameObject> _props = new();
 
-    private const float GroundSurface = -2.5f;
+    private const float GroundSurface = -6.60f;
 
     void Start()
     {

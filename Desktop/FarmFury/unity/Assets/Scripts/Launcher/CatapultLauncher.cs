@@ -16,17 +16,18 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private float _maxLaunchSpeed  = 16.8f;  // 14 px/frame × 60 fps / 50
 
     [Header("Arm Geometry")]
-    // All arm geometry is private const — derived from sprite PPU=384, must never be
-    // overridden by stale Inspector/scene-file values.
-    // Pixel-measured (Python/Pillow on 2048×2048 canvas, PPU=768 → 2.667u), then scaled ×0.75
-    // so the trebuchet reads correctly in the 3.5-orthoSize viewport.
-    // Body: content-bottom at localPos.y=-0.020 (wheels at Y≈0); body top at Y≈1.97
-    // Arm:  pivot-bolt at ~56% from canvas-bottom; pivotHeight=1.76 seats arm inside the body frame
-    private const float _pivotHeight    = 1.76f;
-    private const float _armLongLength  = 0.86f;
-    private const float _armShortLength = 0.71f;
-    private const float _armRestAngle   = 190f;   // z=0 in DrawArmAt → arm sprite appears horizontal
-    private const float MaxLoadAngle    = 50f;    // degrees arm can be pulled past rest angle
+    // Arm geometry — calibrated to Inspector-verified scene layout:
+    //   Trabuchet_Arm  GO at (-2.327, -4.686)  → that IS the pivot
+    //   Cluck_Loaded   GO at (-2.777, -5.038)  → arm tip at rest
+    //   Trabuchet_Swing GO at (-2.777, -5.017) → bucket visual at rest
+    // pivotHeight: launcher at y=-6.60; pivot = -6.60 + 1.914 = -4.686 ✓
+    // armLongLength: |pivot→tip| = sqrt(0.450²+0.352²) = 0.571 u
+    // armRestAngle: atan2(-0.352,-0.450)+360 ≈ 218° (arm loaded/pulled position at rest)
+    private const float _pivotHeight    = 1.914f;
+    private const float _armLongLength  = 0.571f;
+    private const float _armShortLength = 0.471f;
+    private const float _armRestAngle   = 218f;
+    private const float MaxLoadAngle    = 50f;
 
     [Header("Camera")]
     [SerializeField] private float   _returnDelay          = 2.5f;   // seconds after landing before pan-back starts
@@ -47,10 +48,8 @@ public class CatapultLauncher : MonoBehaviour
     // Not serialized — value must come from code so Unity can't freeze a stale Inspector value
     private const float BirdClickRadius = 1.2f;
 
-    // Bucket visual center relative to the arm pivot in the arm's rest orientation (values ×0.75 from original).
-    // arm-tip at rest = pivot + (cos190°×0.86, sin190°×0.86) = pivot + (-0.847, -0.150).
-    // bucket = arm-tip + (0.293, 0.030) = pivot + (-0.554, -0.120).
-    private static readonly Vector2 BucketFromPivot = new Vector2(-0.55f, -0.12f);
+    // Bucket at the arm tip: pivot + (cos218°×0.571, sin218°×0.571) = pivot + (-0.450, -0.352).
+    private static readonly Vector2 BucketFromPivot = new Vector2(-0.450f, -0.352f);
 
     // Runtime state
     private float      _armAngle;
@@ -70,9 +69,10 @@ public class CatapultLauncher : MonoBehaviour
     private SpriteRenderer[] _trajDotRenderers;
     private static Sprite    _dotSprite;
 
-    // Trebuchet sprite GOs (built at runtime if sprites are wired)
-    private GameObject _armSpriteGO;
-    private GameObject _counterweightGO;
+    [Header("Trebuchet Scene GOs")]
+    [SerializeField] private GameObject _armSpriteGO;    // wire to Trabuchet_Arm scene GO
+    [SerializeField] private GameObject _swingSpriteGO;  // wire to Trabuchet_Swing scene GO; shown at apex
+    [SerializeField] private GameObject _counterweightGO;
 
     // Counterweight pendulum simulation
     private float _currentArmAngle;   // angle currently drawn (tracked for velocity)
@@ -106,7 +106,10 @@ public class CatapultLauncher : MonoBehaviour
         _rubberBandLine   = MakeLine("RubberBandRenderer", 0.05f, new Color(0.9f, 0.7f, 0.1f, 0.9f));
         _trajDotRenderers = CreateDotPool(_trajectoryDots);
 
-        if (_trebuchetBodySprite != null || _trebuchetArmSprite != null) BuildTrebuchetBody();
+        if (_trebuchetBodySprite != null || _trebuchetArmSprite != null || _armSpriteGO != null)
+            BuildTrebuchetBody();
+
+        // Swing sprite is always visible — DrawArmAt keeps it pinned to the arm tip.
     }
 
     void OnEnable()
@@ -142,24 +145,25 @@ public class CatapultLauncher : MonoBehaviour
             GameManager.Instance.ForceStartLevel(0);
     }
 
-    // Creates a ground plane at runtime if none exists or if the existing one is invalid.
-    static void EnsureGroundExists()
+    // Creates a ground plane at runtime if none exists or if the existing one is stale.
+    // Ground surface level = Launcher's Y (Launcher sits at ground level).
+    void EnsureGroundExists()
     {
+        float groundY = transform.position.y;
         var existing = GameObject.Find("Ground");
         if (existing != null)
         {
             var check = existing.GetComponent<BoxCollider2D>();
-            // Valid ground: surface near Y=-2.5 and wide enough to catch robots
-            if (check != null && Mathf.Abs(check.bounds.max.y + 2.5f) < 0.5f && check.bounds.size.x > 5f)
+            if (check != null && Mathf.Abs(check.bounds.max.y - groundY) < 0.5f && check.bounds.size.x > 5f)
                 return;
-            Object.Destroy(existing); // buggy/old ground — recreate below
+            Object.Destroy(existing);
         }
 
         var go = new GameObject("Ground");
         go.tag   = "Ground";
         go.layer = 6;
-        go.transform.position   = new Vector3(0f, -2.75f, 0f);
-        go.transform.localScale = new Vector3(60f,  0.5f,  1f);
+        go.transform.position   = new Vector3(0f, groundY - 0.25f, 0f);
+        go.transform.localScale = new Vector3(60f, 0.5f, 1f);
 
         // 1×1 local col × (60,0.5) scale = 60×0.5 world, top edge at Y=-2.5
         var col  = go.AddComponent<BoxCollider2D>();
@@ -207,8 +211,9 @@ public class CatapultLauncher : MonoBehaviour
 
     void HandleInput()
     {
-        var mouse = Mouse.current;
-        if (mouse == null) return;
+        // Pointer.current covers both Mouse (Editor/desktop) and Touchscreen (mobile).
+        var ptr = Pointer.current;
+        if (ptr == null) return;
 
         bool canFire = _activeAnimal == null
                     && _readyBird   != null
@@ -216,10 +221,10 @@ public class CatapultLauncher : MonoBehaviour
                     && _levelLoader.HasBirdsRemaining
                     && GameManager.Instance?.State == GameState.Playing;
 
-        // ── Press: must click ON the bird (which sits in the bucket) ───────
-        if (mouse.leftButton.wasPressedThisFrame && canFire && !_isDragging)
+        // ── Press: must click/tap ON the bird (which sits in the bucket) ────
+        if (ptr.press.wasPressedThisFrame && canFire && !_isDragging)
         {
-            Vector3 world = ScreenToWorld(mouse.position.ReadValue());
+            Vector3 world = ScreenToWorld(ptr.position.ReadValue());
             if (Vector3.Distance(world, _readyBird.transform.position) < BirdClickRadius)
             {
                 _isDragging = true;
@@ -227,32 +232,27 @@ public class CatapultLauncher : MonoBehaviour
             }
         }
 
-        // ── Hold: arm angle follows mouse from pivot; bird stays in bucket ──
-        if (_isDragging && mouse.leftButton.isPressed)
+        // ── Hold: arm angle follows pointer from pivot; bird stays in bucket ─
+        if (_isDragging && ptr.press.isPressed)
         {
-            Vector3 world = ScreenToWorld(mouse.position.ReadValue());
+            Vector3 world = ScreenToWorld(ptr.position.ReadValue());
             Vector3 pivot = PivotPos();
 
             float angle = Mathf.Atan2(world.y - pivot.y, world.x - pivot.x) * Mathf.Rad2Deg;
-            // Normalise to [0, 360] so the clamp against _armRestAngle (190°) works correctly.
             if (angle < 0f) angle += 360f;
 
-            // Only allow the bucket side to pull DOWN and back (angle from rest up to MaxLoadAngle).
             _dragAngle = Mathf.Clamp(angle, _armRestAngle, _armRestAngle + MaxLoadAngle);
             DrawArmAt(_dragAngle);
-
-            // Arm rotation is the visual feedback; no rubber band needed
             _rubberBandLine.positionCount = 0;
         }
 
-        // ── Release: fire ────────────────────────────────────────────────────
-        if (_isDragging && mouse.leftButton.wasReleasedThisFrame)
+        // ── Release: let ArmSnap animate the arm; do NOT pre-reset visually ─
+        if (_isDragging && ptr.press.wasReleasedThisFrame)
         {
             _isDragging = false;
             HideTrajDots();
             _rubberBandLine.positionCount = 0;
-            DrawArmAt(_armRestAngle);
-            Fire();
+            Fire(); // ArmSnap inside Fire() animates arm from drag → apex → rest
         }
     }
 
@@ -263,28 +263,39 @@ public class CatapultLauncher : MonoBehaviour
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
         if (_levelLoader == null || !_levelLoader.HasBirdsRemaining) return;
         _readyBird = _levelLoader.CreateNextAnimal(_levelLoader.PeekNextBird(), _launchPoint);
+        if (_readyBird != null) _readyBird.transform.localScale = new Vector3(2.2676f, 2.5454f, 1f);
         _readyBird?.SetLoadedPose();
     }
 
     void Fire()
     {
         Vector2 velocity = LaunchVelocity();
-        if (velocity.magnitude < 0.1f) return;
-        if (!_levelLoader.TryConsumeBird(out AnimalType birdType)) return;
+        if (velocity.magnitude < 0.1f)
+        {
+            DrawArmAt(_armRestAngle); // not enough pull — snap arm back quietly
+            return;
+        }
+        if (!_levelLoader.TryConsumeBird(out AnimalType birdType))
+        {
+            DrawArmAt(_armRestAngle);
+            return;
+        }
 
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
 
         ScoreManager.Instance?.OnBirdFired();
 
         _activeAnimal = _levelLoader.CreateNextAnimal(birdType, BucketWorldPos(_dragAngle));
+        _activeAnimal.transform.localScale = new Vector3(2.2676f, 2.5454f, 1f);
         _activeAnimal.OnAnimalDestroyed += OnAnimalLanded;
         _activeAnimal.Launch(velocity);
         AudioManager.Play(AudioManager.Sound.Launch);
 
         StartCoroutine(ArmSnap());
 
+        // Camera stays fixed — the bird flies across the static scene.
         if (_returnRoutine != null) StopCoroutine(_returnRoutine);
-        _cameraFollowing = true;
+        _cameraFollowing = false;
         _returnPending   = false;
     }
 
@@ -349,34 +360,50 @@ public class CatapultLauncher : MonoBehaviour
             _armLine.SetPosition(2, tip);
         }
 
-        // Rotate arm sprite to match physics angle.
-        // The arm sprite has the bucket end (left side) at ~190° in its unrotated local frame.
-        // Setting z = angleDeg - 190° maps that local direction to the desired world direction.
+        // Pin arm GO to the physical pivot every frame so it never drifts from the body,
+        // then rotate around that fixed point. eulerAngles (world) is correct here because
+        // Trabuchet_Arm is a top-level scene GO (not a child of Launcher).
         if (_armSpriteGO != null)
-            _armSpriteGO.transform.localEulerAngles = new Vector3(0f, 0f, angleDeg - 190f);
+        {
+            _armSpriteGO.transform.position    = pivot;
+            _armSpriteGO.transform.eulerAngles = new Vector3(0f, 0f, angleDeg - 218f);
+        }
+
+        // Swing sprite (bucket/sling visual) stays pinned to the arm tip at all times.
+        if (_swingSpriteGO != null)
+        {
+            _swingSpriteGO.SetActive(true);
+            _swingSpriteGO.transform.position = new Vector3(tip.x, tip.y,
+                _swingSpriteGO.transform.position.z);
+        }
     }
 
     IEnumerator ArmSnap()
     {
-        // Snap forward from wherever the arm was pulled, then return to rest
         float start   = _dragAngle;
-        float forward = _armRestAngle - 74.4f;  // barrel swings upward-left after firing
+        float forward = _armRestAngle - 74.4f;  // apex ~115.6° (upper-left)
         float t = 0f;
+
+        // Phase 1 (0.35s): arm sweeps from pulled-back position to apex.
+        // DrawArmAt() keeps both arm and swing sprites tracked — no manual SetActive needed.
         while (t < 1f)
         {
-            t += Time.deltaTime / 0.25f;
-            float a = Mathf.Lerp(start, forward, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t)));
-            DrawArmAt(a);
+            t += Time.deltaTime / 0.35f;
+            DrawArmAt(Mathf.Lerp(start, forward, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t))));
             yield return null;
         }
+
+        yield return new WaitForSeconds(0.12f);
+
+        // Phase 2 (0.45s): arm returns to rest.
         t = 0f;
         while (t < 1f)
         {
-            t += Time.deltaTime / 0.25f;
-            float a = Mathf.Lerp(forward, _armRestAngle, Mathf.Clamp01(t * t));
-            DrawArmAt(a);
+            t += Time.deltaTime / 0.45f;
+            DrawArmAt(Mathf.Lerp(forward, _armRestAngle, Mathf.Clamp01(t * t)));
             yield return null;
         }
+
         DrawArmAt(_armRestAngle);
     }
 
@@ -387,7 +414,7 @@ public class CatapultLauncher : MonoBehaviour
         Vector2 vel = LaunchVelocity();
         if (vel.magnitude < 0.1f) { HideTrajDots(); return; }
 
-        float   grav    = Physics2D.gravity.y;
+        float   grav    = Physics2D.gravity.y * 0.4f; // bird uses gravityScale=0.4
         float   fa      = NextBirdFA();
         float   dt      = Time.fixedDeltaTime;
         float   visible = TrajectoryVisibleFraction();
@@ -511,10 +538,10 @@ public class CatapultLauncher : MonoBehaviour
         // Load fraction: how far the arm was pulled (0 = rest, 1 = MaxLoadAngle)
         float loadFrac = Mathf.Clamp01((_dragAngle - _armRestAngle) / MaxLoadAngle);
         if (loadFrac < 0.05f) return Vector2.zero;
-        // Speed 7–13 m/s; full power (~45°, 13 m/s) gives range ~9.8 u from bucket,
-        // reaching structure zone (x≈2.5–3.5) for World 1 from launcher at x=-5.5.
-        float speed    = Mathf.Lerp(7f, 13f, loadFrac);
-        float angleDeg = Mathf.Lerp(20f, 50f, loadFrac);
+        // Bucket at x≈-2.78; robot at x=5.16 → 7.94u range with gravity=-8 (gravityScale=0.4).
+        // At 9 m/s, 22°: t≈0.95s, Δy≈-0.40u — lands on robot at y≈-5.46. Visible arc.
+        float speed    = Mathf.Lerp(6f, 9f, loadFrac);
+        float angleDeg = Mathf.Lerp(45f, 22f, loadFrac); // steep arc at low power, flat at full
         float rad      = angleDeg * Mathf.Deg2Rad;
         return new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)) * speed;
     }
@@ -546,20 +573,19 @@ public class CatapultLauncher : MonoBehaviour
         }
 
         // ── Rotating arm (pivot = sprite fulcrum, set in TextureImporter) ────
-        if (_trebuchetArmSprite != null)
+        // If _armSpriteGO is already wired (scene GO), skip creating a new child GO.
+        if (_armSpriteGO == null && _trebuchetArmSprite != null)
         {
             _armSpriteGO = new GameObject("TrebuchetArm");
             _armSpriteGO.transform.SetParent(transform);
-            // Arm pivot aligned with the physics pivot (PivotPos offset). Scaled ×0.75 to match body.
             _armSpriteGO.transform.localPosition = new Vector3(0f, _pivotHeight, 0f);
             _armSpriteGO.transform.localScale    = new Vector3(0.75f, 0.75f, 1f);
             var armSR          = _armSpriteGO.AddComponent<SpriteRenderer>();
             armSR.sprite       = _trebuchetArmSprite;
-            armSR.sortingOrder = 4;  // renders over frame, under rubber-band line
-
-            // Hide the procedural arm line — sprite art replaces it
-            _armLine.enabled = false;
+            armSR.sortingOrder = 4;
         }
+        // Hide procedural line whenever sprite art is present
+        if (_armSpriteGO != null) _armLine.enabled = false;
 
         // ── Counterweight: hangs from short arm end, swings as arm fires ─────
         if (_trebuchetCounterweightSprite != null)

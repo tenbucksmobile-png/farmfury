@@ -17,7 +17,10 @@ public class BackgroundController : MonoBehaviour
         _sr = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
         _sr.sortingOrder = -100;
-        _sr.sprite       = _skySprite;
+        // Only assign if wired — preserves the sprite already on the SpriteRenderer
+        // (e.g. Background_SkyV1 with sprite set directly in the scene)
+        if (_skySprite != null)
+            _sr.sprite = _skySprite;
 
         if (_cam != null)
         {
