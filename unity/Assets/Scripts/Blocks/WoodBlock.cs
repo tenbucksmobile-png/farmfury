@@ -2,6 +2,10 @@ using UnityEngine;
 
 public class WoodBlock : BlockBase
 {
+    // When true, a launched animal passes through this block at 70% of its incoming velocity.
+    // Set by LevelLoader after spawn when BlockSpawnData.passThrough is true.
+    [SerializeField] public bool _passThrough;
+
     protected override void Awake()
     {
         baseMaxHealth = 80f;

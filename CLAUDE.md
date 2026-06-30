@@ -159,13 +159,13 @@ assets/
 **Sky spec:** 1920×1080 px, no alpha. **Prop/launcher spec:** 1024×1024 px, white bg, element 75% of canvas.
 
 ### Phase 4 — World 1 Completion *(current)*
-✅ Sky backdrop, ground art (5-layer terrain), main menu art, trebuchet sprites, sprite PPU calibration, camera zoom (orthoSize=4.5, rest offset 5.5/2.5), trebuchet arm alignment (_pivotHeight=1.76), L01 redesign (two-tier cage, 2 robots), animal card HUD, level select redesign with world thumbnails, trebuchet drag mechanic, robot visibility fix, all 6 world level cards, SceneryBuilder (deterministic-RNG World 1 props per level), destruction improvements (4 fading fragments, damage at 50% health), all-wood early levels (L01–L03), full coordinate system rebuild (ground Y=−2.5, launcher X=−5.5), retuned block health (wood=80, stone=220), robot scale (0.6×0.9).
+✅ Sky backdrop, ground art (5-layer terrain), main menu art, trebuchet sprites, sprite PPU calibration, camera zoom (orthoSize=4.5, rest offset 5.5/2.5), trebuchet arm alignment (_pivotHeight=1.76), animal card HUD, level select redesign with world thumbnails, trebuchet drag mechanic, robot visibility fix, all 6 world level cards, SceneryBuilder (deterministic-RNG World 1 props per level), destruction improvements (4 fading fragments, damage at 50% health), all-wood early levels (L01–L03), full coordinate system rebuild (ground Y=−2.5, launcher X=−5.5), retuned block health (wood=80, stone=220), robot scale (0.6×0.9), HarvesterRobot.png wired to Robot prefab, Cluck pass-through mechanic (hay bale `_passThrough` flag, 70% velocity carry-through), sky painting import fixed (re-imports SkyPainting.png as Sprite PPU=100 in EnsureBackground), L01 redesigned as tutorial (3× Cluck / 4 hay bales / 1 HarvesterRobot), SceneryBuilder exact placement mode (`_useExactPlacement=true` → skips L1 entirely), PlaceExact() native-size correction, ParallaxScroller component.
 
-**New World 1 prop sprites added** (not yet wired to SceneryBuilder): `RuinedStoneWall.png`, `StoneTower.png`, `StoneWall(Tall).png`, `OldBarn.png`, `DamagedBarn.png`.
+**Level 1 scenery** — hand-authored in the Unity scene as permanent GameObjects under `Scenery_L1` (not code-generated). Elements to place: OldBarn_Right (far left, large), OakTree (center-left), Windmill (center-right, small), WoodenFence ×4 (mid-ground row), GnarledTree (far right), ground clutter (GrassTuft, Rock, WildFlowers). sortingOrder: background elements −15 to −12; ground clutter 1. FarmSilo excluded from all World 1 scenery.
 
 **New trebuchet sprite kit** (multi-part, not yet fully wired): `Trabuchet_Base.png` (static frame), `Trabuchet_Arm.png` (rotating), `Trabuchet_Counterweight.png`, `Trabuchet_Sling.png`, `Trabuchet_Loaded.png`, `Trabuchet_MidSwing.png`, `Trabuchet_Fired.png`. Future-world launchers also present but unwired: GravitySling, Ice Cannon, Plane, Submarine, WaterWheel.
 
-**Still to do:** wire 5 new World 1 props into SceneryBuilder; decide trebuchet sprite approach (sprite-swap vs multi-part assembly); add remaining 12 Meadow Ruins levels (L07–L18); Robot Commander boss.
+**Still to do:** complete Scenery_L1 hand-authoring in scene; add remaining 12 Meadow Ruins levels (L07–L18); Robot Commander boss; decide trebuchet multi-part sprite assembly.
 
 ### Phase 5 — Worlds 2–6
 Each world: new launcher, world physics modifier, new animals, all levels, environment art, music, boss.
@@ -243,8 +243,13 @@ unity/Assets/Scripts/
     BackgroundController.cs — sortingOrder=−100; cover-scale in Start(); LateUpdate() follows camera
     AudioManager.cs         — 6 DSP-generated clips; SfxEnabled/MusicEnabled from PlayerPrefs
     CameraShake.cs          — singleton, auto-attached to Launcher GO
+    ParallaxScroller.cs     — MonoBehaviour; speed 0.0 (world-fixed) – 1.0 (camera-locked);
+                              LateUpdate() offsets X by camDelta×speed for depth parallax;
+                              attached to scenery props by SceneryBuilder.AddParallax()
   Level/
-    LevelData.cs            — ScriptableObject; birds[], blocks[], robots[] arrays; par bird count
+    LevelData.cs            — ScriptableObject; birds[], blocks[], robots[] arrays; par bird count;
+                              BlockSpawnData has optional passThrough, healthOverride, massOverride
+                              fields (0 = use BlockBase defaults; set by LevelLoader after spawn)
     LevelLoader.cs          — instantiates prefabs; TryConsumeBird / PeekNextBird; fires
                               OnBirdConsumed event; BirdQueueSnapshot property;
                               DelayedLevelComplete / DelayedLevelFailed coroutines → GameManager
@@ -253,7 +258,9 @@ unity/Assets/Scripts/
   Animals/
     AnimalBase.cs           — abstract; Kinematic until Launch(); Mouse.current (New Input System);
                               5 pose sprites; HasRealSprites property; DestroyAnimal() fires OnAnimalDestroyed
-    CluckAnimal.cs          — 5-egg cluster bomb in 120° spread; eggs from _eggPrefab
+    CluckAnimal.cs          — 5-egg cluster bomb in 120° spread; eggs from _eggPrefab;
+                              pass-through: punches WoodBlock._passThrough=true at 70% velocity;
+                              _lastVelocity tracked in FixedUpdate to capture pre-impact speed
     BessieAnimal.cs         — vy-18 slam; shockwave 3.6u radius on Ground-tagged landing
     PercyAnimal.cs          — Bounce Roll: bounciness boost, 3 bounces
     WoollyAnimal.cs         — Triple Clone: Instantiate + SetAsClone at ±15°
@@ -267,7 +274,9 @@ unity/Assets/Scripts/
                               health = baseMaxHealth × area/stdArea; colour tints at 50%/25%/0% health;
                               damage = impulse × 1.0 (no multiplier); on death: 4 fragments fly outward,
                               FragmentFader coroutine fades alpha 1→0 over 0.6s then destroys
-    WoodBlock.cs            — baseMaxHealth=80, baseMass=5, bounciness=0.2
+    WoodBlock.cs            — baseMaxHealth=80, baseMass=5, bounciness=0.2;
+                              _passThrough (public): Cluck punches through at 70% velocity;
+                              set by LevelLoader from BlockSpawnData.passThrough
     StoneBlock.cs           — baseMaxHealth=220, baseMass=8, bounciness=0.1
   Enemies/
     RobotEnemy.cs           — HP=35, impulse damage ×1.0; scale=(0.6,0.9); BoxCollider2D.size=(1,1), mass=20;
@@ -293,6 +302,9 @@ unity/Assets/Editor/
   SceneSetup.cs         — FarmFury > Wire Scene References; wires all Inspector refs;
                           sets camera (0,0,-10) orthoSize=4.5; launcher at (-5.5,-2.5,0);
                           ground center (0,-2.75,0) scale (60,0.5,1) → top at Y=-2.5;
+                          EnsureBackground() re-imports SkyPainting.png as Sprite PPU=100 if needed,
+                          then wires it into BackgroundController._skySprite;
+                          FarmSilo intentionally not wired — excluded from World 1 design;
                           NOTE: use TextureImporterSettings (ReadTextureSettings/SetTextureSettings)
                           for pivots — spriteAlignment property was removed in Unity 6
   LevelDataGenerator.cs — FarmFury > Generate All Level Data; LXX_ filenames must sort alphabetically
@@ -330,7 +342,7 @@ All robots destroyed → `LevelLoader.NotifyRobotDestroyed()` → `_spawnedRobot
 - **Effective mass formula:** both dynamic → `(mA × mB) / (mA + mB)`; one static → `movingBody.mass × 0.6`. Damage threshold impulse > 1.5. Damage = `impulse × 1.0` (no multiplier — blocks and robots both use ×1.0).
 - **Robot spawn invincibility:** `RobotEnemy.Initialise()` sets `_invincibleUntil = Time.time + 0.8f`. `OnCollisionEnter2D` returns early while invincible — prevents instant death from fall-settling onto blocks when levels load.
 - **Scenery sortingOrder rule:** decorative props (SceneryBuilder) must use `sortingOrder ≤ 1`. Blocks are `sortingOrder=2`, robots `3`. Props with white-background PNGs (before `remove_backgrounds.py`) at sortingOrder=2 visually cover blocks, making structures appear missing. Always keep props behind gameplay elements.
-- **SceneryBuilder** (`Scripts/Core/SceneryBuilder.cs`): subscribes to `GameManager.OnLevelStarted` in `Start()`. Uses deterministic `System.Random(levelIdx × 137 + 42)` so replays produce the same layout. `Place()` bottom-anchors sprites via `pivot.y / pixelsPerUnit * scale`. Avoids x=1–5 (structure zone) for ground-clutter props.
+- **SceneryBuilder** (`Scripts/Core/SceneryBuilder.cs`): subscribes to `GameManager.OnLevelStarted` in `Start()`. When `_useExactPlacement=true` AND `levelIdx=0`: returns immediately — Level 1 scenery is hand-authored as permanent scene objects under `Scenery_L1` GO. For all other levels: deterministic `System.Random(levelIdx × 137 + 42)` RNG layout. `Place()` bottom-anchors sprites via `pivot.y / pixelsPerUnit * scale`. `PlaceExact()` corrects for native sprite size: `localScale = desired_world_size / native_sprite_size` (so Canva Sx=W/100 formula is correct regardless of PPU). FarmSilo excluded from all placement paths.
 
 ### Physics Values
 | Entity | mass | bounciness | linearDrag |
@@ -349,7 +361,8 @@ GameManager       (GameManager.cs, DontDestroyOnLoad)
 LevelLoader       (LevelLoader.cs)
 ScoreManager      (ScoreManager.cs)
 Launcher          (CatapultLauncher.cs, at world pos −5.5, −2.5, 0)
-Scenery           (SceneryBuilder.cs — 10 World1Prop sprite refs, rebuilt on OnLevelStarted)
+Scenery           (SceneryBuilder.cs — World1Prop sprite refs; _useExactPlacement=true skips L1)
+Scenery_L1        (permanent hand-authored Level 1 background props — in progress)
 BlockParent       (empty holder)
 RobotParent       (empty holder)
 Ground            (tag="Ground", layer=6; top edge at Y=−2.5; 5 visual layers below)

@@ -16,23 +16,38 @@ public static class LevelDataGenerator
         EnsureFolder("Assets/ScriptableObjects", "Levels");
 
         // ── W1_L01  First Contact ─────────────────────────────────────────────
-        // Two-tier cage at X=3 (world). Robot 1 sits in lower cage, Robot 2 in upper.
-        // Positions: world X = spec_x, world Y = spec_y - 2.5 (ground surface at -2.5).
+        // Tutorial level. Player shoots Cluck through a loose pile of hay bales
+        // to destroy the HarvesterRobot sheltering behind them.
+        //
+        // Hay bale positions converted from Canva 1275×720 canvas:
+        //   Formula: X = (CanvaX + W/2 - 637.5) / 100
+        //             Y = (360 - CanvaY - H/2)   / 100
+        //
+        // Haybail(1): CanvaX=896 Y=606 W=67 H=67 → Unity (2.295, -2.815)
+        // Haybail(2): CanvaX=870 Y=643 W=67 H=67 → Unity (2.025, -3.165)
+        // Haybail(3): CanvaX=896 Y=653 W=67 H=67 → Unity (2.295, -3.265)
+        // Haybail(4): CanvaX=915 Y=653 W=67 H=67 → Unity (2.450, -3.265)
+        //
+        // HarvesterRobot: CanvaX=973 Y=585 W=177 H=118 → Unity (4.24, -2.64)
+        // Note: spawns as the generic Robot prefab until a HarvesterRobot prefab is added.
+        //
+        // Par=1: destroying the robot with 1 bird = 3 stars.
         Make(folder, "L01_FirstContact",
             id: "W1_L01", name: "First Contact", par: 1,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood,  3.0f,  -2.3f,  1.2f, 0.4f), // floor plank
-                B(BlockType.Wood,  3.0f,  -1.9f,  1.2f, 0.4f), // lower ceiling
-                B(BlockType.Wood,  2.55f, -1.5f,  0.4f, 0.8f), // left pillar
-                B(BlockType.Wood,  3.45f, -1.5f,  0.4f, 0.8f), // right pillar
-                B(BlockType.Wood,  3.0f,  -1.1f,  1.2f, 0.4f), // mid floor
-                B(BlockType.Wood,  2.55f, -0.7f,  0.4f, 0.8f), // upper left pillar
-                B(BlockType.Wood,  3.45f, -0.7f,  0.4f, 0.8f), // upper right pillar
-                B(BlockType.Wood,  3.0f,  -0.3f,  1.2f, 0.4f), // roof plank
+                // Hay bales — passThrough=true so Cluck continues at 70% velocity after impact.
+                // Health 60 (weaker than standard wood 80), mass 3 (lighter than standard 5).
+                B(BlockType.Wood, 2.295f, -2.815f, 0.67f, 0.67f, passThrough: true, hp: 60f, mass: 3f),
+                B(BlockType.Wood, 2.025f, -3.165f, 0.67f, 0.67f, passThrough: true, hp: 60f, mass: 3f),
+                B(BlockType.Wood, 2.295f, -3.265f, 0.67f, 0.67f, passThrough: true, hp: 60f, mass: 3f),
+                B(BlockType.Wood, 2.450f, -3.265f, 0.67f, 0.67f, passThrough: true, hp: 60f, mass: 3f),
             },
-            robots: new[] { R(3.0f, -2.05f), R(3.0f, -0.85f) });
+            robots: new[]
+            {
+                R(4.24f, -2.64f), // HarvesterRobot sheltering behind the hay bales
+            });
 
         // ── W1_L02  Stone Wall ────────────────────────────────────────────────
         Make(folder, "L02_StoneWall",
@@ -148,8 +163,11 @@ public static class LevelDataGenerator
             AssetDatabase.CreateFolder(parent, child);
     }
 
-    static LevelData.BlockSpawnData B(BlockType type, float x, float y, float w, float h) =>
-        new() { type = type, position = new Vector2(x, y), size = new Vector2(w, h) };
+    // passThrough, hp, mass are optional overrides — 0 values mean "use BlockBase default"
+    static LevelData.BlockSpawnData B(BlockType type, float x, float y, float w, float h,
+                                      bool passThrough = false, float hp = 0f, float mass = 0f) =>
+        new() { type = type, position = new Vector2(x, y), size = new Vector2(w, h),
+                passThrough = passThrough, healthOverride = hp, massOverride = mass };
 
     static LevelData.RobotSpawnData R(float x, float y) =>
         new() { position = new Vector2(x, y) };
