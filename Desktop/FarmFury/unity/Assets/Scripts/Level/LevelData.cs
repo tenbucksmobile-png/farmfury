@@ -20,8 +20,11 @@ public class LevelData : ScriptableObject
     public struct BlockSpawnData
     {
         public BlockType type;
-        public Vector2 position;
-        public Vector2 size;
+        public Vector2   position;
+        public Vector2   size;
+        public bool      passThrough;    // Cluck passes through at 70% velocity on impact
+        public float     healthOverride; // 0 = use BlockBase default; >0 overrides maxHealth
+        public float     massOverride;   // 0 = use BlockBase default; >0 overrides mass
     }
 
     [Serializable]

@@ -12,6 +12,10 @@ public static class SceneSetup
     [MenuItem("FarmFury/Wire Scene References")]
     public static void WireAll()
     {
+        // Deselect everything before EnsureGround() destroys scene GOs — prevents
+        // SerializedObjectNotCreatableException in TransformInspector.OnEnable().
+        UnityEditor.Selection.activeObject = null;
+
         var scene = EditorSceneManager.OpenScene("Assets/Scenes/Game.unity", OpenSceneMode.Single);
 
         EnsureParents();        // BlockParent, RobotParent GameObjects
@@ -25,8 +29,10 @@ public static class SceneSetup
         EnsureMainMenu();       // MainMenuController GO (Canvas sortingOrder 400)
         WireGameManager();      // _levels array
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
-        WireLauncher();         // CatapultLauncher + LevelLoader ref
-        WireRobotSprite();      // Robot_Idle.png → Robot prefab SpriteRenderer
+        WireLauncher();         // CatapultLauncher + LevelLoader ref + counterweight sprite
+        WireRobotSprite();            // Robot_Idle.png → Robot prefab SpriteRenderer (fallback)
+        WireHarvesterRobotSprite();   // HarvesterRobot.png → overrides for Level 1 enemy
+        WireBlockSprites();     // Art sprites into WoodBlock + StoneBlock prefabs
         PositionCamera();       // Move camera to see the play area
 
         EditorSceneManager.SaveScene(scene);
@@ -57,9 +63,16 @@ public static class SceneSetup
         WireProp(so, "_sprHaybail",       "Haybail.png",       propsFolder);
         WireProp(so, "_sprWoodenBarrel",  "WoodenBarrel.png",  propsFolder);
         WireProp(so, "_sprWoodenCart",    "WoodenCart.png",    propsFolder);
-        WireProp(so, "_sprFarmSilo",      "FarmSilo.png",      propsFolder);
-        WireProp(so, "_sprOakTree",       "OakTree.png",       propsFolder);
-        WireProp(so, "_sprGnarledTree",   "GnarledTree.png",   propsFolder);
+        // FarmSilo intentionally not wired — excluded from all World 1 level designs
+        WireProp(so, "_sprWindmill",         "Windmill.png",         propsFolder); // LEVEL1_EXACT
+        WireProp(so, "_sprOakTree",          "OakTree.png",          propsFolder);
+        WireProp(so, "_sprGnarledTree",      "GnarledTree.png",      propsFolder);
+        // Ruins & barns (Phase 4 additions)
+        WireProp(so, "_sprRuinedStoneWall",  "RuinedStoneWall.png",  propsFolder);
+        WireProp(so, "_sprStoneTower",       "StoneTower.png",       propsFolder); // FIXED: StoneWall_Tall.png renamed to StoneTower.png, lives in World1Props
+        // _sprStoneWallTall intentionally not wired — StoneWall_Tall.png was renamed to StoneTower.png above
+        WireProp(so, "_sprOldBarn",          "OldBarn_Right.png",    propsFolder); // FIXED: actual filename
+        WireProp(so, "_sprDamagedBarn",      "DamagedBarn.png",      propsFolder);
         so.ApplyModifiedProperties();
     }
 
@@ -104,6 +117,22 @@ public static class SceneSetup
         if (bc == null) bc = go.AddComponent<BackgroundController>();
 
         const string skyPath = "Assets/Sprites/Environment/Skies/SkyPainting.png";
+
+        // SkyPainting is 1920×1080 art — ensure it is imported as a Sprite before loading.
+        // If it was imported as the default Texture2D, LoadAssetAtPath<Sprite> returns null.
+        var skyImp = AssetImporter.GetAtPath(skyPath) as TextureImporter;
+        if (skyImp != null)
+        {
+            bool dirty = false;
+            if (skyImp.textureType         != TextureImporterType.Sprite)          { skyImp.textureType         = TextureImporterType.Sprite;          dirty = true; }
+            if (skyImp.spritePixelsPerUnit != 100)                                   { skyImp.spritePixelsPerUnit = 100;                                  dirty = true; }
+            if (!skyImp.alphaIsTransparency)                                         { skyImp.alphaIsTransparency = true;                                 dirty = true; }
+            if (skyImp.spriteImportMode    != SpriteImportMode.Single)              { skyImp.spriteImportMode    = SpriteImportMode.Single;              dirty = true; }
+            if (dirty) { skyImp.SaveAndReimport(); Debug.Log("[FarmFury] SkyPainting.png re-imported as Sprite (PPU=100)."); }
+        }
+        else
+            Debug.LogWarning($"[FarmFury] SkyPainting.png not found at {skyPath} — copy it there and re-run Wire Scene References.");
+
         var skySprite = AssetDatabase.LoadAssetAtPath<Sprite>(skyPath);
         if (skySprite != null)
         {
@@ -468,9 +497,102 @@ public static class SceneSetup
         else
             Debug.LogWarning("[FarmFury] Trabuchet_Arm.png not found — run remove_backgrounds.py then re-run Wire Scene References.");
 
+        // ── Trebuchet counterweight sprite (pendulum that swings when arm fires) ─
+        const string cwPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Counter.png"; // FIXED: actual filename is Counter not Counterweight
+        if (AssetDatabase.LoadAssetAtPath<Texture2D>(cwPath) != null)
+        {
+            var imp = AssetImporter.GetAtPath(cwPath) as TextureImporter;
+            if (imp != null)
+            {
+                bool dirty = false;
+                if (imp.textureType         != TextureImporterType.Sprite)          { imp.textureType         = TextureImporterType.Sprite;          dirty = true; }
+                if (imp.spritePixelsPerUnit != 768)                                  { imp.spritePixelsPerUnit = 768;                                 dirty = true; }
+                if (!imp.alphaIsTransparency)                                        { imp.alphaIsTransparency = true;                                dirty = true; }
+                if (imp.spriteImportMode    != SpriteImportMode.Single)             { imp.spriteImportMode    = SpriteImportMode.Single;             dirty = true; }
+                if (dirty) imp.SaveAndReimport();
+            }
+            so.FindProperty("_trebuchetCounterweightSprite").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<Sprite>(cwPath);
+            Debug.Log("[FarmFury] Launcher: counterweight sprite wired.");
+        }
+        else
+            Debug.LogWarning("[FarmFury] Trabuchet_Counterweight.png not found — run remove_backgrounds.py then re-run Wire Scene References.");
+
         so.ApplyModifiedProperties();
 
         Debug.Log("[FarmFury] Launcher: wired LevelLoader reference.");
+    }
+
+    // ── Block art sprites: wire World1Props textures into WoodBlock + StoneBlock prefabs ──
+    // Sets PPU = texture width so native sprite size is 1×1, making localScale(w,h) map
+    // directly to world dimensions in BlockBase.Initialise().
+
+    static void WireBlockSprites()
+    {
+        const string folder = "Assets/Sprites/Environment/World1Props";
+
+        WireBlockPrefab("Assets/Prefabs/Blocks/WoodBlock.prefab", folder, new[]
+        {
+            ("_sprNormal",      "Block_Wood_Normal.png"),
+            ("_sprHorizontal",  "Plank_Horizontal.png"),
+            ("_sprVertical",    "2D_Block_Wood_Vertical.png"),
+        });
+
+        WireBlockPrefab("Assets/Prefabs/Blocks/StoneBlock.prefab", folder, new[]
+        {
+            ("_sprNormal",      "Block_Stone_Normal.png"),
+            ("_sprHorizontal",  "Block_Stone_Normal.png"),   // reuse until dedicated art exists
+            ("_sprVertical",    "Block_Stone_Normal.png"),
+        });
+    }
+
+    static void WireBlockPrefab(string prefabPath, string folder,
+                                 (string field, string file)[] sprites)
+    {
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+        {
+            Debug.LogWarning($"[FarmFury] Block prefab not found: {prefabPath}");
+            return;
+        }
+
+        var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+        var block    = contents.GetComponent<BlockBase>();
+        if (block == null)
+        {
+            PrefabUtility.UnloadPrefabContents(contents);
+            Debug.LogWarning($"[FarmFury] No BlockBase component on {prefabPath}");
+            return;
+        }
+
+        var so = new SerializedObject(block);
+        foreach (var (field, file) in sprites)
+        {
+            string spPath = $"{folder}/{file}";
+            // PPU = texture width → native size = 1×1 so localScale(w,h) = exact world size
+            var imp = AssetImporter.GetAtPath(spPath) as TextureImporter;
+            if (imp != null)
+            {
+                imp.GetSourceTextureWidthAndHeight(out int tw, out _);
+                int targetPpu = tw > 0 ? tw : 1024;
+                bool dirty = false;
+                if (imp.textureType         != TextureImporterType.Sprite)          { imp.textureType         = TextureImporterType.Sprite;          dirty = true; }
+                if (imp.spritePixelsPerUnit != targetPpu)                            { imp.spritePixelsPerUnit = targetPpu;                           dirty = true; }
+                if (!imp.alphaIsTransparency)                                        { imp.alphaIsTransparency = true;                                dirty = true; }
+                if (imp.spriteImportMode    != SpriteImportMode.Single)             { imp.spriteImportMode    = SpriteImportMode.Single;             dirty = true; }
+                if (dirty) imp.SaveAndReimport();
+            }
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spPath);
+            if (sprite != null)
+            {
+                so.FindProperty(field).objectReferenceValue = sprite;
+                Debug.Log($"[FarmFury] {System.IO.Path.GetFileNameWithoutExtension(prefabPath)}.{field} → {file}");
+            }
+            else
+                Debug.LogWarning($"[FarmFury] Sprite not found: {spPath}");
+        }
+        so.ApplyModifiedProperties();
+        PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+        PrefabUtility.UnloadPrefabContents(contents);
     }
 
     // ── Robot sprite: wire Robot_Idle into Robot prefab SpriteRenderer ──────────
@@ -517,6 +639,53 @@ public static class SceneSetup
         PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
         PrefabUtility.UnloadPrefabContents(go);
         Debug.Log("[FarmFury] Robot: wired Robot_Idle.png into _robotSprite (PPU=1746).");
+    }
+
+    // ── HarvesterRobot sprite: wire HarvesterRobot.png into Robot prefab ────────
+    // Called after WireRobotSprite() so this overrides Robot_Idle for Level 1.
+    // When multiple robot types are needed, add a RobotType enum to RobotSpawnData
+    // and instantiate separate prefabs per type in LevelLoader.
+
+    static void WireHarvesterRobotSprite()
+    {
+        const string prefabPath  = "Assets/Prefabs/Enemies/Robot.prefab";
+        const string spritePath  = "Assets/Sprites/Enemies/Robot/HarvesterRobot.png";
+
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+        {
+            Debug.LogWarning("[FarmFury] Robot prefab not found — skipping HarvesterRobot wiring.");
+            return;
+        }
+
+        // Ensure import settings match Robot_Idle (PPU=1746, Single, alpha)
+        var imp = AssetImporter.GetAtPath(spritePath) as TextureImporter;
+        if (imp == null)
+        {
+            Debug.LogWarning($"[FarmFury] HarvesterRobot.png not found at {spritePath}. " +
+                             "Copy it to Assets/Sprites/Enemies/Robot/ and re-run Wire Scene References.");
+            return;
+        }
+        bool dirty = false;
+        if (imp.textureType         != TextureImporterType.Sprite)         { imp.textureType         = TextureImporterType.Sprite;         dirty = true; }
+        if (imp.spritePixelsPerUnit != 1746)                                { imp.spritePixelsPerUnit = 1746;                               dirty = true; }
+        if (!imp.alphaIsTransparency)                                       { imp.alphaIsTransparency = true;                               dirty = true; }
+        if (imp.spriteImportMode    != SpriteImportMode.Single)            { imp.spriteImportMode    = SpriteImportMode.Single;            dirty = true; }
+        if (dirty) { imp.SaveAndReimport(); }
+
+        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+        if (sprite == null) { Debug.LogWarning("[FarmFury] HarvesterRobot.png failed to load as Sprite."); return; }
+
+        var go    = PrefabUtility.LoadPrefabContents(prefabPath);
+        var robot = go.GetComponent<RobotEnemy>();
+        if (robot != null)
+        {
+            var so = new SerializedObject(robot);
+            so.FindProperty("_robotSprite").objectReferenceValue = sprite;
+            so.ApplyModifiedProperties();
+        }
+        PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+        PrefabUtility.UnloadPrefabContents(go);
+        Debug.Log("[FarmFury] Robot: wired HarvesterRobot.png into _robotSprite (PPU=1746).");
     }
 
     // ── Egg prefab: create if missing, wire into CluckAnimal prefab ─────────────

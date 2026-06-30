@@ -14,6 +14,11 @@ public abstract class BlockBase : MonoBehaviour
     [SerializeField] protected float baseMass   = 5f;
     [SerializeField] protected float bounciness = 0.2f;
 
+    [Header("Art Sprites")]
+    [SerializeField] protected Sprite _sprNormal;      // roughly square blocks
+    [SerializeField] protected Sprite _sprHorizontal;  // wide flat blocks (w/h > 1.5)
+    [SerializeField] protected Sprite _sprVertical;    // tall thin blocks  (h/w > 1.4)
+
     [Header("Fragments")]
     [SerializeField] private GameObject[] _fragmentPrefabs;
     [SerializeField] private int          _fragmentCount = 5;
@@ -58,6 +63,18 @@ public abstract class BlockBase : MonoBehaviour
     {
         transform.localScale = new Vector3(width, height, 1f);
         _baseColor = _sr.color; // subclass Awake has already set the material colour
+
+        // Select art sprite based on aspect ratio; falls back to procedural colour if none wired
+        float aspect = width / height;
+        Sprite chosen = aspect < 0.72f ? (_sprVertical   ?? _sprNormal)
+                      : aspect > 1.5f  ? (_sprHorizontal ?? _sprNormal)
+                      : _sprNormal;
+        if (chosen != null)
+        {
+            _sr.sprite = chosen;
+            _sr.color  = Color.white;
+            _baseColor = Color.white;
+        }
 
         float area  = width * height;
         float ratio = area / StdArea;

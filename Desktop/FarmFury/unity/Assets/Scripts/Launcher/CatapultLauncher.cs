@@ -37,6 +37,7 @@ public class CatapultLauncher : MonoBehaviour
     [Header("Trebuchet Art")]
     [SerializeField] private Sprite _trebuchetBodySprite;
     [SerializeField] private Sprite _trebuchetArmSprite;
+    [SerializeField] private Sprite _trebuchetCounterweightSprite;
 
     [Header("Trajectory")]
     [SerializeField] private int   _trajectoryDots      = 20;
@@ -71,6 +72,17 @@ public class CatapultLauncher : MonoBehaviour
 
     // Trebuchet sprite GOs (built at runtime if sprites are wired)
     private GameObject _armSpriteGO;
+    private GameObject _counterweightGO;
+
+    // Counterweight pendulum simulation
+    private float _currentArmAngle;   // angle currently drawn (tracked for velocity)
+    private float _prevArmAngle;
+    private float _cwAngle;           // pendulum angle from vertical (0 = hanging straight down)
+    private float _cwVelocity;        // degrees / second
+
+    private const float CwRopeLen = 0.38f;  // short-arm-end to counterweight center (world units at ×0.75 scale)
+    private const float CwGravity = 22f;    // pendulum restoring strength
+    private const float CwDamping = 5f;     // angular damping
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -172,6 +184,8 @@ public class CatapultLauncher : MonoBehaviour
         // Bird is always locked to the visual bucket — it rotates with the arm during drag
         if (_readyBird != null)
             _readyBird.transform.position = BucketWorldPos(_isDragging ? _dragAngle : _armRestAngle);
+
+        UpdateCounterweight();
 
         if (_cameraFollowing && _activeAnimal != null && !_activeAnimal.IsDestroyed)
         {
@@ -315,6 +329,7 @@ public class CatapultLauncher : MonoBehaviour
     // Draw arm using an explicit world angle.
     void DrawArmAt(float angleDeg)
     {
+        _currentArmAngle = angleDeg;
         Vector3 pivot = PivotPos();
         float   rad   = angleDeg * Mathf.Deg2Rad;
 
@@ -545,6 +560,54 @@ public class CatapultLauncher : MonoBehaviour
             // Hide the procedural arm line — sprite art replaces it
             _armLine.enabled = false;
         }
+
+        // ── Counterweight: hangs from short arm end, swings as arm fires ─────
+        if (_trebuchetCounterweightSprite != null)
+        {
+            _counterweightGO = new GameObject("TrebuchetCounterweight");
+            _counterweightGO.transform.SetParent(transform);
+            _counterweightGO.transform.localScale = new Vector3(0.75f, 0.75f, 1f);
+            var cwSR          = _counterweightGO.AddComponent<SpriteRenderer>();
+            cwSR.sprite       = _trebuchetCounterweightSprite;
+            cwSR.sortingOrder = 3;   // between frame (3) and arm (4)
+
+            _cwAngle    = 0f;
+            _cwVelocity = 0f;
+            _currentArmAngle = _armRestAngle;
+            _prevArmAngle    = _armRestAngle;
+        }
+    }
+
+    // ── Counterweight pendulum ────────────────────────────────────────────────
+
+    void UpdateCounterweight()
+    {
+        if (_counterweightGO == null) return;
+
+        float dt     = Time.deltaTime;
+        float armVel = (_currentArmAngle - _prevArmAngle) / Mathf.Max(dt, 0.001f);
+        _prevArmAngle = _currentArmAngle;
+
+        // Pendulum physics: arm angular velocity drives the counterweight opposite its sweep
+        _cwVelocity += -armVel * 0.28f * dt;                                  // inertial drive
+        _cwVelocity -= CwGravity * Mathf.Sin(_cwAngle * Mathf.Deg2Rad) * dt;  // gravity restoring
+        _cwVelocity -= _cwVelocity * CwDamping * dt;                          // damping
+        _cwAngle    += _cwVelocity * dt;
+        _cwAngle     = Mathf.Clamp(_cwAngle, -110f, 110f);
+
+        // Position: world-space short arm tip + pendulum offset (cwAngle=0 → hangs straight down)
+        float cwRad = _cwAngle * Mathf.Deg2Rad;
+        _counterweightGO.transform.position =
+            ShortArmEnd() + new Vector3(Mathf.Sin(cwRad) * CwRopeLen,
+                                        -Mathf.Cos(cwRad) * CwRopeLen, 0f);
+    }
+
+    Vector3 ShortArmEnd()
+    {
+        Vector3 pivot = PivotPos();
+        float   rad   = _currentArmAngle * Mathf.Deg2Rad;
+        return pivot + new Vector3(Mathf.Cos(rad + Mathf.PI) * _armShortLength,
+                                   Mathf.Sin(rad + Mathf.PI) * _armShortLength, 0f);
     }
 
     LineRenderer MakeLine(string goName, float width, Color color)

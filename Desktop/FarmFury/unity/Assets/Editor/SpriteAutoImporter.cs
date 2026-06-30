@@ -57,10 +57,38 @@ public class SpriteAutoImporter : AssetPostprocessor
             ConfigureSprite(imp, 384, alphaTransparency: true);
             if (imp.spriteImportMode != SpriteImportMode.Single) imp.spriteImportMode = SpriteImportMode.Single;
         }
-        // ── World 1 prop sprites (decorative scenery, PPU=512 → 1024px canvas = 2u at scale 1) ──
-        // Sprites have transparent backgrounds after remove_backgrounds.py.
-        // Centre pivot (default) — SceneryBuilder uses pivot.y/PPU to bottom-anchor each prop.
+        // ── World 1 prop sprites ──────────────────────────────────────────────
+        // Scenery props: PPU=512 → 1024px canvas = 2u native size at scale 1.
+        // Block sprites (Block_*, Plank_*, 2D_Block_*): need PPU=textureWidth so
+        //   nativeSize=1×1, making localScale(w,h) map directly to world dimensions.
         else if (assetPath.Contains("Sprites/Environment/World1Props/"))
+        {
+            string fname = System.IO.Path.GetFileName(assetPath);
+            bool isBlockSprite = fname.StartsWith("Block_") || fname.StartsWith("Plank_") || fname.StartsWith("2D_Block_");
+            // FIXED: explicit entries for late-added scenery sprites that had no .meta
+            // LEVEL1_EXACT: Windmill.png added for Level 1 exact layout
+            bool isNewScenery = fname == "RuinedStoneWall.png" || fname == "StoneTower.png"
+                             || fname == "OldBarn_Right.png"   || fname == "Windmill.png";
+            if (isBlockSprite)
+            {
+                imp.GetSourceTextureWidthAndHeight(out int tw, out _);
+                int ppu = tw > 0 ? tw : 1024;
+                ConfigureSprite(imp, ppu, alphaTransparency: true);
+            }
+            else if (isNewScenery)
+            {
+                ConfigureSprite(imp, 512, alphaTransparency: true); // 512 matches all other World1Props scenery
+            }
+            else
+            {
+                ConfigureSprite(imp, 512, alphaTransparency: true);
+            }
+            if (imp.spriteImportMode != SpriteImportMode.Single)
+                imp.spriteImportMode = SpriteImportMode.Single;
+        }
+        // ── Backdrop art (sky paintings, world reference art, StoneTower) ────
+        // FIXED: StoneTower.png lives here; SceneSetup._sprStoneTower now loads from this path.
+        else if (assetPath.Contains("Sprites/Environment/Backdrops/"))
         {
             ConfigureSprite(imp, 512, alphaTransparency: true);
             if (imp.spriteImportMode != SpriteImportMode.Single)

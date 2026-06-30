@@ -108,10 +108,14 @@ public static class SpriteWiring
         var    animal   = contents.GetComponent<AnimalBase>();
         if (animal == null) { PrefabUtility.UnloadPrefabContents(contents); return; }
 
+        // Derive "cluck", "bessie", etc. from "CluckAnimal", "BessieAnimal"
+        string charKey = prefabName.Replace("Animal", "").ToLower();
+
         var so = new SerializedObject(animal);
         AssignSprite(so, "_sprIdle",     spriteDir, "idle");
         AssignSprite(so, "_sprLoaded",   spriteDir, "loaded");
-        AssignSprite(so, "_sprInFlight", spriteDir, "inflight", "in flight");
+        // Try character-prefixed variant first (e.g. Cluck_InFlight.png) then generic InFlight.png
+        AssignSprite(so, "_sprInFlight", spriteDir, charKey + "_inflight", "inflight", "in flight");
         AssignSprite(so, "_sprImpact",   spriteDir, "impact");
         AssignSprite(so, "_sprAbility",  spriteDir, "abilitytrigger", "trigger", "trigger1", "ability");
         so.ApplyModifiedProperties();
