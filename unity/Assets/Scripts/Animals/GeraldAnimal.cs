@@ -19,7 +19,7 @@ public class GeraldAnimal : AnimalBase
         linearDrag = 0.008f;
         base.Awake();
         if (!HasRealSprites) _sr.color = new Color(0.50f, 0.28f, 0.08f); // dark turkey brown
-        _sr.sortingOrder = 4;
+        _sr.sortingOrder = 6; // fixed 2026-07-08: was 5, needed a slot free for CannonSmoke at 5
         _col.radius      = 0.38f;
         _originalRadius  = _col.radius;
     }

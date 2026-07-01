@@ -175,10 +175,10 @@ MonoBehaviour:
   bounciness: 0.4
   linearDrag: 0.008
   _sprIdle: {fileID: 0}
-  _sprLoaded: {fileID: 8777464590845292808, guid: bc8eaab4f8756474a94fc9a01436c99e, type: 3}
-  _sprInFlight: {fileID: 6045577617042523737, guid: fa9535bd07cb4134ab6006329410e869, type: 3}
-  _sprImpact: {fileID: 8298651271616147762, guid: 1d25924bda2eb9040afbef97d6241215, type: 3}
-  _sprAbility: {fileID: 5321888442754330218, guid: 0a8f7cd411a62774bb3d2303f79a9d26, type: 3}
+  _sprLoaded: {fileID: 21300000, guid: 8e908593088caf640898f71912f156c5, type: 3}
+  _sprInFlight: {fileID: 21300000, guid: a5bef4139b5f47346bd3d5988f3f5964, type: 3}
+  _sprImpact: {fileID: 21300000, guid: fe013f32d60b2d341b14d4c6d1efe967, type: 3}
+  _sprAbility: {fileID: 21300000, guid: 72c4409cbcb3de34b8a35814a14aecc1, type: 3}
   _contactTimeout: 3
   _slamImpulse: 18
   _shockwaveRadius: 3.6

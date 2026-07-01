@@ -9,7 +9,7 @@ using UnityEngine;
 public class SpriteAutoImporter : AssetPostprocessor
 {
     [MenuItem("FarmFury/Reimport Sprites")]
-    static void ForceReimportAll()
+    public static void ForceReimportAll()
     {
         string[] folders =
         {
@@ -33,26 +33,11 @@ public class SpriteAutoImporter : AssetPostprocessor
         var imp = assetImporter as TextureImporter;
         if (imp == null) return;
 
-        // Both trebuchet sprites are 2048×2048 px → PPU=768 gives 2.667u (same as 1024px@384).
-        // MUST be Single mode — Multiple mode (spriteMode:2) splits the sprite into sub-sprites
-        // which Unity's LoadAssetAtPath<Sprite> can't fully load, causing visual disconnects.
-        // ── Trebuchet body (static frame, bottom-centre pivot so it stands on Y=0) ──
-        if (assetPath.Contains("Launchers/Trabuchet_Body"))
-        {
-            ConfigureSprite(imp, 768, alphaTransparency: true);
-            if (imp.spriteImportMode != SpriteImportMode.Single) imp.spriteImportMode = SpriteImportMode.Single;
-            SetCustomPivot(imp, new Vector2(0.50f, 0.00f));
-        }
-        // ── Trebuchet arm (rotating, pivot measured at fulcrum bolt in sprite art) ──
-        else if (assetPath.Contains("Launchers/Trabuchet_Arm"))
-        {
-            ConfigureSprite(imp, 768, alphaTransparency: true);
-            if (imp.spriteImportMode != SpriteImportMode.Single) imp.spriteImportMode = SpriteImportMode.Single;
-            // Pivot measured: pivot-stand bolt at ~40% from left, ~56% from bottom of canvas
-            SetCustomPivot(imp, new Vector2(0.40f, 0.56f));
-        }
-        // ── All other launcher sprites (PPU=384, alpha fix) ──────────────────
-        else if (assetPath.Contains("Sprites/Environment/Launchers/"))
+        // Trebuchet system removed 2026-07-02 (replaced by FarmCannon) — Trabuchet_Body/Arm/Swing
+        // sprites are no longer referenced anywhere; their special-case import rules were removed
+        // along with them. Cannon.png (and any other launcher sprite) uses the generic branch below.
+        // ── All launcher sprites (PPU=384, alpha fix) ────────────────────────
+        if (assetPath.Contains("Sprites/Environment/Launchers/"))
         {
             ConfigureSprite(imp, 384, alphaTransparency: true);
             if (imp.spriteImportMode != SpriteImportMode.Single) imp.spriteImportMode = SpriteImportMode.Single;
@@ -111,6 +96,15 @@ public class SpriteAutoImporter : AssetPostprocessor
         }
         // ── Character sprites (PPU already managed per-character by SpriteWiring) ─
         // Only fix alpha — leave PPU alone so SpriteWiring stays authoritative.
+        // Fixed 2026-07-10: this branch was the ONLY one in this file that never enforced
+        // SpriteImportMode.Single — every other category does, with a comment explaining
+        // Multiple mode breaks LoadAssetAtPath<Sprite>/serialized references. Character sprites
+        // were missed, and it showed: ALL 8 characters' pose PNGs were sitting in Multiple mode,
+        // several auto-sliced by Unity into disconnected fragments (Cluck_InFlight.png alone had
+        // 9). CluckAnimal.prefab's _sprInFlight ended up wired to one of those fragments — a
+        // 53×8px sliver of the original art — instead of the whole sprite, which is why the
+        // in-flight pose was reported as invisible ("not appearing", "not allowing me to drop
+        // into scene" — Multiple-mode textures don't drag into a scene as one usable sprite).
         else if (assetPath.Contains("Sprites/Characters/") || assetPath.Contains("Sprites/Enemies/"))
         {
             if (imp.textureType != TextureImporterType.Sprite)
@@ -119,6 +113,8 @@ public class SpriteAutoImporter : AssetPostprocessor
                 imp.alphaIsTransparency = true;
             if (imp.alphaSource != TextureImporterAlphaSource.FromInput)
                 imp.alphaSource = TextureImporterAlphaSource.FromInput;
+            if (imp.spriteImportMode != SpriteImportMode.Single)
+                imp.spriteImportMode = SpriteImportMode.Single;
         }
     }
 

@@ -19,7 +19,7 @@ public static class EditorAutoSetup
     static void RunOnce()
     {
         AutoGenerateLevels();
-        AutoFixLauncherSprites();
+        AutoFixCannonSprite();
         AutoWireCharacterSprites();
         AutoCopyCardSprites();
         AutoFixWorld1Props();
@@ -40,15 +40,24 @@ public static class EditorAutoSetup
 
     static void AutoWireCharacterSprites()
     {
-        // Only reimport if the sentinel sprite is still on the old PPU value.
-        // This prevents wiring 40+ sprites on every compile after the first fix.
-        const string sentinel = "Assets/Sprites/Characters/Cluck/Loaded.png";
+        // Fixed 2026-07-10: sentinel path was stale — "Loaded.png" never existed post-rename to
+        // "Cluck_Loaded.png", so `imp` was always null and this silently never fired, for any
+        // reason, ever. Separately broadened the trigger to also catch wrong sprite import mode,
+        // not just stale PPU: ALL character sprites (all 8 characters) were stuck in Multiple
+        // mode until SpriteAutoImporter.cs's character branch was fixed the same day to enforce
+        // Single (several got auto-sliced into disconnected fragments — CluckAnimal's in-flight
+        // pose ended up wired to a 53x8px sliver instead of the actual art). Now self-heals a
+        // future regression on next compile instead of relying on someone noticing and running
+        // the menu items by hand.
+        const string sentinel  = "Assets/Sprites/Characters/Cluck/Cluck_Loaded.png";
         const int    targetPpu = 2057;
         var imp = AssetImporter.GetAtPath(sentinel) as TextureImporter;
-        if (imp == null || imp.spritePixelsPerUnit == targetPpu) return;
+        if (imp == null) return;
+        if (imp.spritePixelsPerUnit == targetPpu && imp.spriteImportMode == SpriteImportMode.Single) return;
 
+        SpriteAutoImporter.ForceReimportAll();
         SpriteWiring.WireAll();
-        Debug.Log("[FarmFury] Auto-applied updated character sprite PPU values.");
+        Debug.Log("[FarmFury] Auto-applied updated character sprite PPU/import-mode values.");
     }
 
     static void AutoCopyCardSprites()
@@ -117,21 +126,16 @@ public static class EditorAutoSetup
         Debug.Log("[FarmFury] Auto-reimported World1Props at PPU=512.");
     }
 
-    static void AutoFixLauncherSprites()
+    // Trebuchet system removed 2026-07-02 (replaced by FarmCannon) — was AutoFixLauncherSprites(),
+    // force-fixing Trabuchet_Body/Arm.png. Cannon.png needs no custom pivot (static, non-rotating
+    // prop — default centre 0.5/0.5 is correct) and PPU=384 is already enforced by the generic
+    // "Sprites/Environment/Launchers/" branch in SpriteAutoImporter.OnPreprocessTexture(), so this
+    // just double-checks Single mode/alpha in case the file was ever re-imported as Multiple.
+    static void AutoFixCannonSprite()
     {
-        // Both sprites are 2048×2048 px. PPU=768 gives 2048/768=2.667u.
-        // MUST be Single mode — Multiple mode (spriteMode:2) splits the canvas into sub-sprites
-        // breaking LoadAssetAtPath<Sprite> and causing arm/body to appear disconnected in-game.
-        bool anyFixed = false;
-        anyFixed |= FixSprite("Assets/Sprites/Environment/Launchers/Trabuchet_Body.png", 768,
-                              customPivot: new Vector2(0.50f, 0.00f),
-                              mode: SpriteImportMode.Single);
-        // Arm pivot bolt pixel-measured: ~40% from left, ~56% from bottom of 2048px canvas
-        anyFixed |= FixSprite("Assets/Sprites/Environment/Launchers/Trabuchet_Arm.png", 768,
-                              customPivot: new Vector2(0.40f, 0.56f),
-                              mode: SpriteImportMode.Single);
-        if (anyFixed)
-            Debug.Log("[FarmFury] Auto-fixed launcher sprites (Single mode, PPU=768, pivots).");
+        if (FixSprite("Assets/Sprites/Environment/Launchers/Cannon.png", 384,
+                       mode: SpriteImportMode.Single))
+            Debug.Log("[FarmFury] Auto-fixed Cannon.png (Single mode, PPU=384).");
     }
 
     static bool FixSprite(string path, int ppu, Vector2? customPivot = null,
