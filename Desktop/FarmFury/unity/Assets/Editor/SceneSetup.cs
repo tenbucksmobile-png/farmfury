@@ -32,6 +32,7 @@ public static class SceneSetup
         WireLauncher();         // CatapultLauncher + LevelLoader ref + counterweight sprite
         WireRobotSprite();                // Robot_Idle.png → Robot prefab SpriteRenderer
         EnsureHarvesterRobotPrefab();  // Create/update HarvesterRobot.prefab (separate from Robot)
+        EnsureHaybaleBlockPrefab();    // Create/update HaybaleBlock.prefab (WoodBlock + Haybail.png art)
         WireBlockSprites();     // Art sprites into WoodBlock + StoneBlock prefabs
         PositionCamera();       // Move camera to see the play area
         SpriteWiring.WireAll(); // Wire character pose sprites into all 8 animal prefabs
@@ -429,6 +430,7 @@ public static class SceneSetup
         SetPrefab(so, "_billyPrefab",  "BillyAnimal",  "Assets/Prefabs/Animals",  typeof(BillyAnimal));
         SetPrefab(so, "_robotPrefab",      "Robot",           "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_harvesterPrefab",  "HarvesterRobot",  "Assets/Prefabs/Enemies", typeof(RobotEnemy));
+        SetPrefab(so, "_haybalePrefab",    "HaybaleBlock",    "Assets/Prefabs/Blocks",  typeof(WoodBlock));
 
         so.FindProperty("_blockParent").objectReferenceValue =
             GameObject.Find("BlockParent")?.transform;
@@ -449,9 +451,8 @@ public static class SceneSetup
             go = new GameObject("Launcher");
             Debug.Log("[FarmFury] Created 'Launcher' GameObject.");
         }
-        // Launcher sits at the base of the trebuchet (ground surface Y = -6.60).
-        // PivotPos() = (-2.327, -6.60 + 1.914) = (-2.327, -4.686) — Trabuchet_Arm Inspector position.
-        // Camera rest = launcher + (2.327, 4.60) = (0, -2) matching the scene camera position.
+        // Launcher itself is just an aiming-math anchor (PivotPos() = this position + pivotHeight
+        // 1.914) — unrelated to the visual launcher. Unchanged by the trebuchet->cannon swap.
         go.transform.position = new Vector3(-2.327f, -6.60f, 0f);
 
         var launcher = go.GetComponent<CatapultLauncher>();
@@ -463,97 +464,50 @@ public static class SceneSetup
         so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(2.327f, 4.60f);
         so.FindProperty("_returnDelay").floatValue        = 2.5f;
 
-        // Wire the existing Trabuchet_Arm and Trabuchet_Swing scene GOs so CatapultLauncher
-        // controls them directly instead of creating new sprite children.
-        var armGO   = GameObject.Find("Trabuchet_Arm");
-        var swingGO = GameObject.Find("Trabuchet_Swing");
-        so.FindProperty("_armSpriteGO").objectReferenceValue   = armGO;
-        so.FindProperty("_swingSpriteGO").objectReferenceValue = swingGO;
-
-        // Position and scale arm GO to Inspector-verified values:
-        //   pos (-2.327, -4.686) = pivot (launch GO pos + pivotHeight 1.914)
-        //   scale (1.891186, 1.785115) = user-calibrated sprite scale
-        if (armGO != null)
+        // ── Farm Cannon (2026-07-02, replaces the trebuchet visual system) ──────
+        // Delete the old trebuchet scene GOs — CatapultLauncher no longer references them
+        // (no _armSpriteGO/_swingSpriteGO/_trebuchetXSprite fields exist any more).
+        foreach (var n in new[] { "Trabuchet_Body", "Trabuchet_Arm", "Trabuchet_Swing" })
         {
-            armGO.transform.position   = new Vector3(-2.327f, -4.686f, 0f);
-            armGO.transform.localScale = new Vector3(1.891186f, 1.785115f, 1f);
-            Debug.Log("[FarmFury] Launcher: Trabuchet_Arm set to pos (-2.327, -4.686) scale (1.891186, 1.785115).");
+            var old = GameObject.Find(n);
+            if (old != null) { Object.DestroyImmediate(old); Debug.Log($"[FarmFury] Deleted trebuchet GO '{n}'."); }
         }
-        else Debug.LogWarning("[FarmFury] Launcher: Trabuchet_Arm not found in scene.");
 
-        // Position and scale swing GO (bucket visual) to Inspector-verified values:
-        //   pos (-2.777, -5.017) = arm tip at rest (pivot + 0.571 at 218°)
-        //   scale (1.007133, 1.474944) = user-calibrated sprite scale
-        if (swingGO != null)
+        var cannonGO = GameObject.Find("FarmCannon");
+        if (cannonGO == null)
         {
-            swingGO.transform.position   = new Vector3(-2.777f, -5.017f, 0f);
-            swingGO.transform.localScale = new Vector3(1.007133f, 1.474944f, 1f);
-            Debug.Log("[FarmFury] Launcher: Trabuchet_Swing set to pos (-2.777, -5.017) scale (1.007133, 1.474944).");
+            cannonGO = new GameObject("FarmCannon");
+            Debug.Log("[FarmFury] Created 'FarmCannon' GameObject.");
         }
-        else Debug.LogWarning("[FarmFury] Launcher: Trabuchet_Swing not found in scene.");
+        // User-verified 2026-07-03 (was -4.5,-2.5,2 / 2.2,1.8,1 — see CatapultLauncher.BuildCannon()).
+        cannonGO.transform.position   = new Vector3(-3.0012f, -5.1223f, 0f);
+        cannonGO.transform.localScale = new Vector3(1.4711188f, 1.3868444f, 1f);
 
-        // ── Trebuchet body sprite ─────────────────────────────────────────────
-        // NOT wired here — the user's Trabuchet_Body scene GO is the authoritative visual.
-        // Wiring _trebuchetBodySprite would cause BuildTrebuchetBody() to create a duplicate
-        // "TrebuchetBody" child on the Launcher GO in Play mode.
-        // Import settings are still enforced so the asset stays correct for other uses.
-        const string bodyPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Body.png";
-        if (AssetDatabase.LoadAssetAtPath<Texture2D>(bodyPath) != null)
+        var cannonSR = cannonGO.GetComponent<SpriteRenderer>();
+        if (cannonSR == null) cannonSR = cannonGO.AddComponent<SpriteRenderer>();
+        cannonSR.sortingOrder = 4; // explicit order beats Z-depth ties regardless of Z=2
+
+        const string cannonPath = "Assets/Sprites/Environment/Launchers/Cannon.png";
+        if (AssetDatabase.LoadAssetAtPath<Texture2D>(cannonPath) != null)
         {
-            var imp = AssetImporter.GetAtPath(bodyPath) as TextureImporter;
+            var imp = AssetImporter.GetAtPath(cannonPath) as TextureImporter;
             if (imp != null)
             {
                 bool dirty = false;
-                if (imp.textureType         != TextureImporterType.Sprite)          { imp.textureType         = TextureImporterType.Sprite;          dirty = true; }
-                if (imp.spritePixelsPerUnit != 768)                                  { imp.spritePixelsPerUnit = 768;                                 dirty = true; }
-                if (!imp.alphaIsTransparency)                                        { imp.alphaIsTransparency = true;                                dirty = true; }
-                if (imp.alphaSource         != TextureImporterAlphaSource.FromInput) { imp.alphaSource         = TextureImporterAlphaSource.FromInput; dirty = true; }
-                if (imp.spriteImportMode    != SpriteImportMode.Single)              { imp.spriteImportMode    = SpriteImportMode.Single;             dirty = true; }
+                if (imp.textureType         != TextureImporterType.Sprite) { imp.textureType         = TextureImporterType.Sprite; dirty = true; }
+                if (!imp.alphaIsTransparency)                               { imp.alphaIsTransparency = true;                       dirty = true; }
+                if (imp.spriteImportMode    != SpriteImportMode.Single)    { imp.spriteImportMode    = SpriteImportMode.Single;    dirty = true; }
                 if (dirty) imp.SaveAndReimport();
             }
-            // _trebuchetBodySprite intentionally NOT assigned — scene GO Trabuchet_Body handles the visual.
-            // Explicitly null it out to clear any stale serialised value from previous runs.
-            so.FindProperty("_trebuchetBodySprite").objectReferenceValue = null;
-        }
-
-        // ── Trebuchet arm sprite (rotates with arm angle) ────────────────────
-        // MUST be Single mode — Multiple mode creates sub-sprites breaking LoadAssetAtPath<Sprite>
-        // Pivot bolt pixel-measured in sprite art: ~40% from left, ~56% from bottom
-        const string armPath = "Assets/Sprites/Environment/Launchers/Trabuchet_Arm.png";
-        if (AssetDatabase.LoadAssetAtPath<Texture2D>(armPath) != null)
-        {
-            var imp = AssetImporter.GetAtPath(armPath) as TextureImporter;
-            if (imp != null)
-            {
-                bool dirty = false;
-                if (imp.textureType         != TextureImporterType.Sprite)          { imp.textureType         = TextureImporterType.Sprite;          dirty = true; }
-                if (imp.spritePixelsPerUnit != 768)                                  { imp.spritePixelsPerUnit = 768;                                 dirty = true; }
-                if (!imp.alphaIsTransparency)                                        { imp.alphaIsTransparency = true;                                dirty = true; }
-                if (imp.alphaSource         != TextureImporterAlphaSource.FromInput) { imp.alphaSource         = TextureImporterAlphaSource.FromInput; dirty = true; }
-                if (imp.spriteImportMode    != SpriteImportMode.Single)              { imp.spriteImportMode    = SpriteImportMode.Single;             dirty = true; }
-
-                var settings = new TextureImporterSettings();
-                imp.ReadTextureSettings(settings);
-                var desiredPivot = new Vector2(0.40f, 0.56f); // bolt: 40% left, 56% bottom (pixel-measured)
-                if (settings.spriteAlignment != (int)SpriteAlignment.Custom || settings.spritePivot != desiredPivot)
-                {
-                    settings.spriteAlignment = (int)SpriteAlignment.Custom;
-                    settings.spritePivot     = desiredPivot;
-                    imp.SetTextureSettings(settings);
-                    dirty = true;
-                }
-
-                if (dirty) imp.SaveAndReimport();
-            }
-            so.FindProperty("_trebuchetArmSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(armPath);
-            Debug.Log("[FarmFury] Launcher: arm sprite wired (Single mode, pivot 0.40/0.56).");
+            var cannonSprite = AssetDatabase.LoadAssetAtPath<Sprite>(cannonPath);
+            cannonSR.sprite = cannonSprite;
+            so.FindProperty("_cannonSprite").objectReferenceValue = cannonSprite;
+            Debug.Log("[FarmFury] Launcher: Cannon.png wired (Single mode).");
         }
         else
-            Debug.LogWarning("[FarmFury] Trabuchet_Arm.png not found — run remove_backgrounds.py then re-run Wire Scene References.");
+            Debug.LogWarning("[FarmFury] Cannon.png not found at " + cannonPath);
 
-        // Counterweight removed by design — visual is part of the Trabuchet_Body scene art.
-        so.FindProperty("_trebuchetCounterweightSprite").objectReferenceValue = null;
-        Debug.Log("[FarmFury] Launcher: counterweight sprite nulled (removed by design).");
+        so.FindProperty("_cannonGO").objectReferenceValue = cannonGO;
 
         so.ApplyModifiedProperties();
 
@@ -580,6 +534,36 @@ public static class SceneSetup
             ("_sprNormal",      "Block_Stone_Normal.png"),
             ("_sprHorizontal",  "Block_Stone_Normal.png"),   // reuse until dedicated art exists
             ("_sprVertical",    "Block_Stone_Normal.png"),
+        });
+    }
+
+    // ── HaybaleBlock: a WoodBlock variant rendered with Haybail.png ─────────────
+    // Same mechanics as WoodBlock — health/mass/passThrough come entirely from
+    // BlockSpawnData overrides at the level-data level. Only the default art differs.
+    // LevelLoader picks this prefab when BlockSpawnData.type == BlockType.Haybale.
+    static void EnsureHaybaleBlockPrefab()
+    {
+        const string prefabPath = "Assets/Prefabs/Blocks/HaybaleBlock.prefab";
+
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+        {
+            var go   = new GameObject("HaybaleBlock");
+            go.layer = 8; // Block layer
+            go.AddComponent<Rigidbody2D>();
+            var bc   = go.AddComponent<BoxCollider2D>();
+            bc.size  = new Vector2(1f, 1f);
+            go.AddComponent<SpriteRenderer>();
+            go.AddComponent<WoodBlock>();
+            PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+            Object.DestroyImmediate(go);
+            Debug.Log("[FarmFury] Created HaybaleBlock.prefab.");
+        }
+
+        WireBlockPrefab(prefabPath, "Assets/Sprites/Environment/World1Props", new[]
+        {
+            ("_sprNormal",     "Haybail.png"),
+            ("_sprHorizontal", "Haybail.png"),
+            ("_sprVertical",   "Haybail.png"),
         });
     }
 
@@ -725,6 +709,14 @@ public static class SceneSetup
         {
             var so = new SerializedObject(robot);
             so.FindProperty("_robotSprite").objectReferenceValue = sprite;
+            // _maxHealth raised from the class default (35) to 40 (fixed 2026-07-01) — with the
+            // recalibrated trajectory (LaunchVelocity(), max ~7m/s), a Cluck shot that punches
+            // through the hay pile at 70% speed deals ~24-28 impulse damage. At 35 HP the robot
+            // would survive with only ~7-11 HP — technically not one-shot, but fragile enough to
+            // read as "instant" (any stray contact finishes it). 40 HP leaves a safer ~12-16 HP
+            // margin after the hay-clearing hit, while a second solid hit (~34-40 direct, or
+            // another ~24-28 pass-through) still reliably finishes it — matching L01's par=2.
+            so.FindProperty("_maxHealth").floatValue = 40f;
             so.ApplyModifiedProperties();
         }
 
@@ -786,10 +778,14 @@ public static class SceneSetup
         var cluckComp = contents.GetComponent<CluckAnimal>();
         if (cluckComp != null)
         {
-            var so     = new SerializedObject(cluckComp);
-            var eggGO  = AssetDatabase.LoadAssetAtPath<GameObject>(eggPath);
-            var eggRef = eggGO != null ? eggGO.GetComponent<EggProjectile>() : null;
-            so.FindProperty("_eggPrefab").objectReferenceValue = eggRef;
+            var so    = new SerializedObject(cluckComp);
+            var eggGO = AssetDatabase.LoadAssetAtPath<GameObject>(eggPath);
+            // _eggPrefab on CluckAnimal is typed GameObject (Instantiate(_eggPrefab, ...) in
+            // SpawnEggs() expects a GameObject) — assigning eggGO.GetComponent<EggProjectile>()
+            // here was a type mismatch that SerializedProperty silently rejected, leaving the
+            // field null (UnassignedReferenceException at runtime on ability trigger). Fixed
+            // 2026-07-05: assign the GameObject itself, not a component on it.
+            so.FindProperty("_eggPrefab").objectReferenceValue = eggGO;
             so.ApplyModifiedProperties();
             PrefabUtility.SaveAsPrefabAsset(contents, cluckPath);
             Debug.Log("[FarmFury] CluckAnimal._eggPrefab wired.");

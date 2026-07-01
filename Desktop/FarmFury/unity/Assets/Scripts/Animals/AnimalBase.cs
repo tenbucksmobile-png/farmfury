@@ -45,7 +45,10 @@ public abstract class AnimalBase : MonoBehaviour
         _col = GetComponent<CircleCollider2D>();
         _sr  = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
-        _sr.sortingOrder = 5;   // in front of trebuchet body (3) and arm (4)
+        _sr.sortingOrder = 6;   // fixed 2026-07-08: was 5 — CannonSmoke needed to sit between
+                                 // FarmCannon (4) and animals, but sortingOrder is integer-only,
+                                 // so animals moved to 6 and smoke took 5 rather than leaving no
+                                 // slot between the cannon and the bird.
 
         _rb.mass                   = mass;
         _rb.linearDamping          = linearDrag;
@@ -82,6 +85,16 @@ public abstract class AnimalBase : MonoBehaviour
     public void SetLoadedPose()
     {
         if (_sprLoaded  != null) _sr.sprite = _sprLoaded;
+        else if (_sprIdle != null) _sr.sprite = _sprIdle;
+    }
+
+    // Shows the in-flight pose without actually launching (physics/IsLaunched/IsInFlight
+    // untouched) — used for the bird sitting loaded at the cannon barrel mouth, where the
+    // dynamic in-flight pose (wings out) reads better than the seated "loaded" pose.
+    public void SetInFlightPose()
+    {
+        if (_sprInFlight != null) _sr.sprite = _sprInFlight;
+        else if (_sprLoaded != null) _sr.sprite = _sprLoaded;
         else if (_sprIdle != null) _sr.sprite = _sprIdle;
     }
 

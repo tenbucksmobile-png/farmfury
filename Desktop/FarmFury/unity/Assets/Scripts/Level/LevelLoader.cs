@@ -9,6 +9,7 @@ public class LevelLoader : MonoBehaviour
     [Header("Block Prefabs")]
     [SerializeField] private BlockBase  _woodPrefab;
     [SerializeField] private BlockBase  _stonePrefab;
+    [SerializeField] private BlockBase  _haybalePrefab; // WoodBlock mechanics, Haybail.png art
 
     [Header("Animal Prefabs")]
     [SerializeField] private CluckAnimal  _cluckPrefab;
@@ -64,6 +65,7 @@ public class LevelLoader : MonoBehaviour
     {
         if (_woodPrefab       == null) _woodPrefab       = LoadPrefabComponent<WoodBlock>("WoodBlock");
         if (_stonePrefab      == null) _stonePrefab      = LoadPrefabComponent<StoneBlock>("StoneBlock");
+        if (_haybalePrefab    == null) _haybalePrefab    = LoadPrefabComponent<WoodBlock>("HaybaleBlock");
         if (_robotPrefab      == null) _robotPrefab      = LoadPrefabComponent<RobotEnemy>("Robot");
         if (_harvesterPrefab  == null) _harvesterPrefab  = LoadPrefabComponent<RobotEnemy>("HarvesterRobot");
         if (_cluckPrefab  == null) _cluckPrefab  = LoadPrefabComponent<CluckAnimal>("CluckAnimal");
@@ -177,13 +179,20 @@ public class LevelLoader : MonoBehaviour
 
     void SpawnBlock(LevelData.BlockSpawnData data)
     {
-        var prefab = data.type == BlockType.Wood ? _woodPrefab : _stonePrefab;
+        var prefab = data.type switch
+        {
+            BlockType.Stone   => _stonePrefab,
+            BlockType.Haybale => _haybalePrefab != null ? _haybalePrefab : _woodPrefab,
+            _                 => _woodPrefab,
+        };
         if (prefab == null) { Debug.LogWarning("[LevelLoader] Block prefab null — run Wire Scene References."); return; }
         var block  = Instantiate(prefab,
             new Vector3(data.position.x, data.position.y, 0f),
             Quaternion.identity,
             _blockParent);
         block.Initialise(data.size.x, data.size.y);
+        block.ApplyOverrides(data.healthOverride, data.massOverride);
+        if (data.passThrough && block is WoodBlock wood) wood._passThrough = true;
         _spawnedBlocks.Add(block);
     }
 
@@ -198,7 +207,19 @@ public class LevelLoader : MonoBehaviour
             Quaternion.identity,
             _robotParent);
         if (data.scale != Vector2.zero)
+        {
             robot.transform.localScale = new Vector3(data.scale.x, data.scale.y, 1f);
+
+            // RobotEnemy.Awake() sets BoxCollider2D.size=(1,1) assuming the default
+            // (0.6, 0.9) scale, which gives a sane 0.6×0.9 world hitbox. A large custom
+            // scale (used to make L01's HarvesterRobot visually imposing) would otherwise
+            // inflate the SAME collider to e.g. 4.36×4.69 world units — deep enough to
+            // overlap the ground collider at spawn and get launched into the air by
+            // physics separation. Re-derive collider size so the world-space hitbox stays
+            // pinned to the default 0.6×0.9 regardless of visual scale.
+            if (robot.TryGetComponent<BoxCollider2D>(out var col))
+                col.size = new Vector2(0.6f / data.scale.x, 0.9f / data.scale.y);
+        }
         robot.Initialise(this);
         _spawnedRobots.Add(robot);
     }

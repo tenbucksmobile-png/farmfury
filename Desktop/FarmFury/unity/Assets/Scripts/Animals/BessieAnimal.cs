@@ -20,7 +20,7 @@ public class BessieAnimal : AnimalBase
         bounciness = 0.15f;
         linearDrag = 0.016f;
         base.Awake();
-        if (_sr) { if (!HasRealSprites) _sr.color = new Color(1f, 0.4f, 0.7f); _sr.sortingOrder = 4; } // pink
+        if (_sr) { if (!HasRealSprites) _sr.color = new Color(1f, 0.4f, 0.7f); _sr.sortingOrder = 6; } // pink; fixed 2026-07-08: was 5, needed a slot free for CannonSmoke at 5
         if (_col) _col.radius = 0.52f; // 26px / 50
     }
 

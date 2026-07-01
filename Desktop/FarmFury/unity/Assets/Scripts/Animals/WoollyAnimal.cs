@@ -24,7 +24,7 @@ public class WoollyAnimal : AnimalBase
         linearDrag = 0.01f;
         base.Awake();
         _sr.color        = Color.white;
-        _sr.sortingOrder = 4;
+        _sr.sortingOrder = 6; // fixed 2026-07-08: was 5, needed a slot free for CannonSmoke at 5
         _col.radius      = 0.36f;
     }
 

@@ -169,12 +169,39 @@ public class HUDController : MonoBehaviour
 
         root.AddComponent<GraphicRaycaster>();
 
-        BuildScoreDisplay(root.transform);
-        BuildBirdQueueArea(root.transform);
-        BuildPauseButton(root.transform);
-        BuildLevelCompletePanel(root.transform);  // hidden until LevelComplete state fires
+        // Screen-edge elements (score/queue/pause) anchor inside this instead of the raw
+        // canvas rect, so they respect notch/rounded-corner safe insets. Without it they're
+        // positioned against the full device screen and can render into — or get visually
+        // clipped by — the unsafe edge zone (e.g. top-left cards overlapping a notch/corner).
+        var safeArea = BuildSafeArea(root.transform);
+
+        BuildScoreDisplay(safeArea);
+        BuildBirdQueueArea(safeArea);
+        BuildPauseButton(safeArea);
+        BuildLevelCompletePanel(root.transform);  // full-screen panels stay on the raw canvas
         BuildLevelFailedPanel(root.transform);    // hidden until LevelFailed state fires
         BuildPausePanel(root.transform);          // shown/hidden by pause button
+    }
+
+    RectTransform BuildSafeArea(Transform canvas)
+    {
+        var rt = MakeFullScreenRect(canvas, "SafeArea");
+        ApplySafeArea(rt);
+        return rt;
+    }
+
+    static void ApplySafeArea(RectTransform rt)
+    {
+        if (Screen.width <= 0 || Screen.height <= 0) return;
+        Rect safe = Screen.safeArea;
+        Vector2 min = safe.position;
+        Vector2 max = safe.position + safe.size;
+        min.x /= Screen.width;  min.y /= Screen.height;
+        max.x /= Screen.width;  max.y /= Screen.height;
+        rt.anchorMin = min;
+        rt.anchorMax = max;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
     }
 
     // Score: dark backing strip, top-centre, with large number inside.

@@ -22,7 +22,7 @@ public class CluckAnimal : AnimalBase
         bounciness = 0.4f;
         linearDrag = 0.008f;
         base.Awake();
-        if (_sr) { if (!HasRealSprites) _sr.color = Color.yellow; _sr.sortingOrder = 4; }
+        if (_sr) { if (!HasRealSprites) _sr.color = Color.yellow; _sr.sortingOrder = 6; } // fixed 2026-07-08: was 5, needed a slot free for CannonSmoke at 5
         if (_col) _col.radius = 0.36f; // 18px / 50
     }
 

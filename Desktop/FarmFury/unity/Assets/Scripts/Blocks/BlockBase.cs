@@ -88,6 +88,19 @@ public abstract class BlockBase : MonoBehaviour
         _rb.bodyType = RigidbodyType2D.Static;
     }
 
+    // Applies per-instance LevelData overrides after Initialise(). 0 = keep the
+    // area-scaled default computed in Initialise().
+    public void ApplyOverrides(float healthOverride, float massOverride)
+    {
+        if (healthOverride > 0f)
+        {
+            MaxHealth = healthOverride;
+            Health    = healthOverride;
+        }
+        if (massOverride > 0f)
+            _rb.mass = massOverride;
+    }
+
     public void TakeDamage(float amount)
     {
         if (IsDestroyed) return;

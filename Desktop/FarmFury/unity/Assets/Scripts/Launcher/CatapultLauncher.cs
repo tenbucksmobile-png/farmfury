@@ -2,8 +2,10 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Phase 1.1 — Trebuchet mechanic: click the bird in the bucket, drag to rotate the arm,
-// release to launch. The bird stays locked in the visual bucket throughout the drag.
+// Farm Cannon mechanic: click the bird loaded in the cannon barrel, drag to aim (angle +
+// power), release to fire. Aiming math (drag detection, launch velocity, trajectory arc) is
+// UNCHANGED from the original trebuchet system — 2026-07-02 replaced only the visual launcher
+// (trebuchet -> farm cannon). See CLAUDE.md Audit Findings for the full before/after.
 // Place on a GameObject at world position (11.2, 0, 0).
 public class CatapultLauncher : MonoBehaviour
 {
@@ -15,19 +17,13 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private float _maxDragDistance = 2.4f;   // 120 px / 50
     [SerializeField] private float _maxLaunchSpeed  = 16.8f;  // 14 px/frame × 60 fps / 50
 
-    [Header("Arm Geometry")]
-    // Arm geometry — calibrated to Inspector-verified scene layout:
-    //   Trabuchet_Arm  GO at (-2.327, -4.686)  → that IS the pivot
-    //   Cluck_Loaded   GO at (-2.777, -5.038)  → arm tip at rest
-    //   Trabuchet_Swing GO at (-2.777, -5.017) → bucket visual at rest
-    // pivotHeight: launcher at y=-6.60; pivot = -6.60 + 1.914 = -4.686 ✓
-    // armLongLength: |pivot→tip| = sqrt(0.450²+0.352²) = 0.571 u
-    // armRestAngle: atan2(-0.352,-0.450)+360 ≈ 218° (arm loaded/pulled position at rest)
-    private const float _pivotHeight    = 1.914f;
-    private const float _armLongLength  = 0.571f;
-    private const float _armShortLength = 0.471f;
-    private const float _armRestAngle   = 218f;
-    private const float MaxLoadAngle    = 50f;
+    [Header("Aim Geometry")]
+    // Abstract aiming-math anchor. NOT tied to any visual GameObject — drag angle is measured
+    // relative to this point, exactly as it was for the trebuchet. Kept byte-for-byte unchanged
+    // during the 2026-07-02 cannon swap per explicit instruction: aiming logic does not change.
+    private const float _pivotHeight  = 1.914f;
+    private const float _armRestAngle = 218f;  // drag-angle lower bound
+    private const float MaxLoadAngle  = 50f;   // drag-angle range above _armRestAngle
 
     [Header("Camera")]
     [SerializeField] private float   _returnDelay          = 2.5f;   // seconds after landing before pan-back starts
@@ -35,10 +31,29 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private float   _cameraReturnDuration = 1.2f;   // seconds for the pan-back animation
     [SerializeField] private Vector2 _cameraRestOffset     = new Vector2(5.5f, 2.5f);
 
-    [Header("Trebuchet Art")]
-    [SerializeField] private Sprite _trebuchetBodySprite;
-    [SerializeField] private Sprite _trebuchetArmSprite;
-    [SerializeField] private Sprite _trebuchetCounterweightSprite;
+    [Header("Farm Cannon")]
+    [SerializeField] private GameObject _cannonGO;      // wired to "FarmCannon" scene GO
+    [SerializeField] private Sprite     _cannonSprite;   // single "Cannon" sprite — never swapped
+
+    // Cannon-relative offsets (world-space, added to the cannon's REST position — recoil never
+    // affects the launch point or the loaded-bird position, only the cannon's own sprite).
+    private static readonly Vector2 CannonBarrelOffset     = new Vector2(1.1f, 0.4f);  // barrel tip = LaunchPoint / trajectory-arc origin
+    // User-verified 2026-07-11, replacing the original (0.9, 0.3) guess: now that
+    // Cluck_InFlight renders as the actual whole sprite (not the pre-fix 53x8px sliver
+    // fragment), the visually-correct offset for where it sits in the barrel is different.
+    private static readonly Vector2 CannonLoadedBirdOffset = new Vector2(0.6212f, 0.4223f);
+
+    private const float RecoilDistance       = 0.3f;   // rest X -> rest X − 0.3 (e.g. -4.5 -> -4.8)
+    private const float RecoilOutDuration    = 0.08f;
+    private const float RecoilReturnDuration = 0.4f;
+    private const float CannonResetDelay     = 1.80f;  // total time from fire until "ready for next bird"
+
+    // User-verified 2026-07-11, replacing the original (2.2676, 2.5454): that value was
+    // calibrated against Cluck_InFlight's pre-fix appearance (a 53x8px sliver fragment from
+    // the Multiple-sprite-mode bug — see CLAUDE.md Audit Findings), so it rendered far too
+    // large once the sprite import was corrected to show the actual whole character art.
+    // Applies to both the loaded (PrepareNextBird) and in-flight (Fire) bird instances.
+    private static readonly Vector3 BirdScale = new Vector3(0.274099f, 0.251007f, 1f);
 
     [Header("Trajectory")]
     [SerializeField] private int   _trajectoryDots      = 20;
@@ -48,41 +63,25 @@ public class CatapultLauncher : MonoBehaviour
     // Not serialized — value must come from code so Unity can't freeze a stale Inspector value
     private const float BirdClickRadius = 1.2f;
 
-    // Bucket at the arm tip: pivot + (cos218°×0.571, sin218°×0.571) = pivot + (-0.450, -0.352).
-    private static readonly Vector2 BucketFromPivot = new Vector2(-0.450f, -0.352f);
-
     // Runtime state
-    private float      _armAngle;
-    private float      _dragAngle;      // arm angle while dragging (for snap start)
+    private float      _dragAngle;      // drag angle while dragging (aiming math — unchanged)
     private bool       _isDragging;
     private Vector3    _pocketPos;      // unused — kept to avoid serialisation churn
-    private Vector3    _launchPoint;    // arm tip at rest angle — the physical fire origin
+    private Vector3    _launchPoint;    // cannon barrel tip — the physical fire origin
+    private Vector3    _cannonRestPos;  // cached FarmCannon rest position; recoil animates around this
     private AnimalBase _activeAnimal;
     private AnimalBase _readyBird;
     private bool       _cameraFollowing;
     private bool       _returnPending;    // true once ReturnCamera() has been started for this shot
     private Coroutine  _returnRoutine;
+    private Coroutine  _fireRoutine;
 
     // Renderers
-    private LineRenderer     _armLine;
     private LineRenderer     _rubberBandLine;
     private SpriteRenderer[] _trajDotRenderers;
     private static Sprite    _dotSprite;
-
-    [Header("Trebuchet Scene GOs")]
-    [SerializeField] private GameObject _armSpriteGO;    // wire to Trabuchet_Arm scene GO
-    [SerializeField] private GameObject _swingSpriteGO;  // wire to Trabuchet_Swing scene GO; shown at apex
-    [SerializeField] private GameObject _counterweightGO;
-
-    // Counterweight pendulum simulation
-    private float _currentArmAngle;   // angle currently drawn (tracked for velocity)
-    private float _prevArmAngle;
-    private float _cwAngle;           // pendulum angle from vertical (0 = hanging straight down)
-    private float _cwVelocity;        // degrees / second
-
-    private const float CwRopeLen = 0.38f;  // short-arm-end to counterweight center (world units at ×0.75 scale)
-    private const float CwGravity = 22f;    // pendulum restoring strength
-    private const float CwDamping = 5f;     // angular damping
+    private SpriteRenderer   _cannonSR;
+    private ParticleSystem   _smokePS;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -100,16 +99,11 @@ public class CatapultLauncher : MonoBehaviour
             _camera.orthographicSize = 4.5f;
         }
 
-        _armAngle = _armRestAngle;
-
-        _armLine          = MakeLine("ArmRenderer",        0.08f, new Color(0.42f, 0.23f, 0.06f));
         _rubberBandLine   = MakeLine("RubberBandRenderer", 0.05f, new Color(0.9f, 0.7f, 0.1f, 0.9f));
         _trajDotRenderers = CreateDotPool(_trajectoryDots);
 
-        if (_trebuchetBodySprite != null || _trebuchetArmSprite != null || _armSpriteGO != null)
-            BuildTrebuchetBody();
-
-        // Swing sprite is always visible — DrawArmAt keeps it pinned to the arm tip.
+        BuildCannon();
+        BuildSmokeParticles();
     }
 
     void OnEnable()
@@ -128,7 +122,6 @@ public class CatapultLauncher : MonoBehaviour
     {
         EnsureGroundExists();
         RefreshRestPoint();
-        DrawArmAt(_armRestAngle);
         SnapCameraToRest();
 
         // Defer one frame so all Start() methods (including MainMenuController) have run.
@@ -185,12 +178,6 @@ public class CatapultLauncher : MonoBehaviour
     {
         HandleInput();
 
-        // Bird is always locked to the visual bucket — it rotates with the arm during drag
-        if (_readyBird != null)
-            _readyBird.transform.position = BucketWorldPos(_isDragging ? _dragAngle : _armRestAngle);
-
-        UpdateCounterweight();
-
         if (_cameraFollowing && _activeAnimal != null && !_activeAnimal.IsDestroyed)
         {
             if (_activeAnimal.IsInFlight)
@@ -221,7 +208,7 @@ public class CatapultLauncher : MonoBehaviour
                     && _levelLoader.HasBirdsRemaining
                     && GameManager.Instance?.State == GameState.Playing;
 
-        // ── Press: must click/tap ON the bird (which sits in the bucket) ────
+        // ── Press: must click/tap ON the bird (loaded in the cannon barrel) ──
         if (ptr.press.wasPressedThisFrame && canFire && !_isDragging)
         {
             Vector3 world = ScreenToWorld(ptr.position.ReadValue());
@@ -232,7 +219,7 @@ public class CatapultLauncher : MonoBehaviour
             }
         }
 
-        // ── Hold: arm angle follows pointer from pivot; bird stays in bucket ─
+        // ── Hold: aim angle follows pointer from the abstract pivot (unchanged math) ──
         if (_isDragging && ptr.press.isPressed)
         {
             Vector3 world = ScreenToWorld(ptr.position.ReadValue());
@@ -242,17 +229,17 @@ public class CatapultLauncher : MonoBehaviour
             if (angle < 0f) angle += 360f;
 
             _dragAngle = Mathf.Clamp(angle, _armRestAngle, _armRestAngle + MaxLoadAngle);
-            DrawArmAt(_dragAngle);
             _rubberBandLine.positionCount = 0;
+            DrawTrajectory();
         }
 
-        // ── Release: let ArmSnap animate the arm; do NOT pre-reset visually ─
+        // ── Release: fire. The cannon has no drag-follow visual, so nothing to snap back. ──
         if (_isDragging && ptr.press.wasReleasedThisFrame)
         {
             _isDragging = false;
             HideTrajDots();
             _rubberBandLine.positionCount = 0;
-            Fire(); // ArmSnap inside Fire() animates arm from drag → apex → rest
+            Fire();
         }
     }
 
@@ -262,36 +249,30 @@ public class CatapultLauncher : MonoBehaviour
     {
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
         if (_levelLoader == null || !_levelLoader.HasBirdsRemaining) return;
-        _readyBird = _levelLoader.CreateNextAnimal(_levelLoader.PeekNextBird(), _launchPoint);
-        if (_readyBird != null) _readyBird.transform.localScale = new Vector3(2.2676f, 2.5454f, 1f);
-        _readyBird?.SetLoadedPose();
+        Vector3 loadedPos = _cannonRestPos + (Vector3)CannonLoadedBirdOffset;
+        _readyBird = _levelLoader.CreateNextAnimal(_levelLoader.PeekNextBird(), loadedPos);
+        if (_readyBird != null) _readyBird.transform.localScale = BirdScale;
+        _readyBird?.SetInFlightPose(); // wings-out pose reads better poking out of a cannon muzzle than the seated "loaded" pose
     }
 
     void Fire()
     {
         Vector2 velocity = LaunchVelocity();
-        if (velocity.magnitude < 0.1f)
-        {
-            DrawArmAt(_armRestAngle); // not enough pull — snap arm back quietly
-            return;
-        }
-        if (!_levelLoader.TryConsumeBird(out AnimalType birdType))
-        {
-            DrawArmAt(_armRestAngle);
-            return;
-        }
+        if (velocity.magnitude < 0.1f) return; // not enough pull — nothing fires
+        if (!_levelLoader.TryConsumeBird(out AnimalType birdType)) return;
 
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
 
         ScoreManager.Instance?.OnBirdFired();
 
-        _activeAnimal = _levelLoader.CreateNextAnimal(birdType, BucketWorldPos(_dragAngle));
-        _activeAnimal.transform.localScale = new Vector3(2.2676f, 2.5454f, 1f);
+        _activeAnimal = _levelLoader.CreateNextAnimal(birdType, _launchPoint);
+        _activeAnimal.transform.localScale = BirdScale;
         _activeAnimal.OnAnimalDestroyed += OnAnimalLanded;
         _activeAnimal.Launch(velocity);
         AudioManager.Play(AudioManager.Sound.Launch);
 
-        StartCoroutine(ArmSnap());
+        if (_fireRoutine != null) StopCoroutine(_fireRoutine);
+        _fireRoutine = StartCoroutine(CannonFireSequence());
 
         // Camera stays fixed — the bird flies across the static scene.
         if (_returnRoutine != null) StopCoroutine(_returnRoutine);
@@ -302,7 +283,6 @@ public class CatapultLauncher : MonoBehaviour
     void OnAnimalLanded(AnimalBase _)
     {
         _activeAnimal = null;
-        DrawArmAt(_armRestAngle);
 
         // If the bird was destroyed before a landing was detected (rare edge case),
         // start the pan-back now so the camera doesn't stay locked forever.
@@ -322,92 +302,168 @@ public class CatapultLauncher : MonoBehaviour
     void OnLevelStarted(LevelData _)
     {
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
-        _activeAnimal                 = null;
+        _activeAnimal    = null;
         _isDragging      = false;
         _cameraFollowing = false;
         _returnPending   = false;
-        _armAngle        = _armRestAngle;
         HideTrajDots();
         _rubberBandLine.positionCount = 0;
         if (_returnRoutine != null) StopCoroutine(_returnRoutine);
+        if (_fireRoutine   != null) StopCoroutine(_fireRoutine);
+        if (_cannonGO != null) _cannonGO.transform.position = _cannonRestPos;
         RefreshRestPoint();
-        DrawArmAt(_armRestAngle);
         PrepareNextBird();
     }
 
-    // ── Arm visual ────────────────────────────────────────────────────────────
+    // ── Cannon visual ─────────────────────────────────────────────────────────
 
-    // Draw arm using an explicit world angle.
-    void DrawArmAt(float angleDeg)
+    // Creates/finds the FarmCannon GO and its single SpriteRenderer. No rotation, no arm, no
+    // counterweight — a cannon is a static prop; only its position recoils on fire.
+    void BuildCannon()
     {
-        _currentArmAngle = angleDeg;
-        Vector3 pivot = PivotPos();
-        float   rad   = angleDeg * Mathf.Deg2Rad;
+        if (_cannonGO == null) _cannonGO = GameObject.Find("FarmCannon");
 
-        Vector3 tip = pivot + new Vector3(
-            Mathf.Cos(rad) * _armLongLength,
-            Mathf.Sin(rad) * _armLongLength, 0f);
-
-        Vector3 cw = pivot + new Vector3(
-            Mathf.Cos(rad + Mathf.PI) * _armShortLength,
-            Mathf.Sin(rad + Mathf.PI) * _armShortLength, 0f);
-
-        if (_armLine.enabled)
+        if (_cannonGO == null)
         {
-            _armLine.positionCount = 3;
-            _armLine.SetPosition(0, cw);
-            _armLine.SetPosition(1, pivot);
-            _armLine.SetPosition(2, tip);
+            // Position/scale user-verified 2026-07-03 (was -4.5,-2.5,2 / 2.2,1.8,1 — a stray
+            // manually-placed "Cannon" GO at these exact values was found duplicating this one
+            // and has been deleted from the scene; this is now the single source of truth).
+            _cannonGO = new GameObject("FarmCannon");
+            _cannonGO.transform.position   = new Vector3(-3.0012f, -5.1223f, 0f);
+            _cannonGO.transform.localScale = new Vector3(1.4711188f, 1.3868444f, 1f);
         }
 
-        // Pin arm GO to the physical pivot every frame so it never drifts from the body,
-        // then rotate around that fixed point. eulerAngles (world) is correct here because
-        // Trabuchet_Arm is a top-level scene GO (not a child of Launcher).
-        if (_armSpriteGO != null)
-        {
-            _armSpriteGO.transform.position    = pivot;
-            _armSpriteGO.transform.eulerAngles = new Vector3(0f, 0f, angleDeg - 218f);
-        }
+        _cannonSR = _cannonGO.GetComponent<SpriteRenderer>();
+        if (_cannonSR == null) _cannonSR = _cannonGO.AddComponent<SpriteRenderer>();
+        if (_cannonSprite != null) _cannonSR.sprite = _cannonSprite;
+        _cannonSR.sortingOrder = 4; // explicit order wins over Z-depth ties
 
-        // Swing sprite (bucket/sling visual) stays pinned to the arm tip at all times.
-        if (_swingSpriteGO != null)
-        {
-            _swingSpriteGO.SetActive(true);
-            _swingSpriteGO.transform.position = new Vector3(tip.x, tip.y,
-                _swingSpriteGO.transform.position.z);
-        }
+        _cannonRestPos = _cannonGO.transform.position;
     }
 
-    IEnumerator ArmSnap()
+    // Procedural smoke-puff particle system: cone burst, fades out, drifts slightly upward.
+    void BuildSmokeParticles()
     {
-        float start   = _dragAngle;
-        float forward = _armRestAngle - 74.4f;  // apex ~115.6° (upper-left)
-        float t = 0f;
+        var go = new GameObject("CannonSmoke");
+        go.transform.SetParent(transform);
+        _smokePS = go.AddComponent<ParticleSystem>();
 
-        // Phase 1 (0.35s): arm sweeps from pulled-back position to apex.
-        // DrawArmAt() keeps both arm and swing sprites tracked — no manual SetActive needed.
-        while (t < 1f)
+        // AddComponent<ParticleSystem>() starts it playing immediately (default
+        // playOnAwake=true) — configuring `main` (e.g. duration) while it's already
+        // playing throws "Setting the duration while system is still playing is not
+        // supported". Force it into a stopped/cleared state first.
+        _smokePS.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        var main             = _smokePS.main;
+        main.loop            = false;
+        main.playOnAwake     = false;
+        main.duration        = 1.2f;
+        main.startLifetime   = 1.2f;
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(1.5f, 2.5f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.3f, 0.8f);
+        main.startColor      = Color.white;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+        var emission = _smokePS.emission;
+        emission.rateOverTime = 0f;
+        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 15) });
+
+        var shape = _smokePS.shape;
+        shape.shapeType = ParticleSystemShapeType.Cone;
+        shape.angle     = 25f;
+
+        var colorOverLifetime = _smokePS.colorOverLifetime;
+        colorOverLifetime.enabled = true;
+        var grad = new Gradient();
+        grad.SetKeys(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f),           new GradientAlphaKey(0f, 1f) });
+        colorOverLifetime.color = grad;
+
+        // "slight upward drift Y=+0.5" — a constant upward force over the particle's life,
+        // not Unity's gravityModifier (which only pulls down).
+        var forceOverLifetime = _smokePS.forceOverLifetime;
+        forceOverLifetime.enabled = true;
+        forceOverLifetime.y = 0.5f;
+
+        // Renders as a plain white square without an explicit texture — a bare quad has no
+        // shape of its own. Reuses the same soft-radial-falloff generation as MakeDotSprite().
+        var mat = new Material(Shader.Find("Sprites/Default"));
+        mat.mainTexture = MakeSoftCircleTexture(32);
+        var psRenderer = go.GetComponent<ParticleSystemRenderer>();
+        psRenderer.material     = mat;
+        // Fixed 2026-07-08: was 1 (2026-07-06 fix), which put smoke BEHIND the opaque FarmCannon
+        // sprite (order 4) — the cannon fully occluded it, reported as "no smoke comes out of the
+        // cannon anymore". There's no integer between 4 (cannon) and the old animal order of 5,
+        // so animals moved to 6 (see AnimalBase.cs) and smoke takes 5: in front of the cannon
+        // (visible puffing out of the barrel) but still behind the bird (won't cover the ~1.3s
+        // flight the way the original order=6 did).
+        psRenderer.sortingOrder = 5;
+    }
+
+    // Soft circular blob with a feathered edge (alpha falls off toward the rim) — smoke/puff
+    // texture. Unlike MakeDotSprite() (hard edge, used for the trajectory dots), this fades
+    // gradually so particles blend instead of showing a visible disc outline.
+    static Texture2D MakeSoftCircleTexture(int size)
+    {
+        var   tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
+        float r   = size * 0.5f;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
         {
-            t += Time.deltaTime / 0.35f;
-            DrawArmAt(Mathf.Lerp(start, forward, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t))));
+            float dx   = x - r + 0.5f, dy = y - r + 0.5f;
+            float dist = Mathf.Sqrt(dx * dx + dy * dy) / r;
+            float a    = Mathf.Clamp01(1f - dist); // 1 at centre, 0 at/past the rim
+            tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a)); // squared falloff — softer edge
+        }
+        tex.Apply();
+        return tex;
+    }
+
+    void SpawnSmoke()
+    {
+        if (_smokePS == null) return;
+        _smokePS.transform.position = _launchPoint; // barrel mouth
+        _smokePS.Play();
+    }
+
+    // Fire-time sequence: recoil out (0.08s) -> smoke burst -> recoil return (0.4s) -> wait out
+    // the remainder of CannonResetDelay (1.80s total). The cannon sprite itself never swaps
+    // (single "Cannon" sprite throughout) — only position (recoil) and particles animate.
+    IEnumerator CannonFireSequence()
+    {
+        yield return StartCoroutine(RecoilTo(_cannonRestPos.x - RecoilDistance, RecoilOutDuration));
+
+        SpawnSmoke(); // t = RecoilOutDuration (0.08s)
+
+        yield return StartCoroutine(RecoilTo(_cannonRestPos.x, RecoilReturnDuration));
+
+        float remaining = CannonResetDelay - RecoilOutDuration - RecoilReturnDuration;
+        if (remaining > 0f) yield return new WaitForSeconds(remaining);
+        // t = CannonResetDelay (1.80s) — cannon considered "reset"/ready for next bird.
+    }
+
+    // Simple coroutine tween (no DOTween in this project — checked Packages/manifest.json).
+    IEnumerator RecoilTo(float targetX, float duration)
+    {
+        if (_cannonGO == null) yield break;
+        float startX  = _cannonGO.transform.position.x;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float x = Mathf.Lerp(startX, targetX, Mathf.Clamp01(elapsed / duration));
+            Vector3 p = _cannonGO.transform.position;
+            _cannonGO.transform.position = new Vector3(x, p.y, p.z);
             yield return null;
         }
-
-        yield return new WaitForSeconds(0.12f);
-
-        // Phase 2 (0.45s): arm returns to rest.
-        t = 0f;
-        while (t < 1f)
-        {
-            t += Time.deltaTime / 0.45f;
-            DrawArmAt(Mathf.Lerp(forward, _armRestAngle, Mathf.Clamp01(t * t)));
-            yield return null;
-        }
-
-        DrawArmAt(_armRestAngle);
+        Vector3 final = _cannonGO.transform.position;
+        _cannonGO.transform.position = new Vector3(targetX, final.y, final.z);
     }
 
     // ── Trajectory preview (dotted arc) ──────────────────────────────────────
+    // Physics/shape UNCHANGED — only the origin point changed (barrel mouth, fixed, instead of
+    // a drag-varying bucket position, since the cannon body doesn't rotate with the pull).
 
     void DrawTrajectory()
     {
@@ -418,7 +474,7 @@ public class CatapultLauncher : MonoBehaviour
         float   fa      = NextBirdFA();
         float   dt      = Time.fixedDeltaTime;
         float   visible = TrajectoryVisibleFraction();
-        Vector2 pos     = _launchPoint;
+        Vector2 pos     = _launchPoint; // fixed cannon barrel mouth — arc origin never moves
         Vector2 v       = vel;
 
         for (int i = 0; i < _trajectoryDots; i++)
@@ -508,40 +564,29 @@ public class CatapultLauncher : MonoBehaviour
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    // Refresh _launchPoint from the REST angle (called once on start + level reset).
+    // Refresh _launchPoint from the cannon's rest position (called once on start + level reset).
     void RefreshRestPoint()
     {
-        Vector3 pivot = PivotPos();
-        float   rad   = _armRestAngle * Mathf.Deg2Rad;
-        _launchPoint  = pivot + new Vector3(
-            Mathf.Cos(rad) * _armLongLength,
-            Mathf.Sin(rad) * _armLongLength, 0f);
+        _launchPoint = _cannonRestPos + (Vector3)CannonBarrelOffset;
     }
 
     Vector3 PivotPos() =>
         transform.position + new Vector3(0f, _pivotHeight, 0f);
-
-    // Returns the world position of the visual bucket for any arm angle.
-    // BucketFromPivot is the bucket offset from pivot in the arm's default (rest) orientation.
-    // Rotating that offset by (armAngle − restAngle) gives the bucket position at any arm angle.
-    Vector3 BucketWorldPos(float armAngle)
-    {
-        float rotRad = (armAngle - _armRestAngle) * Mathf.Deg2Rad;
-        float cos    = Mathf.Cos(rotRad), sin = Mathf.Sin(rotRad);
-        return PivotPos() + new Vector3(
-            BucketFromPivot.x * cos - BucketFromPivot.y * sin,
-            BucketFromPivot.x * sin + BucketFromPivot.y * cos, 0f);
-    }
 
     Vector2 LaunchVelocity()
     {
         // Load fraction: how far the arm was pulled (0 = rest, 1 = MaxLoadAngle)
         float loadFrac = Mathf.Clamp01((_dragAngle - _armRestAngle) / MaxLoadAngle);
         if (loadFrac < 0.05f) return Vector2.zero;
-        // Bucket at x≈-2.78; robot at x=5.16 → 7.94u range with gravity=-8 (gravityScale=0.4).
-        // At 9 m/s, 22°: t≈0.95s, Δy≈-0.40u — lands on robot at y≈-5.46. Visible arc.
-        float speed    = Mathf.Lerp(6f, 9f, loadFrac);
-        float angleDeg = Mathf.Lerp(45f, 22f, loadFrac); // steep arc at low power, flat at full
+        // Recalibrated 2026-07-03: the FarmCannon moved from (-4.5,-2.5) to the user-verified
+        // (-3.0012,-5.1223), which shifts _launchPoint (cannon pos + CannonBarrelOffset) from
+        // ~(-2.35,-4.72) to ~(-1.90,-4.72) — closer to the robot, so the old 6.0-7.0 m/s range
+        // overshot it (numerically integrated: max pull landed at X≈5.75 against a robot at
+        // X=4.8). Spread reduced to 5.5-6.5 m/s (angle range unchanged, still 48°-42°, still
+        // clearly arched — ~1.0-1.1u apex above launch height): min pull lands ~X 3.1 (short of
+        // the hay pile), max pull lands ~X 4.9 (back on the robot).
+        float speed    = Mathf.Lerp(5.5f, 6.5f, loadFrac);
+        float angleDeg = Mathf.Lerp(48f, 42f, loadFrac); // both ends stay high — always visibly arched
         float rad      = angleDeg * Mathf.Deg2Rad;
         return new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)) * speed;
     }
@@ -554,86 +599,6 @@ public class CatapultLauncher : MonoBehaviour
     {
         Vector3 s = new Vector3(screen.x, screen.y, Mathf.Abs(_camera.transform.position.z));
         return _camera.ScreenToWorldPoint(s);
-    }
-
-    void BuildTrebuchetBody()
-    {
-        // ── Static frame (wheels + A-frame) ──────────────────────────────────
-        if (_trebuchetBodySprite != null)
-        {
-            var bodyGO = new GameObject("TrebuchetBody");
-            bodyGO.transform.SetParent(transform);
-            // Bottom-centre pivot (0.5, 0.0). At ×0.75 scale: content-bottom 0.026×0.75=0.020u
-            // above canvas-bottom → offset -0.020 so wheel content sits exactly on Y=0.
-            bodyGO.transform.localPosition = new Vector3(0f, -0.020f, 0f);
-            bodyGO.transform.localScale    = new Vector3(0.75f, 0.75f, 1f);
-            var bodySR          = bodyGO.AddComponent<SpriteRenderer>();
-            bodySR.sprite       = _trebuchetBodySprite;
-            bodySR.sortingOrder = 3;
-        }
-
-        // ── Rotating arm (pivot = sprite fulcrum, set in TextureImporter) ────
-        // If _armSpriteGO is already wired (scene GO), skip creating a new child GO.
-        if (_armSpriteGO == null && _trebuchetArmSprite != null)
-        {
-            _armSpriteGO = new GameObject("TrebuchetArm");
-            _armSpriteGO.transform.SetParent(transform);
-            _armSpriteGO.transform.localPosition = new Vector3(0f, _pivotHeight, 0f);
-            _armSpriteGO.transform.localScale    = new Vector3(0.75f, 0.75f, 1f);
-            var armSR          = _armSpriteGO.AddComponent<SpriteRenderer>();
-            armSR.sprite       = _trebuchetArmSprite;
-            armSR.sortingOrder = 4;
-        }
-        // Hide procedural line whenever sprite art is present
-        if (_armSpriteGO != null) _armLine.enabled = false;
-
-        // ── Counterweight: hangs from short arm end, swings as arm fires ─────
-        if (_trebuchetCounterweightSprite != null)
-        {
-            _counterweightGO = new GameObject("TrebuchetCounterweight");
-            _counterweightGO.transform.SetParent(transform);
-            _counterweightGO.transform.localScale = new Vector3(0.75f, 0.75f, 1f);
-            var cwSR          = _counterweightGO.AddComponent<SpriteRenderer>();
-            cwSR.sprite       = _trebuchetCounterweightSprite;
-            cwSR.sortingOrder = 3;   // between frame (3) and arm (4)
-
-            _cwAngle    = 0f;
-            _cwVelocity = 0f;
-            _currentArmAngle = _armRestAngle;
-            _prevArmAngle    = _armRestAngle;
-        }
-    }
-
-    // ── Counterweight pendulum ────────────────────────────────────────────────
-
-    void UpdateCounterweight()
-    {
-        if (_counterweightGO == null) return;
-
-        float dt     = Time.deltaTime;
-        float armVel = (_currentArmAngle - _prevArmAngle) / Mathf.Max(dt, 0.001f);
-        _prevArmAngle = _currentArmAngle;
-
-        // Pendulum physics: arm angular velocity drives the counterweight opposite its sweep
-        _cwVelocity += -armVel * 0.28f * dt;                                  // inertial drive
-        _cwVelocity -= CwGravity * Mathf.Sin(_cwAngle * Mathf.Deg2Rad) * dt;  // gravity restoring
-        _cwVelocity -= _cwVelocity * CwDamping * dt;                          // damping
-        _cwAngle    += _cwVelocity * dt;
-        _cwAngle     = Mathf.Clamp(_cwAngle, -110f, 110f);
-
-        // Position: world-space short arm tip + pendulum offset (cwAngle=0 → hangs straight down)
-        float cwRad = _cwAngle * Mathf.Deg2Rad;
-        _counterweightGO.transform.position =
-            ShortArmEnd() + new Vector3(Mathf.Sin(cwRad) * CwRopeLen,
-                                        -Mathf.Cos(cwRad) * CwRopeLen, 0f);
-    }
-
-    Vector3 ShortArmEnd()
-    {
-        Vector3 pivot = PivotPos();
-        float   rad   = _currentArmAngle * Mathf.Deg2Rad;
-        return pivot + new Vector3(Mathf.Cos(rad + Mathf.PI) * _armShortLength,
-                                   Mathf.Sin(rad + Mathf.PI) * _armShortLength, 0f);
     }
 
     LineRenderer MakeLine(string goName, float width, Color color)

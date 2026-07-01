@@ -20,7 +20,7 @@ public class HoraceAnimal : AnimalBase
         linearDrag = 0.012f;
         base.Awake();
         if (!HasRealSprites) _sr.color = new Color(0.55f, 0.32f, 0.10f); // chestnut brown
-        _sr.sortingOrder = 4;
+        _sr.sortingOrder = 6; // fixed 2026-07-08: was 5, needed a slot free for CannonSmoke at 5
         _col.radius      = 0.40f;
     }
 
