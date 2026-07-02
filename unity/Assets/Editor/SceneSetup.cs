@@ -325,43 +325,52 @@ public static class SceneSetup
             Debug.LogWarning("[FarmFury] LandingPage.png not found at Assets/Sprites/UI/LandingPage.png.");
         }
 
-        // Wire PLAY button sprite (square icon, replaces the earlier procedural rect + text)
-        const string playPath = "Assets/Sprites/UI/Play.png";
-        if (AssetDatabase.LoadAssetAtPath<Texture2D>(playPath) != null)
-        {
-            var importer = AssetImporter.GetAtPath(playPath) as TextureImporter;
-            if (importer != null)
-            {
-                bool changed = false;
-                if (importer.textureType != TextureImporterType.Sprite)
-                { importer.textureType = TextureImporterType.Sprite; changed = true; }
-                if (importer.spritePixelsPerUnit != 100)
-                { importer.spritePixelsPerUnit = 100; changed = true; }
-                if (changed) importer.SaveAndReimport();
-            }
-            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(playPath);
-            var mc = go.GetComponent<MainMenuController>();
-            var so = new SerializedObject(mc);
-            so.FindProperty("_playButtonSprite").objectReferenceValue = sprite;
-            so.ApplyModifiedProperties();
-            Debug.Log("[FarmFury] MainMenu: play button sprite wired.");
-        }
-        else
-        {
-            Debug.LogWarning("[FarmFury] Play.png not found at Assets/Sprites/UI/Play.png.");
-        }
+        // Wire PLAY and SETTINGS button sprites (bottom-left/bottom-right corner icons, per the
+        // 2026-07-16 LandingPage_New.png mockup). These live at Assets/Sprites/UI/Icon/ and are
+        // already imported (Single mode, PPU=100) by SpriteAutoImporter's generic "Sprites/UI/"
+        // rule — no reimport step needed, unlike the old Assets/Sprites/UI/Play.png path this
+        // replaces (that file never actually existed, so _playButtonSprite silently fell back
+        // to a plain orange square at runtime — see MainMenuController's fallback color).
+        var mainMenu = go.GetComponent<MainMenuController>();
+        var mmSo = new SerializedObject(mainMenu);
+        WireSprite(mmSo, "_playButtonSprite",     "Assets/Sprites/UI/Icon/Btn_play.png");
+        WireSprite(mmSo, "_settingsButtonSprite", "Assets/Sprites/UI/Icon/Btn_settings.png");
+        mmSo.ApplyModifiedProperties();
     }
+
+    // Filename keywords that uniquely identify each robot card, indexed by RobotType.
+    // No dedicated "Basic" robot card art exists yet — MatchUpScreen falls back to a text
+    // label ("ROBOT") when the sprite is null, same pattern as everywhere else in this
+    // codebase that tolerates not-yet-authored art rather than crashing on it.
+    static readonly string[] RobotCardKeywords =
+    {
+        "",           // 0 Basic — intentionally unmatched (empty keyword never hits FindAssets)
+        "Harvestor",  // 1 Harvester → Harvestor_Robot.png (source filename typo, kept verbatim)
+    };
 
     // ── WorldMapController (Sunrise Meadows) ──────────────────────────────────
     // Art lives at Assets/Sprites/UI/LevelCards/World1/ — already imported (Single mode,
     // PPU=100) by SpriteAutoImporter's existing "Sprites/UI/" rule, so no reimport step needed
     // here, just AssetDatabase lookups + SerializedObject wiring (same pattern as
-    // EnsureMainMenu above). Also wires LevelPreviewCard's animal-card art on the same GO,
-    // reusing CardKeywords/Assets/Sprites/UI/Cards/ — the exact convention EnsureHUD already
-    // uses for HUDController._cardSprites.
+    // EnsureMainMenu above). Also wires the MatchUpScreen art fields that live directly on
+    // WorldMapController (animal/robot cards, VS graphic, matchup background) — NOT on the
+    // nested MatchUpScreen instance itself. That nested object is a child GameObject created
+    // inside BuildUI(), which only runs when Awake() actually fires (Play mode, or immediately
+    // after a fresh AddComponent) — this batch pass opens the scene without entering Play mode,
+    // so GetComponentInChildren<MatchUpScreen>() here would find nothing (confirmed empirically
+    // 2026-07-16 — m_Children: [] on WorldMap's Transform in the saved scene even right after a
+    // fresh AddComponent<WorldMapController>() in this same method — Awake() genuinely does not
+    // fire synchronously in this batch context, unlike normal interactive-Editor AddComponent
+    // calls). The old LevelPreviewCard had this exact same silent gap. Keeping the fields on
+    // WorldMapController (which DOES persist — proven by every other field below already
+    // working) and threading them into MatchUpScreen.Init() at BuildUI() time sidesteps the
+    // whole issue: it doesn't matter whether BuildUI() ran during this edit-time pass, only that
+    // these fields are correctly saved for the NEXT real Awake() (Play mode / the actual game).
     static void EnsureWorldMap()
     {
-        const string artFolder = "Assets/Sprites/UI/LevelCards/World1";
+        const string artFolder  = "Assets/Sprites/UI/LevelCards/World1";
+        const string iconFolder = "Assets/Sprites/UI/Icon";
+        const string cardsFolder = "Assets/Sprites/UI/Cards";
 
         var go = GameObject.Find("WorldMap");
         if (go == null)
@@ -373,55 +382,59 @@ public static class SceneSetup
             go.AddComponent<WorldMapController>();
 
         var mapSo = new SerializedObject(go.GetComponent<WorldMapController>());
-        WireWorldMapSprite(mapSo, "_backgroundSprite",     $"{artFolder}/SunriseMeadows.png");
-        WireWorldMapSprite(mapSo, "_lockedSprite",         $"{artFolder}/LevelMarker_Locked.png");
-        WireWorldMapSprite(mapSo, "_unlockedSprite",       $"{artFolder}/LevelMarker_Unlocked.png");
-        WireWorldMapSprite(mapSo, "_star1Sprite",          $"{artFolder}/LevelMarker_1star.png");
-        WireWorldMapSprite(mapSo, "_star3Sprite",          $"{artFolder}/LevelMarker_3stars.png");
-        WireWorldMapSprite(mapSo, "_playerPositionSprite", $"{artFolder}/PlayerPosition.png");
+        WireSprite(mapSo, "_backgroundSprite",      $"{artFolder}/SunriseMeadows.png");
+        WireSprite(mapSo, "_lockedSprite",          $"{artFolder}/LevelMarker_Locked.png");
+        WireSprite(mapSo, "_unlockedSprite",        $"{artFolder}/LevelMarker_Unlocked.png");
+        WireSprite(mapSo, "_star1Sprite",           $"{artFolder}/LevelMarker_1star.png");
+        WireSprite(mapSo, "_star3Sprite",           $"{artFolder}/LevelMarker_3stars.png");
+        WireSprite(mapSo, "_playerPositionSprite",  $"{artFolder}/PlayerPosition.png");
+        WireSprite(mapSo, "_nextLevelButtonSprite", $"{iconFolder}/Btn_nextlevel.png");
+        WireSprite(mapSo, "_homeButtonSprite",      $"{iconFolder}/Btn_home.png");
+        WireSprite(mapSo, "_matchUpBackgroundSprite", "Assets/Sprites/UI/MatchUp/MatchUp_Background.png");
+        WireSprite(mapSo, "_vsSprite",              $"{cardsFolder}/VS.png");
         // _star2Sprite intentionally left unwired — no LevelMarker_2stars.png exists yet;
         // LevelMarker.Refresh() falls back to the 3-star sprite until one is added.
-        mapSo.ApplyModifiedProperties();
 
-        // Wire LevelPreviewCard's animal-card art (same 8-slot array as HUDController._cardSprites)
-        var previewCard = go.GetComponentInChildren<LevelPreviewCard>(true);
-        if (previewCard != null)
-        {
-            const string cardsFolder = "Assets/Sprites/UI/Cards";
-            var cardSo  = new SerializedObject(previewCard);
-            var arr     = cardSo.FindProperty("_animalCardSprites");
-            arr.arraySize = CardKeywords.Length;
-            var guids   = AssetDatabase.FindAssets("t:Sprite", new[] { cardsFolder });
-            int wired = 0;
-            for (int i = 0; i < CardKeywords.Length; i++)
-            {
-                string kw = CardKeywords[i].ToLower();
-                foreach (var g in guids)
-                {
-                    string path = AssetDatabase.GUIDToAssetPath(g);
-                    if (!path.ToLower().Contains(kw)) continue;
-                    var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-                    if (spr == null) continue;
-                    arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
-                    wired++;
-                    break;
-                }
-            }
-            cardSo.ApplyModifiedProperties();
-            Debug.Log($"[FarmFury] WorldMap: wired {wired}/8 animal card sprites into LevelPreviewCard.");
-        }
+        WireArrayByKeyword(mapSo, "_animalCardSprites", cardsFolder, CardKeywords, "animal");
+        WireArrayByKeyword(mapSo, "_robotCardSprites",  cardsFolder, RobotCardKeywords, "robot");
+
+        mapSo.ApplyModifiedProperties();
     }
 
-    static void WireWorldMapSprite(SerializedObject so, string fieldName, string path)
+    static void WireArrayByKeyword(SerializedObject so, string fieldName, string folder, string[] keywords, string label)
+    {
+        var arr = so.FindProperty(fieldName);
+        arr.arraySize = keywords.Length;
+        var guids = AssetDatabase.FindAssets("t:Sprite", new[] { folder });
+        int wired = 0;
+        for (int i = 0; i < keywords.Length; i++)
+        {
+            string kw = keywords[i].ToLower();
+            if (string.IsNullOrEmpty(kw)) continue;
+            foreach (var g in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(g);
+                if (!path.ToLower().Contains(kw)) continue;
+                var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                if (spr == null) continue;
+                arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
+                wired++;
+                break;
+            }
+        }
+        Debug.Log($"[FarmFury] WorldMap: wired {wired}/{keywords.Length} {label} card sprites into MatchUpScreen.");
+    }
+
+    static void WireSprite(SerializedObject so, string fieldName, string path)
     {
         var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
         if (spr == null)
         {
-            Debug.LogWarning($"[FarmFury] WorldMap: sprite not found at {path}.");
+            Debug.LogWarning($"[FarmFury] Sprite not found at {path} (target field: {fieldName}).");
             return;
         }
         so.FindProperty(fieldName).objectReferenceValue = spr;
-        Debug.Log($"[FarmFury] WorldMap: wired {fieldName} <- {path}");
+        Debug.Log($"[FarmFury] Wired {fieldName} <- {path}");
     }
 
     // ── AudioManager ──────────────────────────────────────────────────────────

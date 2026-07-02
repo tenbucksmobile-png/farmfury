@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 // Phase 2.6 (updated) — Main menu backed by the LandingPage.png splash art.
 // Builds its own Canvas (sortingOrder 400). Shows on startup (State == Idle).
@@ -12,9 +11,16 @@ public class MainMenuController : MonoBehaviour
 
     [SerializeField] private Sprite _landingSprite;
     [SerializeField] private Sprite _playButtonSprite;
+    [SerializeField] private Sprite _settingsButtonSprite;
 
     private GameObject _panel;
     private Sprite     _squareSpr;
+    private GameObject _settingsPopup;
+    private Image      _musicToggleImg;
+    private Image      _sfxToggleImg;
+
+    private static readonly Color ToggleOnColor  = new(0.20f, 0.65f, 0.30f);
+    private static readonly Color ToggleOffColor = new(0.45f, 0.45f, 0.45f);
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -45,6 +51,33 @@ public class MainMenuController : MonoBehaviour
         // destination (2026-07-15) — LevelSelectController is left in place, unwired, for
         // World 2+ once that content exists and doesn't have its own map screen yet.
         WorldMapController.Instance?.Show();
+    }
+
+    // Minimal Music/SFX toggle popup — reuses the same AudioManager.MusicEnabled/SfxEnabled +
+    // PlayerPrefs-backed state HUDController's pause menu already toggles, so the two screens
+    // can't disagree about whether audio is on. Not a full settings screen (no other settings
+    // exist yet in this project) — scoped to what the mockup's gear icon plausibly opens.
+    void OnSettingsClicked()
+    {
+        _musicToggleImg.color = AudioManager.MusicEnabled ? ToggleOnColor : ToggleOffColor;
+        _sfxToggleImg.color   = AudioManager.SfxEnabled   ? ToggleOnColor : ToggleOffColor;
+        _settingsPopup.SetActive(true);
+    }
+
+    void OnSettingsCloseClicked() => _settingsPopup.SetActive(false);
+
+    void OnMusicToggleClicked()
+    {
+        bool on = !AudioManager.MusicEnabled;
+        AudioManager.SetMusicEnabled(on);
+        _musicToggleImg.color = on ? ToggleOnColor : ToggleOffColor;
+    }
+
+    void OnSfxToggleClicked()
+    {
+        bool on = !AudioManager.SfxEnabled;
+        AudioManager.SetSfxEnabled(on);
+        _sfxToggleImg.color = on ? ToggleOnColor : ToggleOffColor;
     }
 
     // ── UI construction ───────────────────────────────────────────────────────
@@ -79,29 +112,21 @@ public class MainMenuController : MonoBehaviour
         bgImg.color          = _landingSprite != null ? Color.white : new Color(0.36f, 0.62f, 0.88f);
         bgImg.preserveAspect = false;  // stretch to fill canvas
 
-        // Subtle dark band at the bottom so the PLAY button pops against the image
-        var vigGO = new GameObject("BottomVignette");
-        vigGO.transform.SetParent(root, false);
-        var vigRT = vigGO.AddComponent<RectTransform>();
-        vigRT.anchorMin = Vector2.zero;
-        vigRT.anchorMax = new Vector2(1f, 0f);
-        vigRT.offsetMin = Vector2.zero;
-        vigRT.offsetMax = new Vector2(0f, 200f);
-        var vigImg = vigGO.AddComponent<Image>();
-        vigImg.sprite = _squareSpr;
-        vigImg.color  = new Color(0f, 0f, 0f, 0.45f);
-
-        // ── PLAY button ───────────────────────────────────────────────────────
-        // Square icon button (Play.png — orange rounded square, white play glyph, glow
-        // baked into the art) replaces the earlier procedural orange-rect + "▶ PLAY" text.
+        // ── PLAY button — bottom-left corner, per LandingPage_New.png mockup (2026-07-16) ──
+        // CORNER-anchored (not centre-anchored with a fixed offset) so it stays a fixed inset
+        // from the actual corner regardless of device aspect ratio. The first attempt used a
+        // centre-relative offset computed for one specific 16:9 mockup, which put the button
+        // outside the safe area (clipped by the phone bezel/notch) on the real preview — see
+        // the user's screenshot showing it straddling the yellow safe-area border. 160px inset
+        // on both axes keeps a comfortable margin even with a real device's rounded corners.
         var playGO  = new GameObject("PlayBtn");
         playGO.transform.SetParent(root, false);
         var playRT  = playGO.AddComponent<RectTransform>();
-        playRT.anchorMin        = new Vector2(0.5f, 0.5f);
-        playRT.anchorMax        = new Vector2(0.5f, 0.5f);
+        playRT.anchorMin        = new Vector2(0f, 0f);
+        playRT.anchorMax        = new Vector2(0f, 0f);
         playRT.pivot            = new Vector2(0.5f, 0.5f);
-        playRT.anchoredPosition = new Vector2(0f, -360f);  // ~17% from bottom
-        playRT.sizeDelta        = new Vector2(220f, 220f); // square, matches Play.png's aspect
+        playRT.anchoredPosition = new Vector2(160f, 160f);
+        playRT.sizeDelta        = new Vector2(150f, 150f);
         var playImg = playGO.AddComponent<Image>();
         playImg.sprite = _playButtonSprite != null ? _playButtonSprite : _squareSpr;
         playImg.color  = _playButtonSprite != null ? Color.white : new Color(1.00f, 0.55f, 0.05f);
@@ -116,23 +141,121 @@ public class MainMenuController : MonoBehaviour
         playBtn.colors = pc;
         playBtn.onClick.AddListener(OnPlayClicked);
 
-        // ── Version label — bottom-right, subtle ─────────────────────────────
-        var verGO = new GameObject("Version");
-        verGO.transform.SetParent(root, false);
-        var verRT = verGO.AddComponent<RectTransform>();
-        verRT.anchorMin        = new Vector2(1f, 0f);
-        verRT.anchorMax        = new Vector2(1f, 0f);
-        verRT.pivot            = new Vector2(1f, 0f);
-        verRT.anchoredPosition = new Vector2(-22f, 22f);
-        verRT.sizeDelta        = new Vector2(340f, 38f);
-        var verTMP = verGO.AddComponent<TextMeshProUGUI>();
-        verTMP.text               = "World 1 — Meadow Ruins";
-        verTMP.fontSize           = 22f;
-        verTMP.color              = new Color(1f, 1f, 1f, 0.55f);
-        verTMP.alignment          = TextAlignmentOptions.Right;
-        verTMP.enableWordWrapping = false;
+        // ── SETTINGS button — bottom-right corner, mirrors PLAY's corner-anchoring ──
+        var settingsGO = new GameObject("SettingsBtn");
+        settingsGO.transform.SetParent(root, false);
+        var settingsRT = settingsGO.AddComponent<RectTransform>();
+        settingsRT.anchorMin        = new Vector2(1f, 0f);
+        settingsRT.anchorMax        = new Vector2(1f, 0f);
+        settingsRT.pivot            = new Vector2(0.5f, 0.5f);
+        settingsRT.anchoredPosition = new Vector2(-160f, 160f);
+        settingsRT.sizeDelta        = new Vector2(150f, 150f);
+        var settingsImg = settingsGO.AddComponent<Image>();
+        settingsImg.sprite = _settingsButtonSprite != null ? _settingsButtonSprite : _squareSpr;
+        settingsImg.color  = _settingsButtonSprite != null ? Color.white : new Color(1.00f, 0.55f, 0.05f);
+        settingsImg.preserveAspect = true;
+
+        var settingsBtn = settingsGO.AddComponent<Button>();
+        settingsBtn.targetGraphic = settingsImg;
+        var sc = settingsBtn.colors;
+        sc.normalColor      = Color.white;
+        sc.highlightedColor = new Color(0.88f, 0.88f, 0.88f);
+        sc.pressedColor     = new Color(0.68f, 0.68f, 0.68f);
+        settingsBtn.colors  = sc;
+        settingsBtn.onClick.AddListener(OnSettingsClicked);
+
+        BuildSettingsPopup(root);
 
         _panel.SetActive(false);
+    }
+
+    // Small centred Music/SFX toggle popup opened by the gear icon. Same self-contained
+    // dismiss-catcher-behind-a-box pattern used by MatchUpScreen/LevelPreviewCard.
+    void BuildSettingsPopup(Transform root)
+    {
+        var popGO = new GameObject("SettingsPopup");
+        popGO.transform.SetParent(root, false);
+        var popRT = popGO.AddComponent<RectTransform>();
+        popRT.anchorMin = Vector2.zero;
+        popRT.anchorMax = Vector2.one;
+        popRT.offsetMin = popRT.offsetMax = Vector2.zero;
+        _settingsPopup = popGO;
+
+        var dismissImg = popGO.AddComponent<Image>();
+        dismissImg.sprite = _squareSpr;
+        dismissImg.color  = new Color(0f, 0f, 0f, 0.55f);
+        var dismissBtn = popGO.AddComponent<Button>();
+        dismissBtn.targetGraphic = dismissImg;
+        dismissBtn.onClick.AddListener(OnSettingsCloseClicked);
+
+        var box = new GameObject("Box");
+        box.transform.SetParent(popGO.transform, false);
+        var boxRT = box.AddComponent<RectTransform>();
+        boxRT.anchorMin        = new Vector2(0.5f, 0.5f);
+        boxRT.anchorMax        = new Vector2(0.5f, 0.5f);
+        boxRT.pivot            = new Vector2(0.5f, 0.5f);
+        boxRT.sizeDelta        = new Vector2(420f, 260f);
+        var boxImg = box.AddComponent<Image>();
+        boxImg.sprite = _squareSpr;
+        boxImg.color  = new Color(0.97f, 0.94f, 0.88f);
+        var boxBtn = box.AddComponent<Button>(); // swallows clicks so the box itself never dismisses
+        boxBtn.transition = Selectable.Transition.None;
+
+        var titleTMP = MakeToggleLabel(box.transform, "Title", "SETTINGS",
+            new Vector2(0f, 85f), new Vector2(360f, 50f), 30f, new Color(0.12f, 0.10f, 0.06f));
+        titleTMP.fontStyle = TMPro.FontStyles.Bold;
+
+        var musicBtn = MakeToggleButton(box.transform, "MusicToggle", "MUSIC", new Vector2(-95f, -10f));
+        _musicToggleImg = musicBtn.targetGraphic as Image;
+        musicBtn.onClick.AddListener(OnMusicToggleClicked);
+
+        var sfxBtn = MakeToggleButton(box.transform, "SfxToggle", "SFX", new Vector2(95f, -10f));
+        _sfxToggleImg = sfxBtn.targetGraphic as Image;
+        sfxBtn.onClick.AddListener(OnSfxToggleClicked);
+
+        var closeBtn = MakeToggleButton(box.transform, "CloseBtn", "CLOSE", new Vector2(0f, -90f));
+        closeBtn.onClick.AddListener(OnSettingsCloseClicked);
+
+        _settingsPopup.SetActive(false);
+    }
+
+    Button MakeToggleButton(Transform parent, string name, string label, Vector2 pos)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin        = new Vector2(0.5f, 0.5f);
+        rt.anchorMax        = new Vector2(0.5f, 0.5f);
+        rt.pivot            = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta        = new Vector2(150f, 52f);
+        var img = go.AddComponent<Image>();
+        img.sprite = _squareSpr;
+        img.color  = ToggleOffColor;
+        MakeToggleLabel(go.transform, "Label", label, Vector2.zero, new Vector2(150f, 52f), 22f, Color.white);
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = img;
+        return btn;
+    }
+
+    static TMPro.TextMeshProUGUI MakeToggleLabel(Transform parent, string name, string text, Vector2 pos, Vector2 size, float fontSize, Color color)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin        = new Vector2(0.5f, 0.5f);
+        rt.anchorMax        = new Vector2(0.5f, 0.5f);
+        rt.pivot            = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta        = size;
+        var tmp = go.AddComponent<TMPro.TextMeshProUGUI>();
+        tmp.text               = text;
+        tmp.fontSize           = fontSize;
+        tmp.color              = color;
+        tmp.alignment          = TMPro.TextAlignmentOptions.Center;
+        tmp.enableWordWrapping = false;
+        tmp.raycastTarget      = false;
+        return tmp;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
