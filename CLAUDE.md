@@ -99,6 +99,17 @@ Added a new `BlockType.Haybale` (enum value 2, `LevelData.cs`) and a `HaybaleBlo
 - **Fixed by renaming the folders** (`Cluck_Chicken`→`Cluck`, `Bessie_Cow`→`Bessie`, `.meta` files moved along with their folders to preserve GUIDs) rather than changing `SpriteWiring.cs` to match the wrong names — keeps every other tool/doc reference (which all already assume short names) correct without further changes.
 - **Still needs the user to run FarmFury → Wire Sprites (or Wire Scene References) once more** — the rename alone doesn't re-wire the prefabs; `SpriteWiring.WireAll()` needs to run again now that the expected path actually resolves. `_eggPrefab` (fixed separately, round 5) is untouched by this — `SpriteWiring` only ever touches the 5 sprite fields.
 
+**Round 10 — 2026-07-13/15. Cannon-fire audio + Cluck falling SFX + looping music; replay fix; trajectory raised/slowed; then a second round of Cluck/haybail/robot bugs — this time root-caused from measured pixel/physics data instead of guessed.**
+- **Audio added:** `SunriseMeadows_Background.mp3` loops continuously from the first `GameState.Playing` transition (never restarts across levels); `CannonShot.mp3` replaces the procedural launch clip at the existing `AudioManager.Play(Sound.Launch)` call site; `Cluck_falling.mp3` loops from the moment Cluck is fired and fades out over 0.35s the instant `AnimalBase.OnAnimalImpact` fires (a new event, added specifically for this — fires on real hits only, not `CluckAnimal`'s hay pass-through punches, which skip `base.OnCollisionEnter2D` entirely). `AudioManager` moved from a runtime-`AddComponent`-on-the-Launcher-GO pattern to a dedicated scene GO (`SceneSetup.EnsureAudioManager()`) so the three external clips can be serialized into `Game.unity` and survive real builds; `[DefaultExecutionOrder(-90)]` added so this instance reliably wins the singleton race against `CatapultLauncher`'s fallback `AddComponent<AudioManager>()` (now checked via `AudioManager.Instance == null`, not `GetComponent`, since the two are normally different GameObjects).
+- **Replay/Try Again/pause-Restart fixed to reuse the proven no-reload reset path.** `GameManager.RestartLevel()` called `StartLevel()`, which does a full `SceneManager.LoadScene()` — a heavier, less-exercised path than `ForceStartLevel()` (used every time the game boots via `CatapultLauncher.DelayedAutoStart()`, and already resets all launcher/camera/bird state via the existing `OnLevelStarted` handler). Switched to `ForceStartLevel(CurrentLevelIndex)`. Also added an explicit `SnapCameraToRest()` call inside `OnLevelStarted()` — restart no longer reloads the scene, so a camera left mid-pan-back from the previous attempt needed an explicit reset (previously this only ran once at `Start()`).
+- **Trajectory raised + slowed considerably**, numerically re-integrated (same gravity/drag/timestep model `DrawTrajectory()` itself uses) so the landing zone still lines up with the hay pile / robot despite the much floatier flight: `AnimalBase.Launch()`'s `gravityScale` 0.4→0.18; `CatapultLauncher.LaunchVelocity()`'s speed 5.5-6.5→4.0-4.9 m/s, angle 48°-42°→58°-52°; `DrawTrajectory()`'s gravity constant updated to match. Flight time grew ~1.4s→~2.3-2.5s, apex height ~1.0-1.1u→~1.6-2.0u.
+- **Cluck_InFlight invisible — real root cause, measured not guessed.** `Cluck_InFlight.png` is a 500×500 canvas at PPU=2057 with real content trimmed to only 444×301px (measured via PIL bbox) — nowhere near the ~1481px height `SpriteWiring.cs`'s own PPU-calibration comment assumed, and none of the Cluck pose files match the documented "1024×1024" art spec (each is a different resolution: 908×512, 665×375, etc.). At the then-current `BirdScale (0.274, 0.251)` the bird rendered at ~0.06 world units — ~10x smaller than the 0.72u collider it's meant to match. Recalculated `BirdScale = (4.9204, 4.9204)` (uniform — InFlight is the only pose ever shown on this GameObject) to hit that 0.72u target exactly.
+- **New bug from that same fix: Cluck destroyed haybails before any visible contact.** `CircleCollider2D.radius` scales with `transform.localScale` — bumping `BirdScale` ~18x to fix visibility scaled the physics hitbox ~18x too (collider radius 0.36 in local space → ~1.77 world units, versus a ~0.72u visible sprite). Fixed with `CatapultLauncher.ApplyBirdScale()`, which re-derives `col.radius /= BirdScale.x` right after setting the visual scale — same pattern `LevelLoader.SpawnRobot()` already used for the robot's `BoxCollider2D`.
+- **Haybail "still too high" — the first attempted fix (round 9's -4.7) was itself the bug.** That fix assumed the haybale's *nominal* size (1.0×0.9, used for physics/health scaling) equalled its *rendered* size — wrong: `Haybail.png` imports at PPU=512 (the generic World1Props rule, not the 1-unit-native `isBlockSprite`/`isNewScenery` special cases), so at scale (1.0,0.9) the real rendered content (measured: 500×500 canvas, trimmed to 500×419px) is only ~0.7365 units tall. Recomputed from the real pixel content (including the asymmetric top/bottom padding's ~0.04u pivot offset) so the top bale's *visible* art rests on the base row's *visible* art: Y=-4.87 — landing almost exactly back on the original hand-placed -4.876. That original value (sourced from the user's own decorative-prop scene placement, round 3) was already correct; the round-9 "fix" was the actual regression.
+- **Robot position updated again to user-provided (5.7, -5.36)**, scale unchanged (5.7065, 7.009) — same "treat as ground truth, don't re-derive" policy as the 2026-07-09 value. Screenshots continued showing something resembling a small car/robot near the bottom-right corner rather than a robot at this scale (which should occupy roughly half the screen height given the camera at (0,-2) orthoSize 4.5) — flagged to the user as possibly a stale build/screenshot rather than a data bug, unconfirmed.
+
+**Sunrise Meadows world map — 2026-07-15.** New level-select screen for World 1, replacing the grid-based `LevelSelectController` as `MainMenuController`'s PLAY destination (`LevelSelectController` itself is untouched/unwired, kept for World 2+). Built from a user-supplied spec; two deliberate deviations, not silent: (1) implemented as a `ScreenSpaceOverlay` Canvas with UI `Image`/`Button` markers rather than literal world-space `SpriteRenderer`/`Transform` positions — a `SpriteRenderer` has no `Button`/click support of its own, and this keeps the screen consistent with every other menu (all Canvas-based) instead of contesting `CatapultLauncher` for camera ownership; the spec's X/Y path coordinates are honoured directly via a 1 unit = 100px mapping (matching the marker art's own PPU=100). (2) Reuses the existing `ScoreManager.GetBestStars()` convention (0-based `ff_stars_N`, plain star count) rather than the spec's separate 1-based `ff_stars_1..18` scheme with a `-1` "unlocked-but-unplayed" sentinel, so this screen and `LevelSelectController` can't disagree about what's unlocked — trade-off: can't distinguish "never played" from "played and failed" (both read 0 stars). Art already existed at `Assets/Sprites/UI/LevelCards/World1/` (SunriseMeadows.png, 4× LevelMarker_*.png, PlayerPosition.png — no dedicated 2-star marker yet, falls back to 3-star art) and was already correctly imported (PPU=100, Single mode) by the pre-existing generic `Sprites/UI/` rule. `SceneSetup.EnsureWorldMap()` wires all of it, plus the preview card's animal-vs-robot art (reusing `EnsureHUD`'s `CardKeywords`/`Sprites/UI/Cards/` convention). Known gaps: markers 13/14 sit only 50px apart vertically against an 84px-tall marker and will visually overlap (flagged in the original spec as "adjust after seeing in scene"); only 6 of 18 levels have `LevelData` assets, so `LevelPreviewCard` shows a "COMING SOON" placeholder with PLAY disabled for the rest rather than crashing.
+
 **Raw art source (`assets/`) is currently absent from disk.** All 236 files under `assets/` were deleted from the local filesystem outside of any Claude Code session (cause unknown). They remain fully tracked in git at HEAD and are recoverable with `git checkout -- assets/`. The processed/imported sprites Unity actually uses (`unity/Assets/Sprites/`) are untouched and unaffected. The user chose to leave `assets/` deleted for now — **the documented art pipeline (`tools/remove_backgrounds.py`, adding new Kling AI PNGs) will not work until it's restored.**
 
 **`unity/Assets/Sprites/` is entirely gitignored (`unity/.gitignore:37`) and is the only copy of all processed game art.** It is not tracked by git in any commit. Combined with the point above, this means processed sprite art currently exists in exactly one place: this machine's disk. If it's lost, the only recovery path is restoring `assets/` from git and re-running the full art pipeline (`remove_backgrounds.py` → Wire Sprites / Reimport Sprites) — there is no direct git-history recovery for `Sprites/` itself. Worth a deliberate decision (git-LFS, commit it anyway, or accept the risk) rather than leaving it implicit.
@@ -225,8 +236,9 @@ Then open Unity — `EditorAutoSetup` and `SpriteAutoImporter` handle re-import 
 2.2 Level Complete panel — animated star pop-in (bounce 1→1.42→1), score, REPLAY/NEXT.
 2.3 Level Failed panel — TRY AGAIN / MENU.
 2.4 Pause menu — RESUME/RESTART/MENU + ♪ MUSIC / ◎ SFX toggles persisted via PlayerPrefs (`ff_sfx_enabled`, `ff_music_enabled`).
-2.5 Level select — world-art thumbnails, bottom gradient overlay, lock veil, gold/grey ★★★.
-2.6 Main menu — full-screen `LandingPage.png` splash + orange "▶ PLAY" button.
+2.5 Level select — world-art thumbnails, bottom gradient overlay, lock veil, gold/grey ★★★. Superseded for World 1 by the Sunrise Meadows world map (2026-07-15, see Round 10 below) but left in place for World 2+.
+2.6 Main menu — full-screen `LandingPage.png` splash + `Play.png` icon button (2026-07-13, replaced the earlier orange-rect + "▶ PLAY" text).
+2.7 Sunrise Meadows world map (2026-07-15) — winding-path level select for World 1: 18 tappable markers, bobbing player-position indicator, tap-to-preview matchup card. See `WorldMapController.cs`/`LevelMarker.cs`/`LevelPreviewCard.cs` and Round 10 below for the full design/trade-off writeup.
 
 ### Phase 3 — Character Roster ✅ DONE
 All 8 animals scripted, all Kling AI art generated, backgrounds batch-removed via `tools/remove_backgrounds.py`, sprites imported to `unity/Assets/Sprites/Characters/<Name>/`, pose sprites wired into all 8 animal prefabs via **FarmFury → Wire Sprites**.
@@ -355,7 +367,22 @@ unity/Assets/Scripts/
                               LoadMenu() is scene-optional: only loads MainMenu if it's in Build Settings;
                               otherwise LevelSelectController handles the Idle state in-scene
     BackgroundController.cs — sortingOrder=−100; cover-scale in Start(); LateUpdate() follows camera
-    AudioManager.cs         — 6 DSP-generated clips; SfxEnabled/MusicEnabled from PlayerPrefs
+    AudioManager.cs         — 7 DSP-generated SFX clips (Launch/WoodHit/StoneHit/RobotDeath/
+                              Win/Fail/BlockDestroy/RobotHit) + 3 external MP3 clips wired via
+                              SceneSetup.EnsureAudioManager() (Assets/Audio/*.mp3): _musicClip
+                              (looping background music, starts once on first GameState.Playing,
+                              never restarts on later level transitions), _cannonShotClip
+                              (replaces the procedural Launch clip when non-null — same
+                              AudioManager.Play(Sound.Launch) call site), _fallingClip (loops
+                              from Fire() while a Cluck is airborne, stopped with a 0.35s fade
+                              via AnimalBase.OnAnimalImpact — fires on real hits only, not
+                              CluckAnimal's hay pass-through punches). [DefaultExecutionOrder(-90)]
+                              so this instance wins the singleton race against CatapultLauncher's
+                              fallback `AddComponent<AudioManager>()` (checked against
+                              AudioManager.Instance now, not GetComponent, since AudioManager
+                              normally lives on its own dedicated scene GO, not the Launcher GO).
+                              SfxEnabled/MusicEnabled from PlayerPrefs; MusicEnabled toggles
+                              _musicSrc.mute live from the pause menu.
     CameraShake.cs          — singleton, auto-attached to Launcher GO
     ParallaxScroller.cs     — MonoBehaviour; speed 0.0 (world-fixed) – 1.0 (camera-locked);
                               LateUpdate() offsets X by camDelta×speed for depth parallax;
@@ -432,8 +459,28 @@ unity/Assets/Scripts/
                               cards anchored top-left (anchorMin 0.02,1 pivot 0,1 pos 0,−12);
                               orange ⚡N damage badge; Level Complete/Failed/Pause panels
     LevelSelectController.cs — ScrollRect + GridLayoutGroup 3-col; RefreshGrid() rebuilds on show;
-                              world-art thumbnails with gradient overlay; lock veil
-    MainMenuController.cs   — LandingPage.png + dark vignette + orange PLAY; shows on GameState.Idle
+                              world-art thumbnails with gradient overlay; lock veil. Untouched but
+                              currently unwired — WorldMapController replaced it as PLAY's
+                              destination for World 1 (kept in place for World 2+).
+    MainMenuController.cs   — LandingPage.png + dark vignette + Play.png icon button (square,
+                              replaces the earlier orange-rect + "▶ PLAY" text); shows on
+                              GameState.Idle; PLAY opens WorldMapController, not LevelSelectController
+    WorldMapController.cs    — Sunrise Meadows (World 1) level map; ScreenSpaceOverlay Canvas,
+                              sortingOrder 300; 18 LevelMarker instances positioned via the
+                              spec's X/Y * 100px (matches marker art's PPU=100); unlock rule
+                              (level 1 always unlocked, level N needs level N-1 >=1 star) reuses
+                              ScoreManager.GetBestStars(), not a separate PlayerPrefs scheme;
+                              bobbing PlayerPositionIndicator above the highest unlocked marker;
+                              owns a LevelPreviewCard instance
+    LevelMarker.cs           — one pin: UI Image+Button (not SpriteRenderer — Button needs uGUI)
+                              + level-number TMP label; Refresh(unlocked,stars,...) picks
+                              locked/unlocked/star1/2/3 art (falls back to 3-star art — no
+                              dedicated 2-star asset yet); PlayLockedShake() damped-sine jitter
+    LevelPreviewCard.cs      — centred popup on tap; level number, animal-vs-robot matchup read
+                              from GameManager.GetLevelData(index).birds[0]/robots[0].robotType,
+                              stars, PLAY button; shows "COMING SOON" (PLAY disabled) when the
+                              level index has no LevelData yet; full-screen dismiss-catcher
+                              behind a click-swallowing card Button
 
 unity/Assets/Editor/
   SceneSetup.cs         — FarmFury > Wire Scene References; wires all Inspector refs;

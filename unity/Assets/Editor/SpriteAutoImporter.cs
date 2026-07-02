@@ -87,6 +87,14 @@ public class SpriteAutoImporter : AssetPostprocessor
             if (imp.spriteImportMode != SpriteImportMode.Single)
                 imp.spriteImportMode = SpriteImportMode.Single;
         }
+        // ── General UI icons/buttons (e.g. Play.png) — same PPU=100 convention as the
+        // card sprites above; RectTransform.sizeDelta controls on-screen size regardless. ──
+        else if (assetPath.Contains("Sprites/UI/"))
+        {
+            ConfigureSprite(imp, 100, alphaTransparency: true);
+            if (imp.spriteImportMode != SpriteImportMode.Single)
+                imp.spriteImportMode = SpriteImportMode.Single;
+        }
         // ── Robot enemy sprites (PPU=1746 → content 1746px = 1u; at scale 0.8 → 0.8u world) ──
         else if (assetPath.Contains("Sprites/Enemies/Robot/"))
         {

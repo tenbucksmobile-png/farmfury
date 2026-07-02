@@ -27,24 +27,30 @@ public static class LevelDataGenerator
         // asset (old 2.5-ground-relative system) — see CLAUDE.md Audit Findings. Now
         // kept in sync: regenerating via "Generate All Level Data" reproduces this design.
         //
-        // HarvesterRobot position (5.6, -5.25) and scale (5.7065, 7.009) — fixed 2026-07-09,
-        // USER-PROVIDED exact values from their own Editor after three rounds of Claude's own
-        // position/scale calculations all came back "still wrong" (X=5.15509 too far right/edge
-        // of frame; Y=-6.25 clipped at the bottom; Y=-5.8215 still too low; halving the scale to
-        // "fix" framing was the wrong instinct — the user wanted it bigger, not smaller). Lesson:
-        // once numeric recalculation has failed twice, ask for the measured value instead of
-        // computing a third guess. Do not re-derive this from camera/sprite-padding math again —
-        // treat it as ground truth unless the user reports it's wrong.
+        // HarvesterRobot position/scale — user-provided ground truth, updated whenever the user
+        // reports it's still wrong (2026-07-09: (5.6,-5.25); 2026-07-14: (5.7,-5.36), scale
+        // (5.7065,7.009) unchanged both times). Do not re-derive this from camera/sprite-padding
+        // math — three earlier rounds of Claude's own calculations all came back "still wrong".
         // BoxCollider2D is re-derived in LevelLoader.SpawnRobot() to stay pinned to the default
         // 0.6×0.9 world-space hitbox regardless of visual scale (fixed 2026-07-01 — previously
         // the collider inherited the full scale, deeply overlapping the ground at spawn and
         // getting launched into the air by physics separation) — this formula is scale-agnostic,
-        // so this scale change needs no corresponding code change.
+        // so position/scale changes here need no corresponding code change.
         //
-        // Hay pile: positions match the 4 hand-placed decorative "Haybail"/"Haybail (1-3)"
-        // scene GameObjects exactly (read from Game.unity), so this replaces them rather
-        // than duplicating them — delete the 4 decorative scene GOs once this is live, since
-        // these gameplay blocks render the same Haybail.png art at the same spots. hp=10
+        // Hay pile: base 3 positions match the hand-placed decorative "Haybail"/"Haybail (1-3)"
+        // scene GameObjects (read from Game.unity) — delete those 4 decorative scene GOs once
+        // this is live, since these gameplay blocks render the same Haybail.png art at the same
+        // spots. The 4th (top) bale's Y: 2026-07-13 moved it from -4.876 to -4.7 assuming the
+        // block's *nominal* size (1.0x0.9) equalled its rendered size — wrong, and it made
+        // "too high" worse, not better. Haybail.png is imported at PPU=512 (the generic
+        // World1Props rule — it isn't in SpriteAutoImporter's isBlockSprite/isNewScenery lists
+        // that give 1-unit-native sizing), so at scale (1.0,0.9) the actual rendered content
+        // (measured via PIL bbox: 500x500 canvas, trimmed content 500x419px) is only ~0.7365
+        // units tall, not 0.9. Recomputed 2026-07-14 from the real pixel content (including the
+        // ~0.04u pivot-offset from asymmetric top/bottom padding) so the top bale's *visible*
+        // art rests on the base row's *visible* art: Y=-4.87 — landing almost exactly back on
+        // the original hand-placed -4.876, confirming that value (sourced from the user's own
+        // scene placement) was already correct and the 2026-07-13 "fix" was the actual bug. hp=10
         // (fixed 2026-07-01, was 60 — that survived multiple hits instead of exploding in one;
         // a typical Cluck impact does ~15-20 impulse damage, so 10 reliably one-shots it).
         // passThrough=true lets Cluck punch through at 70% speed and continue to the robot.
@@ -56,11 +62,11 @@ public static class LevelDataGenerator
                 B(BlockType.Haybale, 3.6462f, -5.553f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
                 B(BlockType.Haybale, 4.3098f, -5.608f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
                 B(BlockType.Haybale, 3.85f,   -5.654f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.029f,  -4.876f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 4.029f,  -4.87f,  1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
             },
             robots: new[]
             {
-                R(5.6f, -5.25f, 5.7065f, 7.009f, RobotType.Harvester), // sheltering behind the hay
+                R(5.7f, -5.36f, 5.7065f, 7.009f, RobotType.Harvester), // sheltering behind the hay
             });
 
         // ── W1_L02  Stone Wall ────────────────────────────────────────────────
