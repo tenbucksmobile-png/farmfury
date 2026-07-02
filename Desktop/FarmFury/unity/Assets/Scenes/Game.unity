@@ -257,7 +257,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuController
   _landingSprite: {fileID: -7436237830664669438, guid: 97757046d8bee274ebe2f3f843104b7f, type: 3}
-  _playButtonSprite: {fileID: 21300000, guid: cefe14c7a65e3234fb8772ffb444b1c8, type: 3}
+  _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
+  _settingsButtonSprite: {fileID: 21300000, guid: 70471a128358f6a4ca9554a97b76abfa, type: 3}
 --- !u!4 &80042615
 Transform:
   m_ObjectHideFlags: 0
@@ -265,57 +266,6 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 80042613}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &141103131
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 141103133}
-  - component: {fileID: 141103132}
-  m_Layer: 0
-  m_Name: WorldMap
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &141103132
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 141103131}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d50ab5d1bd21cf4eb507ca4147e7063, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WorldMapController
-  _backgroundSprite: {fileID: 21300000, guid: 5999b5e21e8d097499fa3d90d51b5c89, type: 3}
-  _lockedSprite: {fileID: 21300000, guid: dcab2c7735dab8341b7c3d64cfabc1b1, type: 3}
-  _unlockedSprite: {fileID: 21300000, guid: e74618a4c6b0cdb42a34e98ca605f390, type: 3}
-  _star1Sprite: {fileID: 21300000, guid: ee0d676dd37f9374ab254bace7903c31, type: 3}
-  _star2Sprite: {fileID: 0}
-  _star3Sprite: {fileID: 21300000, guid: 2eed94ae6a65d9745816aeb7dc75362d, type: 3}
-  _playerPositionSprite: {fileID: 21300000, guid: be146f42572afb9498e79d75727957e8, type: 3}
---- !u!4 &141103133
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 141103131}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -2515,6 +2465,73 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1901905599
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1901905601}
+  - component: {fileID: 1901905600}
+  m_Layer: 0
+  m_Name: WorldMap
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1901905600
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1901905599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d50ab5d1bd21cf4eb507ca4147e7063, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldMapController
+  _backgroundSprite: {fileID: 21300000, guid: 5999b5e21e8d097499fa3d90d51b5c89, type: 3}
+  _lockedSprite: {fileID: 21300000, guid: dcab2c7735dab8341b7c3d64cfabc1b1, type: 3}
+  _unlockedSprite: {fileID: 21300000, guid: e74618a4c6b0cdb42a34e98ca605f390, type: 3}
+  _star1Sprite: {fileID: 21300000, guid: ee0d676dd37f9374ab254bace7903c31, type: 3}
+  _star2Sprite: {fileID: 0}
+  _star3Sprite: {fileID: 21300000, guid: 2eed94ae6a65d9745816aeb7dc75362d, type: 3}
+  _playerPositionSprite: {fileID: 21300000, guid: be146f42572afb9498e79d75727957e8, type: 3}
+  _nextLevelButtonSprite: {fileID: 21300000, guid: aab28c6f5485e6c4f9c53f5933a21aef, type: 3}
+  _homeButtonSprite: {fileID: 21300000, guid: d4ca48065cb59984b89e8382405d5040, type: 3}
+  _matchUpBackgroundSprite: {fileID: 21300000, guid: 7aee4aa5a5fbbd448b008893066ddbb4, type: 3}
+  _vsSprite: {fileID: 21300000, guid: 7c6e294ad0a71c6499f50860b027c32d, type: 3}
+  _animalCardSprites:
+  - {fileID: 21300000, guid: 591b1591284cd334e9002e6c3105f9e3, type: 3}
+  - {fileID: 21300000, guid: 77ff4fa7a2fc9d04489f3c550139f738, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  _robotCardSprites:
+  - {fileID: 0}
+  - {fileID: 21300000, guid: cc5b9462ee132f847b9343a5e59a5470, type: 3}
+--- !u!4 &1901905601
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1901905599}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1964560753
 GameObject:
   m_ObjectHideFlags: 0
@@ -2846,4 +2863,4 @@ SceneRoots:
   - {fileID: 1569112925}
   - {fileID: 1874293237}
   - {fileID: 17476937}
-  - {fileID: 141103133}
+  - {fileID: 1901905601}
