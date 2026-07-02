@@ -26,6 +26,9 @@ public abstract class AnimalBase : MonoBehaviour
     public bool IsDestroyed { get; protected set; }
 
     public event Action<AnimalBase> OnAnimalDestroyed;
+    // Fires on the first REAL collision (not CluckAnimal's pass-through punches, which
+    // return before calling base.OnCollisionEnter2D) — used to stop/fade the falling SFX.
+    public event Action<AnimalBase> OnAnimalImpact;
 
     protected Rigidbody2D      _rb;
     protected CircleCollider2D _col;
@@ -101,7 +104,10 @@ public abstract class AnimalBase : MonoBehaviour
     public void Launch(Vector2 velocity)
     {
         _rb.bodyType       = RigidbodyType2D.Dynamic;
-        _rb.gravityScale   = 0.4f; // floaty arc — slower, more visible trajectory
+        // 2026-07-14: dropped from 0.4 to 0.18 (~55% weaker fall) per request to slow the
+        // flight considerably and loop higher — paired with CatapultLauncher's higher
+        // angle/lower speed and DrawTrajectory()'s matching grav constant.
+        _rb.gravityScale   = 0.18f;
         _rb.linearVelocity = velocity;
         IsLaunched         = true;
         IsInFlight         = true;
@@ -115,6 +121,7 @@ public abstract class AnimalBase : MonoBehaviour
         IsInFlight = false;
         if (_sprImpact != null) _sr.sprite = _sprImpact;
         _sr.enabled = false;   // hide immediately — no dead bird lying on the ground
+        OnAnimalImpact?.Invoke(this);
         if (!_contactStarted)
         {
             _contactStarted = true;

@@ -27,6 +27,8 @@ public static class SceneSetup
         EnsureHUD();            // HUDController GO (builds Canvas at runtime)
         EnsureLevelSelect();    // LevelSelectController GO (Canvas sortingOrder 300)
         EnsureMainMenu();       // MainMenuController GO (Canvas sortingOrder 400)
+        EnsureWorldMap();       // WorldMapController GO (Sunrise Meadows level-map, replaces LevelSelectController for PLAY)
+        EnsureAudioManager();   // AudioManager GO wired with music/cannon/falling clips
         WireGameManager();      // _levels array
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
         WireLauncher();         // CatapultLauncher + LevelLoader ref + counterweight sprite
@@ -322,6 +324,140 @@ public static class SceneSetup
         {
             Debug.LogWarning("[FarmFury] LandingPage.png not found at Assets/Sprites/UI/LandingPage.png.");
         }
+
+        // Wire PLAY button sprite (square icon, replaces the earlier procedural rect + text)
+        const string playPath = "Assets/Sprites/UI/Play.png";
+        if (AssetDatabase.LoadAssetAtPath<Texture2D>(playPath) != null)
+        {
+            var importer = AssetImporter.GetAtPath(playPath) as TextureImporter;
+            if (importer != null)
+            {
+                bool changed = false;
+                if (importer.textureType != TextureImporterType.Sprite)
+                { importer.textureType = TextureImporterType.Sprite; changed = true; }
+                if (importer.spritePixelsPerUnit != 100)
+                { importer.spritePixelsPerUnit = 100; changed = true; }
+                if (changed) importer.SaveAndReimport();
+            }
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(playPath);
+            var mc = go.GetComponent<MainMenuController>();
+            var so = new SerializedObject(mc);
+            so.FindProperty("_playButtonSprite").objectReferenceValue = sprite;
+            so.ApplyModifiedProperties();
+            Debug.Log("[FarmFury] MainMenu: play button sprite wired.");
+        }
+        else
+        {
+            Debug.LogWarning("[FarmFury] Play.png not found at Assets/Sprites/UI/Play.png.");
+        }
+    }
+
+    // ── WorldMapController (Sunrise Meadows) ──────────────────────────────────
+    // Art lives at Assets/Sprites/UI/LevelCards/World1/ — already imported (Single mode,
+    // PPU=100) by SpriteAutoImporter's existing "Sprites/UI/" rule, so no reimport step needed
+    // here, just AssetDatabase lookups + SerializedObject wiring (same pattern as
+    // EnsureMainMenu above). Also wires LevelPreviewCard's animal-card art on the same GO,
+    // reusing CardKeywords/Assets/Sprites/UI/Cards/ — the exact convention EnsureHUD already
+    // uses for HUDController._cardSprites.
+    static void EnsureWorldMap()
+    {
+        const string artFolder = "Assets/Sprites/UI/LevelCards/World1";
+
+        var go = GameObject.Find("WorldMap");
+        if (go == null)
+        {
+            go = new GameObject("WorldMap");
+            Debug.Log("[FarmFury] Created 'WorldMap' GameObject.");
+        }
+        if (go.GetComponent<WorldMapController>() == null)
+            go.AddComponent<WorldMapController>();
+
+        var mapSo = new SerializedObject(go.GetComponent<WorldMapController>());
+        WireWorldMapSprite(mapSo, "_backgroundSprite",     $"{artFolder}/SunriseMeadows.png");
+        WireWorldMapSprite(mapSo, "_lockedSprite",         $"{artFolder}/LevelMarker_Locked.png");
+        WireWorldMapSprite(mapSo, "_unlockedSprite",       $"{artFolder}/LevelMarker_Unlocked.png");
+        WireWorldMapSprite(mapSo, "_star1Sprite",          $"{artFolder}/LevelMarker_1star.png");
+        WireWorldMapSprite(mapSo, "_star3Sprite",          $"{artFolder}/LevelMarker_3stars.png");
+        WireWorldMapSprite(mapSo, "_playerPositionSprite", $"{artFolder}/PlayerPosition.png");
+        // _star2Sprite intentionally left unwired — no LevelMarker_2stars.png exists yet;
+        // LevelMarker.Refresh() falls back to the 3-star sprite until one is added.
+        mapSo.ApplyModifiedProperties();
+
+        // Wire LevelPreviewCard's animal-card art (same 8-slot array as HUDController._cardSprites)
+        var previewCard = go.GetComponentInChildren<LevelPreviewCard>(true);
+        if (previewCard != null)
+        {
+            const string cardsFolder = "Assets/Sprites/UI/Cards";
+            var cardSo  = new SerializedObject(previewCard);
+            var arr     = cardSo.FindProperty("_animalCardSprites");
+            arr.arraySize = CardKeywords.Length;
+            var guids   = AssetDatabase.FindAssets("t:Sprite", new[] { cardsFolder });
+            int wired = 0;
+            for (int i = 0; i < CardKeywords.Length; i++)
+            {
+                string kw = CardKeywords[i].ToLower();
+                foreach (var g in guids)
+                {
+                    string path = AssetDatabase.GUIDToAssetPath(g);
+                    if (!path.ToLower().Contains(kw)) continue;
+                    var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                    if (spr == null) continue;
+                    arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
+                    wired++;
+                    break;
+                }
+            }
+            cardSo.ApplyModifiedProperties();
+            Debug.Log($"[FarmFury] WorldMap: wired {wired}/8 animal card sprites into LevelPreviewCard.");
+        }
+    }
+
+    static void WireWorldMapSprite(SerializedObject so, string fieldName, string path)
+    {
+        var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (spr == null)
+        {
+            Debug.LogWarning($"[FarmFury] WorldMap: sprite not found at {path}.");
+            return;
+        }
+        so.FindProperty(fieldName).objectReferenceValue = spr;
+        Debug.Log($"[FarmFury] WorldMap: wired {fieldName} <- {path}");
+    }
+
+    // ── AudioManager ──────────────────────────────────────────────────────────
+    // Dedicated scene GameObject (not runtime-AddComponent'd like before) so external
+    // clips can be serialized into Game.unity and survive into real builds — AssetDatabase
+    // only runs here at edit-time to capture the references. AudioManager's own
+    // [DefaultExecutionOrder(-90)] guarantees this instance's Awake() wins the singleton
+    // race against CatapultLauncher's fallback AddComponent (see CatapultLauncher.Awake()).
+    static void EnsureAudioManager()
+    {
+        var go = GameObject.Find("AudioManager");
+        if (go == null)
+        {
+            go = new GameObject("AudioManager");
+            Debug.Log("[FarmFury] Created 'AudioManager' GameObject.");
+        }
+        if (go.GetComponent<AudioManager>() == null)
+            go.AddComponent<AudioManager>();
+
+        WireAudioClip(go, "_musicClip",      "Assets/Audio/SunriseMeadows_Background.mp3");
+        WireAudioClip(go, "_cannonShotClip", "Assets/Audio/CannonShot.mp3");
+        WireAudioClip(go, "_fallingClip",    "Assets/Audio/Cluck_falling.mp3");
+    }
+
+    static void WireAudioClip(GameObject go, string fieldName, string path)
+    {
+        var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+        if (clip == null)
+        {
+            Debug.LogWarning($"[FarmFury] Audio clip not found at {path}.");
+            return;
+        }
+        var so = new SerializedObject(go.GetComponent<AudioManager>());
+        so.FindProperty(fieldName).objectReferenceValue = clip;
+        so.ApplyModifiedProperties();
+        Debug.Log($"[FarmFury] AudioManager: wired {fieldName} <- {path}");
     }
 
     // ── LevelSelectController + world card sprite wiring ─────────────────────────

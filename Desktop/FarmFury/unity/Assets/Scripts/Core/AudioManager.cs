@@ -1,14 +1,32 @@
+using System.Collections;
 using UnityEngine;
 
+// [DefaultExecutionOrder(-90)] guarantees this Awake() runs (and claims Instance) before
+// CatapultLauncher's fallback `if (AudioManager.Instance == null) AddComponent<AudioManager>()`
+// — without it, the runtime-added fallback (with null external clips) could win the singleton
+// race depending on scene object order, silently dropping music/cannon-shot/falling audio.
+[DefaultExecutionOrder(-90)]
 public class AudioManager : MonoBehaviour
 {
     public enum Sound { Launch, WoodHit, StoneHit, RobotDeath, Win, Fail, BlockDestroy, RobotHit }
 
     public static AudioManager Instance { get; private set; }
 
+    [Header("External Clips (wired via FarmFury -> Wire Scene References)")]
+    [SerializeField] private AudioClip _musicClip;       // SunriseMeadows_Background.mp3, loops during gameplay
+    [SerializeField] private AudioClip _cannonShotClip;  // CannonShot.mp3, replaces the procedural Launch sound
+    [SerializeField] private AudioClip _fallingClip;     // Cluck_falling.mp3, loops while Cluck is airborne
+
     private AudioSource _src;
+    private AudioSource _musicSrc;
+    private AudioSource _fallingSrc;
     private AudioClip[] _clips;
     private float[]     _lastPlayTime;
+    private Coroutine   _fallingFadeRoutine;
+
+    private const float MusicVolume         = 0.5f;
+    private const float FallingVolume        = 0.6f;
+    private const float FallingFadeDuration  = 0.35f;
 
     private const int SR = 44100;
 
@@ -27,6 +45,8 @@ public class AudioManager : MonoBehaviour
         MusicEnabled = value;
         PlayerPrefs.SetInt("ff_music_enabled", value ? 1 : 0);
         PlayerPrefs.Save();
+        if (Instance != null && Instance._musicSrc != null)
+            Instance._musicSrc.mute = !value;
     }
 
     void Awake()
@@ -40,9 +60,22 @@ public class AudioManager : MonoBehaviour
         _src             = gameObject.AddComponent<AudioSource>();
         _src.playOnAwake = false;
 
+        _musicSrc             = gameObject.AddComponent<AudioSource>();
+        _musicSrc.playOnAwake = false;
+        _musicSrc.loop        = true;
+        _musicSrc.volume      = MusicVolume;
+        _musicSrc.clip        = _musicClip;
+        _musicSrc.mute        = !MusicEnabled;
+
+        _fallingSrc             = gameObject.AddComponent<AudioSource>();
+        _fallingSrc.playOnAwake = false;
+        _fallingSrc.loop        = true;
+        _fallingSrc.volume      = FallingVolume;
+        _fallingSrc.clip        = _fallingClip;
+
         _clips = new AudioClip[]
         {
-            BuildLaunch(),
+            _cannonShotClip != null ? _cannonShotClip : BuildLaunch(),
             BuildWoodHit(),
             BuildStoneHit(),
             BuildRobotDeath(),
@@ -71,6 +104,12 @@ public class AudioManager : MonoBehaviour
     {
         if (state == GameState.LevelComplete) Play(Sound.Win);
         if (state == GameState.LevelFailed)   Play(Sound.Fail);
+
+        // Starts once on the first Playing transition and simply keeps looping across
+        // levels (isPlaying guard below means later transitions back to Playing don't
+        // restart it) — "continuously playing while the user is playing the game".
+        if (state == GameState.Playing && _musicSrc != null && _musicSrc.clip != null && !_musicSrc.isPlaying)
+            _musicSrc.Play();
     }
 
     // cooldown: ignore the call if this sound played within the last N seconds
@@ -81,6 +120,41 @@ public class AudioManager : MonoBehaviour
         if (cooldown > 0f && Time.time - Instance._lastPlayTime[idx] < cooldown) return;
         Instance._lastPlayTime[idx] = Time.time;
         Instance._src.PlayOneShot(Instance._clips[idx], 0.8f);
+    }
+
+    // ── Falling sound (Cluck airborne) ───────────────────────────────────────
+    // Loops from the moment Cluck is fired; CatapultLauncher stops it (with a fade) the
+    // instant AnimalBase.OnAnimalImpact fires — i.e. on the real hit, not on pass-through
+    // punches (CluckAnimal's pass-through branch never calls base.OnCollisionEnter2D).
+
+    public void PlayFalling()
+    {
+        if (_fallingSrc == null || _fallingSrc.clip == null || !SfxEnabled) return;
+        if (_fallingFadeRoutine != null) { StopCoroutine(_fallingFadeRoutine); _fallingFadeRoutine = null; }
+        _fallingSrc.volume = FallingVolume;
+        _fallingSrc.Play();
+    }
+
+    public void StopFallingFade()
+    {
+        if (_fallingSrc == null || !_fallingSrc.isPlaying) return;
+        if (_fallingFadeRoutine != null) StopCoroutine(_fallingFadeRoutine);
+        _fallingFadeRoutine = StartCoroutine(FadeOutFalling());
+    }
+
+    IEnumerator FadeOutFalling()
+    {
+        float startVol = _fallingSrc.volume;
+        float t = 0f;
+        while (t < FallingFadeDuration)
+        {
+            t += Time.deltaTime;
+            _fallingSrc.volume = Mathf.Lerp(startVol, 0f, t / FallingFadeDuration);
+            yield return null;
+        }
+        _fallingSrc.Stop();
+        _fallingSrc.volume = FallingVolume; // reset for next shot
+        _fallingFadeRoutine = null;
     }
 
     // ── Clip builders ─────────────────────────────────────────────────────────

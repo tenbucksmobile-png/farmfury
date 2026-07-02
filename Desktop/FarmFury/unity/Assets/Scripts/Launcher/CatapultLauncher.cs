@@ -48,12 +48,20 @@ public class CatapultLauncher : MonoBehaviour
     private const float RecoilReturnDuration = 0.4f;
     private const float CannonResetDelay     = 1.80f;  // total time from fire until "ready for next bird"
 
-    // User-verified 2026-07-11, replacing the original (2.2676, 2.5454): that value was
-    // calibrated against Cluck_InFlight's pre-fix appearance (a 53x8px sliver fragment from
-    // the Multiple-sprite-mode bug — see CLAUDE.md Audit Findings), so it rendered far too
-    // large once the sprite import was corrected to show the actual whole character art.
-    // Applies to both the loaded (PrepareNextBird) and in-flight (Fire) bird instances.
-    private static readonly Vector3 BirdScale = new Vector3(0.274099f, 0.251007f, 1f);
+    // Recalibrated 2026-07-13: the previous (0.274099, 0.251007) was tuned before the
+    // Assets/Sprites/Characters/Cluck_Chicken -> Cluck folder rename (round 9), so it was
+    // very likely eyeballed against the still-unwired "yellow dot" fallback circle, not the
+    // real Cluck_InFlight sprite — that would explain why the bird stayed invisible after
+    // this value was set. Re-derived directly from measured pixel data instead of a visual
+    // guess: Cluck_InFlight.png is a 500x500 canvas (PPU=2057) whose actual non-transparent
+    // content is a 444x301px region (measured via PIL bbox), i.e. 0.2159 x 0.1463 world
+    // units unscaled. SpriteWiring.cs's own PPU comment states the design intent as
+    // "visual diameter ≈ physics collider diameter" (collider diameter = 0.36*2 = 0.72u).
+    // Scale solved so the sprite's real content height hits that target: 0.72 / 0.1463 ≈
+    // 4.9204 (uniform — InFlight is the only pose ever shown on this GameObject, so no
+    // cross-pose aspect compromise is needed). Final on-screen size ≈ 1.06 x 0.72 units —
+    // comparable to a haybale block, clearly visible against the 9-unit-tall camera viewport.
+    private static readonly Vector3 BirdScale = new Vector3(4.9204f, 4.9204f, 1f);
 
     [Header("Trajectory")]
     [SerializeField] private int   _trajectoryDots      = 20;
@@ -90,7 +98,12 @@ public class CatapultLauncher : MonoBehaviour
         if (_camera == null) _camera = Camera.main;
         if (_levelLoader == null) _levelLoader = FindAnyObjectByType<LevelLoader>();
         if (GetComponent<CameraShake>()   == null) gameObject.AddComponent<CameraShake>();
-        if (GetComponent<AudioManager>()  == null) gameObject.AddComponent<AudioManager>();
+        // Checked against the static singleton, not GetComponent(this GO) — AudioManager now
+        // normally lives on its own dedicated scene GO (wired with external clips via
+        // SceneSetup.EnsureAudioManager()); AudioManager's [DefaultExecutionOrder(-90)]
+        // guarantees that instance claims Instance first, so this is a null-safety fallback
+        // only (e.g. a scene that hasn't run Wire Scene References yet), never a duplicate.
+        if (AudioManager.Instance == null) gameObject.AddComponent<AudioManager>();
 
         // Ensure 2D orthographic view regardless of scene camera settings
         if (_camera != null)
@@ -251,8 +264,24 @@ public class CatapultLauncher : MonoBehaviour
         if (_levelLoader == null || !_levelLoader.HasBirdsRemaining) return;
         Vector3 loadedPos = _cannonRestPos + (Vector3)CannonLoadedBirdOffset;
         _readyBird = _levelLoader.CreateNextAnimal(_levelLoader.PeekNextBird(), loadedPos);
-        if (_readyBird != null) _readyBird.transform.localScale = BirdScale;
+        if (_readyBird != null) ApplyBirdScale(_readyBird);
         _readyBird?.SetInFlightPose(); // wings-out pose reads better poking out of a cannon muzzle than the seated "loaded" pose
+    }
+
+    // Sets the visual scale AND re-derives the CircleCollider2D radius to counteract it — same
+    // pattern as LevelLoader.SpawnRobot()'s BoxCollider2D re-derivation for the robot's custom
+    // scale. Unity's CircleCollider2D radius scales with transform.localScale, so after
+    // BirdScale grew from ~0.27 to ~4.92 (fixing Cluck_InFlight's near-invisible render size —
+    // see CLAUDE.md), the hitbox grew right along with it to ~18x its designed size, extending
+    // far outside the visible sprite. That's why Cluck was destroying haybails well before any
+    // visible contact ("destroys the haybails before actually hitting anything"). Divides by
+    // BirdScale.x (uniform, x==y) to restore whichever world-space radius each character's own
+    // Awake() set (e.g. CluckAnimal: 0.36) as if scale were still 1.
+    static void ApplyBirdScale(AnimalBase animal)
+    {
+        animal.transform.localScale = BirdScale;
+        if (animal.TryGetComponent<CircleCollider2D>(out var col))
+            col.radius /= BirdScale.x;
     }
 
     void Fire()
@@ -266,10 +295,12 @@ public class CatapultLauncher : MonoBehaviour
         ScoreManager.Instance?.OnBirdFired();
 
         _activeAnimal = _levelLoader.CreateNextAnimal(birdType, _launchPoint);
-        _activeAnimal.transform.localScale = BirdScale;
+        ApplyBirdScale(_activeAnimal);
         _activeAnimal.OnAnimalDestroyed += OnAnimalLanded;
+        _activeAnimal.OnAnimalImpact    += HandleAnimalImpact;
         _activeAnimal.Launch(velocity);
         AudioManager.Play(AudioManager.Sound.Launch);
+        if (birdType == AnimalType.Cluck) AudioManager.Instance?.PlayFalling();
 
         if (_fireRoutine != null) StopCoroutine(_fireRoutine);
         _fireRoutine = StartCoroutine(CannonFireSequence());
@@ -279,6 +310,10 @@ public class CatapultLauncher : MonoBehaviour
         _cameraFollowing = false;
         _returnPending   = false;
     }
+
+    // Fires on the real hit (ground/robot/non-passthrough block) — not on Cluck's hay
+    // pass-through punches, which skip base.OnCollisionEnter2D entirely.
+    void HandleAnimalImpact(AnimalBase _) => AudioManager.Instance?.StopFallingFade();
 
     void OnAnimalLanded(AnimalBase _)
     {
@@ -312,6 +347,11 @@ public class CatapultLauncher : MonoBehaviour
         if (_fireRoutine   != null) StopCoroutine(_fireRoutine);
         if (_cannonGO != null) _cannonGO.transform.position = _cannonRestPos;
         RefreshRestPoint();
+        // Restart/Replay now reuses this same handler (GameManager.RestartLevel ->
+        // ForceStartLevel, no scene reload — see GameManager.cs), so a leftover mid-pan-back
+        // camera position from the previous attempt must be snapped back here explicitly;
+        // previously this only ever ran once at Start(), which a same-scene restart skips.
+        SnapCameraToRest();
         PrepareNextBird();
     }
 
@@ -470,7 +510,7 @@ public class CatapultLauncher : MonoBehaviour
         Vector2 vel = LaunchVelocity();
         if (vel.magnitude < 0.1f) { HideTrajDots(); return; }
 
-        float   grav    = Physics2D.gravity.y * 0.4f; // bird uses gravityScale=0.4
+        float   grav    = Physics2D.gravity.y * 0.18f; // bird uses gravityScale=0.18 (see AnimalBase.Launch)
         float   fa      = NextBirdFA();
         float   dt      = Time.fixedDeltaTime;
         float   visible = TrajectoryVisibleFraction();
@@ -578,15 +618,17 @@ public class CatapultLauncher : MonoBehaviour
         // Load fraction: how far the arm was pulled (0 = rest, 1 = MaxLoadAngle)
         float loadFrac = Mathf.Clamp01((_dragAngle - _armRestAngle) / MaxLoadAngle);
         if (loadFrac < 0.05f) return Vector2.zero;
-        // Recalibrated 2026-07-03: the FarmCannon moved from (-4.5,-2.5) to the user-verified
-        // (-3.0012,-5.1223), which shifts _launchPoint (cannon pos + CannonBarrelOffset) from
-        // ~(-2.35,-4.72) to ~(-1.90,-4.72) — closer to the robot, so the old 6.0-7.0 m/s range
-        // overshot it (numerically integrated: max pull landed at X≈5.75 against a robot at
-        // X=4.8). Spread reduced to 5.5-6.5 m/s (angle range unchanged, still 48°-42°, still
-        // clearly arched — ~1.0-1.1u apex above launch height): min pull lands ~X 3.1 (short of
-        // the hay pile), max pull lands ~X 4.9 (back on the robot).
-        float speed    = Mathf.Lerp(5.5f, 6.5f, loadFrac);
-        float angleDeg = Mathf.Lerp(48f, 42f, loadFrac); // both ends stay high — always visibly arched
+        // Recalibrated 2026-07-14: raised + slowed per request ("loop more", "slow down
+        // considerably") — paired with AnimalBase.Launch()'s gravityScale drop (0.4 -> 0.18,
+        // ~55% weaker fall) and DrawTrajectory()'s matching grav constant. Numerically
+        // re-integrated (same model as DrawTrajectory: grav=-20*0.18, drag fa=0.008, dt=0.02)
+        // to re-hit the same landing zone despite the much floatier flight: min pull
+        // (angle=58, speed=4.0) lands ~X 3.0 (still short of the hay pile), max pull
+        // (angle=52, speed=4.9) lands ~X 5.7 (back on the robot at X=5.6). Flight time grew
+        // from ~1.4s to ~2.3-2.5s and apex height from ~1.0-1.1u to ~1.6-2.0u above launch —
+        // a noticeably bigger, slower, loopier arc.
+        float speed    = Mathf.Lerp(4.0f, 4.9f, loadFrac);
+        float angleDeg = Mathf.Lerp(58f, 52f, loadFrac); // both ends stay high — always visibly arched
         float rad      = angleDeg * Mathf.Deg2Rad;
         return new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)) * speed;
     }

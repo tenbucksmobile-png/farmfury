@@ -11,6 +11,7 @@ public class MainMenuController : MonoBehaviour
     public bool IsVisible => _panel != null && _panel.activeSelf;
 
     [SerializeField] private Sprite _landingSprite;
+    [SerializeField] private Sprite _playButtonSprite;
 
     private GameObject _panel;
     private Sprite     _squareSpr;
@@ -40,7 +41,10 @@ public class MainMenuController : MonoBehaviour
     void OnPlayClicked()
     {
         _panel.SetActive(false);
-        LevelSelectController.Instance?.Show();
+        // Sunrise Meadows world map replaces the grid-based LevelSelectController as PLAY's
+        // destination (2026-07-15) — LevelSelectController is left in place, unwired, for
+        // World 2+ once that content exists and doesn't have its own map screen yet.
+        WorldMapController.Instance?.Show();
     }
 
     // ── UI construction ───────────────────────────────────────────────────────
@@ -88,6 +92,8 @@ public class MainMenuController : MonoBehaviour
         vigImg.color  = new Color(0f, 0f, 0f, 0.45f);
 
         // ── PLAY button ───────────────────────────────────────────────────────
+        // Square icon button (Play.png — orange rounded square, white play glyph, glow
+        // baked into the art) replaces the earlier procedural orange-rect + "▶ PLAY" text.
         var playGO  = new GameObject("PlayBtn");
         playGO.transform.SetParent(root, false);
         var playRT  = playGO.AddComponent<RectTransform>();
@@ -95,24 +101,11 @@ public class MainMenuController : MonoBehaviour
         playRT.anchorMax        = new Vector2(0.5f, 0.5f);
         playRT.pivot            = new Vector2(0.5f, 0.5f);
         playRT.anchoredPosition = new Vector2(0f, -360f);  // ~17% from bottom
-        playRT.sizeDelta        = new Vector2(360f, 100f);
+        playRT.sizeDelta        = new Vector2(220f, 220f); // square, matches Play.png's aspect
         var playImg = playGO.AddComponent<Image>();
-        playImg.sprite = _squareSpr;
-        playImg.color  = new Color(1.00f, 0.55f, 0.05f); // orange matches Farm Fury logo
-
-        var lblGO = new GameObject("Label");
-        lblGO.transform.SetParent(playGO.transform, false);
-        var lRT = lblGO.AddComponent<RectTransform>();
-        lRT.anchorMin = Vector2.zero;
-        lRT.anchorMax = Vector2.one;
-        lRT.offsetMin = lRT.offsetMax = Vector2.zero;
-        var lTMP = lblGO.AddComponent<TextMeshProUGUI>();
-        lTMP.text               = "▶  PLAY";
-        lTMP.fontSize           = 54f;
-        lTMP.color              = Color.white;
-        lTMP.alignment          = TextAlignmentOptions.Center;
-        lTMP.enableWordWrapping = false;
-        lTMP.fontStyle          = FontStyles.Bold;
+        playImg.sprite = _playButtonSprite != null ? _playButtonSprite : _squareSpr;
+        playImg.color  = _playButtonSprite != null ? Color.white : new Color(1.00f, 0.55f, 0.05f);
+        playImg.preserveAspect = true;
 
         var playBtn = playGO.AddComponent<Button>();
         playBtn.targetGraphic = playImg;

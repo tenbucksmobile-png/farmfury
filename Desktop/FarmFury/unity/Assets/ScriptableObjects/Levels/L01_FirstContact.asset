@@ -39,12 +39,12 @@ MonoBehaviour:
     healthOverride: 10
     massOverride: 3
   - type: 2
-    position: {x: 4.029, y: -4.876}
+    position: {x: 4.029, y: -4.87}
     size: {x: 1.0, y: 0.9}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
   robots:
   - robotType: 1
-    position: {x: 5.6, y: -5.25}
+    position: {x: 5.7, y: -5.36}
     scale: {x: 5.7065, y: 7.009}

@@ -97,7 +97,12 @@ public class GameManager : MonoBehaviour
         OnLevelStarted?.Invoke(data);
     }
 
-    public void RestartLevel() => StartLevel(CurrentLevelIndex);
+    // Uses ForceStartLevel (no scene reload) rather than StartLevel — restarting the exact
+    // same level doesn't need a full scene teardown/rebuild, and this reuses the same
+    // in-place reset path (CatapultLauncher.OnLevelStarted, LevelLoader.ClearLevel +
+    // respawn, ScoreManager.InitLevel) that already runs on every level load, rather than
+    // the SceneManager.LoadScene path, which exists for switching to a *different* level.
+    public void RestartLevel() => ForceStartLevel(CurrentLevelIndex);
 
     // Starts a level without reloading the scene — for direct play in Game.unity
     public void ForceStartLevel(int index)
