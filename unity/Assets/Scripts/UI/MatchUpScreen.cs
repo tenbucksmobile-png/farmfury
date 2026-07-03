@@ -38,7 +38,13 @@ public class MatchUpScreen : MonoBehaviour
     // directly in the saved scene) and threads them through Init() below.
     private Sprite[] _animalCardSprites;
     private Sprite[] _robotCardSprites;
-    private Sprite   _backgroundSprite; // MatchUp_Background.png
+    // Plain sky/ruins/hills backdrop (Background_SkyV1.png) — deliberately NOT the flat
+    // MatchUp_New.png mockup, which has its own frames/characters baked in. This screen is
+    // composed from modular pieces (this backdrop + each card's own framed art from
+    // Sprites/UI/Cards/ + the VS graphic) laid out to resemble the mockup, not built by pasting
+    // sprites on top of the mockup image itself — see WorldMapController.cs's
+    // _matchUpBackgroundSprite comment for the bug this replaced (2026-07-18).
+    private Sprite   _backgroundSprite;
     private Sprite   _vsSprite;          // VS.png
 
     private GameObject      _panel;
@@ -151,9 +157,12 @@ public class MatchUpScreen : MonoBehaviour
     }
 
     // ── UI construction ────────────────────────────────────────────────────────
-    // Coordinates measured from MatchUp_New.png (1280x720), converted to this canvas's
-    // 1920x1080 reference resolution via the same uniform 1.5x scale WorldMapController uses
-    // (identical 16:9 aspect, non-aspect-preserving full-bleed background).
+    // Card/VS layout coordinates were originally measured against MatchUp_New.png (the mockup)
+    // on the assumption the mockup's own baked-in frame positions were the target to line up
+    // with. That was the wrong target — see the _backgroundSprite comment above — but the
+    // resulting symmetric two-card-plus-VS layout is independent of the (now plain) background,
+    // so the numbers below are kept as a reasonable centred composition, not because they still
+    // align to anything baked into an image.
 
     void BuildUI(Sprite squareSpr)
     {

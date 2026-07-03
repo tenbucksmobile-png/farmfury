@@ -390,7 +390,13 @@ public static class SceneSetup
         WireSprite(mapSo, "_playerPositionSprite",  $"{artFolder}/PlayerPosition.png");
         WireSprite(mapSo, "_nextLevelButtonSprite", $"{iconFolder}/Btn_nextlevel.png");
         WireSprite(mapSo, "_homeButtonSprite",      $"{iconFolder}/Btn_home.png");
-        WireSprite(mapSo, "_matchUpBackgroundSprite", "Assets/Sprites/UI/MatchUp/MatchUp_Background.png");
+        // NOT MatchUp_Background.png — that's the flat design mockup (frames/chicken/robot/VS
+        // baked into one image); wiring it as a live background produced a doubled, misaligned
+        // frame once the real card sprites were drawn on top (see WorldMapController.cs comment
+        // above _matchUpBackgroundSprite). Background_SkyV1.png is the same painted sky/ruins/
+        // hills art with nothing else baked in — already imported and used as the main gameplay
+        // backdrop, so this also keeps the two screens visually consistent.
+        WireSprite(mapSo, "_matchUpBackgroundSprite", "Assets/Sprites/Environment/Skies/Background_SkyV1.png");
         WireSprite(mapSo, "_vsSprite",              $"{cardsFolder}/VS.png");
         // _star2Sprite intentionally left unwired — no LevelMarker_2stars.png exists yet;
         // LevelMarker.Refresh() falls back to the 3-star sprite until one is added.
@@ -713,6 +719,10 @@ public static class SceneSetup
             ("_sprNormal",     "Haybail.png"),
             ("_sprHorizontal", "Haybail.png"),
             ("_sprVertical",   "Haybail.png"),
+            // Both PNGs are the same 500x500 canvas, so WireBlockPrefab's per-sprite
+            // "PPU = texture width" auto-derivation gives both an identical native 1x1 size —
+            // the hit-flash swap in BlockBase.PlayDamageFlash() can't visibly change size/shape.
+            ("_sprDamaged",    "Haybail_Damaged.png"),
         });
     }
 
@@ -818,6 +828,7 @@ public static class SceneSetup
     {
         const string prefabPath = "Assets/Prefabs/Enemies/HarvesterRobot.prefab";
         const string spritePath = "Assets/Sprites/Enemies/Robot/HarvesterRobot.png";
+        const string damagedSpritePath = "Assets/Sprites/Enemies/Robot/HarvesterRobot_Damaged.png";
 
         var imp = AssetImporter.GetAtPath(spritePath) as TextureImporter;
         if (imp == null)
@@ -834,6 +845,28 @@ public static class SceneSetup
 
         var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
         if (sprite == null) { Debug.LogWarning("[FarmFury] HarvesterRobot.png failed to load as Sprite."); return; }
+
+        // HarvesterRobot_Damaged.png is a 500x500 canvas, unlike the normal art's 612x408 —
+        // PPU=1746 would render it a different apparent size when PlayDamageFlash() swaps sprites
+        // on the same Transform. Computed PPU so the damaged canvas's height (500px) renders at
+        // the same world height as the normal sprite's height (408px / 1746 = 0.2337u):
+        // 500 / 0.2337 ≈ 2140. Only needs to be close for a 0.15s flash, not pixel-exact.
+        var dImp = AssetImporter.GetAtPath(damagedSpritePath) as TextureImporter;
+        Sprite damagedSprite = null;
+        if (dImp == null)
+        {
+            Debug.LogWarning($"[FarmFury] HarvesterRobot_Damaged.png not found at {damagedSpritePath} — hit-flash will fall back to the plain white tint.");
+        }
+        else
+        {
+            bool dDirty = false;
+            if (dImp.textureType         != TextureImporterType.Sprite)  { dImp.textureType         = TextureImporterType.Sprite;  dDirty = true; }
+            if (dImp.spritePixelsPerUnit != 2140)                         { dImp.spritePixelsPerUnit = 2140;                        dDirty = true; }
+            if (!dImp.alphaIsTransparency)                                { dImp.alphaIsTransparency = true;                        dDirty = true; }
+            if (dImp.spriteImportMode    != SpriteImportMode.Single)     { dImp.spriteImportMode    = SpriteImportMode.Single;     dDirty = true; }
+            if (dDirty) dImp.SaveAndReimport();
+            damagedSprite = AssetDatabase.LoadAssetAtPath<Sprite>(damagedSpritePath);
+        }
 
         bool exists = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null;
         GameObject go;
@@ -858,6 +891,8 @@ public static class SceneSetup
         {
             var so = new SerializedObject(robot);
             so.FindProperty("_robotSprite").objectReferenceValue = sprite;
+            if (damagedSprite != null)
+                so.FindProperty("_robotDamagedSprite").objectReferenceValue = damagedSprite;
             // _maxHealth raised from the class default (35) to 40 (fixed 2026-07-01) — with the
             // recalibrated trajectory (LaunchVelocity(), max ~7m/s), a Cluck shot that punches
             // through the hay pile at 70% speed deals ~24-28 impulse damage. At 35 HP the robot

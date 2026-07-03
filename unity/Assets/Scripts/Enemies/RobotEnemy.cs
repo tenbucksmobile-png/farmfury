@@ -15,6 +15,11 @@ public class RobotEnemy : MonoBehaviour
     // Wired by SceneSetup from Assets/Sprites/Enemies/Robot/Robot_Idle.png
     [SerializeField] private Sprite _robotSprite;
 
+    // Hit-reaction art — wired only on HarvesterRobot.prefab from HarvesterRobot_Damaged.png
+    // (no dedicated damaged art exists for the plain Robot.prefab yet, so this stays null there
+    // and FlashDamage() falls back to its old plain white tint below).
+    [SerializeField] private Sprite _robotDamagedSprite;
+
     // Steel blue-grey fallback when no art sprite is wired
     private static readonly Color BaseColor = new Color(0.38f, 0.44f, 0.54f);
 
@@ -43,8 +48,19 @@ public class RobotEnemy : MonoBehaviour
         if (col == null) col = gameObject.AddComponent<BoxCollider2D>();
         col.size = new Vector2(1f, 1f); // local; world = 0.6 × 0.9 u after scale
 
-        // Prefab mass defaults to 1; override to match design spec
+        // Prefab mass defaults to 1; override to match design spec (used only by the
+        // effective-mass damage formula in OnCollisionEnter2D below — see bodyType note next).
         _rb.mass = 20f;
+
+        // Prefab Rigidbody2D ships Dynamic with no constraints (Unity default) and nothing in
+        // this class ever set it otherwise, so every robot free-fell under gravity from its
+        // LevelData spawn Y to wherever its tiny 0.6x0.9 collider first found support — reported
+        // 2026-07-18 as "begins in the right position then falls back down". Static matches
+        // BlockBase.Initialise()'s existing convention for every block type (immovable
+        // structure piece you destroy, not push around) and OnCollisionEnter2D's effMass
+        // formula already special-cases a Static collision partner, so damage-on-hit is
+        // unaffected — only the free-fall stops.
+        _rb.bodyType = RigidbodyType2D.Static;
 
         if (!hasArt) AddEyes();
     }
@@ -103,9 +119,25 @@ public class RobotEnemy : MonoBehaviour
     IEnumerator FlashDamage()
     {
         if (_sr == null) yield break;
-        _sr.color = Color.white;
-        yield return new WaitForSeconds(0.07f);
-        if (!IsDestroyed && _sr != null) _sr.color = _restColor;
+
+        if (_robotDamagedSprite != null)
+        {
+            // Dedicated hit-reaction pose (still the whole robot, just with an impact burst/red
+            // eye baked into the art) already reads as "just got hit" on its own — swap the
+            // whole sprite instead of the old plain white tint, then swap back once the flash
+            // window ends (unless the robot died from this hit, in which case Die()'s squish/
+            // destroy sequence takes over and there's nothing to revert on a destroyed object).
+            Sprite normalSprite = _sr.sprite;
+            _sr.sprite = _robotDamagedSprite;
+            yield return new WaitForSeconds(0.15f);
+            if (!IsDestroyed && _sr != null) _sr.sprite = normalSprite;
+        }
+        else
+        {
+            _sr.color = Color.white;
+            yield return new WaitForSeconds(0.07f);
+            if (!IsDestroyed && _sr != null) _sr.color = _restColor;
+        }
     }
 
     void Die()

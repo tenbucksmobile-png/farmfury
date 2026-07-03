@@ -114,18 +114,20 @@ public class MainMenuController : MonoBehaviour
 
         // ── PLAY button — bottom-left corner, per LandingPage_New.png mockup (2026-07-16) ──
         // CORNER-anchored (not centre-anchored with a fixed offset) so it stays a fixed inset
-        // from the actual corner regardless of device aspect ratio. The first attempt used a
-        // centre-relative offset computed for one specific 16:9 mockup, which put the button
-        // outside the safe area (clipped by the phone bezel/notch) on the real preview — see
-        // the user's screenshot showing it straddling the yellow safe-area border. 160px inset
-        // on both axes keeps a comfortable margin even with a real device's rounded corners.
+        // from the actual corner regardless of device aspect ratio. The first attempt's 160u
+        // inset on both axes was still measured (2026-07-17, from a user phone-frame screenshot,
+        // pixel-measured against the button's own 150u sizeDelta to calibrate px→unit scale)
+        // to leave the button ~32u left of the yellow safe-area guide — i.e. straddling/outside
+        // it — while the vertical inset was already adequate. Widened the X inset to clear the
+        // guide with margin; Y bumped slightly too as a safety margin against mockup measurement
+        // noise, not because it measured as a real problem.
         var playGO  = new GameObject("PlayBtn");
         playGO.transform.SetParent(root, false);
         var playRT  = playGO.AddComponent<RectTransform>();
         playRT.anchorMin        = new Vector2(0f, 0f);
         playRT.anchorMax        = new Vector2(0f, 0f);
         playRT.pivot            = new Vector2(0.5f, 0.5f);
-        playRT.anchoredPosition = new Vector2(160f, 160f);
+        playRT.anchoredPosition = new Vector2(220f, 170f);
         playRT.sizeDelta        = new Vector2(150f, 150f);
         var playImg = playGO.AddComponent<Image>();
         playImg.sprite = _playButtonSprite != null ? _playButtonSprite : _squareSpr;
@@ -148,7 +150,7 @@ public class MainMenuController : MonoBehaviour
         settingsRT.anchorMin        = new Vector2(1f, 0f);
         settingsRT.anchorMax        = new Vector2(1f, 0f);
         settingsRT.pivot            = new Vector2(0.5f, 0.5f);
-        settingsRT.anchoredPosition = new Vector2(-160f, 160f);
+        settingsRT.anchoredPosition = new Vector2(-220f, 170f);
         settingsRT.sizeDelta        = new Vector2(150f, 150f);
         var settingsImg = settingsGO.AddComponent<Image>();
         settingsImg.sprite = _settingsButtonSprite != null ? _settingsButtonSprite : _squareSpr;

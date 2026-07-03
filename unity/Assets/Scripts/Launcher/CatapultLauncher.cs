@@ -25,6 +25,12 @@ public class CatapultLauncher : MonoBehaviour
     private const float _armRestAngle = 218f;  // drag-angle lower bound
     private const float MaxLoadAngle  = 50f;   // drag-angle range above _armRestAngle
 
+    // Deadzone radius (world units) around the pivot within which the drag angle is not
+    // updated — see HandleInput()'s "Hold" branch. ~11x the pivot-to-loaded-bird distance
+    // (~0.055u), chosen to comfortably absorb touchscreen contact-point jitter while still
+    // being well inside a normal drag gesture's travel distance.
+    private const float MinAimRadius = 0.6f;
+
     [Header("Camera")]
     [SerializeField] private float   _returnDelay          = 2.5f;   // seconds after landing before pan-back starts
     [SerializeField] private float   _cameraFollowSpeed    = 6f;     // exponential follow rate (units/s)
@@ -237,11 +243,23 @@ public class CatapultLauncher : MonoBehaviour
         {
             Vector3 world = ScreenToWorld(ptr.position.ReadValue());
             Vector3 pivot = PivotPos();
+            Vector2 toPointer = new Vector2(world.x - pivot.x, world.y - pivot.y);
 
-            float angle = Mathf.Atan2(world.y - pivot.y, world.x - pivot.x) * Mathf.Rad2Deg;
-            if (angle < 0f) angle += 360f;
+            // The loaded bird sits only ~0.055 world units from the pivot (measured 2026-07-18),
+            // so the very start of every drag is an angle computed from a near-zero-length
+            // vector — a fraction of a millimetre of finger jitter there swings the aim across
+            // most of the 50-degree pull range. That reads as "twitchy"/uncontrollable on a
+            // mobile touchscreen, where contact-point noise is larger than a mouse's. Freezing
+            // the angle until the pointer has moved MinAimRadius away from the pivot gives the
+            // drag a stable direction before it starts steering, without changing the underlying
+            // pivot/angle aiming math itself.
+            if (toPointer.magnitude >= MinAimRadius)
+            {
+                float angle = Mathf.Atan2(toPointer.y, toPointer.x) * Mathf.Rad2Deg;
+                if (angle < 0f) angle += 360f;
+                _dragAngle = Mathf.Clamp(angle, _armRestAngle, _armRestAngle + MaxLoadAngle);
+            }
 
-            _dragAngle = Mathf.Clamp(angle, _armRestAngle, _armRestAngle + MaxLoadAngle);
             _rubberBandLine.positionCount = 0;
             DrawTrajectory();
         }

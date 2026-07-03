@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -19,6 +20,11 @@ public abstract class BlockBase : MonoBehaviour
     [SerializeField] protected Sprite _sprHorizontal;  // wide flat blocks (w/h > 1.5)
     [SerializeField] protected Sprite _sprVertical;    // tall thin blocks  (h/w > 1.4)
 
+    // Optional hit-reaction art (e.g. Haybail_Damaged.png) — null on block types that don't
+    // have one wired, in which case TakeDamage() only does the existing colour-tint/crack
+    // feedback below, unchanged.
+    [SerializeField] protected Sprite _sprDamaged;
+
     [Header("Fragments")]
     [SerializeField] private GameObject[] _fragmentPrefabs;
     [SerializeField] private int          _fragmentCount = 5;
@@ -37,6 +43,10 @@ public abstract class BlockBase : MonoBehaviour
 
     private SpriteRenderer _crackSR1;   // light cracks: visible below 67% health
     private SpriteRenderer _crackSR2;   // heavy cracks: visible below 33% health
+
+    private Sprite    _normalSprite;       // the aspect-selected sprite chosen in Initialise(),
+                                            // restored after a _sprDamaged flash
+    private Coroutine _damageFlashRoutine;
 
     private static Sprite _crackSprite1;
     private static Sprite _crackSprite2;
@@ -75,6 +85,7 @@ public abstract class BlockBase : MonoBehaviour
             _sr.color  = Color.white;
             _baseColor = Color.white;
         }
+        _normalSprite = _sr.sprite; // restored after a _sprDamaged flash (see TakeDamage())
 
         float area  = width * height;
         float ratio = area / StdArea;
@@ -110,7 +121,27 @@ public abstract class BlockBase : MonoBehaviour
         Health = Mathf.Max(0f, Health - amount);
         PlayHitSound();
         OnHealthChanged();
+        PlayDamageFlash();
         if (Health <= 0f) DestroyBlock();
+    }
+
+    // Briefly swaps to _sprDamaged (e.g. Haybail_Damaged.png) on hit, then restores the normal
+    // sprite — mirrors RobotEnemy.FlashDamage()'s dedicated-art hit reaction. No-op for block
+    // types that don't have one wired (_sprDamaged stays null), leaving the existing colour-tint/
+    // crack-overlay feedback in OnHealthChanged() as the only damage feedback for those.
+    void PlayDamageFlash()
+    {
+        if (_sprDamaged == null || _sr == null) return;
+        if (_damageFlashRoutine != null) StopCoroutine(_damageFlashRoutine);
+        _damageFlashRoutine = StartCoroutine(DamageFlashRoutine());
+    }
+
+    IEnumerator DamageFlashRoutine()
+    {
+        _sr.sprite = _sprDamaged;
+        yield return new WaitForSeconds(0.15f);
+        if (!IsDestroyed && _sr != null) _sr.sprite = _normalSprite;
+        _damageFlashRoutine = null;
     }
 
     protected virtual void OnCollisionEnter2D(Collision2D col)

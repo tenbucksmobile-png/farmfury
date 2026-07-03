@@ -22,23 +22,30 @@ public class WorldMapController : MonoBehaviour
 
     public const int LevelCount = 18; // Sunrise Meadows / World 1
 
-    // LAYOUT NOTE (2026-07-16 mockup pass) — PathPositions below are measured directly from the
-    // user-supplied SunriseMeadows_New.png concept mockup (1280x720), converted to this canvas's
-    // 1920x1080 reference resolution via a uniform 1.5x scale (both share a 16:9 aspect, and the
-    // background Image stretches non-aspect-preserving to fill the canvas, so this mapping is
-    // exact regardless of the sprite's imported PPU). Pin *positions* were measured with an
-    // automated color-blob detector cross-checked against pixel-grid crops; pin *ordering* (which
-    // pin = which level number) is my best-guess left-to-right path traversal — NOT verified
-    // against a hand-traced path, since the mockup's winding trail is hard to disambiguate from a
-    // flat image alone. Flagging per the project's established "don't silently guess" convention:
-    // verify in-Editor and tell me if any level numbers should swap.
+    // LAYOUT NOTE (2026-07-19, regenerated background) — the original SunriseMeadows.png baked
+    // 18 placeholder pins + NEXT LEVEL/Home buttons directly into the image; the real code-drawn
+    // markers/buttons could never be made to align with them, producing a persistent doubled/
+    // misaligned look no amount of position-tuning fixed (see git history for several failed
+    // rounds of that). Replaced with a regenerated background (same scenery, no pins/buttons
+    // baked in) specifically so the path itself could be traced from real pixel data instead of
+    // guessed. PathPositions below come from an actual computed trace, not an eyeballed
+    // left-to-right guess: masked the tan dirt-path colour out of SunriseMeadows.png, isolated
+    // the path's connected pixel blob, built a graph over it and BFS'd from the pond/barn end to
+    // get a geodesic-ordered centerline (handles the path's S-curve correctly, unlike a naive
+    // per-column average), smoothed it, then walked 18 evenly-arc-length-spaced points along it.
+    // Pin ordering (level 1 = pond/barn end, level 18 = fortress end) follows the path's own
+    // start/end, not a guess — the barn/pond side reads as the "home base" starting area and the
+    // fortress is the clear visual endpoint/boss structure. One known rough spot: levels 7-11 sit
+    // close together at the path's tightest hairpin bend (physically ~60-90 canvas units wide
+    // there vs. each marker's own 56-unit width) — some visual overlap there is basically
+    // unavoidable given the art's actual path width at that bend, not a measurement error.
     private static readonly Vector2[] PathPositions =
     {
-        new(-366.3f, -109.2f), new(-343.4f, -176.3f), new(-343.2f,   32.3f), new(-221.3f,   66.3f),
-        new(-218.6f, -221.4f), new(-166.1f, -126.5f), new(-125.0f,  149.1f), new(-113.7f,   35.4f),
-        new( -75.3f, -248.7f), new( -19.8f,  -77.7f), new(  19.2f,   43.1f), new(  31.4f, -195.9f),
-        new(  80.9f,  -54.6f), new( 138.0f, -222.9f), new( 177.2f,   10.1f), new( 197.0f, -273.5f),
-        new( 294.9f, -117.0f), new( 448.8f, -134.6f),
+        new(-354.8f, -229.6f), new(-286.1f, -229.2f), new(-217.7f, -223.8f), new(-153.2f, -200.9f),
+        new( -84.8f, -199.8f), new( -19.1f, -180.2f), new(  34.9f, -141.8f), new(  66.7f, -121.2f),
+        new(   4.8f, -111.4f), new(  28.3f, -108.4f), new(  92.4f, -133.1f), new( 157.0f, -156.7f),
+        new( 222.2f, -178.6f), new( 288.0f, -198.5f), new( 354.4f, -198.0f), new( 418.2f, -172.6f),
+        new( 483.1f, -150.3f), new( 547.7f, -126.8f),
     };
 
     [Header("Art (wired via FarmFury -> Wire Scene References)")]
@@ -49,6 +56,12 @@ public class WorldMapController : MonoBehaviour
     [SerializeField] private Sprite _star2Sprite;           // no dedicated art yet — falls back to 3-star
     [SerializeField] private Sprite _star3Sprite;           // LevelMarker_3stars.png
     [SerializeField] private Sprite _playerPositionSprite;  // PlayerPosition.png
+    // Removed, then re-added same day (2026-07-19): briefly deleted because the OLD
+    // SunriseMeadows.png baked NEXT LEVEL/Home art directly into the background, so a second
+    // rendered sprite doubled up (see git history for that fix). The background has since been
+    // regenerated clean (no pins/buttons baked in) specifically to fix the pin duplication bug —
+    // that also removed the baked buttons, so these need to go back to being real rendered
+    // sprites again or they'd just be invisible with nothing underneath.
     [SerializeField] private Sprite _nextLevelButtonSprite; // Btn_nextlevel.png
     [SerializeField] private Sprite _homeButtonSprite;      // Btn_home.png
 
@@ -62,7 +75,16 @@ public class WorldMapController : MonoBehaviour
     // LevelPreviewCard had). Fields directly on WorldMapController persist correctly (proven by
     // every field above already working), so BuildUI() threads them into MatchUpScreen.Init()
     // as parameters instead of relying on external wiring of a nested SerializeField.
-    [SerializeField] private Sprite   _matchUpBackgroundSprite; // MatchUp_Background.png
+    // Plain sky/hills/ruins backdrop — NOT MatchUp_Background.png. That file is the flat design
+    // mockup (sky + wood frames + chicken + robot + VS baked into ONE image as a reference for
+    // what the screen should look like); using it as the runtime background and then drawing the
+    // real modular card sprites (which have their own frame baked into each card) on top of it
+    // produced two overlapping, slightly-misaligned frames — exactly the bug the user reported
+    // 2026-07-18 from a screenshot showing a second frame edge poking out behind the real card.
+    // Fixed by reusing Background_SkyV1.png (same painted sky/ruins/hills art already used as the
+    // main gameplay backdrop) — it has no characters or frames baked in, so the only frame drawn
+    // is each card's own.
+    [SerializeField] private Sprite   _matchUpBackgroundSprite; // Background_SkyV1.png
     [SerializeField] private Sprite   _vsSprite;                // VS.png
     [SerializeField] private Sprite[] _animalCardSprites = new Sprite[8]; // Sprites/UI/Cards/, AnimalType-indexed
     [SerializeField] private Sprite[] _robotCardSprites  = new Sprite[2]; // Sprites/UI/Cards/, RobotType-indexed
@@ -253,7 +275,9 @@ public class WorldMapController : MonoBehaviour
         bgImg.color          = _backgroundSprite != null ? Color.white : new Color(0.55f, 0.75f, 0.55f);
         bgImg.preserveAspect = false;
 
-        // ── Map content — centred; anchoredPosition IS PathPositions[i]*100 directly ─
+        // ── Map content — centred; anchoredPosition IS PathPositions[i] directly (no extra
+        // scale factor — SunriseMeadows.png is exactly 1920x1080, matching this canvas's
+        // reference resolution 1:1, so measured image pixels convert straight to canvas units) ─
         var mapGO = new GameObject("MapContent");
         mapGO.transform.SetParent(root, false);
         var mapRT = mapGO.AddComponent<RectTransform>();
@@ -291,13 +315,14 @@ public class WorldMapController : MonoBehaviour
         // here would double up / clash in font with the baked one. See old git history if a
         // code-driven title is ever needed again (e.g. for a differently-worded background).
 
-        // ── NEXT LEVEL button — bottom-left, per mockup. Shortcut to the matchup screen for
-        // whichever level the bobbing indicator currently sits on ─────────────
-        // CORNER-anchored, not centre-anchored with a fixed offset — the Main Menu's PLAY/
-        // Settings buttons used the latter first and ended up outside the safe area (clipped
-        // by the phone bezel/notch) on a real preview, since a centre-relative offset computed
-        // from one flat 16:9 mockup doesn't hold across different device aspect ratios. Corner
-        // anchoring keeps a fixed inset from the actual corner regardless of aspect.
+        // ── NEXT LEVEL button — bottom-left, rendered from Btn_nextlevel.png ────────
+        // The regenerated (2026-07-19) SunriseMeadows.png has nothing baked in but scenery and
+        // the title banner — no pins, no NEXT LEVEL/Home art — specifically so the pins could be
+        // fixed without fighting a duplicate baked layer (see WorldMapController pin-position
+        // comment below). That means these buttons need real rendered sprites again, same as
+        // before the brief invisible-click-zone detour. Corner-anchored per the Main Menu PLAY/
+        // Settings buttons' safe-area fix — a fixed inset from the actual corner holds up across
+        // device aspect ratios better than a centre-relative offset tuned to one flat mockup.
         var nextGO = new GameObject("NextLevelBtn");
         nextGO.transform.SetParent(root, false);
         var nextRT = nextGO.AddComponent<RectTransform>();
@@ -319,7 +344,7 @@ public class WorldMapController : MonoBehaviour
         nextBtn.colors      = nc;
         nextBtn.onClick.AddListener(OnNextLevelClicked);
 
-        // ── Home button — bottom-right, per mockup. Returns to main menu ─────
+        // ── Home button — bottom-right, rendered from Btn_home.png ──────────────────
         // Corner-anchored — see NEXT LEVEL button comment above for why.
         var homeGO = new GameObject("HomeBtn");
         homeGO.transform.SetParent(root, false);

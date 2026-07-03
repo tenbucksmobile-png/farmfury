@@ -37,32 +37,34 @@ public static class LevelDataGenerator
         // getting launched into the air by physics separation) — this formula is scale-agnostic,
         // so position/scale changes here need no corresponding code change.
         //
-        // Hay pile: base 3 positions match the hand-placed decorative "Haybail"/"Haybail (1-3)"
-        // scene GameObjects (read from Game.unity) — delete those 4 decorative scene GOs once
-        // this is live, since these gameplay blocks render the same Haybail.png art at the same
-        // spots. The 4th (top) bale's Y: 2026-07-13 moved it from -4.876 to -4.7 assuming the
-        // block's *nominal* size (1.0x0.9) equalled its rendered size — wrong, and it made
-        // "too high" worse, not better. Haybail.png is imported at PPU=512 (the generic
-        // World1Props rule — it isn't in SpriteAutoImporter's isBlockSprite/isNewScenery lists
-        // that give 1-unit-native sizing), so at scale (1.0,0.9) the actual rendered content
-        // (measured via PIL bbox: 500x500 canvas, trimmed content 500x419px) is only ~0.7365
-        // units tall, not 0.9. Recomputed 2026-07-14 from the real pixel content (including the
-        // ~0.04u pivot-offset from asymmetric top/bottom padding) so the top bale's *visible*
-        // art rests on the base row's *visible* art: Y=-4.87 — landing almost exactly back on
-        // the original hand-placed -4.876, confirming that value (sourced from the user's own
-        // scene placement) was already correct and the 2026-07-13 "fix" was the actual bug. hp=10
-        // (fixed 2026-07-01, was 60 — that survived multiple hits instead of exploding in one;
-        // a typical Cluck impact does ~15-20 impulse damage, so 10 reliably one-shots it).
+        // Hay pile: base 3 positions originally matched the hand-placed decorative
+        // "Haybail"/"Haybail (1-3)" scene GameObjects (those 4 decorative scene GOs were since
+        // deleted, round 6 — superseded by these gameplay blocks). The internal stack gap (top
+        // bale above the base row) was correctly recomputed 2026-07-14 from Haybail.png's real
+        // pixel content (PIL-measured: 500x500 canvas at PPU=512, trimmed content 500x419px ->
+        // 0.7365 units tall at scale 0.9, not the nominal 0.9) — that gap was NOT the bug being
+        // fixed 2026-07-18. What was never checked until then: the base row's height *above the
+        // true ground line* (Y=-6.60) — those Y values were copied straight from the user's old
+        // decorative placement without ever validating them against the ground, and sat ~0.63
+        // units above where a bale's bottom edge should actually touch (-6.60 + 0.7365/2 =
+        // -6.232 for a bale centred there), i.e. the whole pile was floating with a visible gap
+        // beneath it — reported as "the top haybail is still too high" from a screenshot showing
+        // exactly that gap. Fixed by shifting all 4 Y values down by the same 0.627u so the
+        // lowest base bale now rests at the ground line (preserving the base row's original
+        // relative unevenness — an intentional hand-placed "pile" look, not a flat stack — and
+        // the top bale's already-correct 0.7365u gap above the base row moves down with it).
+        // hp=10 (fixed 2026-07-01, was 60 — that survived multiple hits instead of exploding in
+        // one; a typical Cluck impact does ~15-20 impulse damage, so 10 reliably one-shots it).
         // passThrough=true lets Cluck punch through at 70% speed and continue to the robot.
         Make(folder, "L01_FirstContact",
             id: "W1_L01", name: "First Contact", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 3.6462f, -5.553f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.3098f, -5.608f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 3.85f,   -5.654f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.029f,  -4.87f,  1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 3.6462f, -6.180f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 4.3098f, -6.235f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 3.85f,   -6.281f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 4.029f,  -5.497f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
             },
             robots: new[]
             {
