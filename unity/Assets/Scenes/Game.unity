@@ -2503,11 +2503,16 @@ MonoBehaviour:
   _playerPositionSprite: {fileID: 21300000, guid: be146f42572afb9498e79d75727957e8, type: 3}
   _nextLevelButtonSprite: {fileID: 21300000, guid: aab28c6f5485e6c4f9c53f5933a21aef, type: 3}
   _homeButtonSprite: {fileID: 21300000, guid: d4ca48065cb59984b89e8382405d5040, type: 3}
-  _matchUpBackgroundSprite: {fileID: 21300000, guid: 9ffb1e3a75dc2da4bb4fa00456174701, type: 3}
-  _vsSprite: {fileID: 21300000, guid: 7c6e294ad0a71c6499f50860b027c32d, type: 3}
+  _matchUpBackgroundSprite: {fileID: 21300000, guid: ed2b157a59f220a4d9865c985c16a533, type: 3}
+  _vsSprite: {fileID: 21300000, guid: ab43ef71a08791942945adb080cb3570, type: 3}
+  _levelHeaderSprite: {fileID: 21300000, guid: c0a1553d7df69e94f9cb11bb5e85ed21, type: 3}
+  _countdown3Sprite: {fileID: 21300000, guid: 81663a4a1c4c6ba47883a8fe7742f152, type: 3}
+  _countdown2Sprite: {fileID: 21300000, guid: d08fa34e6909cc542bf331ee837b665a, type: 3}
+  _countdown1Sprite: {fileID: 21300000, guid: dff2ddbeb02234148bf6adde0901f6d4, type: 3}
+  _countdownReadySprite: {fileID: 21300000, guid: 306020828991d0f47ac5cc30275e6693, type: 3}
   _animalCardSprites:
-  - {fileID: 21300000, guid: 591b1591284cd334e9002e6c3105f9e3, type: 3}
-  - {fileID: 21300000, guid: 77ff4fa7a2fc9d04489f3c550139f738, type: 3}
+  - {fileID: 21300000, guid: c3af207aa6c867d4db24a5c85fd611a3, type: 3}
+  - {fileID: 21300000, guid: e1df3a77efa688641a58ec1a679fb833, type: 3}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
@@ -2515,8 +2520,8 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   _robotCardSprites:
-  - {fileID: 0}
-  - {fileID: 21300000, guid: cc5b9462ee132f847b9343a5e59a5470, type: 3}
+  - {fileID: 21300000, guid: baaecddae24a9ed46a23ab282c5db333, type: 3}
+  - {fileID: 21300000, guid: c15e1961fbce02146bc26ac23b612313, type: 3}
 --- !u!4 &1901905601
 Transform:
   m_ObjectHideFlags: 0

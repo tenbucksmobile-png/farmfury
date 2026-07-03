@@ -19,7 +19,9 @@ public class LevelMarker : MonoBehaviour
     private Sprite              _fallbackSpr;
     private Coroutine          _shakeRoutine;
 
-    private static readonly Vector2 MarkerSize = new(56f, 84f); // matches LevelMarker_*.png's 256x384 (2:3) aspect
+    // Enlarged 2026-07-24 per user feedback ("increase the sizing of the widgets on the path")
+    // — was 56x84, now 80x120 (same 2:3 aspect as the 256x384 source art, just ~1.43x bigger).
+    private static readonly Vector2 MarkerSize = new(80f, 120f);
 
     // fallbackSpr: a plain white square used when no real marker art is wired yet, so markers
     // are still visible/tappable (tinted per state) before FarmFury -> Wire Scene References runs.

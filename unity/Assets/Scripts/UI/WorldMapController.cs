@@ -22,30 +22,33 @@ public class WorldMapController : MonoBehaviour
 
     public const int LevelCount = 18; // Sunrise Meadows / World 1
 
-    // LAYOUT NOTE (2026-07-19, regenerated background) — the original SunriseMeadows.png baked
-    // 18 placeholder pins + NEXT LEVEL/Home buttons directly into the image; the real code-drawn
-    // markers/buttons could never be made to align with them, producing a persistent doubled/
-    // misaligned look no amount of position-tuning fixed (see git history for several failed
-    // rounds of that). Replaced with a regenerated background (same scenery, no pins/buttons
-    // baked in) specifically so the path itself could be traced from real pixel data instead of
-    // guessed. PathPositions below come from an actual computed trace, not an eyeballed
-    // left-to-right guess: masked the tan dirt-path colour out of SunriseMeadows.png, isolated
-    // the path's connected pixel blob, built a graph over it and BFS'd from the pond/barn end to
-    // get a geodesic-ordered centerline (handles the path's S-curve correctly, unlike a naive
-    // per-column average), smoothed it, then walked 18 evenly-arc-length-spaced points along it.
+    // LAYOUT NOTE (2026-07-24, re-traced to include the full visible S-curve) — every previous
+    // trace (Round 12, Round 13/2026-07-20) restricted itself to the LOWER dip-and-rise portion
+    // of the path (y ≈ 660-833 in source-image pixels) and never went up near the windmill/ruins
+    // bend, because every purely graph-distance-based method (geodesic BFS, skeleton shortest-
+    // path) independently found that region to be a dead-end spur off the main route rather than
+    // a through-path — confirmed multiple times by re-deriving from scratch and getting the same
+    // answer. That answer was topologically defensible but wrong for this purpose: rendering it
+    // (see docs/HISTORY.md) produced markers bunched in a visually flat row hugging the bottom of
+    // the map, ignoring the prominent bend that's clearly part of the path in the art — reported
+    // directly against a screenshot. Re-traced by hand this time (pixel-sampling directly against
+    // the source image, verifying each candidate point's actual RGB against the same tan-path
+    // color test used by the automated attempts, since eyeballing coordinates against the art
+    // alone had already caused mis-reads earlier in this same investigation) to explicitly
+    // include the bend: pond -> rises up past the windmill/ruins bend -> back down through the
+    // lower dip -> tail to the fortress. Resampled to 18 evenly arc-length-spaced points
+    // (~100-107 units apart, vs. markers' own ~80-unit width at the enlarged size below — some
+    // touching is expected and fine, same reasoning as the MatchUp screen's card/VS spacing).
+    // Confirmed by rendering all 18 points plus the connecting line back onto the source image.
     // Pin ordering (level 1 = pond/barn end, level 18 = fortress end) follows the path's own
-    // start/end, not a guess — the barn/pond side reads as the "home base" starting area and the
-    // fortress is the clear visual endpoint/boss structure. One known rough spot: levels 7-11 sit
-    // close together at the path's tightest hairpin bend (physically ~60-90 canvas units wide
-    // there vs. each marker's own 56-unit width) — some visual overlap there is basically
-    // unavoidable given the art's actual path width at that bend, not a measurement error.
+    // visible start/end, unchanged from every previous round.
     private static readonly Vector2[] PathPositions =
     {
-        new(-354.8f, -229.6f), new(-286.1f, -229.2f), new(-217.7f, -223.8f), new(-153.2f, -200.9f),
-        new( -84.8f, -199.8f), new( -19.1f, -180.2f), new(  34.9f, -141.8f), new(  66.7f, -121.2f),
-        new(   4.8f, -111.4f), new(  28.3f, -108.4f), new(  92.4f, -133.1f), new( 157.0f, -156.7f),
-        new( 222.2f, -178.6f), new( 288.0f, -198.5f), new( 354.4f, -198.0f), new( 418.2f, -172.6f),
-        new( 483.1f, -150.3f), new( 547.7f, -126.8f),
+        new(-368.0f, -240.0f), new(-287.1f, -170.7f), new(-243.9f, -74.5f), new(-209.3f, 23.9f),
+        new(-109.5f, 37.4f), new(-20.6f, -17.0f), new(21.6f, -110.4f), new(-44.1f, -187.0f),
+        new(-144.1f, -223.5f), new(-234.0f, -254.0f), new(-133.7f, -285.6f), new(-27.5f, -290.1f),
+        new(77.1f, -271.5f), new(180.9f, -246.8f), new(284.3f, -220.2f), new(385.4f, -186.3f),
+        new(484.9f, -147.6f), new(588.0f, -120.0f),
     };
 
     [Header("Art (wired via FarmFury -> Wire Scene References)")]
@@ -75,19 +78,19 @@ public class WorldMapController : MonoBehaviour
     // LevelPreviewCard had). Fields directly on WorldMapController persist correctly (proven by
     // every field above already working), so BuildUI() threads them into MatchUpScreen.Init()
     // as parameters instead of relying on external wiring of a nested SerializeField.
-    // Plain sky/hills/ruins backdrop — NOT MatchUp_Background.png. That file is the flat design
-    // mockup (sky + wood frames + chicken + robot + VS baked into ONE image as a reference for
-    // what the screen should look like); using it as the runtime background and then drawing the
-    // real modular card sprites (which have their own frame baked into each card) on top of it
-    // produced two overlapping, slightly-misaligned frames — exactly the bug the user reported
-    // 2026-07-18 from a screenshot showing a second frame edge poking out behind the real card.
-    // Fixed by reusing Background_SkyV1.png (same painted sky/ruins/hills art already used as the
-    // main gameplay backdrop) — it has no characters or frames baked in, so the only frame drawn
-    // is each card's own.
-    [SerializeField] private Sprite   _matchUpBackgroundSprite; // Background_SkyV1.png
+    // Dedicated backdrop for this screen — Assets/Sprites/UI/MatchUp/MatchUpBackground.png.
+    // (Earlier revisions of this screen reused the gameplay sky backdrop to avoid a duplicate-
+    // frame bug in a since-replaced mockup image — no longer relevant now that a purpose-built
+    // backdrop with nothing else baked into it exists; see docs/HISTORY.md for that history.)
+    [SerializeField] private Sprite   _matchUpBackgroundSprite; // MatchUpBackground.png
     [SerializeField] private Sprite   _vsSprite;                // VS.png
-    [SerializeField] private Sprite[] _animalCardSprites = new Sprite[8]; // Sprites/UI/Cards/, AnimalType-indexed
-    [SerializeField] private Sprite[] _robotCardSprites  = new Sprite[2]; // Sprites/UI/Cards/, RobotType-indexed
+    [SerializeField] private Sprite   _levelHeaderSprite;       // LevelHeader1.png (level 1 only)
+    [SerializeField] private Sprite   _countdown3Sprite;        // countdown3.png
+    [SerializeField] private Sprite   _countdown2Sprite;        // countdown2.png
+    [SerializeField] private Sprite   _countdown1Sprite;        // countdown1.png
+    [SerializeField] private Sprite   _countdownReadySprite;    // Countdown_Ready.png
+    [SerializeField] private Sprite[] _animalCardSprites = new Sprite[8]; // Sprites/UI/MatchUp/, AnimalType-indexed
+    [SerializeField] private Sprite[] _robotCardSprites  = new Sprite[2]; // Sprites/UI/MatchUp/, RobotType-indexed
 
     private GameObject       _panel;
     private Sprite           _squareSpr;
@@ -204,7 +207,7 @@ public class WorldMapController : MonoBehaviour
     IEnumerator IndicatorRoutine(bool slideFirst)
     {
         if (_playerIndicatorRT == null) yield break;
-        Vector2 basePos = _markers[_highestUnlocked].AnchoredPosition + new Vector2(0f, 70f);
+        Vector2 basePos = _markers[_highestUnlocked].AnchoredPosition + new Vector2(0f, 100f);
 
         if (slideFirst)
         {
@@ -297,13 +300,16 @@ public class WorldMapController : MonoBehaviour
         }
 
         // ── Player position indicator ────────────────────────────────────────
+        // Enlarged 2026-07-24 (56x56 -> 90x90) to match the bigger markers below, and the hover
+        // offset in IndicatorRoutine bumped 70 -> 100 to sit proportionally above the taller
+        // marker art (MarkerSize now 80x120, was 56x84 — see LevelMarker.cs).
         var pGO = new GameObject("PlayerPositionIndicator");
         pGO.transform.SetParent(mapRT, false);
         _playerIndicatorRT = pGO.AddComponent<RectTransform>();
         _playerIndicatorRT.anchorMin = new Vector2(0.5f, 0.5f);
         _playerIndicatorRT.anchorMax = new Vector2(0.5f, 0.5f);
         _playerIndicatorRT.pivot     = new Vector2(0.5f, 0.5f);
-        _playerIndicatorRT.sizeDelta = new Vector2(56f, 56f);
+        _playerIndicatorRT.sizeDelta = new Vector2(90f, 90f);
         var pImg = pGO.AddComponent<Image>();
         pImg.sprite         = _playerPositionSprite != null ? _playerPositionSprite : _squareSpr;
         pImg.color          = _playerPositionSprite != null ? Color.white : new Color(1f, 0.85f, 0.2f);
@@ -315,22 +321,34 @@ public class WorldMapController : MonoBehaviour
         // here would double up / clash in font with the baked one. See old git history if a
         // code-driven title is ever needed again (e.g. for a differently-worded background).
 
+        // ── SafeArea — NEXT LEVEL and Home live inside this, same Screen.safeArea-driven
+        // pattern as HUDController.BuildSafeArea/ApplySafeArea and MatchUpScreen's SafeArea
+        // (see that file's comment for the full reasoning). Fixes a real clipping bug reported
+        // 2026-07-24 — both buttons rendered outside the device's actual safe area on a real
+        // phone aspect ratio, even though their old corner offsets looked fine against the flat
+        // 1920x1080 reference canvas math. Everything that needs to be reachable/tappable near a
+        // screen edge goes in here now; the full-bleed background and the map content (centred,
+        // away from any edge) don't need to.
+        var safeGO = new GameObject("SafeArea");
+        safeGO.transform.SetParent(root, false);
+        var safeRT = safeGO.AddComponent<RectTransform>();
+        ApplySafeArea(safeRT);
+        Transform safe = safeRT;
+
         // ── NEXT LEVEL button — bottom-left, rendered from Btn_nextlevel.png ────────
-        // The regenerated (2026-07-19) SunriseMeadows.png has nothing baked in but scenery and
-        // the title banner — no pins, no NEXT LEVEL/Home art — specifically so the pins could be
-        // fixed without fighting a duplicate baked layer (see WorldMapController pin-position
-        // comment below). That means these buttons need real rendered sprites again, same as
-        // before the brief invisible-click-zone detour. Corner-anchored per the Main Menu PLAY/
-        // Settings buttons' safe-area fix — a fixed inset from the actual corner holds up across
-        // device aspect ratios better than a centre-relative offset tuned to one flat mockup.
+        // Enlarged 2026-07-24 to match the landing page's PLAY/SETTINGS icon scale (150x150 —
+        // see MainMenuController.cs). Btn_nextlevel.png is a wide 512x128 (4:1) pill, not square
+        // like Home/PLAY/SETTINGS, so "same size" here means matching HEIGHT (150, same visual
+        // weight/prominence) rather than forcing a literal 150x150 box that would badly distort
+        // or letterbox it — width follows the art's own 4:1 aspect via preserveAspect.
         var nextGO = new GameObject("NextLevelBtn");
-        nextGO.transform.SetParent(root, false);
+        nextGO.transform.SetParent(safe, false);
         var nextRT = nextGO.AddComponent<RectTransform>();
         nextRT.anchorMin        = new Vector2(0f, 0f);
         nextRT.anchorMax        = new Vector2(0f, 0f);
-        nextRT.pivot            = new Vector2(0f, 0.5f);
-        nextRT.anchoredPosition = new Vector2(70f, 150f);
-        nextRT.sizeDelta        = new Vector2(300f, 64f);
+        nextRT.pivot            = new Vector2(0f, 0f);
+        nextRT.anchoredPosition = new Vector2(40f, 40f);
+        nextRT.sizeDelta        = new Vector2(600f, 150f);
         var nextImg = nextGO.AddComponent<Image>();
         nextImg.sprite         = _nextLevelButtonSprite != null ? _nextLevelButtonSprite : _squareSpr;
         nextImg.color          = _nextLevelButtonSprite != null ? Color.white : new Color(0.85f, 0.55f, 0.05f);
@@ -345,15 +363,17 @@ public class WorldMapController : MonoBehaviour
         nextBtn.onClick.AddListener(OnNextLevelClicked);
 
         // ── Home button — bottom-right, rendered from Btn_home.png ──────────────────
-        // Corner-anchored — see NEXT LEVEL button comment above for why.
+        // Enlarged 84x84 -> 150x150 to exactly match the landing page's PLAY/SETTINGS icons
+        // (same 1:1-aspect Btn_*.png category — see MainMenuController.cs). Corner-anchored
+        // within the SafeArea — see NEXT LEVEL button comment above for why.
         var homeGO = new GameObject("HomeBtn");
-        homeGO.transform.SetParent(root, false);
+        homeGO.transform.SetParent(safe, false);
         var homeRT = homeGO.AddComponent<RectTransform>();
         homeRT.anchorMin        = new Vector2(1f, 0f);
         homeRT.anchorMax        = new Vector2(1f, 0f);
-        homeRT.pivot            = new Vector2(0.5f, 0.5f);
-        homeRT.anchoredPosition = new Vector2(-160f, 160f);
-        homeRT.sizeDelta        = new Vector2(84f, 84f);
+        homeRT.pivot            = new Vector2(1f, 0f);
+        homeRT.anchoredPosition = new Vector2(-40f, 40f);
+        homeRT.sizeDelta        = new Vector2(150f, 150f);
         var homeImg = homeGO.AddComponent<Image>();
         homeImg.sprite         = _homeButtonSprite != null ? _homeButtonSprite : _squareSpr;
         homeImg.color          = _homeButtonSprite != null ? Color.white : new Color(0.12f, 0.14f, 0.22f, 0.85f);
@@ -371,7 +391,9 @@ public class WorldMapController : MonoBehaviour
         var matchGO = new GameObject("MatchUpScreen");
         matchGO.transform.SetParent(root, false);
         _matchUpScreen = matchGO.AddComponent<MatchUpScreen>();
-        _matchUpScreen.Init(_squareSpr, _matchUpBackgroundSprite, _vsSprite, _animalCardSprites, _robotCardSprites);
+        _matchUpScreen.Init(_squareSpr, _matchUpBackgroundSprite, _vsSprite, _levelHeaderSprite,
+            _countdown3Sprite, _countdown2Sprite, _countdown1Sprite, _countdownReadySprite,
+            _animalCardSprites, _robotCardSprites);
 
         _panel.SetActive(false);
     }
@@ -384,5 +406,29 @@ public class WorldMapController : MonoBehaviour
         tex.SetPixels(px);
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, 4, 4), Vector2.one * 0.5f, 4f);
+    }
+
+    // Same technique as HUDController.ApplySafeArea / MatchUpScreen.ApplySafeArea — maps
+    // Screen.safeArea (actual device pixels) to normalized anchors so children of this
+    // RectTransform can never render into a notch, rounded corner, or home-indicator zone.
+    static void ApplySafeArea(RectTransform rt)
+    {
+        if (Screen.width <= 0 || Screen.height <= 0)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+        }
+        else
+        {
+            Rect safe = Screen.safeArea;
+            Vector2 min = safe.position;
+            Vector2 max = safe.position + safe.size;
+            min.x /= Screen.width;  min.y /= Screen.height;
+            max.x /= Screen.width;  max.y /= Screen.height;
+            rt.anchorMin = min;
+            rt.anchorMax = max;
+        }
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
     }
 }

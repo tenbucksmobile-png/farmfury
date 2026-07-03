@@ -338,16 +338,6 @@ public static class SceneSetup
         mmSo.ApplyModifiedProperties();
     }
 
-    // Filename keywords that uniquely identify each robot card, indexed by RobotType.
-    // No dedicated "Basic" robot card art exists yet — MatchUpScreen falls back to a text
-    // label ("ROBOT") when the sprite is null, same pattern as everywhere else in this
-    // codebase that tolerates not-yet-authored art rather than crashing on it.
-    static readonly string[] RobotCardKeywords =
-    {
-        "",           // 0 Basic — intentionally unmatched (empty keyword never hits FindAssets)
-        "Harvestor",  // 1 Harvester → Harvestor_Robot.png (source filename typo, kept verbatim)
-    };
-
     // ── WorldMapController (Sunrise Meadows) ──────────────────────────────────
     // Art lives at Assets/Sprites/UI/LevelCards/World1/ — already imported (Single mode,
     // PPU=100) by SpriteAutoImporter's existing "Sprites/UI/" rule, so no reimport step needed
@@ -370,7 +360,6 @@ public static class SceneSetup
     {
         const string artFolder  = "Assets/Sprites/UI/LevelCards/World1";
         const string iconFolder = "Assets/Sprites/UI/Icon";
-        const string cardsFolder = "Assets/Sprites/UI/Cards";
 
         var go = GameObject.Find("WorldMap");
         if (go == null)
@@ -390,21 +379,70 @@ public static class SceneSetup
         WireSprite(mapSo, "_playerPositionSprite",  $"{artFolder}/PlayerPosition.png");
         WireSprite(mapSo, "_nextLevelButtonSprite", $"{iconFolder}/Btn_nextlevel.png");
         WireSprite(mapSo, "_homeButtonSprite",      $"{iconFolder}/Btn_home.png");
-        // NOT MatchUp_Background.png — that's the flat design mockup (frames/chicken/robot/VS
-        // baked into one image); wiring it as a live background produced a doubled, misaligned
-        // frame once the real card sprites were drawn on top (see WorldMapController.cs comment
-        // above _matchUpBackgroundSprite). Background_SkyV1.png is the same painted sky/ruins/
-        // hills art with nothing else baked in — already imported and used as the main gameplay
-        // backdrop, so this also keeps the two screens visually consistent.
-        WireSprite(mapSo, "_matchUpBackgroundSprite", "Assets/Sprites/Environment/Skies/Background_SkyV1.png");
-        WireSprite(mapSo, "_vsSprite",              $"{cardsFolder}/VS.png");
         // _star2Sprite intentionally left unwired — no LevelMarker_2stars.png exists yet;
         // LevelMarker.Refresh() falls back to the 3-star sprite until one is added.
 
-        WireArrayByKeyword(mapSo, "_animalCardSprites", cardsFolder, CardKeywords, "animal");
-        WireArrayByKeyword(mapSo, "_robotCardSprites",  cardsFolder, RobotCardKeywords, "robot");
+        WireMatchUpCards(mapSo);
 
         mapSo.ApplyModifiedProperties();
+    }
+
+    // MatchUpScreen art — dedicated folder, distinct from the HUD's Assets/Sprites/UI/Cards/
+    // (see CardKeywords above, still used by EnsureHUD). Only Cluck/Bessie (animal) and
+    // Basic/Harvester (robot) have art here today, matching what L01-L06 actually use — other
+    // AnimalType slots are left null and MatchUpScreen already tolerates that (hides the card
+    // image rather than crashing).
+    static void WireMatchUpCards(SerializedObject mapSo)
+    {
+        const string matchUpFolder = "Assets/Sprites/UI/MatchUp";
+
+        WireSprite(mapSo, "_matchUpBackgroundSprite", $"{matchUpFolder}/MatchUpBackground.png");
+        WireSprite(mapSo, "_vsSprite",                $"{matchUpFolder}/VS.png");
+        WireSprite(mapSo, "_levelHeaderSprite",       $"{matchUpFolder}/LevelHeader1.png");
+        WireSprite(mapSo, "_countdown3Sprite",        $"{matchUpFolder}/countdown3.png");
+        WireSprite(mapSo, "_countdown2Sprite",        $"{matchUpFolder}/countdown2.png");
+        WireSprite(mapSo, "_countdown1Sprite",        $"{matchUpFolder}/countdown1.png");
+        WireSprite(mapSo, "_countdownReadySprite",    $"{matchUpFolder}/Countdown_Ready.png");
+
+        WireArrayByKeyword(mapSo, "_animalCardSprites", matchUpFolder, CardKeywords, "animal");
+
+        // Robot cards need exact-filename matching, not substring: "Robot.png" (Basic) has no
+        // distinguishing prefix, but "Harvestor_Robot.png"/"Harvestor_Robot1.png" both also
+        // contain "robot" — a naive keyword search (like WireArrayByKeyword uses for animals)
+        // would ambiguously match all three off either keyword.
+        var robotArr = mapSo.FindProperty("_robotCardSprites");
+        robotArr.arraySize = 2;
+        robotArr.GetArrayElementAtIndex(0).objectReferenceValue = // Basic
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Robot.png");
+        // Prefer the newer Harvestor_Robot1.png (revised art, added a day after the original)
+        // over Harvestor_Robot.png if both exist.
+        Sprite harvester = AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Harvestor_Robot1.png")
+                         ?? AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Harvestor_Robot.png");
+        robotArr.GetArrayElementAtIndex(1).objectReferenceValue = harvester; // Harvester
+    }
+
+    // Added 2026-07-24 — a Sunrise Meadows screenshot showed level markers 1-2 rendering as
+    // LevelMarker_3stars.png ("3" badge) and marker 3 as LevelMarker_Unlocked.png ("1" badge),
+    // which looked like a bug at first glance. It isn't one: WorldMapController.IsUnlocked()/
+    // ScoreManager.GetBestStars() were both already correct — that screenshot's PlayerPrefs
+    // simply had 2 levels previously completed with 3 stars each from earlier testing sessions,
+    // which is exactly what ff_stars_0/ff_stars_1 = 3 should render as. On a genuinely fresh
+    // save (no ff_stars_N keys set), level 1 shows LevelMarker_Unlocked.png and every other
+    // level shows LevelMarker_Locked.png, per the existing (unchanged) logic. This menu item
+    // just clears that leftover test data on demand, standalone from Wire Scene References
+    // (which is scene/asset wiring, not runtime save data — bundling this into it would be a
+    // surprising side effect of an unrelated action).
+    [MenuItem("FarmFury/Reset World Map Progress")]
+    public static void ResetWorldMapProgress()
+    {
+        for (int i = 0; i < WorldMapController.LevelCount; i++)
+        {
+            PlayerPrefs.DeleteKey($"ff_score_{i}");
+            PlayerPrefs.DeleteKey($"ff_stars_{i}");
+        }
+        PlayerPrefs.Save();
+        Debug.Log($"[FarmFury] Cleared ff_score_N/ff_stars_N for all {WorldMapController.LevelCount} levels — " +
+                   "world map will show a fresh save (level 1 unlocked, rest locked) next time it opens.");
     }
 
     static void WireArrayByKeyword(SerializedObject so, string fieldName, string folder, string[] keywords, string label)

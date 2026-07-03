@@ -1,32 +1,39 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
 // Full-screen "animal VS robot" transition screen shown between the Sunrise Meadows world map
-// and gameplay — replaces the old centred LevelPreviewCard popup (2026-07-16 mockup pass,
-// MatchUp_New.png). Built once by WorldMapController and toggled via Show(levelIndex)/Hide(),
-// same self-contained runtime-built pattern as everything else in this project's UI layer.
+// and gameplay. Built once by WorldMapController and toggled via Show(levelIndex)/Hide(), same
+// self-contained runtime-built pattern as everything else in this project's UI layer.
+//
+// ANIMATION REDESIGN (2026-07-21) — replaced the old static "tap anywhere to continue" screen
+// with a scripted, non-interactive motion sequence per the user's explicit shot list: backdrop
+// -> level header pops in -> animal card slides in from the left / robot card slides in from the
+// right, meeting as the VS graphic pops in between them -> hold -> countdown 3, 2, 1 (each pops
+// in, holds, pops out) -> READY! -> auto-launch into gameplay. No player input during the
+// sequence — the old ✕ close button and tap-to-continue catcher are both gone (removed per
+// explicit instruction; there is currently no way to back out once a marker is tapped).
+//
+// SCOPE NOTE — "concentrating on level 1 only" per explicit instruction: the level-header art
+// is hardcoded to LevelHeader1.png (no LevelHeader2/3/... exist yet and none are attempted here).
+// If Show() is ever called for a different level, the header will still read "LEVEL 1" — a known,
+// accepted inaccuracy for now, not a bug to chase.
 //
 // MATCHUP NOTE — both cards are read fresh from GameManager.GetLevelData(levelIndex) on every
-// Show(), not fixed: the animal card is birds[0] and the robot card is robots[0].robotType for
-// THAT level, so a different level shows a different matchup, per the user's explicit
-// clarification that this is not a static "chicken vs robot" splash. Player-chosen-animal
-// (mentioned by the user as a planned future feature, once animals are unlockable) is
-// intentionally NOT built here — Show() always uses the level's birds[0], same convention the
-// old LevelPreviewCard used, so swapping in a player-selected animal later only needs to change
-// the `animal` lookup inside Show() (e.g. to a saved player preference), not this screen's layout.
+// Show(): the animal card is birds[0] and the robot card is robots[0].robotType for THAT level.
+// Player-chosen-animal (a possible future feature once animals are unlockable) is intentionally
+// NOT built here — Show() always uses the level's birds[0].
 //
-// ENTRY-TRIGGER NOTE — the mockup has no visible PLAY/continue button (verified: the source
-// image is a full 1280x720 frame, nothing is cropped). Implemented as tap-anywhere-to-continue
-// with a pulsing "TAP TO CONTINUE" hint, which is a UX default I picked, not something the
-// mockup specifies — flagging rather than silently assuming. A dedicated ✕ close button
-// (top-left) always backs out to the map without starting the level, for players who opened
-// this by tapping an old completed pin and don't want to replay it immediately.
+// AUDIO NOTE — intentionally left out of this pass (countdown beeps, whoosh/impact stings, etc.)
+// per explicit instruction; the user will add it later. Every beat below is a natural hook point
+// for a future AudioManager.Play(...) call (see the per-beat comments in PlaySequence()).
 public class MatchUpScreen : MonoBehaviour
 {
-    // Animal card art — 8-slot array indexed by AnimalType. Robot card art — indexed by
-    // RobotType (Basic, Harvester); no dedicated "Basic" card art exists yet (only
-    // Harvestor_Robot.png) — Show() falls back to a text label when null.
+    // Card art — 8-slot array indexed by AnimalType, 2-slot array indexed by RobotType. Sourced
+    // from Assets/Sprites/UI/MatchUp/ (see SceneSetup.WireMatchUpCards) — a dedicated art set for
+    // this screen, distinct from the HUD's Assets/Sprites/UI/Cards/. Only Cluck/Bessie (animal)
+    // and Basic/Harvester (robot) have art there today, matching what L01-L06 actually use.
     //
     // NOT [SerializeField] on this component — MatchUpScreen is a child GameObject created at
     // runtime inside WorldMapController.BuildUI(), which only executes when Awake() actually
@@ -38,47 +45,68 @@ public class MatchUpScreen : MonoBehaviour
     // directly in the saved scene) and threads them through Init() below.
     private Sprite[] _animalCardSprites;
     private Sprite[] _robotCardSprites;
-    // Plain sky/ruins/hills backdrop (Background_SkyV1.png) — deliberately NOT the flat
-    // MatchUp_New.png mockup, which has its own frames/characters baked in. This screen is
-    // composed from modular pieces (this backdrop + each card's own framed art from
-    // Sprites/UI/Cards/ + the VS graphic) laid out to resemble the mockup, not built by pasting
-    // sprites on top of the mockup image itself — see WorldMapController.cs's
-    // _matchUpBackgroundSprite comment for the bug this replaced (2026-07-18).
-    private Sprite   _backgroundSprite;
-    private Sprite   _vsSprite;          // VS.png
+
+    private Sprite _backgroundSprite;   // MatchUpBackground.png — full-bleed backdrop
+    private Sprite _vsSprite;           // VS.png
+    private Sprite _levelHeaderSprite;  // LevelHeader1.png (level 1 only — see SCOPE NOTE above)
+    private Sprite _countdown3Sprite;
+    private Sprite _countdown2Sprite;
+    private Sprite _countdown1Sprite;
+    private Sprite _countdownReadySprite;
 
     private GameObject      _panel;
-    private Image           _bgImg;
-    private Image           _animalImg;
-    private Image           _robotImg;
-    private TextMeshProUGUI _robotFallbackLabel;
-    private TextMeshProUGUI _levelNumText;
-    private TextMeshProUGUI _starsText;
-    private TextMeshProUGUI _continueHint;
-    private Button          _fullScreenBtn;
-    private int             _levelIndex;
-    private bool            _hasData;
-    private Coroutine       _pulseRoutine;
+    private Image            _fadeOverlayImg; // fades to opaque black just before auto-launch, see PlaySequence step 6
+    private Image            _bgImg;
+    private RectTransform    _headerRT;
+    private Image             _headerImg;
+    private RectTransform    _animalRT;
+    private Image             _animalImg;
+    private RectTransform    _robotRT;
+    private Image             _robotImg;
+    private TextMeshProUGUI  _robotFallbackLabel;
+    private RectTransform    _vsRT;
+    private Image             _vsImg;
+    private RectTransform    _countdownRT;
+    private Image             _countdownImg;
+
+    private int       _levelIndex;
+    private bool      _hasData;
+    private Coroutine _sequenceRoutine;
+
+    // Rest positions for the two cards / VS graphic (2026-07-23 pass — "fuller" layout per user
+    // feedback: bigger cards, closer together, touching VS). Cards are 560x560 (half-width 280),
+    // VS is 220x220 (half-width 110); animal/robot X = ∓(110+280) = ∓390 so each card's inner
+    // edge exactly touches VS's outer edge. All three sit at the safe area's vertical centre
+    // (y=0) — see BuildUI's SafeArea section for why centring here is the robust choice rather
+    // than a fixed offset guessed against the full 1920x1080 reference size.
+    private static readonly Vector2 AnimalRestPos = new(-390f, 0f);
+    private static readonly Vector2 RobotRestPos  = new(390f, 0f);
+    private static readonly Vector2 VsRestPos     = new(0f, 0f);
+    private const float OffscreenOffset = 900f; // how far off-screen each card starts before sliding in
+    private const float CardRotationDeg = 10f;  // outward tilt — animal +10 (leans left), robot -10 (leans right)
 
     public void Init(Sprite squareSpr, Sprite backgroundSprite, Sprite vsSprite,
+        Sprite levelHeaderSprite,
+        Sprite countdown3Sprite, Sprite countdown2Sprite, Sprite countdown1Sprite, Sprite countdownReadySprite,
         Sprite[] animalCardSprites, Sprite[] robotCardSprites)
     {
-        _backgroundSprite  = backgroundSprite;
-        _vsSprite          = vsSprite;
-        _animalCardSprites = animalCardSprites;
-        _robotCardSprites  = robotCardSprites;
+        _backgroundSprite      = backgroundSprite;
+        _vsSprite               = vsSprite;
+        _levelHeaderSprite      = levelHeaderSprite;
+        _countdown3Sprite       = countdown3Sprite;
+        _countdown2Sprite       = countdown2Sprite;
+        _countdown1Sprite       = countdown1Sprite;
+        _countdownReadySprite   = countdownReadySprite;
+        _animalCardSprites      = animalCardSprites;
+        _robotCardSprites       = robotCardSprites;
         BuildUI(squareSpr);
     }
 
     public void Show(int levelIndex)
     {
         _levelIndex = levelIndex;
-        var data  = GameManager.Instance?.GetLevelData(levelIndex);
-        int stars = ScoreManager.GetBestStars(levelIndex);
-
-        _levelNumText.text = $"LEVEL {levelIndex + 1}";
-        _starsText.text    = StarText(stars);
-        _hasData           = data != null;
+        var data = GameManager.Instance?.GetLevelData(levelIndex);
+        _hasData = data != null;
 
         if (data != null)
         {
@@ -96,73 +124,214 @@ public class MatchUpScreen : MonoBehaviour
             _robotImg.enabled           = robotSpr != null;
             _robotFallbackLabel.enabled = robotSpr == null;
             _robotFallbackLabel.text    = robot == RobotType.Harvester ? "HARVESTER\nROBOT" : "ROBOT";
-
-            _continueHint.text = "TAP TO CONTINUE";
         }
         else
         {
             // Level data doesn't exist yet (only L01-L06 are authored right now, out of 18
-            // marker slots — see CLAUDE.md Gap Analysis) — show a placeholder instead of
-            // crashing or launching a level with no content.
+            // marker slots — see CLAUDE.md Gap Analysis). The sequence still plays (see SCOPE
+            // NOTE at the top of this file) but skips the auto-launch at the end and just
+            // returns to the map instead of crashing on a null level.
             _animalImg.enabled          = false;
             _robotImg.enabled           = false;
             _robotFallbackLabel.enabled = true;
             _robotFallbackLabel.text    = "COMING\nSOON";
-            _continueHint.text          = "TAP TO GO BACK";
         }
 
         _panel.SetActive(true);
-        if (_pulseRoutine != null) StopCoroutine(_pulseRoutine);
-        _pulseRoutine = StartCoroutine(PulseHint());
+        if (_sequenceRoutine != null) StopCoroutine(_sequenceRoutine);
+        _sequenceRoutine = StartCoroutine(PlaySequence());
     }
 
     public void Hide()
     {
-        if (_pulseRoutine != null) { StopCoroutine(_pulseRoutine); _pulseRoutine = null; }
+        if (_sequenceRoutine != null) { StopCoroutine(_sequenceRoutine); _sequenceRoutine = null; }
         _panel.SetActive(false);
     }
 
-    void OnFullScreenClicked()
+    // ── Motion sequence ───────────────────────────────────────────────────────
+    // Backdrop -> header pop -> cards slide in from both sides, VS slamming in between them right
+    // as the cards land -> 2s hold -> countdown 3/2/1 (2s each) -> READY! -> whole panel fades ->
+    // auto-launch. Entirely non-interactive; nothing here waits on player input.
+    //
+    // TIMING (2026-07-22, slowed down + retimed per user feedback — "too fast", "VS does not
+    // seem to appear"). The whole sequence previously ran in well under 4 seconds total, with the
+    // VS pop a lone 0.20s beat sandwiched between two other fast beats — easy to miss even though
+    // nothing was actually broken in the visibility logic (sprite/enabled/scale all checked out
+    // statically). Fixed by both slowing every beat down and restructuring cards+VS into one
+    // continuous "clash" (see CardsAndVsClash below) so the VS pop is no longer a separate,
+    // easy-to-miss afterthought — it's timed to complete exactly as the cards land, and it's
+    // bigger (peak overshoot 1.4 vs the header's 1.15) so it reads as a "slam," not a fade-in.
+    IEnumerator PlaySequence()
     {
-        Hide();
-        if (_hasData) GameManager.Instance?.ForceStartLevel(_levelIndex);
+        // Reset every animated element to its pre-entrance state.
+        _fadeOverlayImg.color    = new Color(0f, 0f, 0f, 0f);
+        _headerRT.localScale     = Vector3.zero;
+        _animalRT.anchoredPosition = AnimalRestPos + new Vector2(-OffscreenOffset, 0f);
+        _robotRT.anchoredPosition  = RobotRestPos + new Vector2(OffscreenOffset, 0f);
+        _vsRT.localScale         = Vector3.zero;
+        _vsImg.enabled           = _vsSprite != null; // defensive re-assert, see class comment
+        _countdownImg.enabled    = false;
+
+        // 1) Level header pops in. (Future hook: AudioManager whoosh/pop SFX.)
+        yield return PopIn(_headerRT, 0.6f);
+
+        // 2) Cards slide in from both sides and meet in the middle, VS slamming in between them
+        // right as they land — one continuous beat, not three separate ones.
+        yield return CardsAndVsClash(slideDuration: 0.9f, vsPopDuration: 0.4f, vsPeak: 1.4f);
+
+        // 3) Hold so the full matchup registers before the countdown starts — 2s per explicit
+        // instruction.
+        yield return new WaitForSecondsRealtime(2.0f);
+
+        // 4) Countdown: 3, 2, 1 — each pops in, holds ~2s, pops back out. Only one numeral is
+        // ever visible at a time. (Future hook: a beep per numeral.)
+        yield return CountdownBeat(_countdown3Sprite, 2.0f);
+        yield return CountdownBeat(_countdown2Sprite, 2.0f);
+        yield return CountdownBeat(_countdown1Sprite, 2.0f);
+
+        // 5) READY! — same pop-in language, held for a beat, does not pop back out (the whole
+        // panel fades instead, immediately below).
+        _countdownImg.sprite  = _countdownReadySprite;
+        _countdownImg.enabled = _countdownReadySprite != null;
+        Color rc = _countdownImg.color; rc.a = 1f; _countdownImg.color = rc;
+        yield return AnimateScale(_countdownRT, 0f, 1f, 0.25f, bounce: true);
+        yield return new WaitForSecondsRealtime(1.2f);
+
+        // 6) Fade to solid black, then auto-launch into gameplay — no tap required.
+        //
+        // BUG FIX (2026-07-24) — this used to fade the whole panel's CanvasGroup to *transparent*
+        // before launching. MatchUpScreen is a sibling of the World Map's own background/pins
+        // inside the same shared canvas (see WorldMapController.BuildUI, "added last so it
+        // renders on top"), so making it transparent revealed the map underneath for the entire
+        // 0.4s fade, before gameplay had even started — reported as "the game navigates back to
+        // the meadows sunrise scene ... before moving to gameplay." Fixed by fading an opaque
+        // black overlay IN instead (0 -> 1 alpha, not the reverse) so the screen goes to solid
+        // black rather than see-through. GameManager.ForceStartLevel() then triggers
+        // WorldMapController.HidePanel(), which deactivates the whole map canvas — including this
+        // screen, since it's a child of that canvas — atomically in the same frame; the last
+        // thing rendered before that cut is solid black, never a peek at stale map/card content.
+        yield return FadeImageAlpha(_fadeOverlayImg, 0f, 1f, 0.4f);
+        if (_hasData)
+            GameManager.Instance?.ForceStartLevel(_levelIndex);
+        else
+            _panel.SetActive(false); // no level to launch — just return to the map
+        _sequenceRoutine = null;
     }
 
-    void OnCloseClicked() => Hide();
-
-    System.Collections.IEnumerator PulseHint()
+    // Cards slide in from off-screen; the VS pop starts partway through that slide (timed so it
+    // finishes exactly as the cards land) rather than after the slide fully completes — this is
+    // what makes it read as "cards meet, VS slams in between them" as a single beat instead of
+    // three sequential ones.
+    IEnumerator CardsAndVsClash(float slideDuration, float vsPopDuration, float vsPeak)
     {
-        const float period = 1.1f;
-        while (true)
+        var slideRoutine = StartCoroutine(SlideCardsIn(slideDuration));
+        float vsDelay = Mathf.Max(0f, slideDuration - vsPopDuration);
+        yield return new WaitForSecondsRealtime(vsDelay);
+        var vsRoutine = StartCoroutine(PopIn(_vsRT, vsPopDuration, vsPeak));
+        yield return slideRoutine;
+        yield return vsRoutine;
+    }
+
+    // One numeral: pop in, hold, pop back out (scale + fade), then hide.
+    IEnumerator CountdownBeat(Sprite spr, float holdDuration)
+    {
+        _countdownImg.sprite  = spr;
+        _countdownImg.enabled = spr != null;
+        Color c = _countdownImg.color; c.a = 1f; _countdownImg.color = c;
+
+        yield return AnimateScale(_countdownRT, 0f, 1f, 0.2f, bounce: true);
+        yield return new WaitForSecondsRealtime(holdDuration);
+        yield return AnimateScaleAndFade(_countdownRT, _countdownImg, 1f, 0f, 0.2f);
+
+        _countdownImg.enabled = false;
+    }
+
+    // Scale-pop entrance for a persistent element (header / VS) that stays visible afterward:
+    // 0 -> overshoot -> settles at 1, using the same ease-out-back language as the Level
+    // Complete panel's star pop-in (HUDController.PopStar), just starting from 0 instead of 1.
+    IEnumerator PopIn(RectTransform rt, float duration, float peak = 1.15f) =>
+        AnimateScale(rt, 0f, 1f, duration, bounce: true, peak: peak);
+
+    IEnumerator SlideCardsIn(float duration)
+    {
+        Vector2 animalStart = _animalRT.anchoredPosition;
+        Vector2 robotStart  = _robotRT.anchoredPosition;
+        float elapsed = 0f;
+        while (elapsed < duration)
         {
-            float t = (Mathf.Sin(Time.time * (2f * Mathf.PI / period)) + 1f) * 0.5f;
-            var c = _continueHint.color;
-            c.a = Mathf.Lerp(0.35f, 1f, t);
-            _continueHint.color = c;
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+            _animalRT.anchoredPosition = Vector2.Lerp(animalStart, AnimalRestPos, t);
+            _robotRT.anchoredPosition  = Vector2.Lerp(robotStart, RobotRestPos, t);
             yield return null;
         }
+        _animalRT.anchoredPosition = AnimalRestPos;
+        _robotRT.anchoredPosition  = RobotRestPos;
     }
 
-    static string StarText(int earned)
+    // from -> to scale over duration; bounce=true uses an ease-out-back overshoot (only sensible
+    // for a 0->1 entrance, peak configurable — see PopScale), bounce=false is a plain SmoothStep
+    // (used for the 1->0 exit).
+    IEnumerator AnimateScale(RectTransform rt, float from, float to, float duration, bool bounce, float peak = 1.15f)
     {
-        const string gold = "#FFD200";
-        const string grey = "#8A8A90";
-        var sb = new System.Text.StringBuilder();
-        for (int i = 0; i < 3; i++)
+        float elapsed = 0f;
+        while (elapsed < duration)
         {
-            if (i > 0) sb.Append("  ");
-            sb.Append(i < earned ? $"<color={gold}>★</color>" : $"<color={grey}>★</color>");
+            elapsed += Time.unscaledDeltaTime;
+            float t     = Mathf.Clamp01(elapsed / duration);
+            float value = bounce ? Mathf.LerpUnclamped(from, to, PopScale(t, peak)) : Mathf.SmoothStep(from, to, t);
+            rt.localScale = Vector3.one * value;
+            yield return null;
         }
-        return sb.ToString();
+        rt.localScale = Vector3.one * to;
+    }
+
+    // Scale + fade together (used for the countdown numerals' pop-out).
+    IEnumerator AnimateScaleAndFade(RectTransform rt, Image img, float fromScale, float toScale, float duration)
+    {
+        Color baseColor = img.color;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+            rt.localScale = Vector3.one * Mathf.Lerp(fromScale, toScale, t);
+            Color c = baseColor; c.a = Mathf.Lerp(1f, 0f, t);
+            img.color = c;
+            yield return null;
+        }
+        rt.localScale = Vector3.one * toScale;
+    }
+
+    IEnumerator FadeImageAlpha(Image img, float from, float to, float duration)
+    {
+        Color c = img.color;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            c.a = Mathf.Lerp(from, to, Mathf.Clamp01(elapsed / duration));
+            img.color = c;
+            yield return null;
+        }
+        c.a = to;
+        img.color = c;
+    }
+
+    // Ease-out-back overshoot: 0 at t=0, peak at t=0.7, settles to 1 at t=1. Same curve shape as
+    // HUDController.StarBounce, just starting from 0 instead of 1 since these elements pop in
+    // from nothing rather than re-emphasising something already on screen. peak is configurable
+    // per caller — a soft 1.15 for the header (should read as "arriving"), a bigger 1.4 for VS
+    // (should read as "slamming in").
+    static float PopScale(float t, float peak = 1.15f)
+    {
+        const float peakT = 0.70f;
+        return t < peakT
+            ? Mathf.SmoothStep(0f, peak, t / peakT)
+            : Mathf.SmoothStep(peak, 1f, (t - peakT) / (1f - peakT));
     }
 
     // ── UI construction ────────────────────────────────────────────────────────
-    // Card/VS layout coordinates were originally measured against MatchUp_New.png (the mockup)
-    // on the assumption the mockup's own baked-in frame positions were the target to line up
-    // with. That was the wrong target — see the _backgroundSprite comment above — but the
-    // resulting symmetric two-card-plus-VS layout is independent of the (now plain) background,
-    // so the numbers below are kept as a reasonable centred composition, not because they still
-    // align to anything baked into an image.
 
     void BuildUI(Sprite squareSpr)
     {
@@ -172,7 +341,10 @@ public class MatchUpScreen : MonoBehaviour
         rootRT.offsetMin = rootRT.offsetMax = Vector2.zero;
         _panel = gameObject;
 
-        // Background — sky/clouds/hills art, full-bleed
+        // Background — MatchUpBackground.png, full-bleed, deliberately OUTSIDE the SafeArea
+        // below (should paint edge-to-edge including under a notch/rounded corner). Also blocks
+        // raycasts to whatever is behind this screen (the world map markers) since
+        // Image.raycastTarget defaults to true and this renders first/behind everything else.
         var bgGO = new GameObject("Background");
         bgGO.transform.SetParent(transform, false);
         var bgRT = bgGO.AddComponent<RectTransform>();
@@ -184,120 +356,155 @@ public class MatchUpScreen : MonoBehaviour
         _bgImg.color          = _backgroundSprite != null ? Color.white : new Color(0.35f, 0.55f, 0.85f);
         _bgImg.preserveAspect = false;
 
-        // Full-screen tap-to-continue catcher, sits above the background but below the cards
-        // and close button (added later in the hierarchy so they receive taps first).
-        var catcherGO = new GameObject("ContinueCatcher");
-        catcherGO.transform.SetParent(transform, false);
-        var catcherRT = catcherGO.AddComponent<RectTransform>();
-        catcherRT.anchorMin = Vector2.zero;
-        catcherRT.anchorMax = Vector2.one;
-        catcherRT.offsetMin = catcherRT.offsetMax = Vector2.zero;
-        var catcherImg = catcherGO.AddComponent<Image>();
-        catcherImg.color = new Color(0f, 0f, 0f, 0f); // invisible but raycastable
-        _fullScreenBtn = catcherGO.AddComponent<Button>();
-        _fullScreenBtn.targetGraphic = catcherImg;
-        var fc = _fullScreenBtn.colors;
-        fc.normalColor = fc.highlightedColor = fc.pressedColor = Color.white;
-        _fullScreenBtn.colors = fc;
-        _fullScreenBtn.onClick.AddListener(OnFullScreenClicked);
+        // SafeArea — every other element lives inside this, same pattern as
+        // HUDController.BuildSafeArea/ApplySafeArea. Fixes a real clipping bug reported
+        // 2026-07-23: the countdown numeral was rendering outside the device's actual safe
+        // (non-notch/non-home-indicator) region on a real phone aspect ratio, even though it sat
+        // safely within the flat 1920x1080 reference canvas math. A fixed pixel offset guessed
+        // against the full reference resolution can never account for a real device's actual
+        // inset, which varies per device — anchoring to the true Screen.safeArea does.
+        var safeGO = new GameObject("SafeArea");
+        safeGO.transform.SetParent(transform, false);
+        var safeRT = safeGO.AddComponent<RectTransform>();
+        ApplySafeArea(safeRT);
+        Transform safe = safeRT;
 
-        // Left card — player's animal
+        // Level header — LevelHeader1.png (see SCOPE NOTE at the top of this file). Top-anchored
+        // within the safe area with a small fixed inset, NOT centre-anchored with a guessed
+        // offset — this guarantees it never clips the top edge regardless of how much the actual
+        // safe rect shrinks on a given device (same reasoning as the countdown below, and the
+        // same technique WorldMapController already uses for its corner-anchored buttons).
+        // Enlarged considerably (560x280, still LevelHeader1.png's ~2:1 aspect) per user feedback
+        // ("increase the header text sizing").
+        var headerGO = new GameObject("LevelHeader");
+        headerGO.transform.SetParent(safe, false);
+        _headerRT = headerGO.AddComponent<RectTransform>();
+        _headerRT.anchorMin        = new Vector2(0.5f, 1f);
+        _headerRT.anchorMax        = new Vector2(0.5f, 1f);
+        _headerRT.pivot            = new Vector2(0.5f, 1f);
+        _headerRT.anchoredPosition = new Vector2(0f, -30f);
+        _headerRT.sizeDelta        = new Vector2(560f, 280f);
+        _headerImg = headerGO.AddComponent<Image>();
+        _headerImg.sprite         = _levelHeaderSprite;
+        _headerImg.enabled        = _levelHeaderSprite != null;
+        _headerImg.preserveAspect = true;
+        _headerImg.raycastTarget  = false;
+
+        // Left card — player's animal. Enlarged (560x560, was 480) and moved closer to centre so
+        // its inner edge touches VS (see AnimalRestPos/RobotRestPos/VsRestPos comment above),
+        // tilted outward (see CardRotationDeg) per user feedback ("bring the cards closer
+        // together and enlarge, rotate the cards slightly outwards, they should touch the VS").
+        // Centred on the safe area (0.5,0.5) rather than the raw canvas, same reasoning as the
+        // header/countdown but less at-risk since it's near the vertical middle, not an edge.
         var animGO = new GameObject("AnimalCard");
-        animGO.transform.SetParent(transform, false);
-        var animRT = animGO.AddComponent<RectTransform>();
-        animRT.anchorMin        = new Vector2(0.5f, 0.5f);
-        animRT.anchorMax        = new Vector2(0.5f, 0.5f);
-        animRT.pivot            = new Vector2(0.5f, 0.5f);
-        animRT.anchoredPosition = new Vector2(-537f, 19.5f);
-        animRT.sizeDelta        = new Vector2(517.5f, 592.5f);
+        animGO.transform.SetParent(safe, false);
+        _animalRT = animGO.AddComponent<RectTransform>();
+        _animalRT.anchorMin        = new Vector2(0.5f, 0.5f);
+        _animalRT.anchorMax        = new Vector2(0.5f, 0.5f);
+        _animalRT.pivot            = new Vector2(0.5f, 0.5f);
+        _animalRT.anchoredPosition = AnimalRestPos;
+        _animalRT.sizeDelta        = new Vector2(560f, 560f); // square framed portraits (500x500 source art)
+        _animalRT.localEulerAngles = new Vector3(0f, 0f, CardRotationDeg);
         _animalImg = animGO.AddComponent<Image>();
         _animalImg.preserveAspect = true;
         _animalImg.raycastTarget  = false;
 
-        // Right card — the robot(s) this level's player will face
+        // Right card — the robot(s) this level's player will face. Mirrors the animal card.
         var robotGO = new GameObject("RobotCard");
-        robotGO.transform.SetParent(transform, false);
-        var robotRT = robotGO.AddComponent<RectTransform>();
-        robotRT.anchorMin        = new Vector2(0.5f, 0.5f);
-        robotRT.anchorMax        = new Vector2(0.5f, 0.5f);
-        robotRT.pivot            = new Vector2(0.5f, 0.5f);
-        robotRT.anchoredPosition = new Vector2(480f, 19.5f);
-        robotRT.sizeDelta        = new Vector2(517.5f, 592.5f);
+        robotGO.transform.SetParent(safe, false);
+        _robotRT = robotGO.AddComponent<RectTransform>();
+        _robotRT.anchorMin        = new Vector2(0.5f, 0.5f);
+        _robotRT.anchorMax        = new Vector2(0.5f, 0.5f);
+        _robotRT.pivot            = new Vector2(0.5f, 0.5f);
+        _robotRT.anchoredPosition = RobotRestPos;
+        _robotRT.sizeDelta        = new Vector2(560f, 560f);
+        _robotRT.localEulerAngles = new Vector3(0f, 0f, -CardRotationDeg);
         _robotImg = robotGO.AddComponent<Image>();
         _robotImg.preserveAspect = true;
         _robotImg.raycastTarget  = false;
 
         // Fallback label shown inside the robot card slot when no dedicated art exists yet
-        // (RobotType.Basic) or when the level has no data ("COMING SOON").
-        _robotFallbackLabel = MakeLabel(transform, "RobotFallbackLabel",
-            new Vector2(480f, 19.5f), new Vector2(400f, 200f), 36f, new Color(0.25f, 0.20f, 0.12f));
+        // or when the level has no data ("COMING SOON"). Follows the robot card's position, not
+        // its rotation (a rotated text block reads worse than a rotated card) — a same-position
+        // substitute for _robotImg, not a separate beat.
+        _robotFallbackLabel = MakeLabel(safe, "RobotFallbackLabel",
+            RobotRestPos, new Vector2(400f, 200f), 36f, new Color(0.25f, 0.20f, 0.12f));
         _robotFallbackLabel.fontStyle = FontStyles.Bold;
 
-        // VS graphic, centred between the two cards
+        // VS graphic, centred between the two cards, touching both — enlarged (220x220, was 160)
+        // to match the bigger cards.
         var vsGO = new GameObject("VS");
-        vsGO.transform.SetParent(transform, false);
-        var vsRT = vsGO.AddComponent<RectTransform>();
-        vsRT.anchorMin        = new Vector2(0.5f, 0.5f);
-        vsRT.anchorMax        = new Vector2(0.5f, 0.5f);
-        vsRT.pivot            = new Vector2(0.5f, 0.5f);
-        vsRT.anchoredPosition = new Vector2(-22.5f, 75f);
-        vsRT.sizeDelta        = new Vector2(160f, 160f);
-        var vsImg = vsGO.AddComponent<Image>();
-        vsImg.sprite         = _vsSprite;
-        vsImg.enabled        = _vsSprite != null;
-        vsImg.preserveAspect = true;
-        vsImg.raycastTarget  = false;
+        vsGO.transform.SetParent(safe, false);
+        _vsRT = vsGO.AddComponent<RectTransform>();
+        _vsRT.anchorMin        = new Vector2(0.5f, 0.5f);
+        _vsRT.anchorMax        = new Vector2(0.5f, 0.5f);
+        _vsRT.pivot            = new Vector2(0.5f, 0.5f);
+        _vsRT.anchoredPosition = VsRestPos;
+        _vsRT.sizeDelta        = new Vector2(220f, 220f);
+        _vsImg = vsGO.AddComponent<Image>();
+        _vsImg.sprite         = _vsSprite;
+        _vsImg.enabled        = _vsSprite != null;
+        _vsImg.preserveAspect = true;
+        _vsImg.raycastTarget  = false;
 
-        // Level number — top of screen
-        _levelNumText = MakeLabel(transform, "LevelNum",
-            new Vector2(0f, 460f), new Vector2(700f, 70f), 46f, new Color(1f, 0.97f, 0.86f));
-        _levelNumText.fontStyle = FontStyles.Bold;
+        // Countdown display — bottom-anchored within the safe area with a small fixed inset (the
+        // exact clipping fix described in the SafeArea comment above), not centre-anchored with a
+        // guessed negative offset like the first pass. Enlarged (260x260, was 220) and shared by
+        // all four sprites (3/2/1/READY) via this one RectTransform, so they're all identically
+        // sized ("resize the countdown sprites to the same sizing") by construction.
+        var cdGO = new GameObject("Countdown");
+        cdGO.transform.SetParent(safe, false);
+        _countdownRT = cdGO.AddComponent<RectTransform>();
+        _countdownRT.anchorMin        = new Vector2(0.5f, 0f);
+        _countdownRT.anchorMax        = new Vector2(0.5f, 0f);
+        _countdownRT.pivot            = new Vector2(0.5f, 0f);
+        _countdownRT.anchoredPosition = new Vector2(0f, 40f);
+        _countdownRT.sizeDelta        = new Vector2(260f, 260f);
+        _countdownImg = cdGO.AddComponent<Image>();
+        _countdownImg.preserveAspect = true;
+        _countdownImg.raycastTarget  = false;
+        _countdownImg.enabled        = false;
 
-        // Stars (replay context) — just under the level number
-        _starsText = MakeLabel(transform, "Stars",
-            new Vector2(0f, 400f), new Vector2(400f, 50f), 30f, Color.white);
-
-        // Pulsing continue hint — bottom of screen
-        _continueHint = MakeLabel(transform, "ContinueHint",
-            new Vector2(0f, -470f), new Vector2(600f, 50f), 26f, new Color(1f, 1f, 1f, 1f));
-        _continueHint.fontStyle = FontStyles.Bold;
-
-        // Close button — top-left, backs out without starting the level. Its own Button
-        // swallows the click so it never falls through to the full-screen continue catcher.
-        var closeGO = new GameObject("CloseBtn");
-        closeGO.transform.SetParent(transform, false);
-        var closeRT = closeGO.AddComponent<RectTransform>();
-        closeRT.anchorMin        = new Vector2(0f, 1f);
-        closeRT.anchorMax        = new Vector2(0f, 1f);
-        closeRT.pivot            = new Vector2(0f, 1f);
-        closeRT.anchoredPosition = new Vector2(24f, -24f);
-        closeRT.sizeDelta        = new Vector2(64f, 64f);
-        var closeImg = closeGO.AddComponent<Image>();
-        closeImg.sprite = squareSpr;
-        closeImg.color  = new Color(0.12f, 0.14f, 0.22f, 0.85f);
-        var closeLblGO = new GameObject("Label");
-        closeLblGO.transform.SetParent(closeGO.transform, false);
-        var closeLblRT = closeLblGO.AddComponent<RectTransform>();
-        closeLblRT.anchorMin = Vector2.zero;
-        closeLblRT.anchorMax = Vector2.one;
-        closeLblRT.offsetMin = closeLblRT.offsetMax = Vector2.zero;
-        var closeLblTMP = closeLblGO.AddComponent<TextMeshProUGUI>();
-        closeLblTMP.text               = "×";
-        closeLblTMP.fontSize           = 40f;
-        closeLblTMP.color              = Color.white;
-        closeLblTMP.alignment          = TextAlignmentOptions.Center;
-        closeLblTMP.enableWordWrapping = false;
-        closeLblTMP.raycastTarget      = false;
-        var closeBtn = closeGO.AddComponent<Button>();
-        closeBtn.targetGraphic = closeImg;
-        var cc = closeBtn.colors;
-        cc.normalColor      = Color.white;
-        cc.highlightedColor = new Color(0.85f, 0.85f, 0.85f);
-        cc.pressedColor     = new Color(0.60f, 0.60f, 0.60f);
-        closeBtn.colors     = cc;
-        closeBtn.onClick.AddListener(OnCloseClicked);
+        // Fade-to-black overlay — full-bleed, added LAST (outside the safe area, like the
+        // background) so it renders on top of literally everything else in this screen. See
+        // PlaySequence step 6 for why this fades TO OPAQUE rather than the screen fading to
+        // transparent.
+        var fadeGO = new GameObject("FadeOverlay");
+        fadeGO.transform.SetParent(transform, false);
+        var fadeRT = fadeGO.AddComponent<RectTransform>();
+        fadeRT.anchorMin = Vector2.zero;
+        fadeRT.anchorMax = Vector2.one;
+        fadeRT.offsetMin = fadeRT.offsetMax = Vector2.zero;
+        _fadeOverlayImg = fadeGO.AddComponent<Image>();
+        _fadeOverlayImg.sprite        = squareSpr;
+        _fadeOverlayImg.color         = new Color(0f, 0f, 0f, 0f);
+        _fadeOverlayImg.raycastTarget = false;
 
         _panel.SetActive(false);
+    }
+
+    // Same technique as HUDController.ApplySafeArea — maps Screen.safeArea (actual device pixels)
+    // to normalized anchors so children of this RectTransform can never render into a notch,
+    // rounded corner, or home-indicator zone regardless of device.
+    static void ApplySafeArea(RectTransform rt)
+    {
+        if (Screen.width <= 0 || Screen.height <= 0)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+        }
+        else
+        {
+            Rect safe = Screen.safeArea;
+            Vector2 min = safe.position;
+            Vector2 max = safe.position + safe.size;
+            min.x /= Screen.width;  min.y /= Screen.height;
+            max.x /= Screen.width;  max.y /= Screen.height;
+            rt.anchorMin = min;
+            rt.anchorMax = max;
+        }
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
     }
 
     static TextMeshProUGUI MakeLabel(Transform parent, string name, Vector2 pos, Vector2 size, float fontSize, Color color)
