@@ -45,24 +45,47 @@ public class HUDController : MonoBehaviour
 
     private GameObject                _lcPanel;
     private TextMeshProUGUI           _lcScoreText;
-    private TextMeshProUGUI           _lcBestText;
-    private readonly RectTransform[]  _lcStarRTs  = new RectTransform[3];
-    private readonly TextMeshProUGUI[] _lcStarTMPs = new TextMeshProUGUI[3];
+    private TextMeshProUGUI           _lcLevelUpText;
+    // 4 slots: [0..2] the real star rating (existing GetBestStars() 0-3 scale), [3] is not a
+    // rating — it always pops last and represents "you leveled up" (see AnimateStars).
+    private readonly RectTransform[]  _lcStarRTs  = new RectTransform[4];
+    private readonly Image[]          _lcStarImgs = new Image[4];
     private Coroutine                  _lcAnim;
 
     private static readonly Color StarFilled = new Color(1.00f, 0.82f, 0.00f);
     private static readonly Color StarEmpty  = new Color(0.38f, 0.38f, 0.42f);
+
+    [SerializeField] private Sprite _lcTitleSprite; // LevelComplete.png
+    [SerializeField] private Sprite _starSprite;    // ScoreStars.png — tinted gold/grey per slot
 
     // ── Level Failed panel (Phase 2.3) ────────────────────────────────────────
 
     private GameObject       _lfPanel;
     private TextMeshProUGUI  _lfScoreText;
 
+    [SerializeField] private Sprite _lfTitleSprite; // LevelFailed.png
+
+    // Shared art wired via SceneSetup (Assets/Sprites/UI/MatchUp/ + Assets/Sprites/UI/Icon/) —
+    // both the LevelComplete and LevelFailed panels use the same backdrop/button assets.
+    // Both BuildLevelCompletePanel()/BuildLevelFailedPanel() fall back to a plain procedural
+    // box/text if any of these are unwired, so neither panel ever renders blank.
+    [SerializeField] private Sprite _scoreboardSprite; // Scoreboard.png (backdrop)
+    [SerializeField] private Sprite _playButtonSprite; // Btn_play.png
+    [SerializeField] private Sprite _homeButtonSprite;  // Btn_home.png
+
+    // Top-bar elements hidden while a full-screen end-of-level panel is up — both
+    // LevelComplete and LevelFailed panels are self-contained (own score display),
+    // and pausing a finished level makes no sense.
+    private GameObject _scoreDisplayRoot;
+    private GameObject _pauseButtonRoot;
+
     // ── Pause menu (Phase 2.4) ────────────────────────────────────────────────
 
     private GameObject _pausePanel;
     private Image      _musicToggleImg;
     private Image      _sfxToggleImg;
+
+    [SerializeField] private Sprite _quitButtonSprite; // Btn_quite.png ("QUIT" baked into the art)
 
     private static readonly Color ToggleOnColor  = new Color(0.12f, 0.14f, 0.22f);
     private static readonly Color ToggleOffColor = new Color(0.40f, 0.40f, 0.44f);
@@ -137,17 +160,28 @@ public class HUDController : MonoBehaviour
             case GameState.LevelComplete:
                 HideLevelFailedPanel();
                 ShowLevelCompletePanel();
+                SetTopBarVisible(false);
                 break;
             case GameState.LevelFailed:
                 HideLevelCompletePanel();
                 ShowLevelFailedPanel();
+                SetTopBarVisible(false);
                 break;
             default:
                 HideLevelCompletePanel();
                 HideLevelFailedPanel();
                 HidePausePanel();
+                SetTopBarVisible(true);
                 break;
         }
+    }
+
+    // Score display + pause button both live top-of-screen; hidden whenever a
+    // full-screen end-of-level panel (LevelComplete/LevelFailed) is showing.
+    void SetTopBarVisible(bool visible)
+    {
+        if (_scoreDisplayRoot != null) _scoreDisplayRoot.SetActive(visible);
+        if (_pauseButtonRoot  != null) _pauseButtonRoot.SetActive(visible);
     }
 
     // ── Canvas construction ───────────────────────────────────────────────────
@@ -212,6 +246,7 @@ public class HUDController : MonoBehaviour
                             pivot:     new Vector2(0.5f, 1f),
                             pos:       new Vector2(0f, 0f),
                             size:      new Vector2(260f, 62f));
+        _scoreDisplayRoot = backing.gameObject;
 
         _scoreText = MakeStretchText(backing.transform, "ScoreValue",
                          fontSize: 50f, text: "0",
@@ -239,6 +274,7 @@ public class HUDController : MonoBehaviour
                       pivot:     new Vector2(1f, 1f),
                       pos:       new Vector2(-16f, -8f),
                       size:      new Vector2(58f, 58f));
+        _pauseButtonRoot = btn.gameObject;
 
         _pauseGlyph = MakeStretchText(btn.transform, "PauseGlyph",
                           fontSize: 24f, text: "II",
@@ -394,59 +430,88 @@ public class HUDController : MonoBehaviour
         overlay.sprite = _squareSpr;
         overlay.color  = new Color(0f, 0f, 0f, 0.50f);
 
-        // Centre card — warm cream
-        var box = MakeImage(rootRT, "LCBox", _squareSpr, new Color(0.97f, 0.95f, 0.90f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(580f, 420f));
-
-        // Title
-        MakeCentredText(box.transform, "LCTitle",
-            pos: new Vector2(0f, 155f), size: new Vector2(540f, 58f),
-            fontSize: 42f, text: "LEVEL COMPLETE!",
-            color: new Color(0.92f, 0.60f, 0.04f));
-
-        // Three star slots — grey until animated gold
-        for (int i = 0; i < 3; i++)
+        // Scoreboard art backdrop — same asset/size/position as the Level Failed panel.
+        // Falls back to the old plain cream box if unwired so the panel never renders blank.
+        Image box;
+        if (_scoreboardSprite != null)
         {
-            float xOff      = -160f + i * 160f;
-            var starGO      = new GameObject($"LCStar_{i}");
+            box = MakeImage(rootRT, "LCBox", _scoreboardSprite, Color.white,
+                      new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(620f, 363f));
+            box.preserveAspect = true;
+        }
+        else
+        {
+            box = MakeImage(rootRT, "LCBox", _squareSpr, new Color(0.97f, 0.95f, 0.90f),
+                      new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(580f, 420f));
+        }
+
+        // Title — LevelComplete.png sign-topper, overlapping the board's top edge.
+        // Falls back to gold TMP text if unwired.
+        if (_lcTitleSprite != null)
+        {
+            var titleImg = MakeImage(box.transform, "LCTitle", _lcTitleSprite, Color.white,
+                      new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, 255f), new Vector2(340f, 183f));
+            titleImg.preserveAspect = true;
+        }
+        else
+        {
+            MakeCentredText(box.transform, "LCTitle",
+                pos: new Vector2(0f, 220f), size: new Vector2(540f, 58f),
+                fontSize: 42f, text: "LEVEL COMPLETE!",
+                color: new Color(0.92f, 0.60f, 0.04f));
+        }
+
+        // Four star slots — grey until animated gold. Slots 0-2 are the real star rating;
+        // slot 3 doesn't reflect performance, it always pops last to mean "level up" (see
+        // AnimateStars/ShowLevelCompletePanel).
+        for (int i = 0; i < 4; i++)
+        {
+            float xOff = -195f + i * 130f;
+            var starGO = new GameObject($"LCStar_{i}");
             starGO.transform.SetParent(box.transform, false);
-            var rt          = starGO.AddComponent<RectTransform>();
-            rt.anchorMin    = new Vector2(0.5f, 0.5f);
-            rt.anchorMax    = new Vector2(0.5f, 0.5f);
-            rt.pivot        = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = new Vector2(xOff, 65f);
-            rt.sizeDelta    = new Vector2(95f, 95f);
-            var tmp         = starGO.AddComponent<TextMeshProUGUI>();
-            tmp.text        = "●";
-            tmp.fontSize    = 80f;
-            tmp.color       = StarEmpty;
-            tmp.alignment   = TextAlignmentOptions.Center;
-            tmp.enableWordWrapping = false;
+            var rt = starGO.AddComponent<RectTransform>();
+            rt.anchorMin        = new Vector2(0.5f, 0.5f);
+            rt.anchorMax        = new Vector2(0.5f, 0.5f);
+            rt.pivot            = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(xOff, 90f);
+            rt.sizeDelta        = new Vector2(85f, 85f);
+            var img = starGO.AddComponent<Image>();
+            img.sprite         = _starSprite != null ? _starSprite : _circleSpr;
+            img.color          = StarEmpty;
+            img.preserveAspect = true;
             _lcStarRTs[i]  = rt;
-            _lcStarTMPs[i] = tmp;
+            _lcStarImgs[i] = img;
         }
 
         // Score value (large)
         _lcScoreText = MakeCentredText(box.transform, "LCScore",
-            pos: new Vector2(0f, -28f), size: new Vector2(460f, 56f),
-            fontSize: 48f, text: "0",
-            color: new Color(0.12f, 0.10f, 0.06f));
+            pos: new Vector2(0f, 10f), size: new Vector2(460f, 64f),
+            fontSize: 52f, text: "0",
+            color: new Color(0.20f, 0.10f, 0.03f));
+        StyleAsGameNumber(_lcScoreText);
 
-        // Best / new-best line
-        _lcBestText = MakeCentredText(box.transform, "LCBest",
-            pos: new Vector2(0f, -80f), size: new Vector2(400f, 36f),
-            fontSize: 26f, text: "",
-            color: new Color(0.50f, 0.50f, 0.54f));
+        // "LEVEL UP!" label — revealed in sync with the 4th star (see PopStar)
+        _lcLevelUpText = MakeCentredText(box.transform, "LCLevelUp",
+            pos: new Vector2(0f, -45f), size: new Vector2(400f, 36f),
+            fontSize: 26f, text: "LEVEL UP!",
+            color: StarFilled);
+        _lcLevelUpText.gameObject.SetActive(false);
 
-        // Buttons
-        var replayBtn = MakePanelButton(box.transform, "ReplayBtn", "REPLAY",
-                            new Vector2(-148f, -160f), new Vector2(196f, 56f));
-        replayBtn.onClick.AddListener(OnReplayClicked);
+        // Buttons — Btn_play (world map, advance to next level) on the left, Btn_home
+        // (landing page) on the right. Dropped clear below the board's bottom edge — same
+        // offset as the Level Failed panel, see its comment for the non-overlap math.
+        var playBtn = MakeIconButton(box.transform, "PlayBtn", _playButtonSprite,
+                          new Color(1.00f, 0.55f, 0.05f),
+                          pos: new Vector2(-170f, -260f), size: new Vector2(130f, 130f));
+        playBtn.onClick.AddListener(OnLevelCompletePlayClicked);
 
-        var nextBtn = MakePanelButton(box.transform, "NextBtn", "NEXT >",
-                          new Vector2(+148f, -160f), new Vector2(196f, 56f));
-        nextBtn.onClick.AddListener(OnNextClicked);
+        var homeBtn = MakeIconButton(box.transform, "HomeBtn", _homeButtonSprite,
+                          new Color(1.00f, 0.55f, 0.05f),
+                          pos: new Vector2(+170f, -260f), size: new Vector2(130f, 130f));
+        homeBtn.onClick.AddListener(OnLevelCompleteHomeClicked);
 
         _lcPanel.SetActive(false);
     }
@@ -455,21 +520,19 @@ public class HUDController : MonoBehaviour
     {
         if (_lcPanel == null) return;
 
-        int  score   = ScoreManager.Instance?.Score ?? 0;
-        int  stars   = ScoreManager.Instance?.Stars ?? 0;
-        bool newBest = ScoreManager.Instance?.IsNewBest ?? false;
-        int  best    = ScoreManager.GetBestScore(GameManager.Instance?.CurrentLevelIndex ?? 0);
+        int score = ScoreManager.Instance?.Score ?? 0;
+        int stars = ScoreManager.Instance?.Stars ?? 0;
 
         _lcScoreText.text = score.ToString("N0");
-        _lcBestText.text  = newBest ? "●  NEW BEST!" : $"BEST  {best:N0}";
-        _lcBestText.color = newBest ? StarFilled : new Color(0.50f, 0.50f, 0.54f);
 
-        // Reset all stars to grey at normal scale before animating
-        for (int i = 0; i < 3; i++)
+        // Reset all stars to grey at normal scale before animating; hide the level-up label
+        // until the 4th star's pop reveals it.
+        for (int i = 0; i < 4; i++)
         {
             _lcStarRTs[i].localScale = Vector3.one;
-            _lcStarTMPs[i].color     = StarEmpty;
+            _lcStarImgs[i].color     = StarEmpty;
         }
+        _lcLevelUpText.gameObject.SetActive(false);
 
         _lcPanel.SetActive(true);
 
@@ -483,16 +546,24 @@ public class HUDController : MonoBehaviour
         if (_lcPanel != null) _lcPanel.SetActive(false);
     }
 
-    void OnReplayClicked()
+    // Btn_play — advances GameState to Idle, which WorldMapController reacts to on its own by
+    // showing itself and sliding the position indicator from the level just completed to the
+    // newly-unlocked next one (see WorldMapController.RefreshMarkers/IndicatorRoutine — this
+    // already happens automatically once the just-finished level's star result unlocks the
+    // next pin, no extra plumbing needed here).
+    void OnLevelCompletePlayClicked()
     {
         HideLevelCompletePanel();
-        GameManager.Instance?.RestartLevel();
+        GameManager.Instance?.LoadMenu();
     }
 
-    void OnNextClicked()
+    // Btn_home — same "skip the world map, land on the main menu" pattern as Level Failed's
+    // Home button (see OnMenuClicked and WorldMapController.SkipToMainMenu).
+    void OnLevelCompleteHomeClicked()
     {
         HideLevelCompletePanel();
-        GameManager.Instance?.LoadNextLevel();
+        GameManager.Instance?.LoadMenu();
+        WorldMapController.Instance?.SkipToMainMenu();
     }
 
     // ── Level Failed panel ────────────────────────────────────────────────────
@@ -505,36 +576,59 @@ public class HUDController : MonoBehaviour
         overlay.sprite = _squareSpr;
         overlay.color  = new Color(0f, 0f, 0f, 0.55f);
 
-        // Card — slightly cooler/darker cream than Level Complete
-        var box = MakeImage(rootRT, "LFBox", _squareSpr, new Color(0.96f, 0.93f, 0.90f),
+        // Scoreboard art is the whole backdrop (wooden sign, blank parchment centre) —
+        // falls back to the old plain cream box if unwired so the panel never renders blank.
+        Image box;
+        if (_scoreboardSprite != null)
+        {
+            box = MakeImage(rootRT, "LFBox", _scoreboardSprite, Color.white,
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(480f, 300f));
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(620f, 363f));
+            box.preserveAspect = true;
+        }
+        else
+        {
+            box = MakeImage(rootRT, "LFBox", _squareSpr, new Color(0.96f, 0.93f, 0.90f),
+                      new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(480f, 300f));
+        }
 
-        // Title — deep red
-        MakeCentredText(box.transform, "LFTitle",
-            pos: new Vector2(0f, 100f), size: new Vector2(440f, 54f),
-            fontSize: 40f, text: "LEVEL FAILED!",
-            color: new Color(0.82f, 0.14f, 0.10f));
+        // Title — LevelFailed.png sign-topper, overlapping the board's top edge.
+        // Falls back to red TMP text if unwired.
+        if (_lfTitleSprite != null)
+        {
+            var titleImg = MakeImage(box.transform, "LFTitle", _lfTitleSprite, Color.white,
+                      new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, 255f), new Vector2(340f, 183f));
+            titleImg.preserveAspect = true;
+        }
+        else
+        {
+            MakeCentredText(box.transform, "LFTitle",
+                pos: new Vector2(0f, 220f), size: new Vector2(440f, 54f),
+                fontSize: 40f, text: "LEVEL FAILED!",
+                color: new Color(0.82f, 0.14f, 0.10f));
+        }
 
-        // Score label
-        MakeCentredText(box.transform, "LFScoreLabel",
-            pos: new Vector2(0f, 28f), size: new Vector2(380f, 32f),
-            fontSize: 24f, text: "SCORE",
-            color: new Color(0.45f, 0.42f, 0.40f));
-
-        // Score value
+        // Score value only (no "SCORE" label), centred dead-middle of the backdrop
         _lfScoreText = MakeCentredText(box.transform, "LFScore",
-            pos: new Vector2(0f, -16f), size: new Vector2(380f, 48f),
-            fontSize: 42f, text: "0",
-            color: new Color(0.12f, 0.10f, 0.06f));
+            pos: new Vector2(0f, 0f), size: new Vector2(400f, 64f),
+            fontSize: 52f, text: "0",
+            color: new Color(0.20f, 0.10f, 0.03f));
+        StyleAsGameNumber(_lfScoreText);
 
-        // Buttons
-        var tryAgainBtn = MakePanelButton(box.transform, "TryAgainBtn", "TRY AGAIN",
-                              new Vector2(-118f, -110f), new Vector2(196f, 56f));
+        // Buttons — Btn_play (try again) on the left, Btn_home (landing page) on the right.
+        // Dropped clear below the board's bottom edge (board half-height 181.5 + button half-
+        // height 65 = 246.5 is the minimum non-overlapping offset) so the icons sit on the dark
+        // overlay instead of covering the sign art.
+        var tryAgainBtn = MakeIconButton(box.transform, "TryAgainBtn", _playButtonSprite,
+                              new Color(1.00f, 0.55f, 0.05f),
+                              pos: new Vector2(-170f, -260f), size: new Vector2(130f, 130f));
         tryAgainBtn.onClick.AddListener(OnTryAgainClicked);
 
-        var menuBtn = MakePanelButton(box.transform, "MenuBtn", "MENU",
-                          new Vector2(+118f, -110f), new Vector2(130f, 56f));
+        var menuBtn = MakeIconButton(box.transform, "MenuBtn", _homeButtonSprite,
+                          new Color(1.00f, 0.55f, 0.05f),
+                          pos: new Vector2(+170f, -260f), size: new Vector2(130f, 130f));
         menuBtn.onClick.AddListener(OnMenuClicked);
 
         _lfPanel.SetActive(false);
@@ -562,6 +656,11 @@ public class HUDController : MonoBehaviour
     {
         HideLevelFailedPanel();
         GameManager.Instance?.LoadMenu();
+        // LoadMenu() transitions GameState to Idle, which WorldMapController reacts to by
+        // showing itself (it's the PLAY destination) — SkipToMainMenu() immediately hides it
+        // again in the same call so the world map never actually flashes on screen, landing
+        // cleanly on the main menu instead. Same pattern used by the Level Complete Home button.
+        WorldMapController.Instance?.SkipToMainMenu();
     }
 
     // ── Pause menu ────────────────────────────────────────────────────────────
@@ -574,10 +673,12 @@ public class HUDController : MonoBehaviour
         overlay.sprite = _squareSpr;
         overlay.color  = new Color(0f, 0f, 0f, 0.60f);
 
-        // Centre card
+        // Centre card — enlarged 340->480 to fit the new QUIT row below MENU; MENU and
+        // everything above it keep the exact same relative position/spacing as before
+        // (unchanged offsets), only the divider/toggle row shift down to make room.
         var box = MakeImage(rootRT, "PauseBox", _squareSpr, new Color(0.97f, 0.95f, 0.90f),
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(380f, 340f));
+                      new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(380f, 480f));
 
         // Title
         MakeCentredText(box.transform, "PauseTitle",
@@ -598,19 +699,27 @@ public class HUDController : MonoBehaviour
                           new Vector2(0f, -80f), new Vector2(280f, 52f));
         menuBtn.onClick.AddListener(OnPauseMenuClicked);
 
+        // QUIT — Btn_quite.png already has "QUIT" baked into the art (a labelled button, not
+        // a bare icon), so it's sized/treated like the icon buttons elsewhere rather than
+        // stretched to the 280-wide text-button rows above.
+        var quitBtn = MakeIconButton(box.transform, "QuitBtn", _quitButtonSprite,
+                          new Color(0.75f, 0.20f, 0.12f),
+                          pos: new Vector2(0f, -145f), size: new Vector2(90f, 90f));
+        quitBtn.onClick.AddListener(OnQuitClicked);
+
         // Divider
         MakeImage(box.transform, "PauseDivider", _squareSpr, new Color(0.72f, 0.70f, 0.68f),
               new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-              new Vector2(0.5f, 0.5f), new Vector2(0f, -120f), new Vector2(300f, 2f));
+              new Vector2(0.5f, 0.5f), new Vector2(0f, -185f), new Vector2(300f, 2f));
 
         // Toggle buttons
         var musicBtn = MakePanelButton(box.transform, "MusicToggle", "MUSIC",
-                           new Vector2(-80f, -148f), new Vector2(130f, 44f));
+                           new Vector2(-80f, -213f), new Vector2(130f, 44f));
         _musicToggleImg = musicBtn.targetGraphic as Image;
         musicBtn.onClick.AddListener(OnMusicToggleClicked);
 
         var sfxBtn = MakePanelButton(box.transform, "SfxToggle", "SFX",
-                         new Vector2(+80f, -148f), new Vector2(130f, 44f));
+                         new Vector2(+80f, -213f), new Vector2(130f, 44f));
         _sfxToggleImg = sfxBtn.targetGraphic as Image;
         sfxBtn.onClick.AddListener(OnSfxToggleClicked);
 
@@ -647,6 +756,18 @@ public class HUDController : MonoBehaviour
         GameManager.Instance?.LoadMenu();
     }
 
+    // Quits the standalone app; in the Editor, Application.Quit() is a no-op, so this stops
+    // Play mode instead — the same idiom used throughout Unity projects for an in-game quit
+    // button that also behaves sensibly while testing in the Editor.
+    void OnQuitClicked()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
     void OnMusicToggleClicked()
     {
         bool on = !AudioManager.MusicEnabled;
@@ -663,24 +784,30 @@ public class HUDController : MonoBehaviour
             _sfxToggleImg.color = on ? ToggleOnColor : ToggleOffColor;
     }
 
-    // Stagger: star 1 at 0.3s, star 2 at 0.75s, star 3 at 1.2s after panel opens.
+    // Stagger: star 1 at 0.3s, star 2 at 0.75s, star 3 at 1.2s, level-up star at 1.65s.
+    // Slots 0-2 only pop if earned (real star rating); slot 3 always pops — it isn't a
+    // rating, it's the "you leveled up" reveal that also surfaces the LEVEL UP! label.
     IEnumerator AnimateStars(int earnedCount)
     {
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 4; i++)
         {
             yield return new WaitForSecondsRealtime(0.30f + i * 0.45f);
-            if (i < earnedCount)
-                StartCoroutine(PopStar(i));
+            if (i < 3 && i >= earnedCount) continue;
+            StartCoroutine(PopStar(i));
         }
         _lcAnim = null;
     }
 
-    // Bounce scale 1→1.42→1, simultaneous grey→gold colour transition.
+    // Bounce scale 1→1.42→1, simultaneous grey→gold colour transition. Slot 3 additionally
+    // reveals the LEVEL UP! label alongside its own pop.
     IEnumerator PopStar(int idx)
     {
         var rt  = _lcStarRTs[idx];
-        var tmp = _lcStarTMPs[idx];
-        if (rt == null || tmp == null) yield break;
+        var img = _lcStarImgs[idx];
+        if (rt == null || img == null) yield break;
+
+        if (idx == 3 && _lcLevelUpText != null)
+            _lcLevelUpText.gameObject.SetActive(true);
 
         float elapsed = 0f;
         const float dur = 0.38f;
@@ -688,13 +815,13 @@ public class HUDController : MonoBehaviour
         {
             float t      = Mathf.Clamp01(elapsed / dur);
             rt.localScale = Vector3.one * StarBounce(t);
-            tmp.color     = Color.Lerp(StarEmpty, StarFilled,
+            img.color     = Color.Lerp(StarEmpty, StarFilled,
                                 Mathf.SmoothStep(0f, 1f, t * 1.4f));
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
         rt.localScale = Vector3.one;
-        tmp.color     = StarFilled;
+        img.color     = StarFilled;
     }
 
     // Ease-out overshoot: 1 at t=0, peak 1.42 at t=0.6, settles to 1 at t=1.
@@ -725,6 +852,25 @@ public class HUDController : MonoBehaviour
         return tmp;
     }
 
+    // Approximates the bold, black-outlined, gold-to-orange gradient cartoon lettering used in
+    // the game's own art (LevelFailed.png/LevelComplete.png titles) using only the default TMP
+    // font's built-in outline + vertex-gradient support. No custom font/sprite asset exists in
+    // this project (TextMesh Pro ships only LiberationSans SDF) — this is the closest match
+    // achievable without importing new font or sprite art.
+    static void StyleAsGameNumber(TextMeshProUGUI tmp)
+    {
+        tmp.color               = Color.white; // must be white or it tints the gradient below
+        tmp.fontStyle            = FontStyles.Bold;
+        tmp.enableVertexGradient = true;
+        tmp.colorGradient        = new VertexGradient(
+            new Color(1.00f, 0.87f, 0.40f), new Color(1.00f, 0.87f, 0.40f),
+            new Color(0.95f, 0.55f, 0.05f), new Color(0.95f, 0.55f, 0.05f));
+        var mat = tmp.fontMaterial; // instance, safe to edit without affecting other TMP text
+        mat.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.22f);
+        mat.SetColor(ShaderUtilities.ID_OutlineColor, Color.black);
+        tmp.fontMaterial = mat;
+    }
+
     // Dark rectangular button with centred white label; returns the Button component.
     Button MakePanelButton(Transform parent, string name, string label, Vector2 pos, Vector2 size)
     {
@@ -739,6 +885,26 @@ public class HUDController : MonoBehaviour
         cols.normalColor      = Color.white;
         cols.highlightedColor = new Color(0.80f, 0.80f, 0.80f);
         cols.pressedColor     = new Color(0.52f, 0.52f, 0.52f);
+        btn.colors            = cols;
+        return btn;
+    }
+
+    // Square icon button (e.g. Btn_play / Btn_home) — falls back to a plain orange
+    // square with no icon if sprite is unwired, same fallback pattern MainMenuController uses.
+    Button MakeIconButton(Transform parent, string name, Sprite sprite, Color fallbackColor,
+        Vector2 pos, Vector2 size)
+    {
+        var img = MakeImage(parent, name, sprite != null ? sprite : _squareSpr,
+                      sprite != null ? Color.white : fallbackColor,
+                      new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                      new Vector2(0.5f, 0.5f), pos, size);
+        img.preserveAspect = true;
+        var btn           = img.gameObject.AddComponent<Button>();
+        btn.targetGraphic = img;
+        var cols              = btn.colors;
+        cols.normalColor      = Color.white;
+        cols.highlightedColor = new Color(0.88f, 0.88f, 0.88f);
+        cols.pressedColor     = new Color(0.68f, 0.68f, 0.68f);
         btn.colors            = cols;
         return btn;
     }

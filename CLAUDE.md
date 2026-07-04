@@ -249,7 +249,33 @@ unity/Assets/Scripts/
   UI/
     HUDController.cs                 — Canvas built at runtime; card widgets anchored top-left (anchorMin
                               0.02,1); orange ⚡N damage badge; Level Complete/Failed/Pause panels; SafeArea
-                              RectTransform wrapper (Screen.safeArea-driven) for score/queue/pause elements
+                              RectTransform wrapper (Screen.safeArea-driven) for score/queue/pause elements.
+                              Top-of-screen score display + pause button hide themselves (SetTopBarVisible)
+                              whenever a full-screen end-of-level panel is up (both are self-contained with
+                              their own score display, and pausing a finished level makes no sense).
+                              **Level Complete/Failed panels (2026-07-25 redesign)** both use
+                              Scoreboard.png (Assets/Sprites/UI/MatchUp/) as the whole backdrop instead of a
+                              plain coloured box, with LevelComplete.png/LevelFailed.png as a sign-topper
+                              title overlapping the board's top edge, and square Btn_play/Btn_home icon
+                              buttons (shared fields — same assets on both panels) dropped clear below the
+                              board's bottom edge so they never render over the sign art. Falls back to the
+                              old plain box/text-button look if any sprite is unwired, so neither panel ever
+                              renders blank. Score number uses StyleAsGameNumber() — bold + black outline +
+                              gold-to-orange vertex gradient on the default TMP font, the closest
+                              approximation of the game's own bubble-lettering achievable without importing
+                              a new font asset (this project ships only LiberationSans SDF). Level Complete
+                              replaced its old 3-dot star row + "NEW BEST!" text with 4 real ScoreStars.png
+                              images: slots 0-2 are the actual star rating, slot 3 always pops last
+                              regardless of rating and reveals a "LEVEL UP!" label — it isn't a score tier,
+                              just a fixed "you cleared it" beat. Level Complete's Btn_play calls
+                              GameManager.LoadMenu() and relies on WorldMapController's own OnStateChanged
+                              listener to show itself and slide the position indicator to the newly-unlocked
+                              next level (no extra plumbing needed — see WorldMapController below); its
+                              Btn_home and Level Failed's Btn_home both call the new
+                              WorldMapController.SkipToMainMenu() so tapping Home lands directly on the main
+                              menu instead of flashing the world map first. Pause menu gained a QUIT button
+                              (Btn_quite.png, previously a dead asset) — `EditorApplication.isPlaying = false`
+                              in the Editor, `Application.Quit()` in a build.
     LevelSelectController.cs          — grid-based level select (ScrollRect + GridLayoutGroup). Unwired for
                               World 1 (superseded by WorldMapController) but kept in place for World 2+
     MainMenuController.cs             — LandingPage.png background (title/character art baked in); PLAY
@@ -274,7 +300,13 @@ unity/Assets/Scripts/
                               Screen.safeArea-driven SafeArea child (same ApplySafeArea pattern as
                               HUDController/MatchUpScreen), corner-anchored with a small fixed inset —
                               real rendered sprites, not baked into the background. Owns MatchUpScreen's
-                              art fields directly (see note below on why).
+                              art fields directly (see note below on why). Public SkipToMainMenu()
+                              (2026-07-25) — called by HUDController's Level Complete/Failed Home buttons:
+                              HidePanel() then MainMenuController.Show(). Needed because LoadMenu() always
+                              transitions GameState to Idle, which this class's own OnStateChanged reacts to
+                              by showing itself (it's the PLAY destination) — SkipToMainMenu() runs
+                              immediately after in the same call stack, hiding the map again before a frame
+                              ever renders it, so "Home" lands on the main menu instead of flashing the map.
     LevelMarker.cs                     — UI Image+Button (not SpriteRenderer — Button needs uGUI) + level
                               number TMP label; MarkerSize=80x120 (2:3 aspect, matches the 256x384 source
                               art). Refresh(unlocked,stars,...) picks locked/unlocked/star1/2/3 art (falls
@@ -332,6 +364,17 @@ unity/Assets/Editor/
   BuildScript.cs             — batch-mode entry points called by Run-Unity.ps1
   EditorAutoSetup.cs          — see "Auto-Compile Pipeline" above
   SpriteAutoImporter.cs        — see "Auto-Compile Pipeline" above
+  PanelPreview.cs              — FarmFury > Debug > Run Panel Preview; QA tool added 2026-07-25 since this
+                              project has no test framework and no OS-level input automation is available in
+                              this environment. Drives GameManager's public state API directly (ForceStartLevel
+                              -> FailLevel/CompleteLevel -> SendMessage("OnPauseClicked")) to force the Level
+                              Failed/Complete/Pause panels to show in Play mode without playing an actual
+                              level, screenshotting each via ScreenCapture.CaptureScreenshot. Must be launched
+                              as a real interactive Editor (no -batchmode/-nographics — Play mode needs a
+                              rendering Game view), unlike every other Run-Unity.ps1 command. Untested end to
+                              end in this environment — the one attempt OOM'd during a cold asset reimport on
+                              a 7.7GB-RAM machine before ever reaching Play mode; retry once free memory allows,
+                              or run it directly from the Editor's own menu.
 ```
 
 ### Runtime Event Flow

@@ -277,6 +277,19 @@ public static class SceneSetup
                 }
             }
         }
+        // Level Complete / Level Failed panel art — Scoreboard/LevelComplete/LevelFailed/
+        // ScoreStars live in the MatchUp folder (already used elsewhere for the pre-match
+        // sequence); Btn_play/Btn_home are the shared Icon set also used by
+        // MainMenuController/WorldMapController. Scoreboard + the two buttons are shared
+        // between both end-of-level panels (same assets, same field).
+        WireSprite(so, "_lcTitleSprite",       "Assets/Sprites/UI/MatchUp/LevelComplete.png");
+        WireSprite(so, "_starSprite",          "Assets/Sprites/UI/MatchUp/ScoreStars.png");
+        WireSprite(so, "_lfTitleSprite",       "Assets/Sprites/UI/MatchUp/LevelFailed.png");
+        WireSprite(so, "_scoreboardSprite",    "Assets/Sprites/UI/MatchUp/Scoreboard.png");
+        WireSprite(so, "_playButtonSprite",    "Assets/Sprites/UI/Icon/Btn_play.png");
+        WireSprite(so, "_homeButtonSprite",    "Assets/Sprites/UI/Icon/Btn_home.png");
+        WireSprite(so, "_quitButtonSprite",    "Assets/Sprites/UI/Icon/Btn_quite.png");
+
         so.ApplyModifiedProperties();
 
         if (wired > 0)

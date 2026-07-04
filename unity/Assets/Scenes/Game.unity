@@ -1257,6 +1257,13 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 536150bd4fc1c64439cca54569cdf408, type: 3}
   - {fileID: 21300000, guid: 10274d57663c03f4d87f729bee7c0187, type: 3}
   - {fileID: 21300000, guid: d5730ddb717e53f418358d6a98b70236, type: 3}
+  _lcTitleSprite: {fileID: 21300000, guid: 55c76c54ccf22d048a30634f33af70af, type: 3}
+  _starSprite: {fileID: 21300000, guid: 94b1b72d55d99e0418c67d225c245dcf, type: 3}
+  _lfTitleSprite: {fileID: 21300000, guid: e4eb9af51ce59bd4191a4805b798c680, type: 3}
+  _scoreboardSprite: {fileID: 21300000, guid: 4b9c61b5ffabce84fa6732409a7d4554, type: 3}
+  _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
+  _homeButtonSprite: {fileID: 21300000, guid: d4ca48065cb59984b89e8382405d5040, type: 3}
+  _quitButtonSprite: {fileID: 21300000, guid: d1f0def92ad14f449842c9b7152f760d, type: 3}
 --- !u!4 &1148615753
 Transform:
   m_ObjectHideFlags: 0
