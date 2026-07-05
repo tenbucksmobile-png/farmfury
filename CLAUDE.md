@@ -27,6 +27,10 @@ Full GDD: `C:\Users\Personel\Desktop\FarmFury_GDD_v2.docx`
 - **No level validator exists** (GDD §04 calls for one — a physics-sim script checking stability/solvability before a level ships). The L02–L06 bug above would have been caught by this.
 - **No "Perfect" star tier** — `ScoreManager` implements 1/2/3★ only; the GDD's 4th tier (3★ + all blocks destroyed) is not implemented.
 - 6 World 1 levels exist of 18 required (4 tutorial, 8 build, 4 twist, 2 boss — no boss level yet). L07–L18 are unwritten.
+- **No ground/grass visual ever existed for L01 — fixed 2026-07-26 with a placeholder.** `EnsureGround()`'s physics collider is deliberately invisible (top edge Y=−6.60), and no one had hand-authored a replacement, so the sky backdrop ran straight to the bottom of the screen. Symptom reported by the user: haybails/HarvesterRobot/a landing Cluck all looked like they were sinking or "falling through the floor" near the bottom of the screen. Root cause confirmed NOT a physics bug (Ground's collider/Rigidbody2D/layer-collision setup all check out) — the camera's visible range at rest (Y −6.5 to +2.5) already clips 0.1 units above the true ground surface, so anything settling near true ground level visually vanishes with nothing to anchor it. `SceneSetup.EnsureGroundVisual()` now creates a tinted placeholder strip (top edge Y=−5.3, matching where props already rest) to close that gap — replace with real ground/grass art when available, then delete `GroundVisual_Placeholder` from the scene.
+- **`LevelSelectController` removed entirely 2026-07-26** — user-reported the old "SELECT LEVEL" grid screen kept appearing instead of/behind the Sunrise Meadows world map. Root cause: it subscribed to `GameManager.OnStateChanged` and showed itself on `GameState.Idle` using the exact same Canvas `sortingOrder` (300) `WorldMapController` uses — the two were silently racing to show themselves on every Idle transition ever since `WorldMapController` superseded it for World 1 (2026-07-15); it was never actually disabled, just left running unused in the background until now. The script, its `SceneSetup.EnsureLevelSelect()` wiring, and the leftover `LevelSelect` scene GameObject (auto-cleaned by `WireAll()` on next run) are all gone. World 2+ needs its own map screen built following `WorldMapController`'s pattern when that content exists — not a resurrected grid select.
+- **Pause access restored 2026-07-26** via a new top-right 3-button row (Quit/Mute/Pause, real icon art) — see HUDController.cs entry above. Briefly removed earlier the same day alongside the top-centre score readout ("0" box, still gone) before being reinstated in this fuller form.
+- **L01 haybale pile Y-shifted +1.0 on 2026-07-26** (user-reported: pile sat below the camera's visible safe line — bottom edge was at Y≈−6.73 against a visible-camera-bottom of Y=−6.5). New positions put the lowest bale's bottom edge at Y≈−5.73, matching where the other hand-placed props visually sit rather than the (mostly off-screen) true physics ground line. All 4 bales are `_stayKinematic` (see BlockBase.cs entry), so once placed they never move again regardless of being struck.
 
 ---
 
@@ -174,6 +178,12 @@ unity/Assets/Scripts/
                               so it wins the singleton race against CatapultLauncher's fallback AddComponent.
                               SfxEnabled/MusicEnabled persisted via PlayerPrefs, toggled from both the
                               pause menu and the Main Menu SETTINGS popup (same state, can't disagree).
+                              Mix rebalanced 2026-07-26 (user-reported: cannon shot buried the Cluck falling/
+                              scream loop, which starts in the same frame — see CatapultLauncher.Fire()):
+                              FallingVolume raised 0.6->0.9, and Play()'s previously-uniform 0.8 PlayOneShot
+                              scale is now a per-Sound VolumeScale[] array with Launch specifically dropped
+                              to 0.5 — every other SFX (WoodHit/StoneHit/RobotDeath/Win/Fail/BlockDestroy/
+                              RobotHit) keeps the original 0.8.
     CameraShake.cs           — singleton; tracks its own per-frame contribution as a delta and subtracts it
                               back out, so repeated shakes always net to exactly zero (never permanently
                               drifts the camera — see docs/HISTORY.md Round 7 for the bug this fixed)
@@ -196,7 +206,12 @@ unity/Assets/Scripts/
     AnimalBase.cs             — abstract; Kinematic until Launch(); Pointer.current (New Input System, covers
                               Mouse+Touch); 5 pose sprites (_sprIdle/_sprLoaded/_sprInFlight/_sprImpact/
                               _sprAbility); HasRealSprites property; DestroyAnimal() fires OnAnimalDestroyed;
-                              OnAnimalImpact fires on real collision hits only; sortingOrder=6 on all 8 subclasses
+                              OnAnimalImpact fires on real collision hits only; sortingOrder=6 on all 8 subclasses.
+                              OnCollisionEnter2D shows _sprImpact (e.g. Cluck_Impact.png) for the rest of the
+                              _contactTimeout window (fixed 2026-07-26 — it used to get assigned then hidden
+                              on the very next line in the same frame, so the reaction pose was never actually
+                              visible before DestroyAnimal() removed the GameObject); only falls back to the
+                              old instant-hide when no impact art is wired at all (procedural fallback circle).
     CluckAnimal.cs             — 5-egg cluster bomb in 120° spread from _eggPrefab (must be the egg GameObject
                               itself — _eggPrefab is typed GameObject, not EggProjectile); pass-through: punches
                               WoodBlock._passThrough=true at 70% velocity, skips base.OnCollisionEnter2D (so
@@ -208,12 +223,22 @@ unity/Assets/Scripts/
     EggProjectile.cs           — layer 10; flat _damage=15 on first contact only
   Blocks/
     BlockBase.cs               — spawns Static; wakes ALL blocks on first TakeDamage() via
-                              FindObjectsByType<BlockBase>() (Unity 6 API); health = baseMaxHealth ×
-                              area/stdArea; tints at 50%/25%/0% health; damage = impulse × 1.0; on death:
-                              4 fragments fly outward, fade 1->0 over 0.6s. ApplyOverrides(health, mass)
-                              applies BlockSpawnData overrides after Initialise() — called by LevelLoader.
-                              Optional _sprDamaged + PlayDamageFlash() for a brief art swap on hit (only
-                              wired where dedicated damaged-state art exists, e.g. HaybaleBlock)
+                              FindObjectsByType<BlockBase>() (Unity 6 API) — EXCEPT blocks with
+                              _stayKinematic=true, which never transition to Dynamic (added 2026-07-26:
+                              HaybaleBlock sets this — hitting one haybale in a cluster used to wake and
+                              visibly shift/tumble all of them, since the wake call is global, not
+                              per-instance; now an untouched neighbour never physically moves). health =
+                              baseMaxHealth × area/stdArea; tints at 50%/25%/0% health; damage = impulse ×
+                              1.0; on death: _sprExplode (if wired) shows a death-burst sprite via
+                              SpawnExplosion() instead of the default 4-fragments-fly-outward-fade-1->0-
+                              over-0.6s (HaybaleBlock wires this to Haybail_Damaged.png — at hp=10 it
+                              always dies on the hit that damages it, so this explosion is the reaction
+                              players actually see). ApplyOverrides(health, mass) applies BlockSpawnData
+                              overrides after Initialise() — called by LevelLoader. Optional _sprDamaged +
+                              PlayDamageFlash() for a brief pre-death art swap on hit (only wired where
+                              dedicated damaged-state art exists, e.g. HaybaleBlock) — in practice this
+                              never gets seen on a one-hit-kill block like Haybale; _sprExplode above is
+                              the one that matters there.
     WoodBlock.cs                — baseMaxHealth=80, baseMass=5, bounciness=0.2; _passThrough (public)
     StoneBlock.cs                — baseMaxHealth=220, baseMass=8, bounciness=0.1
   Enemies/
@@ -229,14 +254,29 @@ unity/Assets/Scripts/
     ScoreManager.cs               — Robot +1000, Wood +100, Stone +200, Egg +50, bird-left bonus +500;
                               PlayerPrefs keys: ff_score_N, ff_stars_N (0-based, plain star count)
   Launcher/
-    CatapultLauncher.cs            — visual launcher is FarmCannon (see Coordinate System above). Aim math:
-                              click bird -> drag -> PivotPos()-relative angle clamped to [_armRestAngle=218°,
-                              218°+MaxLoadAngle=50°] -> loadFrac -> LaunchVelocity() speed 4.0-4.9 m/s, angle
-                              58°-52° (both ends stay high — always visibly arched; re-tuned 2026-07-14,
-                              paired with AnimalBase.Launch()'s gravityScale=0.18 for a slower, loopier arc).
-                              MinAimRadius=0.6f: drag angle freezes until the pointer has moved that far from
-                              the pivot, preventing hair-trigger full-power swings from small movements
-                              (mobile touch fix, 2026-07-18). CannonBarrelOffset=(1.1,0.4) = _launchPoint
+    CatapultLauncher.cs            — visual launcher is FarmCannon (see Coordinate System above). Aim math
+                              (rewritten 2026-07-26 — direction and power are now independent axes, "Angry
+                              Birds" style, per explicit user request after every shot looked identical
+                              regardless of drag direction): click bird -> drag -> PivotPos()-relative pull
+                              ANGLE clamped to [_armRestAngle=200°, 200°+MaxLoadAngle=60°=260°], mirrored
+                              through the pivot (-180°) to a 20°-80° launch angle (200°->20° flat shot,
+                              260°->80° near-vertical lob) — DIRECTION now actually changes the shot, unlike
+                              the old trebuchet-arm scheme this replaced, which clamped the same way but only
+                              ever read the clamped value as a single 0-1 "how far pulled" fraction driving a
+                              barely-varying 52°-58° range, discarding the real direction entirely (see
+                              docs/HISTORY.md). Pull DISTANCE from the pivot (clamped to _maxDragDistance=2.4)
+                              independently drives POWER: LaunchVelocity() speed _minLaunchSpeed=3.0-
+                              _maxLaunchSpeed=6.0 m/s (both [SerializeField] — _maxLaunchSpeed already existed
+                              serialized in Game.unity at a stale 16.8 from an even earlier, never-wired
+                              design; fixed to 6 directly in the scene YAML alongside adding the new
+                              _minLaunchSpeed=3, per the [SerializeField] stale-value trap below). Numerically
+                              verified (same substep model as DrawTrajectory) to span L01's play area across
+                              multiple angle/power combinations rather than one fixed landing zone. Paired
+                              with AnimalBase.Launch()'s gravityScale=0.18 for a slower, loopier arc (2026-07-14).
+                              MinAimRadius=0.6f: drag ANGLE (only) freezes until the pointer has moved that far
+                              from the pivot, preventing hair-trigger full-power swings from small movements
+                              (mobile touch fix, 2026-07-18) — pull distance/power tracks the pointer from the
+                              first frame, no deadzone. CannonBarrelOffset=(1.1,0.4) = _launchPoint
                               (trajectory-arc origin AND Fire()'s actual spawn point). CannonLoadedBirdOffset
                               =(0.6212,0.4223) = fixed ready-bird position (cannon body doesn't rotate).
                               BirdScale=(4.9204,4.9204) (uniform — InFlight is the only pose shown on this
@@ -248,36 +288,66 @@ unity/Assets/Scripts/
                               against the launcher's own Y (dynamic, not hardcoded).
   UI/
     HUDController.cs                 — Canvas built at runtime; card widgets anchored top-left (anchorMin
-                              0.02,1); orange ⚡N damage badge; Level Complete/Failed/Pause panels; SafeArea
-                              RectTransform wrapper (Screen.safeArea-driven) for score/queue/pause elements.
-                              Top-of-screen score display + pause button hide themselves (SetTopBarVisible)
-                              whenever a full-screen end-of-level panel is up (both are self-contained with
-                              their own score display, and pausing a finished level makes no sense).
-                              **Level Complete/Failed panels (2026-07-25 redesign)** both use
-                              Scoreboard.png (Assets/Sprites/UI/MatchUp/) as the whole backdrop instead of a
-                              plain coloured box, with LevelComplete.png/LevelFailed.png as a sign-topper
-                              title overlapping the board's top edge, and square Btn_play/Btn_home icon
-                              buttons (shared fields — same assets on both panels) dropped clear below the
-                              board's bottom edge so they never render over the sign art. Falls back to the
-                              old plain box/text-button look if any sprite is unwired, so neither panel ever
-                              renders blank. Score number uses StyleAsGameNumber() — bold + black outline +
-                              gold-to-orange vertex gradient on the default TMP font, the closest
-                              approximation of the game's own bubble-lettering achievable without importing
-                              a new font asset (this project ships only LiberationSans SDF). Level Complete
-                              replaced its old 3-dot star row + "NEW BEST!" text with 4 real ScoreStars.png
-                              images: slots 0-2 are the actual star rating, slot 3 always pops last
-                              regardless of rating and reveals a "LEVEL UP!" label — it isn't a score tier,
-                              just a fixed "you cleared it" beat. Level Complete's Btn_play calls
-                              GameManager.LoadMenu() and relies on WorldMapController's own OnStateChanged
-                              listener to show itself and slide the position indicator to the newly-unlocked
-                              next level (no extra plumbing needed — see WorldMapController below); its
-                              Btn_home and Level Failed's Btn_home both call the new
+                              0.02,1); orange ⚡N damage badge (enlarged + restyled with StyleAsGameNumber()
+                              2026-07-26 — same bold/black-outline/gold-orange-gradient treatment as the
+                              Level Complete/Failed score numbers, per user request to "match the game
+                              font"); Level Complete/Failed/Pause panels; SafeArea RectTransform wrapper
+                              (Screen.safeArea-driven) for the bird queue.
+                              **Top-centre score readout ("0" box) REMOVED 2026-07-26** (user request — read
+                              as an unstyled placeholder rectangle over the sky art); `BuildScoreDisplay()`
+                              and its fields are gone entirely, not hidden. Score is still shown on the Level
+                              Complete/Failed panels via their own score text.
+                              **Top-right button row (`BuildTopRightButtons`, added later the same day)**
+                              replaces the single plain-grey-circle pause button that briefly got removed in
+                              the same pass as the score readout above. Three real icon buttons, top-right
+                              corner, 64x64 each with a 14px gap, order left-to-right Quit/Mute/Pause (Pause
+                              flush in the screen corner): **Pause** (`Btn_pause.png`) calls `OnPauseClicked()`
+                              — same toggle logic as before (`SetPaused`/`ShowPausePanel`), now the pause
+                              menu's only trigger again. **Mute** (`Btn_music.png` <-> `NoSound.png`, sprite-
+                              swapped not tinted) toggles BOTH `AudioManager.MusicEnabled` and `SfxEnabled`
+                              together via `OnTopMuteToggleClicked()` — distinct from the pause panel's two
+                              separate Music/SFX toggles (`_musicToggleImg`/`_sfxToggleImg`, colour-tinted,
+                              independent); `RefreshTopMuteIcon()` re-derives which sprite to show from actual
+                              AudioManager state (not a locally-tracked flag) so it stays correct even if
+                              those separate pause-panel toggles are used instead. **Quit** reuses the
+                              existing `_quitButtonSprite`/`OnQuitClicked()` the pause panel's own quit button
+                              already used. The whole row (`_topRightRoot`) hides via `SetTopBarVisible`
+                              alongside the bird queue whenever a full-screen end-of-level panel is up, same
+                              as the old score readout used to. `_birdQueueRoot` was actually missing from
+                              that toggle until earlier the same day (user-reported leftover animal cards
+                              still visible top-left behind the Level Complete panel) — `_topRightRoot` was
+                              added to it from the start, so it doesn't repeat that bug.
+                              **Level Complete/Failed panels (2026-07-25 redesign, Level Complete
+                              restructured again 2026-07-26)** both use Scoreboard.png
+                              (Assets/Sprites/UI/MatchUp/) as the whole backdrop instead of a plain coloured
+                              box (Level Complete's box enlarged 620x363 -> 680x398 2026-07-26, same 653:382
+                              native aspect, to give the star row more headroom inside the board's parchment
+                              area), with LevelComplete.png/LevelFailed.png as a sign-topper title
+                              overlapping the board's top edge. Falls back to the old plain box/text-button
+                              look if any sprite is unwired, so neither panel ever renders blank. Score
+                              number uses StyleAsGameNumber() — bold + black outline + gold-to-orange vertex
+                              gradient on the default TMP font, the closest approximation of the game's own
+                              bubble-lettering achievable without importing a new font asset (this project
+                              ships only LiberationSans SDF). Level Complete shows 3 real ScoreStars.png
+                              images (dropped from 4 2026-07-26) — all three are now the actual star rating,
+                              no forced always-pops slot. The old 4th "always pops, reveals a LEVEL UP! text
+                              label" slot and the separate Btn_play icon were both removed in the same pass;
+                              Btn_play's bottom-left slot is now a single _levelUpStarSprite (Levelup.png —
+                              "LEVEL UP" baked into the art, no text label needed) that pulses continuously
+                              (LevelUpStarPulse(), scale 1<->1.12 sine wave, starts in ShowLevelCompletePanel/
+                              stops in HideLevelCompletePanel) and fires the exact same handler Btn_play used
+                              to (OnLevelCompletePlayClicked -> GameManager.LoadMenu()) — it's now the
+                              panel's one obvious, animated tap target back to the world map, rather than a
+                              static icon next to a separate forced-star/text reveal. Btn_home is unchanged
+                              (bottom-right, mirrors the level-up star's position/size). Level Complete's
+                              level-up star calls GameManager.LoadMenu() and relies on WorldMapController's
+                              own OnStateChanged listener to show itself and slide the position indicator to
+                              the newly-unlocked next level (no extra plumbing needed — see WorldMapController
+                              below); its Btn_home and Level Failed's Btn_home both call the new
                               WorldMapController.SkipToMainMenu() so tapping Home lands directly on the main
                               menu instead of flashing the world map first. Pause menu gained a QUIT button
                               (Btn_quite.png, previously a dead asset) — `EditorApplication.isPlaying = false`
                               in the Editor, `Application.Quit()` in a build.
-    LevelSelectController.cs          — grid-based level select (ScrollRect + GridLayoutGroup). Unwired for
-                              World 1 (superseded by WorldMapController) but kept in place for World 2+
     MainMenuController.cs             — LandingPage.png background (title/character art baked in); PLAY
                               (bottom-left) and SETTINGS (bottom-right), both corner-anchored; PLAY opens
                               WorldMapController; SETTINGS opens a Music/SFX popup sharing AudioManager state
@@ -350,10 +420,17 @@ unity/Assets/Editor/
   SceneSetup.cs           — FarmFury > Wire Scene References; wires all Inspector refs; sets camera
                               (0,0,-10) orthoSize=4.5; launcher at (-2.327,-6.60,0); creates/wires FarmCannon
                               at (-3.0012,-5.1223,0) scale (1.4711188,1.3868444,1); ground center
-                              (0,-2.75,0) scale (60,0.5,1) -> top at Y=-2.5 (physics-collider-only — no
+                              (0,-6.85,0) scale (60,0.5,1) -> top at Y=-6.60 (physics-collider-only — no
                               longer generates visual ground layers; deletes leftover code-generated
-                              GroundFill/GrassBase/etc. from older runs; ground/grass visuals are entirely
-                              user-authored scene GameObjects now)
+                              GroundFill/GrassBase/etc. from older runs; ground/grass visuals are meant to be
+                              user-authored scene GameObjects, but none ever were for L01 — see
+                              EnsureGroundVisual() below and the Known Issues entry on this). Also creates
+                              **GroundVisual_Placeholder** (2026-07-26) — a tinted stand-in strip, top edge
+                              Y=-5.3 (matching where hand-placed props already visually rest) down to Y=-12,
+                              sortingOrder=-1, filling the gap left by the invisible physics-only ground so
+                              nothing near ground level reads as "sinking into nothing." Delete this
+                              GameObject once real ground/grass art replaces it — EnsureGroundVisual() only
+                              (re)creates it if missing.
   LevelDataGenerator.cs    — FarmFury > Generate All Level Data; LXX_ filenames must sort alphabetically;
                               header comment documents which levels (L01 only) use the current coordinate
                               system vs. which (L02-L06) are still on the old one

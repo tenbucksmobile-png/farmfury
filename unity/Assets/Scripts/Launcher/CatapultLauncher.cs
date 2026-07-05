@@ -2,10 +2,14 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Farm Cannon mechanic: click the bird loaded in the cannon barrel, drag to aim (angle +
-// power), release to fire. Aiming math (drag detection, launch velocity, trajectory arc) is
-// UNCHANGED from the original trebuchet system — 2026-07-02 replaced only the visual launcher
-// (trebuchet -> farm cannon). See CLAUDE.md Audit Findings for the full before/after.
+// Farm Cannon mechanic: click the bird loaded in the cannon barrel, drag to aim, release to
+// fire. Direction and power are two independent axes ("Angry Birds" style, added 2026-07-26):
+// drag ANGLE (relative to the pivot) sets the launch angle, drag DISTANCE sets the power. This
+// replaced the original trebuchet-arm aiming math, which was carried over unchanged through the
+// 2026-07-02 cannon visual swap — that scheme clamped the drag angle into a narrow arc and only
+// ever used it to derive a single 0-1 "how far pulled" value driving both speed and angle
+// together, so the actual drag direction was thrown away and every shot looked nearly identical
+// regardless of where the player dragged (user-reported bug, see docs/HISTORY.md).
 // Place on a GameObject at world position (11.2, 0, 0).
 public class CatapultLauncher : MonoBehaviour
 {
@@ -14,21 +18,34 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private Camera      _camera;
 
     [Header("Launch Physics")]
+    // Pull DISTANCE from the pivot drives power (0 at rest, full power at/past this distance).
+    // Was declared but never actually read before 2026-07-26 — the trebuchet-arm scheme derived
+    // power from the clamped drag ANGLE instead. Revived here as the real power axis.
     [SerializeField] private float _maxDragDistance = 2.4f;   // 120 px / 50
-    [SerializeField] private float _maxLaunchSpeed  = 16.8f;  // 14 px/frame × 60 fps / 50
+    [SerializeField] private float _minLaunchSpeed  = 3.0f;
+    [SerializeField] private float _maxLaunchSpeed  = 6.0f;
 
     [Header("Aim Geometry")]
     // Abstract aiming-math anchor. NOT tied to any visual GameObject — drag angle is measured
-    // relative to this point, exactly as it was for the trebuchet. Kept byte-for-byte unchanged
-    // during the 2026-07-02 cannon swap per explicit instruction: aiming logic does not change.
+    // relative to this point.
     private const float _pivotHeight  = 1.914f;
-    private const float _armRestAngle = 218f;  // drag-angle lower bound
-    private const float MaxLoadAngle  = 50f;   // drag-angle range above _armRestAngle
+
+    // Pull-angle cone (world-space, standard atan2 convention: 0°=+X, 90°=+Y). The player drags
+    // the loaded bird backward/away from the target, mirroring it through the pivot (-180°) to
+    // get the actual launch angle — same convention the old trebuchet-arm code used, just no
+    // longer discarded. 200°-260° pull mirrors to a 20°-80° launch angle: pulling toward
+    // horizontal-left (200°) gives a flat 20° shot, pulling toward straight-down (260°) gives an
+    // 80° near-vertical lob. Widened from the trebuchet's old 218°-268° (which only ever mirrored
+    // to a barely-varying 38°-88°, and wasn't even used that way — see class comment) so
+    // direction changes are actually visible on release, per explicit user request.
+    private const float _armRestAngle = 200f;  // drag-angle lower bound
+    private const float MaxLoadAngle  = 60f;   // drag-angle range above _armRestAngle
 
     // Deadzone radius (world units) around the pivot within which the drag angle is not
     // updated — see HandleInput()'s "Hold" branch. ~11x the pivot-to-loaded-bird distance
     // (~0.055u), chosen to comfortably absorb touchscreen contact-point jitter while still
-    // being well inside a normal drag gesture's travel distance.
+    // being well inside a normal drag gesture's travel distance. Only gates the ANGLE; pull
+    // distance (power) tracks the pointer continuously from the first frame of the drag.
     private const float MinAimRadius = 0.6f;
 
     [Header("Camera")]
@@ -78,7 +95,8 @@ public class CatapultLauncher : MonoBehaviour
     private const float BirdClickRadius = 1.2f;
 
     // Runtime state
-    private float      _dragAngle;      // drag angle while dragging (aiming math — unchanged)
+    private float      _dragAngle;      // pull angle while dragging — sets launch direction
+    private float      _pullDistance;   // pull distance from the pivot, clamped — sets launch power
     private bool       _isDragging;
     private Vector3    _pocketPos;      // unused — kept to avoid serialisation churn
     private Vector3    _launchPoint;    // cannon barrel tip — the physical fire origin
@@ -233,26 +251,30 @@ public class CatapultLauncher : MonoBehaviour
             Vector3 world = ScreenToWorld(ptr.position.ReadValue());
             if (Vector3.Distance(world, _readyBird.transform.position) < BirdClickRadius)
             {
-                _isDragging = true;
-                _dragAngle  = _armRestAngle;
+                _isDragging   = true;
+                _dragAngle    = _armRestAngle;
+                _pullDistance = 0f;
             }
         }
 
-        // ── Hold: aim angle follows pointer from the abstract pivot (unchanged math) ──
+        // ── Hold: angle + distance both follow the pointer from the abstract pivot ──
         if (_isDragging && ptr.press.isPressed)
         {
             Vector3 world = ScreenToWorld(ptr.position.ReadValue());
             Vector3 pivot = PivotPos();
             Vector2 toPointer = new Vector2(world.x - pivot.x, world.y - pivot.y);
 
+            // Power tracks pull distance continuously from the first frame — no deadzone here,
+            // unlike the angle below, since a plain magnitude has no small-vector instability.
+            _pullDistance = Mathf.Clamp(toPointer.magnitude, 0f, _maxDragDistance);
+
             // The loaded bird sits only ~0.055 world units from the pivot (measured 2026-07-18),
             // so the very start of every drag is an angle computed from a near-zero-length
             // vector — a fraction of a millimetre of finger jitter there swings the aim across
-            // most of the 50-degree pull range. That reads as "twitchy"/uncontrollable on a
-            // mobile touchscreen, where contact-point noise is larger than a mouse's. Freezing
-            // the angle until the pointer has moved MinAimRadius away from the pivot gives the
-            // drag a stable direction before it starts steering, without changing the underlying
-            // pivot/angle aiming math itself.
+            // most of the pull range. That reads as "twitchy"/uncontrollable on a mobile
+            // touchscreen, where contact-point noise is larger than a mouse's. Freezing the angle
+            // until the pointer has moved MinAimRadius away from the pivot gives the drag a
+            // stable direction before it starts steering.
             if (toPointer.magnitude >= MinAimRadius)
             {
                 float angle = Mathf.Atan2(toPointer.y, toPointer.x) * Mathf.Rad2Deg;
@@ -633,20 +655,23 @@ public class CatapultLauncher : MonoBehaviour
 
     Vector2 LaunchVelocity()
     {
-        // Load fraction: how far the arm was pulled (0 = rest, 1 = MaxLoadAngle)
-        float loadFrac = Mathf.Clamp01((_dragAngle - _armRestAngle) / MaxLoadAngle);
-        if (loadFrac < 0.05f) return Vector2.zero;
-        // Recalibrated 2026-07-14: raised + slowed per request ("loop more", "slow down
-        // considerably") — paired with AnimalBase.Launch()'s gravityScale drop (0.4 -> 0.18,
-        // ~55% weaker fall) and DrawTrajectory()'s matching grav constant. Numerically
-        // re-integrated (same model as DrawTrajectory: grav=-20*0.18, drag fa=0.008, dt=0.02)
-        // to re-hit the same landing zone despite the much floatier flight: min pull
-        // (angle=58, speed=4.0) lands ~X 3.0 (still short of the hay pile), max pull
-        // (angle=52, speed=4.9) lands ~X 5.7 (back on the robot at X=5.6). Flight time grew
-        // from ~1.4s to ~2.3-2.5s and apex height from ~1.0-1.1u to ~1.6-2.0u above launch —
-        // a noticeably bigger, slower, loopier arc.
-        float speed    = Mathf.Lerp(4.0f, 4.9f, loadFrac);
-        float angleDeg = Mathf.Lerp(58f, 52f, loadFrac); // both ends stay high — always visibly arched
+        // Power fraction: how far the pointer was pulled from the pivot (0 = rest, 1 = at/past
+        // _maxDragDistance) — independent of angle. Replaces the old scheme where a single
+        // "how far into the clamped angle range" fraction drove both speed AND angle together,
+        // which is why direction never used to matter (see class comment).
+        float powerFrac = Mathf.Clamp01(_pullDistance / _maxDragDistance);
+        if (powerFrac < 0.05f) return Vector2.zero;
+
+        // Direction: the pull angle mirrored through the pivot (-180°) gives the launch angle.
+        // _armRestAngle=200/MaxLoadAngle=60 means _dragAngle ranges 200°-260°, mirroring to a
+        // 20°-80° launch angle — dragging toward horizontal-left gives a flat 20° shot, dragging
+        // toward straight-down gives an 80° near-vertical lob. Numerically verified (same
+        // substep model as DrawTrajectory: grav=-20*0.18, drag fa=0.008, dt=0.02) against
+        // _minLaunchSpeed/_maxLaunchSpeed (3.0-6.0) to comfortably span L01's play area (hay
+        // pile ~X 3.6-4.3, robot ~X 5.7) across a range of angle/power combinations rather than
+        // one fixed landing zone — e.g. speed 5.0 at 20° or speed 4.0 at 35° both land ~X 4-5.6.
+        float speed    = Mathf.Lerp(_minLaunchSpeed, _maxLaunchSpeed, powerFrac);
+        float angleDeg = _dragAngle - 180f;
         float rad      = angleDeg * Mathf.Deg2Rad;
         return new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)) * speed;
     }

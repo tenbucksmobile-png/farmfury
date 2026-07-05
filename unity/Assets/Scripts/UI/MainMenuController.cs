@@ -47,9 +47,12 @@ public class MainMenuController : MonoBehaviour
     void OnPlayClicked()
     {
         _panel.SetActive(false);
-        // Sunrise Meadows world map replaces the grid-based LevelSelectController as PLAY's
-        // destination (2026-07-15) — LevelSelectController is left in place, unwired, for
-        // World 2+ once that content exists and doesn't have its own map screen yet.
+        // Sunrise Meadows world map is PLAY's destination (since 2026-07-15). The old grid-based
+        // LevelSelectController was removed entirely 2026-07-26 — it was still silently reacting
+        // to GameState.Idle in the background, racing WorldMapController to show itself on every
+        // Idle transition (same event, same Canvas sortingOrder). World 2+ should get its own
+        // map screen built on the WorldMapController pattern when that content exists, not a
+        // resurrected LevelSelectController.
         WorldMapController.Instance?.Show();
     }
 

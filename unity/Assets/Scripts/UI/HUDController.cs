@@ -5,16 +5,20 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
-// Phase 2.1 — HUD: score (top-centre), bird queue (bottom-left, animated), pause button (top-right).
-// Creates its own Canvas + all child elements procedurally in Awake(); nothing needs to be pre-wired.
+// Phase 2.1 — HUD: bird queue (top-left cards, animated), top-right button row (top-right
+// corner). Creates its own Canvas + all child elements procedurally in Awake(); nothing needs
+// to be pre-wired.
+// The top-centre score readout ("0" box) was removed 2026-07-26 (user request — read as an
+// unstyled placeholder over the sky art) and never came back; score is still shown on the
+// Level Complete/Failed panels. The top-right pause button was removed in that same pass, then
+// reinstated later the same day as part of a proper 3-button row (Quit/Mute/Pause) using real
+// icon art instead of the old plain grey circle — see BuildTopRightButtons().
 // Place on any scene GO (SceneSetup creates a "HUD" GO for this).
 public class HUDController : MonoBehaviour
 {
     public static HUDController Instance { get; private set; }
 
     // UI leaf references set during BuildCanvas()
-    private TextMeshProUGUI _scoreText;
-    private TextMeshProUGUI _pauseGlyph;
     private RectTransform   _birdQueueRoot;
 
     // Parallel lists: card RectTransforms + their base X positions
@@ -45,18 +49,26 @@ public class HUDController : MonoBehaviour
 
     private GameObject                _lcPanel;
     private TextMeshProUGUI           _lcScoreText;
-    private TextMeshProUGUI           _lcLevelUpText;
-    // 4 slots: [0..2] the real star rating (existing GetBestStars() 0-3 scale), [3] is not a
-    // rating — it always pops last and represents "you leveled up" (see AnimateStars).
-    private readonly RectTransform[]  _lcStarRTs  = new RectTransform[4];
-    private readonly Image[]          _lcStarImgs = new Image[4];
+    // 3 slots: the real star rating (existing GetBestStars() 0-3 scale). The old 4th slot that
+    // always popped last as a "you leveled up" reveal (and its accompanying LEVEL UP! text) was
+    // removed 2026-07-26 — that beat is now the flashing _levelUpStarSprite button below, which
+    // both reads as the level-up moment AND is the panel's primary tap target.
+    private readonly RectTransform[]  _lcStarRTs  = new RectTransform[3];
+    private readonly Image[]          _lcStarImgs = new Image[3];
     private Coroutine                  _lcAnim;
+    private RectTransform               _lcLevelUpStarRT;
+    private Coroutine                  _lcLevelUpPulse;
 
     private static readonly Color StarFilled = new Color(1.00f, 0.82f, 0.00f);
     private static readonly Color StarEmpty  = new Color(0.38f, 0.38f, 0.42f);
 
     [SerializeField] private Sprite _lcTitleSprite; // LevelComplete.png
     [SerializeField] private Sprite _starSprite;    // ScoreStars.png — tinted gold/grey per slot
+    // Replaces the old Btn_play slot on the Level Complete panel only (2026-07-26) — a big
+    // gold "LEVEL UP" star (art has the label baked in) that pulses continuously to draw the
+    // tap, instead of a plain static play icon. Tapping it does exactly what Btn_play used to:
+    // GameManager.LoadMenu() back to the Sunrise Meadows world map flow.
+    [SerializeField] private Sprite _levelUpStarSprite; // Levelup.png
 
     // ── Level Failed panel (Phase 2.3) ────────────────────────────────────────
 
@@ -73,12 +85,6 @@ public class HUDController : MonoBehaviour
     [SerializeField] private Sprite _playButtonSprite; // Btn_play.png
     [SerializeField] private Sprite _homeButtonSprite;  // Btn_home.png
 
-    // Top-bar elements hidden while a full-screen end-of-level panel is up — both
-    // LevelComplete and LevelFailed panels are self-contained (own score display),
-    // and pausing a finished level makes no sense.
-    private GameObject _scoreDisplayRoot;
-    private GameObject _pauseButtonRoot;
-
     // ── Pause menu (Phase 2.4) ────────────────────────────────────────────────
 
     private GameObject _pausePanel;
@@ -89,6 +95,18 @@ public class HUDController : MonoBehaviour
 
     private static readonly Color ToggleOnColor  = new Color(0.12f, 0.14f, 0.22f);
     private static readonly Color ToggleOffColor = new Color(0.40f, 0.40f, 0.44f);
+
+    // ── Top-right button row (2026-07-26) ─────────────────────────────────────
+    // Re-adds a pause trigger (removed along with the old score readout earlier the same day)
+    // plus a combined music+SFX mute toggle and a direct quit — all three real icon buttons,
+    // top-right corner, nicely spaced. Order left-to-right: Quit, Mute, Pause (Pause sits
+    // right in the corner per "insert Btn_pause in the top right", the other two placed
+    // progressively further left/"next to it").
+    [SerializeField] private Sprite _pauseButtonSprite; // Btn_pause.png
+    [SerializeField] private Sprite _musicOnSprite;     // Btn_music.png
+    [SerializeField] private Sprite _musicOffSprite;    // NoSound.png
+    private Image          _topMuteImg;
+    private RectTransform  _topRightRoot;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -116,12 +134,6 @@ public class HUDController : MonoBehaviour
                 RefreshBirdIcons();
         }
 
-        if (ScoreManager.Instance != null)
-        {
-            ScoreManager.Instance.OnScoreChanged += UpdateScore;
-            UpdateScore(ScoreManager.Instance.Score);
-        }
-
         if (_levelLoader != null)
             _levelLoader.OnBirdConsumed += RefreshBirdIcons;
     }
@@ -133,8 +145,6 @@ public class HUDController : MonoBehaviour
             GameManager.Instance.OnLevelStarted -= OnLevelStarted;
             GameManager.Instance.OnStateChanged  -= OnStateChanged;
         }
-        if (ScoreManager.Instance != null)
-            ScoreManager.Instance.OnScoreChanged -= UpdateScore;
         if (_levelLoader != null)
             _levelLoader.OnBirdConsumed -= RefreshBirdIcons;
     }
@@ -144,11 +154,6 @@ public class HUDController : MonoBehaviour
     // ── Event handlers ────────────────────────────────────────────────────────
 
     void OnLevelStarted(LevelData _) => RefreshBirdIcons();
-
-    void UpdateScore(int score)
-    {
-        if (_scoreText != null) _scoreText.text = score.ToString("N0");
-    }
 
     void OnStateChanged(GameState state)
     {
@@ -176,12 +181,17 @@ public class HUDController : MonoBehaviour
         }
     }
 
-    // Score display + pause button both live top-of-screen; hidden whenever a
-    // full-screen end-of-level panel (LevelComplete/LevelFailed) is showing.
+    // The bird-queue cards and the top-right button row both live top-of-screen; hidden
+    // whenever a full-screen end-of-level panel (LevelComplete/LevelFailed) is showing, same
+    // reasoning as the old score readout used to get (self-contained panels, nothing to
+    // pause/mute-from-here on a finished level). _birdQueueRoot was actually missing from this
+    // toggle until 2026-07-26 (user-reported leftover animal cards still visible behind the
+    // Level Complete panel) — _topRightRoot added in the same pass that reinstated the button
+    // row, so it doesn't repeat that bug.
     void SetTopBarVisible(bool visible)
     {
-        if (_scoreDisplayRoot != null) _scoreDisplayRoot.SetActive(visible);
-        if (_pauseButtonRoot  != null) _pauseButtonRoot.SetActive(visible);
+        if (_birdQueueRoot != null) _birdQueueRoot.gameObject.SetActive(visible);
+        if (_topRightRoot  != null) _topRightRoot.gameObject.SetActive(visible);
     }
 
     // ── Canvas construction ───────────────────────────────────────────────────
@@ -203,18 +213,17 @@ public class HUDController : MonoBehaviour
 
         root.AddComponent<GraphicRaycaster>();
 
-        // Screen-edge elements (score/queue/pause) anchor inside this instead of the raw
-        // canvas rect, so they respect notch/rounded-corner safe insets. Without it they're
-        // positioned against the full device screen and can render into — or get visually
-        // clipped by — the unsafe edge zone (e.g. top-left cards overlapping a notch/corner).
+        // Screen-edge elements (the bird queue) anchor inside this instead of the raw canvas
+        // rect, so they respect notch/rounded-corner safe insets. Without it they're positioned
+        // against the full device screen and can render into — or get visually clipped by —
+        // the unsafe edge zone (e.g. top-left cards overlapping a notch/corner).
         var safeArea = BuildSafeArea(root.transform);
 
-        BuildScoreDisplay(safeArea);
         BuildBirdQueueArea(safeArea);
-        BuildPauseButton(safeArea);
+        BuildTopRightButtons(safeArea);           // Quit / Mute / Pause row (2026-07-26)
         BuildLevelCompletePanel(root.transform);  // full-screen panels stay on the raw canvas
         BuildLevelFailedPanel(root.transform);    // hidden until LevelFailed state fires
-        BuildPausePanel(root.transform);          // shown/hidden by pause button
+        BuildPausePanel(root.transform);
     }
 
     RectTransform BuildSafeArea(Transform canvas)
@@ -238,21 +247,6 @@ public class HUDController : MonoBehaviour
         rt.offsetMax = Vector2.zero;
     }
 
-    // Score: dark backing strip, top-centre, with large number inside.
-    void BuildScoreDisplay(Transform canvas)
-    {
-        var backing   = MakeImage(canvas, "ScoreBacking", _squareSpr, new Color(0f, 0f, 0f, 0.55f),
-                            anchorMin: new Vector2(0.5f, 1f), anchorMax: new Vector2(0.5f, 1f),
-                            pivot:     new Vector2(0.5f, 1f),
-                            pos:       new Vector2(0f, 0f),
-                            size:      new Vector2(260f, 62f));
-        _scoreDisplayRoot = backing.gameObject;
-
-        _scoreText = MakeStretchText(backing.transform, "ScoreValue",
-                         fontSize: 50f, text: "0",
-                         color: Color.white, align: TextAlignmentOptions.Center);
-    }
-
     // Bird queue: anchored 2% from left edge and 4% from bottom edge of actual screen —
     // works at any landscape resolution / DPI without pixel-offset guesswork.
     void BuildBirdQueueArea(Transform canvas)
@@ -266,27 +260,77 @@ public class HUDController : MonoBehaviour
         _birdQueueRoot = rt;
     }
 
-    // Pause: circular dark button, top-right, toggles Time.timeScale.
-    void BuildPauseButton(Transform canvas)
+    // Quit / Mute / Pause row — top-right corner, nicely spaced (2026-07-26). Reinstates pause
+    // access (removed earlier the same day along with the old score readout) alongside a new
+    // combined music+SFX mute toggle and a direct quit, all using real icon art instead of the
+    // old plain grey circle. Order left-to-right: Quit, Mute, Pause — Pause sits flush in the
+    // screen corner, per "insert Btn_pause in the top right", with Mute and Quit placed
+    // progressively further left/"next to it".
+    void BuildTopRightButtons(Transform canvas)
     {
-        var btn = MakeImage(canvas, "PauseBtn", _circleSpr, new Color(0f, 0f, 0f, 0.62f),
-                      anchorMin: new Vector2(1f, 1f), anchorMax: new Vector2(1f, 1f),
-                      pivot:     new Vector2(1f, 1f),
-                      pos:       new Vector2(-16f, -8f),
-                      size:      new Vector2(58f, 58f));
-        _pauseButtonRoot = btn.gameObject;
+        const float btnSize = 64f;
+        const float gap     = 14f;
+        const float inset   = 16f;
 
-        _pauseGlyph = MakeStretchText(btn.transform, "PauseGlyph",
-                          fontSize: 24f, text: "II",
-                          color: Color.white, align: TextAlignmentOptions.Center);
+        var rootGO = new GameObject("TopRightButtons");
+        rootGO.transform.SetParent(canvas, false);
+        _topRightRoot = rootGO.AddComponent<RectTransform>();
+        _topRightRoot.anchorMin        = new Vector2(1f, 1f);
+        _topRightRoot.anchorMax        = new Vector2(1f, 1f);
+        _topRightRoot.pivot            = new Vector2(1f, 1f);
+        _topRightRoot.anchoredPosition = new Vector2(-inset, -inset);
+        _topRightRoot.sizeDelta        = new Vector2(btnSize * 3f + gap * 2f, btnSize);
 
-        var b   = btn.gameObject.AddComponent<Button>();
-        var col = b.colors;
-        col.normalColor      = Color.white;
-        col.highlightedColor = new Color(0.78f, 0.78f, 0.78f);
-        col.pressedColor     = new Color(0.55f, 0.55f, 0.55f);
-        b.colors             = col;
-        b.onClick.AddListener(OnPauseClicked);
+        // Pause — rightmost, flush with the corner.
+        var pauseImg = MakeImage(_topRightRoot, "PauseBtn",
+                          _pauseButtonSprite != null ? _pauseButtonSprite : _squareSpr,
+                          _pauseButtonSprite != null ? Color.white : new Color(0f, 0f, 0f, 0.62f),
+                          anchorMin: new Vector2(1f, 0.5f), anchorMax: new Vector2(1f, 0.5f),
+                          pivot:     new Vector2(1f, 0.5f),
+                          pos:       new Vector2(0f, 0f),
+                          size:      new Vector2(btnSize, btnSize));
+        var pauseBtn = pauseImg.gameObject.AddComponent<Button>();
+        pauseBtn.targetGraphic = pauseImg;
+        StyleTopButtonColors(pauseBtn);
+        pauseBtn.onClick.AddListener(OnPauseClicked);
+
+        // Mute — middle. Starts showing whichever icon matches the persisted audio state.
+        var muteImg = MakeImage(_topRightRoot, "MuteBtn",
+                          _musicOnSprite != null ? _musicOnSprite : _squareSpr,
+                          _musicOnSprite != null ? Color.white : new Color(0f, 0f, 0f, 0.62f),
+                          anchorMin: new Vector2(1f, 0.5f), anchorMax: new Vector2(1f, 0.5f),
+                          pivot:     new Vector2(1f, 0.5f),
+                          pos:       new Vector2(-(btnSize + gap), 0f),
+                          size:      new Vector2(btnSize, btnSize));
+        _topMuteImg = muteImg;
+        var muteBtn = muteImg.gameObject.AddComponent<Button>();
+        muteBtn.targetGraphic = muteImg;
+        StyleTopButtonColors(muteBtn);
+        muteBtn.onClick.AddListener(OnTopMuteToggleClicked);
+
+        // Quit — leftmost.
+        var quitImg = MakeImage(_topRightRoot, "TopQuitBtn",
+                          _quitButtonSprite != null ? _quitButtonSprite : _squareSpr,
+                          _quitButtonSprite != null ? Color.white : new Color(0.75f, 0.20f, 0.12f),
+                          anchorMin: new Vector2(1f, 0.5f), anchorMax: new Vector2(1f, 0.5f),
+                          pivot:     new Vector2(1f, 0.5f),
+                          pos:       new Vector2(-2f * (btnSize + gap), 0f),
+                          size:      new Vector2(btnSize, btnSize));
+        var quitBtn = quitImg.gameObject.AddComponent<Button>();
+        quitBtn.targetGraphic = quitImg;
+        StyleTopButtonColors(quitBtn);
+        quitBtn.onClick.AddListener(OnQuitClicked);
+
+        RefreshTopMuteIcon();
+    }
+
+    static void StyleTopButtonColors(Button b)
+    {
+        var c = b.colors;
+        c.normalColor      = Color.white;
+        c.highlightedColor = new Color(0.88f, 0.88f, 0.88f);
+        c.pressedColor     = new Color(0.68f, 0.68f, 0.68f);
+        b.colors = c;
     }
 
     // ── Bird queue (card widgets) ─────────────────────────────────────────────
@@ -344,10 +388,14 @@ public class HUDController : MonoBehaviour
             _birdIcons[0].SetAsLastSibling();
     }
 
+    // Badge enlarged + restyled 2026-07-26 (user request: "enlarge the score numbers and match
+    // to the game font") — text now uses StyleAsGameNumber() (bold + black outline + gold-to-
+    // orange gradient), the same treatment as the Level Complete/Failed score numbers, instead
+    // of plain flat white. Badge grown to fit the bigger text without clipping.
     void BuildDamageBadge(RectTransform parent, AnimalType type, bool large)
     {
-        float bw = large ? 54f : 42f;
-        float bh = large ? 26f : 21f;
+        float bw = large ? 72f : 56f;
+        float bh = large ? 34f : 28f;
 
         var badge = MakeImage(parent, "DamageBadge", _squareSpr,
                         new Color(0.96f, 0.56f, 0.07f, 0.93f),
@@ -356,11 +404,12 @@ public class HUDController : MonoBehaviour
                         pos: new Vector2(-3f, -3f),
                         size: new Vector2(bw, bh));
 
-        MakeStretchText(badge.transform, "DmgText",
-            fontSize: large ? 17f : 13f,
+        var dmgText = MakeStretchText(badge.transform, "DmgText",
+            fontSize: large ? 24f : 18f,
             text: $"⚡{GetDamage(type)}",
             color: Color.white,
             align: TextAlignmentOptions.Center);
+        StyleAsGameNumber(dmgText);
     }
 
     Sprite GetCardSprite(AnimalType type)
@@ -415,7 +464,6 @@ public class HUDController : MonoBehaviour
     {
         _isPaused          = pause;
         Time.timeScale     = pause ? 0f : 1f;
-        if (_pauseGlyph != null) _pauseGlyph.text = pause ? ">" : "II";
         if (!pause) HidePausePanel();
     }
 
@@ -430,21 +478,25 @@ public class HUDController : MonoBehaviour
         overlay.sprite = _squareSpr;
         overlay.color  = new Color(0f, 0f, 0f, 0.50f);
 
-        // Scoreboard art backdrop — same asset/size/position as the Level Failed panel.
+        // Scoreboard art backdrop. Enlarged 620x363 -> 680x398 (2026-07-26, same 653:382 native
+        // aspect as Scoreboard.png so preserveAspect doesn't letterbox it) — the old size left
+        // the star row sitting too close to the board's own parchment edges; this gives the
+        // (now 3, not 4 — see star loop below) stars more headroom without moving them at all,
+        // since children anchored to box's centre don't rescale with the parent's sizeDelta.
         // Falls back to the old plain cream box if unwired so the panel never renders blank.
         Image box;
         if (_scoreboardSprite != null)
         {
             box = MakeImage(rootRT, "LCBox", _scoreboardSprite, Color.white,
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(620f, 363f));
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(680f, 398f));
             box.preserveAspect = true;
         }
         else
         {
             box = MakeImage(rootRT, "LCBox", _squareSpr, new Color(0.97f, 0.95f, 0.90f),
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(580f, 420f));
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(640f, 460f));
         }
 
         // Title — LevelComplete.png sign-topper, overlapping the board's top edge.
@@ -464,12 +516,12 @@ public class HUDController : MonoBehaviour
                 color: new Color(0.92f, 0.60f, 0.04f));
         }
 
-        // Four star slots — grey until animated gold. Slots 0-2 are the real star rating;
-        // slot 3 doesn't reflect performance, it always pops last to mean "level up" (see
-        // AnimateStars/ShowLevelCompletePanel).
-        for (int i = 0; i < 4; i++)
+        // Three star slots — grey until animated gold, purely the real star rating (0-3, see
+        // ScoreManager). The old 4th "always pops, means level up" slot was removed 2026-07-26 —
+        // that beat now belongs entirely to the flashing level-up star button below.
+        for (int i = 0; i < 3; i++)
         {
-            float xOff = -195f + i * 130f;
+            float xOff = -130f + i * 130f;
             var starGO = new GameObject($"LCStar_{i}");
             starGO.transform.SetParent(box.transform, false);
             var rt = starGO.AddComponent<RectTransform>();
@@ -493,20 +545,15 @@ public class HUDController : MonoBehaviour
             color: new Color(0.20f, 0.10f, 0.03f));
         StyleAsGameNumber(_lcScoreText);
 
-        // "LEVEL UP!" label — revealed in sync with the 4th star (see PopStar)
-        _lcLevelUpText = MakeCentredText(box.transform, "LCLevelUp",
-            pos: new Vector2(0f, -45f), size: new Vector2(400f, 36f),
-            fontSize: 26f, text: "LEVEL UP!",
-            color: StarFilled);
-        _lcLevelUpText.gameObject.SetActive(false);
-
-        // Buttons — Btn_play (world map, advance to next level) on the left, Btn_home
-        // (landing page) on the right. Dropped clear below the board's bottom edge — same
-        // offset as the Level Failed panel, see its comment for the non-overlap math.
-        var playBtn = MakeIconButton(box.transform, "PlayBtn", _playButtonSprite,
-                          new Color(1.00f, 0.55f, 0.05f),
+        // Level-up star — replaces the old Btn_play slot (bottom-left, same position/size as
+        // Home so the two mirror each other). Art has "LEVEL UP" baked in, so no separate text
+        // label is needed. Pulses continuously (see LevelUpStarPulse) to draw the tap; tapping
+        // it does exactly what Btn_play used to (OnLevelCompletePlayClicked -> world map flow).
+        var levelUpBtn = MakeIconButton(box.transform, "LevelUpStarBtn", _levelUpStarSprite,
+                          new Color(1.00f, 0.82f, 0.00f),
                           pos: new Vector2(-170f, -260f), size: new Vector2(130f, 130f));
-        playBtn.onClick.AddListener(OnLevelCompletePlayClicked);
+        levelUpBtn.onClick.AddListener(OnLevelCompletePlayClicked);
+        _lcLevelUpStarRT = levelUpBtn.GetComponent<RectTransform>();
 
         var homeBtn = MakeIconButton(box.transform, "HomeBtn", _homeButtonSprite,
                           new Color(1.00f, 0.55f, 0.05f),
@@ -525,32 +572,50 @@ public class HUDController : MonoBehaviour
 
         _lcScoreText.text = score.ToString("N0");
 
-        // Reset all stars to grey at normal scale before animating; hide the level-up label
-        // until the 4th star's pop reveals it.
-        for (int i = 0; i < 4; i++)
+        // Reset all stars to grey at normal scale before animating.
+        for (int i = 0; i < 3; i++)
         {
             _lcStarRTs[i].localScale = Vector3.one;
             _lcStarImgs[i].color     = StarEmpty;
         }
-        _lcLevelUpText.gameObject.SetActive(false);
 
         _lcPanel.SetActive(true);
 
         if (_lcAnim != null) StopCoroutine(_lcAnim);
         _lcAnim = StartCoroutine(AnimateStars(stars));
+
+        if (_lcLevelUpPulse != null) StopCoroutine(_lcLevelUpPulse);
+        if (_lcLevelUpStarRT != null) _lcLevelUpPulse = StartCoroutine(LevelUpStarPulse());
     }
 
     void HideLevelCompletePanel()
     {
         if (_lcAnim != null) { StopCoroutine(_lcAnim); _lcAnim = null; }
+        if (_lcLevelUpPulse != null) { StopCoroutine(_lcLevelUpPulse); _lcLevelUpPulse = null; }
+        if (_lcLevelUpStarRT != null) _lcLevelUpStarRT.localScale = Vector3.one;
         if (_lcPanel != null) _lcPanel.SetActive(false);
     }
 
-    // Btn_play — advances GameState to Idle, which WorldMapController reacts to on its own by
-    // showing itself and sliding the position indicator from the level just completed to the
-    // newly-unlocked next one (see WorldMapController.RefreshMarkers/IndicatorRoutine — this
-    // already happens automatically once the just-finished level's star result unlocks the
-    // next pin, no extra plumbing needed here).
+    // Continuous "breathing" pulse (scale 1 <-> 1.12, sine wave) while the panel is up — draws
+    // the eye to the level-up star since it's now the panel's primary/only forward action.
+    IEnumerator LevelUpStarPulse()
+    {
+        const float period = 1.1f; // seconds per full pulse cycle
+        while (true)
+        {
+            float t = (Time.unscaledTime % period) / period;
+            float s = 1f + 0.12f * Mathf.Sin(t * Mathf.PI * 2f);
+            _lcLevelUpStarRT.localScale = Vector3.one * s;
+            yield return null;
+        }
+    }
+
+    // Fired by the flashing level-up star (was Btn_play before 2026-07-26) — advances GameState
+    // to Idle, which WorldMapController reacts to on its own by showing itself and sliding the
+    // position indicator from the level just completed to the newly-unlocked next one (see
+    // WorldMapController.RefreshMarkers/IndicatorRoutine — this already happens automatically
+    // once the just-finished level's star result unlocks the next pin, no extra plumbing needed
+    // here).
     void OnLevelCompletePlayClicked()
     {
         HideLevelCompletePanel();
@@ -784,30 +849,49 @@ public class HUDController : MonoBehaviour
             _sfxToggleImg.color = on ? ToggleOnColor : ToggleOffColor;
     }
 
-    // Stagger: star 1 at 0.3s, star 2 at 0.75s, star 3 at 1.2s, level-up star at 1.65s.
-    // Slots 0-2 only pop if earned (real star rating); slot 3 always pops — it isn't a
-    // rating, it's the "you leveled up" reveal that also surfaces the LEVEL UP! label.
+    // Top-right mute button (2026-07-26) — one icon toggling BOTH music and SFX together,
+    // distinct from the pause panel's two separate Music/SFX toggles above. Swaps sprite
+    // (Btn_music.png <-> NoSound.png) rather than tinting, per explicit request.
+    void OnTopMuteToggleClicked()
+    {
+        // Currently-on means both are enabled; toggling flips both to the same new state.
+        bool newState = !(AudioManager.MusicEnabled && AudioManager.SfxEnabled);
+        AudioManager.SetMusicEnabled(newState);
+        AudioManager.SetSfxEnabled(newState);
+        RefreshTopMuteIcon();
+    }
+
+    // Re-derives the icon from actual AudioManager state (rather than a locally-tracked flag)
+    // so it stays correct even if the pause panel's separate Music/SFX toggles are used instead
+    // — "on" only when both are enabled, otherwise the muted icon.
+    void RefreshTopMuteIcon()
+    {
+        if (_topMuteImg == null) return;
+        bool on = AudioManager.MusicEnabled && AudioManager.SfxEnabled;
+        Sprite spr = on ? _musicOnSprite : _musicOffSprite;
+        if (spr != null) _topMuteImg.sprite = spr;
+    }
+
+    // Stagger: star 1 at 0.3s, star 2 at 0.75s, star 3 at 1.2s. All 3 slots are now the real
+    // star rating (0-3) — the old forced 4th "always pops, means level up" slot was removed
+    // 2026-07-26; that beat now belongs to the flashing level-up star button instead.
     IEnumerator AnimateStars(int earnedCount)
     {
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 3; i++)
         {
             yield return new WaitForSecondsRealtime(0.30f + i * 0.45f);
-            if (i < 3 && i >= earnedCount) continue;
+            if (i >= earnedCount) continue;
             StartCoroutine(PopStar(i));
         }
         _lcAnim = null;
     }
 
-    // Bounce scale 1→1.42→1, simultaneous grey→gold colour transition. Slot 3 additionally
-    // reveals the LEVEL UP! label alongside its own pop.
+    // Bounce scale 1→1.42→1, simultaneous grey→gold colour transition.
     IEnumerator PopStar(int idx)
     {
         var rt  = _lcStarRTs[idx];
         var img = _lcStarImgs[idx];
         if (rt == null || img == null) yield break;
-
-        if (idx == 3 && _lcLevelUpText != null)
-            _lcLevelUpText.gameObject.SetActive(true);
 
         float elapsed = 0f;
         const float dur = 0.38f;

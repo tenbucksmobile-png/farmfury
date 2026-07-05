@@ -20,14 +20,14 @@ public static class SceneSetup
 
         EnsureParents();        // BlockParent, RobotParent GameObjects
         EnsureGround();         // Static ground plane with collider + renderer
+        EnsureGroundVisual();   // Placeholder tinted ground/grass strip (see method comment)
         EnsureBackground();     // Sky painting backdrop behind all game objects
         EnsureScenery();        // SceneryBuilder GO + World1Props sprite refs
         EnsureEggPrefab();      // Create Egg prefab + wire into CluckAnimal prefab
         EnsureAnimalPrefabs();  // Create Percy/Woolly/Ducky/Horace/Gerald/Billy prefabs
         EnsureHUD();            // HUDController GO (builds Canvas at runtime)
-        EnsureLevelSelect();    // LevelSelectController GO (Canvas sortingOrder 300)
         EnsureMainMenu();       // MainMenuController GO (Canvas sortingOrder 400)
-        EnsureWorldMap();       // WorldMapController GO (Sunrise Meadows level-map, replaces LevelSelectController for PLAY)
+        EnsureWorldMap();       // WorldMapController GO (Sunrise Meadows level-map — PLAY's destination)
         EnsureAudioManager();   // AudioManager GO wired with music/cannon/falling clips
         WireGameManager();      // _levels array
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
@@ -50,6 +50,22 @@ public static class SceneSetup
                 Object.DestroyImmediate(ph);
                 Debug.Log($"[FarmFury] Deleted visual placeholder '{placeholderName}'.");
             }
+        }
+
+        // LevelSelectController removed 2026-07-26 (user-reported: an old "SELECT LEVEL" grid
+        // screen kept appearing behind/instead of the Sunrise Meadows world map). Root cause:
+        // LevelSelectController.Start() subscribed to GameManager.OnStateChanged and showed
+        // itself on GameState.Idle — the exact same event and Canvas sortingOrder (300)
+        // WorldMapController uses — so the two were silently racing to show themselves on every
+        // Idle transition, with whichever GameObject came later in scene order winning. It was
+        // never actually disabled after WorldMapController superseded it for World 1 (2026-07-15),
+        // just left running unused in the background until this. Deletes the leftover scene
+        // GameObject from any project that already ran an older Wire Scene References pass.
+        var staleLevelSelect = GameObject.Find("LevelSelect");
+        if (staleLevelSelect != null)
+        {
+            Object.DestroyImmediate(staleLevelSelect);
+            Debug.Log("[FarmFury] Deleted obsolete 'LevelSelect' GameObject (superseded by WorldMapController).");
         }
 
         EditorSceneManager.SaveScene(scene);
@@ -284,11 +300,16 @@ public static class SceneSetup
         // between both end-of-level panels (same assets, same field).
         WireSprite(so, "_lcTitleSprite",       "Assets/Sprites/UI/MatchUp/LevelComplete.png");
         WireSprite(so, "_starSprite",          "Assets/Sprites/UI/MatchUp/ScoreStars.png");
+        WireSprite(so, "_levelUpStarSprite",   "Assets/Sprites/UI/MatchUp/Levelup.png");
         WireSprite(so, "_lfTitleSprite",       "Assets/Sprites/UI/MatchUp/LevelFailed.png");
         WireSprite(so, "_scoreboardSprite",    "Assets/Sprites/UI/MatchUp/Scoreboard.png");
         WireSprite(so, "_playButtonSprite",    "Assets/Sprites/UI/Icon/Btn_play.png");
         WireSprite(so, "_homeButtonSprite",    "Assets/Sprites/UI/Icon/Btn_home.png");
         WireSprite(so, "_quitButtonSprite",    "Assets/Sprites/UI/Icon/Btn_quite.png");
+        // Top-right Quit/Mute/Pause row (2026-07-26) — Quit reuses _quitButtonSprite above.
+        WireSprite(so, "_pauseButtonSprite",   "Assets/Sprites/UI/Icon/Btn_pause.png");
+        WireSprite(so, "_musicOnSprite",       "Assets/Sprites/UI/Icon/Btn_music.png");
+        WireSprite(so, "_musicOffSprite",      "Assets/Sprites/UI/Icon/NoSound.png");
 
         so.ApplyModifiedProperties();
 
@@ -390,7 +411,7 @@ public static class SceneSetup
         WireSprite(mapSo, "_star1Sprite",           $"{artFolder}/LevelMarker_1star.png");
         WireSprite(mapSo, "_star3Sprite",           $"{artFolder}/LevelMarker_3stars.png");
         WireSprite(mapSo, "_playerPositionSprite",  $"{artFolder}/PlayerPosition.png");
-        WireSprite(mapSo, "_nextLevelButtonSprite", $"{iconFolder}/Btn_nextlevel.png");
+        WireSprite(mapSo, "_playButtonSprite",      $"{iconFolder}/Btn_play.png");
         WireSprite(mapSo, "_homeButtonSprite",      $"{iconFolder}/Btn_home.png");
         // _star2Sprite intentionally left unwired — no LevelMarker_2stars.png exists yet;
         // LevelMarker.Refresh() falls back to the 3-star sprite until one is added.
@@ -528,66 +549,6 @@ public static class SceneSetup
         so.FindProperty(fieldName).objectReferenceValue = clip;
         so.ApplyModifiedProperties();
         Debug.Log($"[FarmFury] AudioManager: wired {fieldName} <- {path}");
-    }
-
-    // ── LevelSelectController + world card sprite wiring ─────────────────────────
-
-    // World card filenames (case-insensitive keyword, index = world number 0-5).
-    static readonly string[] WorldCardKeywords =
-    {
-        "Meadow",    // 0 — World 1 Meadow Ruins
-        "Frozen",    // 1 — World 2 Frozen Tundra
-        "Watermill", // 2 — World 3 Watermill Village
-        "Sky",       // 3 — World 4 Sky Islands
-        "Sunken",    // 4 — World 5 Sunken City
-        "Mothership",// 5 — World 6 Robot Mothership
-    };
-
-    static void EnsureLevelSelect()
-    {
-        var go = GameObject.Find("LevelSelect");
-        if (go == null)
-        {
-            go = new GameObject("LevelSelect");
-            Debug.Log("[FarmFury] Created 'LevelSelect' GameObject.");
-        }
-        if (go.GetComponent<LevelSelectController>() == null)
-            go.AddComponent<LevelSelectController>();
-
-        // Wire world card sprites into _worldCardSprites[]
-        const string cardsFolder = "Assets/Sprites/UI/LevelCards";
-        var lsc = go.GetComponent<LevelSelectController>();
-        var so  = new SerializedObject(lsc);
-        var arr = so.FindProperty("_worldCardSprites");
-        arr.arraySize = WorldCardKeywords.Length;
-
-        var guids = AssetDatabase.FindAssets("t:Sprite", new[] { cardsFolder });
-        int wired = 0;
-        for (int i = 0; i < WorldCardKeywords.Length; i++)
-        {
-            string kw = WorldCardKeywords[i].ToLower();
-            foreach (var g in guids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(g);
-                if (path.ToLower().Contains(kw))
-                {
-                    var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-                    if (spr != null)
-                    {
-                        arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
-                        wired++;
-                        break;
-                    }
-                }
-            }
-        }
-        so.ApplyModifiedProperties();
-
-        if (wired > 0)
-            Debug.Log($"[FarmFury] LevelSelect: wired {wired}/6 world card sprites from {cardsFolder}.");
-        else
-            Debug.LogWarning($"[FarmFury] LevelSelect: no world card art found in {cardsFolder}. " +
-                             "Add Kling AI card art there and re-run Wire Scene References.");
     }
 
     // ── GameManager: wire the levels array ────────────────────────────────────
@@ -774,7 +735,27 @@ public static class SceneSetup
             // "PPU = texture width" auto-derivation gives both an identical native 1x1 size —
             // the hit-flash swap in BlockBase.PlayDamageFlash() can't visibly change size/shape.
             ("_sprDamaged",    "Haybail_Damaged.png"),
+            // _sprExplode reuses the same starburst art as the death-burst VFX (2026-07-26) —
+            // at hp=10 a haybale always dies on the hit that damages it, so this is the reaction
+            // players actually see, not the brief pre-death _sprDamaged flash above.
+            ("_sprExplode",    "Haybail_Damaged.png"),
         });
+
+        // _stayKinematic (2026-07-26): user-reported bug — hitting one haybale in the L01 pile
+        // woke ALL FOUR via BlockBase.WakeAllStaticBlocks() (global, not per-instance), so the
+        // three untouched bales visibly shifted/tumbled even though nothing hit them directly.
+        // Setting this true on the prefab keeps every haybale Static until it's the one actually
+        // destroyed — no physical shift, ever.
+        var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+        var block    = contents.GetComponent<BlockBase>();
+        if (block != null)
+        {
+            var so = new SerializedObject(block);
+            so.FindProperty("_stayKinematic").boolValue = true;
+            so.ApplyModifiedProperties();
+            PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+        }
+        PrefabUtility.UnloadPrefabContents(contents);
     }
 
     static void WireBlockPrefab(string prefabPath, string folder,
@@ -1065,6 +1046,54 @@ public static class SceneSetup
             rb.bodyType = RigidbodyType2D.Static;
         }
         Debug.Log("[FarmFury] Ground physics collider at surface Y=-6.60 (ground/grass visuals are scene-authored, not code-generated).");
+    }
+
+    // Placeholder ground/grass visual (2026-07-26) — L01 shipped with NO ground art at all:
+    // EnsureGround()'s collider is deliberately invisible (see above), and no one ever
+    // hand-authored a replacement, so the sky backdrop ran straight to the bottom of the
+    // screen with nothing showing where solid ground is. User-reported symptom: haybails/
+    // HarvesterRobot/a landing Cluck all looked like they were "sinking" or "falling through
+    // the floor" near the bottom of the screen. Root cause confirmed NOT a physics bug —
+    // Ground's collider/Rigidbody2D/layer setup are all correct — it's that the camera's
+    // visible range at rest (Y -6.5 to +2.5, see PositionCamera()) already clips 0.1 units
+    // above the true ground surface (-6.60), so anything settling near true ground level
+    // visually vanishes off the bottom edge with no ground graphic to anchor it.
+    // This is a stand-in tinted strip, not final art: its rendered TOP edge sits at Y=-5.3
+    // (matching where hand-placed props like OldBarn_Right/GnarledTree/WoodenFence/the
+    // robot already visually rest, per their scene transforms) and extends down to Y=-12,
+    // well past the visible frame in any orientation. sortingOrder=-1 keeps it behind every
+    // gameplay object (decorative props use <=1, blocks=2, robots=3, cannon=4, animals=6 —
+    // see the sortingOrder rule in CLAUDE.md) while still in front of the sky (-100).
+    // DELETE this GameObject once real ground/grass art is authored — this method only
+    // creates it if missing, so removing "GroundVisual_Placeholder" from the scene once
+    // real art exists is enough to stop it coming back.
+    static void EnsureGroundVisual()
+    {
+        const float VisualTop    = -5.3f;
+        const float VisualBottom = -12f;
+        float height = VisualTop - VisualBottom;
+        float centerY = (VisualTop + VisualBottom) / 2f;
+
+        var go = GameObject.Find("GroundVisual_Placeholder");
+        if (go == null)
+        {
+            go = new GameObject("GroundVisual_Placeholder");
+            Debug.Log("[FarmFury] Created 'GroundVisual_Placeholder' ground/grass stand-in — replace with real art, then delete this GameObject.");
+        }
+        go.transform.position   = new Vector3(0f, centerY, 0f);
+        go.transform.localScale = new Vector3(40f, height, 1f);
+
+        var sr = go.GetComponent<SpriteRenderer>();
+        if (sr == null) sr = go.AddComponent<SpriteRenderer>();
+        if (sr.sprite == null)
+        {
+            var tex = new Texture2D(1, 1);
+            tex.SetPixel(0, 0, Color.white);
+            tex.Apply();
+            sr.sprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), Vector2.one * 0.5f, 1f);
+        }
+        sr.color         = new Color(0.36f, 0.56f, 0.24f);
+        sr.sortingOrder  = -1;
     }
 
     // ── Camera: position to see launcher + structures ─────────────────────────

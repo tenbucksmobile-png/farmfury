@@ -25,6 +25,22 @@ public abstract class BlockBase : MonoBehaviour
     // feedback below, unchanged.
     [SerializeField] protected Sprite _sprDamaged;
 
+    // Optional death-burst art (e.g. Haybail_Damaged.png reused as a starburst explosion) —
+    // when wired, DestroyBlock() shows this instead of the generic flying-square fragments.
+    // Added 2026-07-26 for HaybaleBlock: at hp=10 it always dies in one hit anyway (a typical
+    // Cluck impact deals ~15-20), so the _sprDamaged flash above never actually gets seen before
+    // the GameObject is destroyed in the same frame — this is the death reaction players
+    // actually see.
+    [SerializeField] protected Sprite _sprExplode;
+
+    // When true, this block never transitions to a Dynamic Rigidbody2D — see
+    // WakeAllStaticBlocks() below. Added 2026-07-26 per user report: hitting one haybale in a
+    // cluster woke ALL of them (WakeAllStaticBlocks() is global, not per-instance), so the
+    // undamaged neighbours visibly shifted/tumbled even though nothing hit them. HaybaleBlock
+    // sets this true so a hit only ever destroys the one bale that was actually struck — the
+    // rest stay exactly where they were placed.
+    [SerializeField] protected bool _stayKinematic;
+
     [Header("Fragments")]
     [SerializeField] private GameObject[] _fragmentPrefabs;
     [SerializeField] private int          _fragmentCount = 5;
@@ -191,12 +207,28 @@ public abstract class BlockBase : MonoBehaviour
         if (IsDestroyed) return;
         IsDestroyed = true;
         CameraShake.Shake(0.22f, 0.20f);
-        SpawnFragments();
+        if (_sprExplode != null) SpawnExplosion();
+        else                     SpawnFragments();
         SpawnImpactFlash();
         AudioManager.Play(AudioManager.Sound.BlockDestroy, 0.05f);
         OnBlockDestroyed?.Invoke(this);
         ScoreManager.Instance?.AddBlockScore(this);
         Destroy(gameObject);
+    }
+
+    // Death burst for block types with dedicated explosion art (see _sprExplode) — replaces the
+    // generic flying-square SpawnFragments() below. Reuses FragmentFader's existing fade-to-
+    // transparent-over-0.6s-then-destroy behaviour rather than adding a second fade coroutine.
+    void SpawnExplosion()
+    {
+        var go = new GameObject("BlockExplosion");
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite       = _sprExplode;
+        sr.sortingOrder = 10;
+        go.transform.position   = transform.position;
+        float sz = Mathf.Max(_col.bounds.size.x, _col.bounds.size.y) * 2.2f; // bigger than the block itself
+        go.transform.localScale = new Vector3(sz, sz, 1f);
+        go.AddComponent<FragmentFader>();
     }
 
     void SpawnImpactFlash()
@@ -348,7 +380,7 @@ public abstract class BlockBase : MonoBehaviour
     {
         foreach (var block in FindObjectsByType<BlockBase>(FindObjectsInactive.Exclude))
         {
-            if (!block.IsDestroyed && block._rb.bodyType == RigidbodyType2D.Static)
+            if (!block.IsDestroyed && !block._stayKinematic && block._rb.bodyType == RigidbodyType2D.Static)
                 block._rb.bodyType = RigidbodyType2D.Dynamic;
         }
     }

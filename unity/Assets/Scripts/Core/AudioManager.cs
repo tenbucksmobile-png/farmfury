@@ -25,8 +25,28 @@ public class AudioManager : MonoBehaviour
     private Coroutine   _fallingFadeRoutine;
 
     private const float MusicVolume         = 0.5f;
-    private const float FallingVolume        = 0.6f;
+    // Raised 0.6 -> 0.9 (2026-07-26): the falling/scream loop starts at the exact same instant
+    // as the cannon-shot one-shot (see CatapultLauncher.Fire()) and was getting buried under it —
+    // user-reported "cannot hear the chicken scream, it is deafened by the cannon fire". Paired
+    // with Launch's own volume being turned down below, in VolumeScale.
+    private const float FallingVolume        = 0.9f;
     private const float FallingFadeDuration  = 0.35f;
+
+    // Per-sound PlayOneShot volume scale, indexed by (int)Sound — was a single hardcoded 0.8f
+    // for every sound. Launch (the cannon shot) is turned down specifically so it doesn't drown
+    // out the falling/scream loop that starts in the same frame; every other SFX keeps the
+    // original 0.8 level.
+    private static readonly float[] VolumeScale =
+    {
+        0.5f, // Launch
+        0.8f, // WoodHit
+        0.8f, // StoneHit
+        0.8f, // RobotDeath
+        0.8f, // Win
+        0.8f, // Fail
+        0.8f, // BlockDestroy
+        0.8f, // RobotHit
+    };
 
     private const int SR = 44100;
 
@@ -119,7 +139,7 @@ public class AudioManager : MonoBehaviour
         int idx = (int)sound;
         if (cooldown > 0f && Time.time - Instance._lastPlayTime[idx] < cooldown) return;
         Instance._lastPlayTime[idx] = Time.time;
-        Instance._src.PlayOneShot(Instance._clips[idx], 0.8f);
+        Instance._src.PlayOneShot(Instance._clips[idx], VolumeScale[idx]);
     }
 
     // ── Falling sound (Cluck airborne) ───────────────────────────────────────

@@ -20,12 +20,25 @@ MonoBehaviour:
   - type: 0
     position: {x: -2.7, y: -2.3}
     size: {x: 2.4, y: 0.4}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
   - type: 0
     position: {x: -2.7, y: -1.9}
     size: {x: 2.4, y: 0.4}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
   - type: 0
     position: {x: -2.7, y: -1.5}
     size: {x: 1.6, y: 0.4}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
   robots:
-  - position: {x: -1.1, y: -2.1}
-  - position: {x: -2.7, y: -0.9}
+  - robotType: 0
+    position: {x: -1.1, y: -2.1}
+    scale: {x: 0, y: 0}
+  - robotType: 0
+    position: {x: -2.7, y: -0.9}
+    scale: {x: 0, y: 0}

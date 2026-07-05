@@ -3,9 +3,15 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // Sunrise Meadows (World 1) world-map level select. Self-contained: builds its own Canvas
-// (ScreenSpaceOverlay, sortingOrder 300 — same tier LevelSelectController used) in Awake().
-// Shows on GameState.Idle; hides on any other state — same lifecycle as LevelSelectController
-// and MainMenuController.
+// (ScreenSpaceOverlay, sortingOrder 300) in Awake(). Shows on GameState.Idle; hides on any
+// other state.
+//
+// The old grid-based LevelSelectController used this exact same sortingOrder and the same
+// GameState.Idle show/hide lifecycle, and was never actually disabled once this screen
+// superseded it for World 1 (2026-07-15) — the two silently raced to show themselves on every
+// Idle transition until LevelSelectController was deleted entirely (2026-07-26, user-reported:
+// the old "SELECT LEVEL" grid kept appearing instead of/behind this screen). If World 2+ needs
+// its own map, build it following this component's pattern rather than resurrecting that one.
 //
 // ARCHITECTURE NOTE — deviates from the literal spec on purpose, flagged here rather than
 // silently: the spec described literal world-space SpriteRenderers/Transform positions
@@ -13,8 +19,8 @@ using UnityEngine.UI;
 // work through uGUI — a SpriteRenderer has no click support of its own. Implemented instead as
 // a ScreenSpaceOverlay Canvas with UI Image+Button markers, which (a) makes "OnClick" a real,
 // standard Button rather than hand-rolled hit-testing, and (b) keeps this screen consistent
-// with every other menu in the project (MainMenu/LevelSelect/HUD are all Canvas-based) and
-// avoids fighting CatapultLauncher for ownership of the world-space camera.
+// with every other menu in the project (MainMenu/HUD are all Canvas-based) and avoids fighting
+// CatapultLauncher for ownership of the world-space camera.
 //
 public class WorldMapController : MonoBehaviour
 {
@@ -65,7 +71,10 @@ public class WorldMapController : MonoBehaviour
     // regenerated clean (no pins/buttons baked in) specifically to fix the pin duplication bug —
     // that also removed the baked buttons, so these need to go back to being real rendered
     // sprites again or they'd just be invisible with nothing underneath.
-    [SerializeField] private Sprite _nextLevelButtonSprite; // Btn_nextlevel.png
+    // Bottom-left button switched from the wide Btn_nextlevel.png pill to the same square
+    // Btn_play.png icon HUDController/MainMenuController already use elsewhere (2026-07-26) —
+    // sized to exactly match Home below rather than the old pill's own 4:1 aspect.
+    [SerializeField] private Sprite _playButtonSprite;      // Btn_play.png
     [SerializeField] private Sprite _homeButtonSprite;      // Btn_home.png
 
     // MatchUpScreen art — kept as fields on THIS component rather than on the nested
@@ -198,10 +207,9 @@ public class WorldMapController : MonoBehaviour
         _matchUpScreen.Show(levelIndex);
     }
 
-    // NEXT LEVEL button (bottom-left, per mockup) — shortcut to the matchup screen for
-    // whichever level the bobbing indicator is currently sitting on, without needing to tap
-    // the pin itself.
-    void OnNextLevelClicked() => _matchUpScreen.Show(_highestUnlocked);
+    // Play button (bottom-left) — shortcut to the matchup screen for whichever level the
+    // bobbing indicator is currently sitting on, without needing to tap the pin itself.
+    void OnPlayClicked() => _matchUpScreen.Show(_highestUnlocked);
 
     void OnBackClicked()
     {
@@ -347,23 +355,21 @@ public class WorldMapController : MonoBehaviour
         ApplySafeArea(safeRT);
         Transform safe = safeRT;
 
-        // ── NEXT LEVEL button — bottom-left, rendered from Btn_nextlevel.png ────────
-        // Enlarged 2026-07-24 to match the landing page's PLAY/SETTINGS icon scale (150x150 —
-        // see MainMenuController.cs). Btn_nextlevel.png is a wide 512x128 (4:1) pill, not square
-        // like Home/PLAY/SETTINGS, so "same size" here means matching HEIGHT (150, same visual
-        // weight/prominence) rather than forcing a literal 150x150 box that would badly distort
-        // or letterbox it — width follows the art's own 4:1 aspect via preserveAspect.
-        var nextGO = new GameObject("NextLevelBtn");
+        // ── Play button — bottom-left, rendered from Btn_play.png ──────────────────
+        // Replaced the old wide Btn_nextlevel.png pill (2026-07-26) with the same square
+        // Btn_play.png icon used elsewhere, sized to exactly match Home below (150x150) rather
+        // than the pill's own 4:1 aspect.
+        var nextGO = new GameObject("PlayBtn");
         nextGO.transform.SetParent(safe, false);
         var nextRT = nextGO.AddComponent<RectTransform>();
         nextRT.anchorMin        = new Vector2(0f, 0f);
         nextRT.anchorMax        = new Vector2(0f, 0f);
         nextRT.pivot            = new Vector2(0f, 0f);
         nextRT.anchoredPosition = new Vector2(40f, 40f);
-        nextRT.sizeDelta        = new Vector2(600f, 150f);
+        nextRT.sizeDelta        = new Vector2(150f, 150f);
         var nextImg = nextGO.AddComponent<Image>();
-        nextImg.sprite         = _nextLevelButtonSprite != null ? _nextLevelButtonSprite : _squareSpr;
-        nextImg.color          = _nextLevelButtonSprite != null ? Color.white : new Color(0.85f, 0.55f, 0.05f);
+        nextImg.sprite         = _playButtonSprite != null ? _playButtonSprite : _squareSpr;
+        nextImg.color          = _playButtonSprite != null ? Color.white : new Color(0.85f, 0.55f, 0.05f);
         nextImg.preserveAspect = true;
         var nextBtn = nextGO.AddComponent<Button>();
         nextBtn.targetGraphic = nextImg;
@@ -372,7 +378,7 @@ public class WorldMapController : MonoBehaviour
         nc.highlightedColor = new Color(0.90f, 0.90f, 0.90f);
         nc.pressedColor     = new Color(0.70f, 0.70f, 0.70f);
         nextBtn.colors      = nc;
-        nextBtn.onClick.AddListener(OnNextLevelClicked);
+        nextBtn.onClick.AddListener(OnPlayClicked);
 
         // ── Home button — bottom-right, rendered from Btn_home.png ──────────────────
         // Enlarged 84x84 -> 150x150 to exactly match the landing page's PLAY/SETTINGS icons

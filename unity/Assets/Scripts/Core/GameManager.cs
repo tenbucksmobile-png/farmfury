@@ -148,7 +148,9 @@ public class GameManager : MonoBehaviour
     {
         TransitionTo(GameState.Idle);
         // Only load the menu scene if it's registered in Build Settings.
-        // When it isn't (e.g. Phase 2.5 dev), LevelSelectController handles Idle in-scene.
+        // When it isn't (the current setup), WorldMapController/MainMenuController handle
+        // Idle in-scene instead (LevelSelectController used to as well — removed 2026-07-26,
+        // it was racing WorldMapController to show itself on every Idle transition).
         if (SceneInBuild(_menuSceneName))
             SceneManager.LoadScene(_menuSceneName);
     }

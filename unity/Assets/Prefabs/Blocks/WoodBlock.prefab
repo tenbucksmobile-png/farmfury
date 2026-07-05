@@ -189,6 +189,8 @@ MonoBehaviour:
   _sprHorizontal: {fileID: 21300000, guid: 4b2ac722e2559534b9c2715200ae6378, type: 3}
   _sprVertical: {fileID: 21300000, guid: e27b005ffb9511d4f986ae05b40d36f5, type: 3}
   _sprDamaged: {fileID: 0}
+  _sprExplode: {fileID: 0}
+  _stayKinematic: 0
   _fragmentPrefabs: []
   _fragmentCount: 5
   _fragmentSpeed: 4

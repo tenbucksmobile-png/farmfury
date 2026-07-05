@@ -66,7 +66,10 @@ public static class PanelPreview
                 {
                     ScreenCapture.CaptureScreenshot($"{ShotDir}/lc_panel.png");
                     GameManager.Instance.ForceStartLevel(0);
-                    HUDController.Instance.SendMessage("OnPauseClicked");
+                    // OnPauseClicked() (and the pause button that called it) were removed
+                    // 2026-07-26 — ShowPausePanel() is the direct replacement target, still
+                    // private but reachable via SendMessage the same way OnPauseClicked was.
+                    HUDController.Instance.SendMessage("ShowPausePanel");
                     _frameWait = 10;
                     _step = Step.ShotPause;
                 }

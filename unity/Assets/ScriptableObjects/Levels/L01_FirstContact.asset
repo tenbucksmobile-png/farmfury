@@ -15,32 +15,29 @@ MonoBehaviour:
   levelId: W1_L01
   levelName: First Contact
   parBirds: 2
-  birds:
-  - 0
-  - 0
-  - 0
+  birds: 000000000000000000000000
   blocks:
   - type: 2
-    position: {x: 3.6462, y: -6.180}
-    size: {x: 1.0, y: 0.9}
+    position: {x: 3.6462, y: -5.18}
+    size: {x: 1, y: 0.9}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
   - type: 2
-    position: {x: 4.3098, y: -6.235}
-    size: {x: 1.0, y: 0.9}
+    position: {x: 4.3098, y: -5.235}
+    size: {x: 1, y: 0.9}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
   - type: 2
-    position: {x: 3.85, y: -6.281}
-    size: {x: 1.0, y: 0.9}
+    position: {x: 3.85, y: -5.281}
+    size: {x: 1, y: 0.9}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
   - type: 2
-    position: {x: 4.029, y: -5.497}
-    size: {x: 1.0, y: 0.9}
+    position: {x: 4.029, y: -4.497}
+    size: {x: 1, y: 0.9}
     passThrough: 1
     healthOverride: 10
     massOverride: 3

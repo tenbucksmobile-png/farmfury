@@ -119,8 +119,14 @@ public abstract class AnimalBase : MonoBehaviour
     protected virtual void OnCollisionEnter2D(Collision2D col)
     {
         IsInFlight = false;
+        // Show the impact pose (e.g. Cluck_Impact.png) for the remaining _contactTimeout window
+        // instead of hiding instantly — fixed 2026-07-26: _sprImpact used to get assigned then
+        // hidden in the very next line, so the reaction art was never actually visible before
+        // DestroyAnimal() removed the whole GameObject. Only fall back to the old instant-hide
+        // when no impact art is wired at all (procedural fallback circle — "no dead bird lying
+        // on the ground").
         if (_sprImpact != null) _sr.sprite = _sprImpact;
-        _sr.enabled = false;   // hide immediately — no dead bird lying on the ground
+        else                    _sr.enabled = false;
         OnAnimalImpact?.Invoke(this);
         if (!_contactStarted)
         {

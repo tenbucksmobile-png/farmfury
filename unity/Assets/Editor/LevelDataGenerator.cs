@@ -56,15 +56,26 @@ public static class LevelDataGenerator
         // hp=10 (fixed 2026-07-01, was 60 — that survived multiple hits instead of exploding in
         // one; a typical Cluck impact does ~15-20 impulse damage, so 10 reliably one-shots it).
         // passThrough=true lets Cluck punch through at 70% speed and continue to the robot.
+        // Y values shifted up by +1.0 on 2026-07-26 (user-reported: pile sat below the camera's
+        // visible safe line) — the previous baseline (ground-touching, per the 2026-07-18 fix
+        // below) put the lowest bale's bottom edge at Y~-6.73, well past the camera's own visible
+        // bottom (Y=-6.5 at rest — see CLAUDE.md Coordinate System) and therefore cropped/invisible
+        // regardless of the physics ground being correct. Since GroundVisual_Placeholder's visible
+        // grass top edge is Y=-5.3 (added the same day for the same underlying reason — the true
+        // physics ground is basically off-screen), +1.0 lands the pile's lowest bottom edge at
+        // Y~-5.73 — comfortably clear of the camera cutoff and roughly matching where the other
+        // hand-placed props (barn/tree/fence) already sit visually, rather than the true (mostly
+        // off-screen) physics ground line. All 4 bales stay _stayKinematic (see BlockBase.cs), so
+        // once placed here none of them will ever move again, struck or not.
         Make(folder, "L01_FirstContact",
             id: "W1_L01", name: "First Contact", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 3.6462f, -6.180f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.3098f, -6.235f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 3.85f,   -6.281f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.029f,  -5.497f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 3.6462f, -5.180f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 4.3098f, -5.235f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 3.85f,   -5.281f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 4.029f,  -4.497f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
             },
             robots: new[]
             {

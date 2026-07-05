@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 // A single tappable pin on the Sunrise Meadows world map. Built entirely at runtime by
 // WorldMapController (no prefab) as a UI Image + Button rather than a literal SpriteRenderer —
@@ -14,7 +13,6 @@ public class LevelMarker : MonoBehaviour
 
     private RectTransform      _rt;
     private Image              _image;
-    private TextMeshProUGUI    _numberLabel;
     private Action<int>        _onClicked;
     private Sprite              _fallbackSpr;
     private Coroutine          _shakeRoutine;
@@ -47,22 +45,6 @@ public class LevelMarker : MonoBehaviour
         colors.pressedColor     = new Color(0.75f, 0.75f, 0.75f);
         btn.colors = colors;
         btn.onClick.AddListener(() => _onClicked?.Invoke(LevelIndex));
-
-        var lblGO = new GameObject("Number");
-        lblGO.transform.SetParent(transform, false);
-        var lblRT = lblGO.AddComponent<RectTransform>();
-        lblRT.anchorMin        = new Vector2(0.5f, 0.5f);
-        lblRT.anchorMax        = new Vector2(0.5f, 0.5f);
-        lblRT.pivot            = new Vector2(0.5f, 0.5f);
-        lblRT.anchoredPosition = new Vector2(0f, 12f); // upper portion of the badge art
-        lblRT.sizeDelta        = new Vector2(50f, 40f);
-        _numberLabel = lblGO.AddComponent<TextMeshProUGUI>();
-        _numberLabel.text               = (levelIndex + 1).ToString();
-        _numberLabel.fontSize           = 22f;
-        _numberLabel.fontStyle          = FontStyles.Bold;
-        _numberLabel.alignment          = TextAlignmentOptions.Center;
-        _numberLabel.enableWordWrapping = false;
-        _numberLabel.raycastTarget      = false;
     }
 
     // Sprite params may be null individually — falls back to the nearest available state art,
@@ -91,8 +73,6 @@ public class LevelMarker : MonoBehaviour
                           : stars > 0 ? new Color(1.00f, 0.82f, 0.20f)
                                       : new Color(0.55f, 0.75f, 0.55f);
         }
-
-        _numberLabel.color = unlocked ? Color.white : new Color(0.55f, 0.55f, 0.60f);
     }
 
     public Vector2 AnchoredPosition => _rt.anchoredPosition;
