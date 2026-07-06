@@ -179,7 +179,7 @@ MonoBehaviour:
   _sprImpact: {fileID: 21300000, guid: bae06ba49a55e434ab96784efd2b2dd5, type: 3}
   _sprAbility: {fileID: 21300000, guid: 225ac74e6b962c8479da42ca85f6d60e, type: 3}
   _contactTimeout: 3
-  _eggPrefab: {fileID: 7965606769925331295, guid: 7a1a28516a153bb41b8fcd04ccf94559, type: 3}
+  _eggPrefab: {fileID: 1824772230242545158, guid: 7a1a28516a153bb41b8fcd04ccf94559, type: 3}
   _eggCount: 5
   _minEggSpeed: 5
   _spreadDeg: 120

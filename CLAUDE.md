@@ -31,6 +31,7 @@ Full GDD: `C:\Users\Personel\Desktop\FarmFury_GDD_v2.docx`
 - **`LevelSelectController` removed entirely 2026-07-26** — user-reported the old "SELECT LEVEL" grid screen kept appearing instead of/behind the Sunrise Meadows world map. Root cause: it subscribed to `GameManager.OnStateChanged` and showed itself on `GameState.Idle` using the exact same Canvas `sortingOrder` (300) `WorldMapController` uses — the two were silently racing to show themselves on every Idle transition ever since `WorldMapController` superseded it for World 1 (2026-07-15); it was never actually disabled, just left running unused in the background until now. The script, its `SceneSetup.EnsureLevelSelect()` wiring, and the leftover `LevelSelect` scene GameObject (auto-cleaned by `WireAll()` on next run) are all gone. World 2+ needs its own map screen built following `WorldMapController`'s pattern when that content exists — not a resurrected grid select.
 - **Pause access restored 2026-07-26** via a new top-right 3-button row (Quit/Mute/Pause, real icon art) — see HUDController.cs entry above. Briefly removed earlier the same day alongside the top-centre score readout ("0" box, still gone) before being reinstated in this fuller form.
 - **L01 haybale pile Y-shifted +1.0 on 2026-07-26** (user-reported: pile sat below the camera's visible safe line — bottom edge was at Y≈−6.73 against a visible-camera-bottom of Y=−6.5). New positions put the lowest bale's bottom edge at Y≈−5.73, matching where the other hand-placed props visually sit rather than the (mostly off-screen) true physics ground line. All 4 bales are `_stayKinematic` (see BlockBase.cs entry), so once placed they never move again regardless of being struck.
+- **L01 top haybale re-lowered 0.35u + recentred on 2026-07-06** — user reported it "still too high and off the mark": it previously balanced on a single point directly above one base-row bale (X=4.029, Y=−4.497). Moved to X=3.935 (base row's mean X), Y=−4.85, nesting it into the row instead of perching on one corner. The internal single-bale-height stacking math (0.7365u gap, from Haybail.png's measured trimmed content) was previously verified and is unaffected by this change — see `LevelDataGenerator.cs`'s comment above the `Make("L01_FirstContact", ...)` call. Unverified visually in this environment (no Unity render access) — re-check against a fresh screenshot.
 
 ---
 
@@ -177,7 +178,9 @@ unity/Assets/Scripts/
                               dedicated scene GO (SceneSetup.EnsureAudioManager()), [DefaultExecutionOrder(-90)]
                               so it wins the singleton race against CatapultLauncher's fallback AddComponent.
                               SfxEnabled/MusicEnabled persisted via PlayerPrefs, toggled from both the
-                              pause menu and the Main Menu SETTINGS popup (same state, can't disagree).
+                              top-right Mute button and the Main Menu SETTINGS popup (same state, can't
+                              disagree — the pause menu's own separate Music/SFX toggles were removed along
+                              with the rest of that panel 2026-07-06).
                               Mix rebalanced 2026-07-26 (user-reported: cannon shot buried the Cluck falling/
                               scream loop, which starts in the same frame — see CatapultLauncher.Fire()):
                               FallingVolume raised 0.6->0.9, and Play()'s previously-uniform 0.8 PlayOneShot
@@ -215,7 +218,13 @@ unity/Assets/Scripts/
     CluckAnimal.cs             — 5-egg cluster bomb in 120° spread from _eggPrefab (must be the egg GameObject
                               itself — _eggPrefab is typed GameObject, not EggProjectile); pass-through: punches
                               WoodBlock._passThrough=true at 70% velocity, skips base.OnCollisionEnter2D (so
-                              hay punches never trigger OnAnimalImpact / stop the falling SFX)
+                              hay punches never trigger OnAnimalImpact / stop the falling SFX). Calls
+                              wood.TakeDamage(wood.MaxHealth) directly on pass-through (2026-07-06 fix) —
+                              previously relied on BlockBase's own physics-impulse-derived damage from the
+                              same collision, which varies with impact speed/angle across the Cluck's arc and
+                              could leave a passThrough=true block alive after a graze, needing extra birds to
+                              finish it off (user-reported: took all 3 Clucks to clear one haybale pile). Pass-
+                              through blocks now always die in exactly one hit, any contact.
     BessieAnimal.cs            — vy-18 slam; shockwave 3.6u radius on Ground-tagged landing
     PercyAnimal / WoollyAnimal / DuckyAnimal / HoraceAnimal / GeraldAnimal / BillyAnimal
                               — Bounce Roll / Triple Clone / Skip Shot / Rear Kick / Puff Up / Headbutt
@@ -288,8 +297,15 @@ unity/Assets/Scripts/
                               against the launcher's own Y (dynamic, not hardcoded).
   UI/
     HUDController.cs                 — Canvas built at runtime; card widgets anchored top-left (anchorMin
-                              0.02,1); orange ⚡N damage badge (enlarged + restyled with StyleAsGameNumber()
-                              2026-07-26 — same bold/black-outline/gold-orange-gradient treatment as the
+                              0.02,1); orange N damage badge (enlarged + restyled with StyleAsGameNumber()
+                              2026-07-26, enlarged again 2026-07-06 — user reported it was still too small
+                              to read, especially on the smaller queued cards; badge now 92x44/text 34f on
+                              the active card, 74x36/text 26f on queued cards, up from 72x34/24f and
+                              56x28/18f. Leading "⚡" dropped the same day — LiberationSans SDF (the only
+                              font asset this project ships) has no glyph for U+26A1, rendering it as a
+                              tofu box that read as "a square before the numbers"; same class of bug as
+                              the missing ★ glyph fixed in MatchUpScreen (docs/HISTORY.md Round 14) — same
+                              bold/black-outline/gold-orange-gradient treatment as the
                               Level Complete/Failed score numbers, per user request to "match the game
                               font"); Level Complete/Failed/Pause panels; SafeArea RectTransform wrapper
                               (Screen.safeArea-driven) for the bird queue.
@@ -300,21 +316,35 @@ unity/Assets/Scripts/
                               **Top-right button row (`BuildTopRightButtons`, added later the same day)**
                               replaces the single plain-grey-circle pause button that briefly got removed in
                               the same pass as the score readout above. Three real icon buttons, top-right
-                              corner, 64x64 each with a 14px gap, order left-to-right Quit/Mute/Pause (Pause
-                              flush in the screen corner): **Pause** (`Btn_pause.png`) calls `OnPauseClicked()`
-                              — same toggle logic as before (`SetPaused`/`ShowPausePanel`), now the pause
-                              menu's only trigger again. **Mute** (`Btn_music.png` <-> `NoSound.png`, sprite-
-                              swapped not tinted) toggles BOTH `AudioManager.MusicEnabled` and `SfxEnabled`
-                              together via `OnTopMuteToggleClicked()` — distinct from the pause panel's two
-                              separate Music/SFX toggles (`_musicToggleImg`/`_sfxToggleImg`, colour-tinted,
-                              independent); `RefreshTopMuteIcon()` re-derives which sprite to show from actual
-                              AudioManager state (not a locally-tracked flag) so it stays correct even if
-                              those separate pause-panel toggles are used instead. **Quit** reuses the
-                              existing `_quitButtonSprite`/`OnQuitClicked()` the pause panel's own quit button
-                              already used. The whole row (`_topRightRoot`) hides via `SetTopBarVisible`
-                              alongside the bird queue whenever a full-screen end-of-level panel is up, same
-                              as the old score readout used to. `_birdQueueRoot` was actually missing from
-                              that toggle until earlier the same day (user-reported leftover animal cards
+                              corner, 150x150 each (enlarged from 64x64 2026-07-06 — user-reported too small;
+                              now matches MainMenuController's PLAY/SETTINGS button size) with a 14px gap,
+                              order left-to-right Quit/Mute/Pause (Pause flush in the screen corner). **Quit
+                              is sized up to 187.5x187.5 (`quitBtnSize = btnSize / 0.80f`), not the shared
+                              150x150** (2026-07-06, user-reported the three icons "don't look like they're
+                              the same size") — `Btn_quite.png`'s drawn button only fills ~87%x80% of its
+                              own 256x256 canvas (pixel-measured content bbox 222x205), unlike
+                              `Btn_pause.png`, whose art fills its canvas edge-to-edge (256x256), so
+                              rendering both into an identical box left QUIT visibly smaller; the position
+                              math (`pos`) still uses the shared `btnSize+gap` grid since QUIT's right-edge
+                              anchor doesn't move, it only grows further left, away from Mute:
+                              **Pause** (`Btn_pause.png` <-> `Btn_play.png`, swapped not tinted) calls
+                              `OnPauseClicked()` -> `SetPaused()`, which just flips `Time.timeScale` 0/1 and
+                              re-derives its own icon via `RefreshTopPauseIcon()` — no popup opens (the old
+                              PAUSED panel was removed entirely 2026-07-06, see below). **Mute**
+                              (`Btn_music.png` <-> `NoSound.png`, sprite-swapped) toggles BOTH
+                              `AudioManager.MusicEnabled` and `SfxEnabled` together via
+                              `OnTopMuteToggleClicked()`; `RefreshTopMuteIcon()` re-derives which sprite to
+                              show from actual AudioManager state (not a locally-tracked flag) so it stays
+                              correct even if the Main Menu SETTINGS popup's separate toggles are used
+                              instead. **Quit** (`_quitButtonSprite`) no longer closes the app — since
+                              2026-07-06 (user request) `OnQuitClicked()` un-pauses if needed and calls
+                              `GameManager.LoadMenu()` + `WorldMapController.SkipToMainMenu()`, the same
+                              "land directly on the main menu, skip the world map flash" pattern the Level
+                              Complete/Failed Home buttons use. The whole row (`_topRightRoot`) hides via
+                              `SetTopBarVisible` alongside the bird queue whenever a full-screen end-of-level
+                              panel is up, same as the old score readout used to. `_birdQueueRoot` was
+                              actually missing from that toggle until earlier the same day (user-reported
+                              leftover animal cards
                               still visible top-left behind the Level Complete panel) — `_topRightRoot` was
                               added to it from the start, so it doesn't repeat that bug.
                               **Level Complete/Failed panels (2026-07-25 redesign, Level Complete
@@ -345,13 +375,27 @@ unity/Assets/Scripts/
                               the newly-unlocked next level (no extra plumbing needed — see WorldMapController
                               below); its Btn_home and Level Failed's Btn_home both call the new
                               WorldMapController.SkipToMainMenu() so tapping Home lands directly on the main
-                              menu instead of flashing the world map first. Pause menu gained a QUIT button
-                              (Btn_quite.png, previously a dead asset) — `EditorApplication.isPlaying = false`
-                              in the Editor, `Application.Quit()` in a build.
+                              menu instead of flashing the world map first.
+                              **PAUSED popup REMOVED ENTIRELY 2026-07-06** (user request — a separate
+                              RESUME/RESTART/MENU/QUIT/MUSIC/SFX card popping up over the game was more
+                              friction than it was worth once Quit and Mute already had their own dedicated
+                              top-right buttons, below). `BuildPausePanel()`/`ShowPausePanel()`/
+                              `HidePausePanel()`/`MakePanelButton()` and the panel's own
+                              Resume/Restart/Menu/Music/SFX click handlers are all gone, not hidden. Tapping
+                              the top-right Pause button now pauses/resumes directly (`SetPaused()` still
+                              just flips `Time.timeScale` 0/1) and swaps its own icon between
+                              `Btn_pause.png` and `Btn_play.png` (reusing `_playButtonSprite`, the same
+                              sprite the Level Failed panel's Try Again button uses) via
+                              `RefreshTopPauseIcon()`, so the icon itself always shows the next tap's
+                              action instead of opening a menu. Restart/return-to-menu are still reachable
+                              via the Level Failed panel's Try Again/Home buttons — only in-pause access to
+                              them was removed, not the underlying `GameManager.RestartLevel()`/`LoadMenu()`
+                              calls, which both panels still use.
     MainMenuController.cs             — LandingPage.png background (title/character art baked in); PLAY
                               (bottom-left) and SETTINGS (bottom-right), both corner-anchored; PLAY opens
                               WorldMapController; SETTINGS opens a Music/SFX popup sharing AudioManager state
-                              with the pause menu
+                              with the top-right Mute toggle (HUDController's `OnTopMuteToggleClicked`) —
+                              same persisted state, no separate pause-menu toggle exists any more
     WorldMapController.cs              — Sunrise Meadows (World 1) level map; ScreenSpaceOverlay Canvas,
                               sortingOrder 300; 18 LevelMarker instances positioned via PathPositions —
                               hand-traced against the full visible S-curve (pond -> up past the windmill/
@@ -536,7 +580,7 @@ Add `LevelData` ScriptableObject in `Assets/ScriptableObjects/Levels/` with file
 ## Development Roadmap (6 Phases)
 
 - **Phase 1 — Core Feel:** ✅ done (slingshot→cannon aim, trajectory arc, destruction feedback, audio, camera follow).
-- **Phase 2 — UI/UX Shell:** ✅ done (HUD, Level Complete/Failed panels, pause menu, Sunrise Meadows world map, main menu).
+- **Phase 2 — UI/UX Shell:** ✅ done (HUD, Level Complete/Failed panels, pause/resume toggle, Sunrise Meadows world map, main menu).
 - **Phase 3 — Character Roster:** ✅ done (all 8 animals scripted and art-wired).
 - **Phase 4 — World 1 Completion:** current phase. Only L01 is playable; L02–L06 need coordinate migration (see Current Status); L07–L18 unwritten; no boss level yet; no level validator.
 - **Phase 5 — Worlds 2–6:** not started (0%).

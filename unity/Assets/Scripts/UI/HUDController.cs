@@ -85,16 +85,7 @@ public class HUDController : MonoBehaviour
     [SerializeField] private Sprite _playButtonSprite; // Btn_play.png
     [SerializeField] private Sprite _homeButtonSprite;  // Btn_home.png
 
-    // ── Pause menu (Phase 2.4) ────────────────────────────────────────────────
-
-    private GameObject _pausePanel;
-    private Image      _musicToggleImg;
-    private Image      _sfxToggleImg;
-
     [SerializeField] private Sprite _quitButtonSprite; // Btn_quite.png ("QUIT" baked into the art)
-
-    private static readonly Color ToggleOnColor  = new Color(0.12f, 0.14f, 0.22f);
-    private static readonly Color ToggleOffColor = new Color(0.40f, 0.40f, 0.44f);
 
     // ── Top-right button row (2026-07-26) ─────────────────────────────────────
     // Re-adds a pause trigger (removed along with the old score readout earlier the same day)
@@ -102,10 +93,15 @@ public class HUDController : MonoBehaviour
     // top-right corner, nicely spaced. Order left-to-right: Quit, Mute, Pause (Pause sits
     // right in the corner per "insert Btn_pause in the top right", the other two placed
     // progressively further left/"next to it").
+    // Pause no longer opens a PAUSED popup (removed entirely 2026-07-06 per user request) —
+    // tapping it pauses/resumes directly, and the button's own icon swaps Btn_pause <-> Btn_play
+    // (reusing the same _playButtonSprite the Level Failed panel's Try Again button uses) so the
+    // icon itself always shows the next action. See RefreshTopPauseIcon()/SetPaused() below.
     [SerializeField] private Sprite _pauseButtonSprite; // Btn_pause.png
     [SerializeField] private Sprite _musicOnSprite;     // Btn_music.png
     [SerializeField] private Sprite _musicOffSprite;    // NoSound.png
     private Image          _topMuteImg;
+    private Image          _topPauseImg;
     private RectTransform  _topRightRoot;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -175,7 +171,7 @@ public class HUDController : MonoBehaviour
             default:
                 HideLevelCompletePanel();
                 HideLevelFailedPanel();
-                HidePausePanel();
+                if (_isPaused) SetPaused(false);
                 SetTopBarVisible(true);
                 break;
         }
@@ -223,7 +219,6 @@ public class HUDController : MonoBehaviour
         BuildTopRightButtons(safeArea);           // Quit / Mute / Pause row (2026-07-26)
         BuildLevelCompletePanel(root.transform);  // full-screen panels stay on the raw canvas
         BuildLevelFailedPanel(root.transform);    // hidden until LevelFailed state fires
-        BuildPausePanel(root.transform);
     }
 
     RectTransform BuildSafeArea(Transform canvas)
@@ -268,7 +263,7 @@ public class HUDController : MonoBehaviour
     // progressively further left/"next to it".
     void BuildTopRightButtons(Transform canvas)
     {
-        const float btnSize = 64f;
+        const float btnSize = 150f; // matches MainMenuController's PLAY/SETTINGS button size (2026-07-06)
         const float gap     = 14f;
         const float inset   = 16f;
 
@@ -289,6 +284,7 @@ public class HUDController : MonoBehaviour
                           pivot:     new Vector2(1f, 0.5f),
                           pos:       new Vector2(0f, 0f),
                           size:      new Vector2(btnSize, btnSize));
+        _topPauseImg = pauseImg;
         var pauseBtn = pauseImg.gameObject.AddComponent<Button>();
         pauseBtn.targetGraphic = pauseImg;
         StyleTopButtonColors(pauseBtn);
@@ -308,20 +304,30 @@ public class HUDController : MonoBehaviour
         StyleTopButtonColors(muteBtn);
         muteBtn.onClick.AddListener(OnTopMuteToggleClicked);
 
-        // Quit — leftmost.
+        // Quit — leftmost. Sized up from btnSize (2026-07-06, user-reported the three icons
+        // "don't look like they're the same size") — Btn_quite.png's actual button art only
+        // fills ~87%x80% of its own 256x256 canvas (pixel-measured: content bbox 222x205 vs.
+        // Btn_pause.png's content filling its canvas edge-to-edge, 256x256), so rendering both
+        // sprites into an identical square box left QUIT visibly smaller. quitBtnSize
+        // compensates using the tighter (height) fill ratio so QUIT's drawn button reads at the
+        // same size as Pause/Mute; pos below still uses the shared btnSize+gap grid for
+        // spacing — QUIT only grows further left from its own right-edge anchor, away from
+        // Mute, so this can't overlap it.
+        const float quitBtnSize = btnSize / 0.80f;
         var quitImg = MakeImage(_topRightRoot, "TopQuitBtn",
                           _quitButtonSprite != null ? _quitButtonSprite : _squareSpr,
                           _quitButtonSprite != null ? Color.white : new Color(0.75f, 0.20f, 0.12f),
                           anchorMin: new Vector2(1f, 0.5f), anchorMax: new Vector2(1f, 0.5f),
                           pivot:     new Vector2(1f, 0.5f),
                           pos:       new Vector2(-2f * (btnSize + gap), 0f),
-                          size:      new Vector2(btnSize, btnSize));
+                          size:      new Vector2(quitBtnSize, quitBtnSize));
         var quitBtn = quitImg.gameObject.AddComponent<Button>();
         quitBtn.targetGraphic = quitImg;
         StyleTopButtonColors(quitBtn);
         quitBtn.onClick.AddListener(OnQuitClicked);
 
         RefreshTopMuteIcon();
+        RefreshTopPauseIcon();
     }
 
     static void StyleTopButtonColors(Button b)
@@ -389,13 +395,18 @@ public class HUDController : MonoBehaviour
     }
 
     // Badge enlarged + restyled 2026-07-26 (user request: "enlarge the score numbers and match
-    // to the game font") — text now uses StyleAsGameNumber() (bold + black outline + gold-to-
+    // to the game font") — text uses StyleAsGameNumber() (bold + black outline + gold-to-
     // orange gradient), the same treatment as the Level Complete/Failed score numbers, instead
-    // of plain flat white. Badge grown to fit the bigger text without clipping.
+    // of plain flat white. Sizes enlarged again 2026-07-06 (user-reported still too small to
+    // read, especially on the smaller queued cards) — badge grown to fit the bigger text
+    // without clipping. The leading "⚡" was dropped the same day — this project's TMP font
+    // (LiberationSans SDF, the only font asset shipped) has no glyph for U+26A1 and rendered it
+    // as a tofu box, which read as "a square before the numbers" (same class of bug as the
+    // missing ★ glyph fixed in MatchUpScreen's stars display — see docs/HISTORY.md Round 14).
     void BuildDamageBadge(RectTransform parent, AnimalType type, bool large)
     {
-        float bw = large ? 72f : 56f;
-        float bh = large ? 34f : 28f;
+        float bw = large ? 92f : 74f;
+        float bh = large ? 44f : 36f;
 
         var badge = MakeImage(parent, "DamageBadge", _squareSpr,
                         new Color(0.96f, 0.56f, 0.07f, 0.93f),
@@ -405,8 +416,8 @@ public class HUDController : MonoBehaviour
                         size: new Vector2(bw, bh));
 
         var dmgText = MakeStretchText(badge.transform, "DmgText",
-            fontSize: large ? 24f : 18f,
-            text: $"⚡{GetDamage(type)}",
+            fontSize: large ? 34f : 26f,
+            text: $"{GetDamage(type)}",
             color: Color.white,
             align: TextAlignmentOptions.Center);
         StyleAsGameNumber(dmgText);
@@ -446,25 +457,30 @@ public class HUDController : MonoBehaviour
     }
 
     // ── Pause logic ───────────────────────────────────────────────────────────
+    // No PAUSED popup (removed 2026-07-06 per user request) — tapping Pause pauses/resumes
+    // directly, and the button's own icon swaps to communicate the next tap's action.
 
     void OnPauseClicked()
     {
         if (GameManager.Instance == null) return;
         if (GameManager.Instance.State != GameState.Playing) return;
-        if (_isPaused)
-            SetPaused(false);
-        else
-        {
-            SetPaused(true);
-            ShowPausePanel();
-        }
+        SetPaused(!_isPaused);
     }
 
     void SetPaused(bool pause)
     {
-        _isPaused          = pause;
-        Time.timeScale     = pause ? 0f : 1f;
-        if (!pause) HidePausePanel();
+        _isPaused      = pause;
+        Time.timeScale = pause ? 0f : 1f;
+        RefreshTopPauseIcon();
+    }
+
+    // Swaps Btn_pause.png <-> Btn_play.png (the same sprite the Level Failed panel's Try Again
+    // button uses) so the icon always shows what tapping it will do next.
+    void RefreshTopPauseIcon()
+    {
+        if (_topPauseImg == null) return;
+        Sprite spr = _isPaused ? _playButtonSprite : _pauseButtonSprite;
+        if (spr != null) _topPauseImg.sprite = spr;
     }
 
     // ── Level Complete panel ──────────────────────────────────────────────────
@@ -728,125 +744,16 @@ public class HUDController : MonoBehaviour
         WorldMapController.Instance?.SkipToMainMenu();
     }
 
-    // ── Pause menu ────────────────────────────────────────────────────────────
-
-    void BuildPausePanel(Transform canvas)
-    {
-        var rootRT  = MakeFullScreenRect(canvas, "PausePanel");
-        _pausePanel = rootRT.gameObject;
-        var overlay = _pausePanel.AddComponent<Image>();
-        overlay.sprite = _squareSpr;
-        overlay.color  = new Color(0f, 0f, 0f, 0.60f);
-
-        // Centre card — enlarged 340->480 to fit the new QUIT row below MENU; MENU and
-        // everything above it keep the exact same relative position/spacing as before
-        // (unchanged offsets), only the divider/toggle row shift down to make room.
-        var box = MakeImage(rootRT, "PauseBox", _squareSpr, new Color(0.97f, 0.95f, 0.90f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(380f, 480f));
-
-        // Title
-        MakeCentredText(box.transform, "PauseTitle",
-            pos: new Vector2(0f, 130f), size: new Vector2(340f, 50f),
-            fontSize: 38f, text: "PAUSED",
-            color: new Color(0.12f, 0.10f, 0.06f));
-
-        // Action buttons
-        var resumeBtn = MakePanelButton(box.transform, "ResumeBtn", "RESUME",
-                            new Vector2(0f, 50f), new Vector2(280f, 52f));
-        resumeBtn.onClick.AddListener(OnPauseResumeClicked);
-
-        var restartBtn = MakePanelButton(box.transform, "PauseRestartBtn", "RESTART",
-                             new Vector2(0f, -15f), new Vector2(280f, 52f));
-        restartBtn.onClick.AddListener(OnPauseRestartClicked);
-
-        var menuBtn = MakePanelButton(box.transform, "PauseMenuBtn", "MENU",
-                          new Vector2(0f, -80f), new Vector2(280f, 52f));
-        menuBtn.onClick.AddListener(OnPauseMenuClicked);
-
-        // QUIT — Btn_quite.png already has "QUIT" baked into the art (a labelled button, not
-        // a bare icon), so it's sized/treated like the icon buttons elsewhere rather than
-        // stretched to the 280-wide text-button rows above.
-        var quitBtn = MakeIconButton(box.transform, "QuitBtn", _quitButtonSprite,
-                          new Color(0.75f, 0.20f, 0.12f),
-                          pos: new Vector2(0f, -145f), size: new Vector2(90f, 90f));
-        quitBtn.onClick.AddListener(OnQuitClicked);
-
-        // Divider
-        MakeImage(box.transform, "PauseDivider", _squareSpr, new Color(0.72f, 0.70f, 0.68f),
-              new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-              new Vector2(0.5f, 0.5f), new Vector2(0f, -185f), new Vector2(300f, 2f));
-
-        // Toggle buttons
-        var musicBtn = MakePanelButton(box.transform, "MusicToggle", "MUSIC",
-                           new Vector2(-80f, -213f), new Vector2(130f, 44f));
-        _musicToggleImg = musicBtn.targetGraphic as Image;
-        musicBtn.onClick.AddListener(OnMusicToggleClicked);
-
-        var sfxBtn = MakePanelButton(box.transform, "SfxToggle", "SFX",
-                         new Vector2(+80f, -213f), new Vector2(130f, 44f));
-        _sfxToggleImg = sfxBtn.targetGraphic as Image;
-        sfxBtn.onClick.AddListener(OnSfxToggleClicked);
-
-        _pausePanel.SetActive(false);
-    }
-
-    void ShowPausePanel()
-    {
-        if (_pausePanel == null) return;
-        // Sync toggle button colors to persisted AudioManager state
-        if (_musicToggleImg != null)
-            _musicToggleImg.color = AudioManager.MusicEnabled ? ToggleOnColor : ToggleOffColor;
-        if (_sfxToggleImg != null)
-            _sfxToggleImg.color   = AudioManager.SfxEnabled   ? ToggleOnColor : ToggleOffColor;
-        _pausePanel.SetActive(true);
-    }
-
-    void HidePausePanel()
-    {
-        if (_pausePanel != null) _pausePanel.SetActive(false);
-    }
-
-    void OnPauseResumeClicked()  => SetPaused(false);
-
-    void OnPauseRestartClicked()
-    {
-        SetPaused(false);
-        GameManager.Instance?.RestartLevel();
-    }
-
-    void OnPauseMenuClicked()
-    {
-        SetPaused(false);
-        GameManager.Instance?.LoadMenu();
-    }
-
-    // Quits the standalone app; in the Editor, Application.Quit() is a no-op, so this stops
-    // Play mode instead — the same idiom used throughout Unity projects for an in-game quit
-    // button that also behaves sensibly while testing in the Editor.
+    // Quit now returns to the landing page instead of closing the app (2026-07-06, user
+    // request) — same "skip the world map, land directly on the main menu" pattern as the
+    // Level Complete/Failed Home buttons (see OnLevelCompleteHomeClicked and
+    // WorldMapController.SkipToMainMenu). Un-pauses first so Time.timeScale doesn't stay at 0
+    // if Quit is tapped while paused.
     void OnQuitClicked()
     {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
-    }
-
-    void OnMusicToggleClicked()
-    {
-        bool on = !AudioManager.MusicEnabled;
-        AudioManager.SetMusicEnabled(on);
-        if (_musicToggleImg != null)
-            _musicToggleImg.color = on ? ToggleOnColor : ToggleOffColor;
-    }
-
-    void OnSfxToggleClicked()
-    {
-        bool on = !AudioManager.SfxEnabled;
-        AudioManager.SetSfxEnabled(on);
-        if (_sfxToggleImg != null)
-            _sfxToggleImg.color = on ? ToggleOnColor : ToggleOffColor;
+        if (_isPaused) SetPaused(false);
+        GameManager.Instance?.LoadMenu();
+        WorldMapController.Instance?.SkipToMainMenu();
     }
 
     // Top-right mute button (2026-07-26) — one icon toggling BOTH music and SFX together,
@@ -953,24 +860,6 @@ public class HUDController : MonoBehaviour
         mat.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.22f);
         mat.SetColor(ShaderUtilities.ID_OutlineColor, Color.black);
         tmp.fontMaterial = mat;
-    }
-
-    // Dark rectangular button with centred white label; returns the Button component.
-    Button MakePanelButton(Transform parent, string name, string label, Vector2 pos, Vector2 size)
-    {
-        var img = MakeImage(parent, name, _squareSpr, new Color(0.12f, 0.14f, 0.22f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), pos, size);
-        MakeStretchText(img.transform, "Label", fontSize: 26f, text: label,
-                        color: Color.white, align: TextAlignmentOptions.Center);
-        var btn           = img.gameObject.AddComponent<Button>();
-        btn.targetGraphic = img;
-        var cols          = btn.colors;
-        cols.normalColor      = Color.white;
-        cols.highlightedColor = new Color(0.80f, 0.80f, 0.80f);
-        cols.pressedColor     = new Color(0.52f, 0.52f, 0.52f);
-        btn.colors            = cols;
-        return btn;
     }
 
     // Square icon button (e.g. Btn_play / Btn_home) — falls back to a plain orange

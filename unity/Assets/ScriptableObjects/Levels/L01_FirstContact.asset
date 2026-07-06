@@ -36,7 +36,7 @@ MonoBehaviour:
     healthOverride: 10
     massOverride: 3
   - type: 2
-    position: {x: 4.029, y: -4.497}
+    position: {x: 3.935, y: -4.85}
     size: {x: 1, y: 0.9}
     passThrough: 1
     healthOverride: 10

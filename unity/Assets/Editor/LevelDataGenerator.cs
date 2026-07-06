@@ -67,6 +67,10 @@ public static class LevelDataGenerator
         // hand-placed props (barn/tree/fence) already sit visually, rather than the true (mostly
         // off-screen) physics ground line. All 4 bales stay _stayKinematic (see BlockBase.cs), so
         // once placed here none of them will ever move again, struck or not.
+        // Top bale re-lowered 0.35u + recentred 2026-07-06 (see its own comment below) — the
+        // "already-correct 0.7365u gap" note above refers to the *internal* single-bale-height
+        // math, which was fine; the complaint this time was the cap bale balancing on a single
+        // point above one base bale looking precarious/disconnected, not the gap size itself.
         Make(folder, "L01_FirstContact",
             id: "W1_L01", name: "First Contact", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
@@ -75,7 +79,12 @@ public static class LevelDataGenerator
                 B(BlockType.Haybale, 3.6462f, -5.180f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
                 B(BlockType.Haybale, 4.3098f, -5.235f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
                 B(BlockType.Haybale, 3.85f,   -5.281f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.029f,  -4.497f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
+                // Top ("cap") bale — lowered 0.35u and recentred over the base row's mean X
+                // (2026-07-06, user-reported "still too high and off the mark"). Was sitting a
+                // full bale-height above a single base bale (a valid but precarious "balanced on
+                // one point" stack); now nests down into the row for a squatter, more obviously-
+                // connected pile. Re-check against a fresh screenshot after this change.
+                B(BlockType.Haybale, 3.935f,  -4.85f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
             },
             robots: new[]
             {

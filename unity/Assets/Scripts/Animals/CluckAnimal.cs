@@ -34,8 +34,13 @@ public class CluckAnimal : AnimalBase
     }
 
     // ── Pass-through: Cluck punches through hay bales at 70 % velocity ──────────
-    // BlockBase.OnCollisionEnter2D fires in the same frame and handles damage normally.
-    // We only need to restore Cluck's velocity and skip the base "stop-and-hide" path.
+    // BlockBase.OnCollisionEnter2D also fires in the same frame on the block's own
+    // GameObject, but its damage is physics-impulse-derived (relativeVelocity × effective
+    // mass) — inconsistent across the arc (a bird arriving near the top of its lob, or with
+    // drag/gravity having bled off speed, can land well under one-shot impulse), so a bale
+    // could survive and need a second/third bird to finish it off. Passing through is the
+    // whole point of this ability, so kill the bale outright here instead of trusting
+    // impulse math (2026-07-06 fix — user reported it taking all 3 birds to clear one pile).
     protected override void OnCollisionEnter2D(Collision2D col)
     {
         if (IsInFlight)
@@ -50,6 +55,8 @@ public class CluckAnimal : AnimalBase
 
                 // Stop Physics2D from resolving further contacts with this block.
                 Physics2D.IgnoreCollision(_col, col.collider, true);
+
+                wood.TakeDamage(wood.MaxHealth); // guaranteed one-hit kill, regardless of impact speed
 
                 StartCoroutine(FlashPassThrough());
                 AudioManager.Play(AudioManager.Sound.WoodHit, cooldown: 0f);
