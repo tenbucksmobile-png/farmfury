@@ -407,14 +407,10 @@ public static class SceneSetup
         var mapSo = new SerializedObject(go.GetComponent<WorldMapController>());
         WireSprite(mapSo, "_backgroundSprite",      $"{artFolder}/SunriseMeadows.png");
         WireSprite(mapSo, "_lockedSprite",          $"{artFolder}/LevelMarker_Locked.png");
-        WireSprite(mapSo, "_unlockedSprite",        $"{artFolder}/LevelMarker_Unlocked.png");
-        WireSprite(mapSo, "_star1Sprite",           $"{artFolder}/LevelMarker_1star.png");
-        WireSprite(mapSo, "_star3Sprite",           $"{artFolder}/LevelMarker_3stars.png");
+        WireSprite(mapSo, "_unlockedSprite",        $"{artFolder}/LevelMarker_tick.png");
         WireSprite(mapSo, "_playerPositionSprite",  $"{artFolder}/PlayerPosition.png");
         WireSprite(mapSo, "_playButtonSprite",      $"{iconFolder}/Btn_play.png");
         WireSprite(mapSo, "_homeButtonSprite",      $"{iconFolder}/Btn_home.png");
-        // _star2Sprite intentionally left unwired — no LevelMarker_2stars.png exists yet;
-        // LevelMarker.Refresh() falls back to the 3-star sprite until one is added.
 
         WireMatchUpCards(mapSo);
 
@@ -455,17 +451,19 @@ public static class SceneSetup
         robotArr.GetArrayElementAtIndex(1).objectReferenceValue = harvester; // Harvester
     }
 
-    // Added 2026-07-24 — a Sunrise Meadows screenshot showed level markers 1-2 rendering as
-    // LevelMarker_3stars.png ("3" badge) and marker 3 as LevelMarker_Unlocked.png ("1" badge),
-    // which looked like a bug at first glance. It isn't one: WorldMapController.IsUnlocked()/
-    // ScoreManager.GetBestStars() were both already correct — that screenshot's PlayerPrefs
-    // simply had 2 levels previously completed with 3 stars each from earlier testing sessions,
-    // which is exactly what ff_stars_0/ff_stars_1 = 3 should render as. On a genuinely fresh
-    // save (no ff_stars_N keys set), level 1 shows LevelMarker_Unlocked.png and every other
-    // level shows LevelMarker_Locked.png, per the existing (unchanged) logic. This menu item
-    // just clears that leftover test data on demand, standalone from Wire Scene References
-    // (which is scene/asset wiring, not runtime save data — bundling this into it would be a
-    // surprising side effect of an unrelated action).
+    // Added 2026-07-24 — a Sunrise Meadows screenshot showed level markers rendering with
+    // leftover star-tier art from earlier testing sessions, which looked like a bug at first
+    // glance. It isn't one: WorldMapController.IsUnlocked()/ScoreManager.GetBestStars() were
+    // both already correct — that screenshot's PlayerPrefs simply had levels previously
+    // completed from earlier testing. (Per-star-tier marker art no longer exists as of
+    // 2026-07-27 — every unlocked level now renders LevelMarker_tick.png regardless of star
+    // count, so this scenario can no longer visibly recur, but the underlying leftover-
+    // PlayerPrefs issue this menu item clears is unrelated to marker art and still applies.) On
+    // a genuinely fresh save (no ff_stars_N keys set), level 1 shows LevelMarker_tick.png and
+    // every other level shows LevelMarker_Locked.png, per the existing (unchanged) logic. This
+    // menu item just clears that leftover test data on demand, standalone from Wire Scene
+    // References (which is scene/asset wiring, not runtime save data — bundling this into it
+    // would be a surprising side effect of an unrelated action).
     [MenuItem("FarmFury/Reset World Map Progress")]
     public static void ResetWorldMapProgress()
     {

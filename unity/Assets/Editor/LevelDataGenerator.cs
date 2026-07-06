@@ -1,9 +1,14 @@
 // FarmFury — Editor utility. Run via menu: FarmFury ▶ Generate All Level Data
 // Coordinate system (current, post-rebuild): ground surface Y = -6.60, launcher X = -2.327.
 // Block/robot positions are raw world-space — LevelLoader applies no offset at spawn time.
-// L01 uses this current system (see its Make() call below). L02-L06 below still use the
-// OLD pre-rebuild system (ground Y=-2.5, launcher X=-5.5) and are NOT yet migrated — they
-// spawn floating above the current ground. See CLAUDE.md Audit Findings before touching them.
+// L01-L04 use this current system (see their Make() calls below). L02-L04 were migrated
+// 2026-07-27 via a uniform rigid-translation delta from the OLD pre-rebuild system
+// (ground Y=-2.5, launcher X=-5.5): dx=+3.173, dy=-4.10 (new = old + delta). A pure delta
+// preserves every relative relationship the original design had (bottom rows still rest
+// exactly on the ground line, stacked gaps unchanged, the L03 robot still stands on its
+// tower) without needing to hand-retune anything. L05-L06 below still use the OLD system
+// and are NOT yet migrated — they spawn floating above the current ground. See CLAUDE.md
+// Known Issues before touching them.
 
 using UnityEngine;
 using UnityEditor;
@@ -92,41 +97,47 @@ public static class LevelDataGenerator
             });
 
         // ── W1_L02  Stone Wall ────────────────────────────────────────────────
+        // Migrated 2026-07-27 (dx=+3.173, dy=-4.10 from the old ground/launcher — see header
+        // comment above). Original design unchanged: wooden palisade + platform, 1 robot behind it.
         Make(folder, "L02_StoneWall",
             id: "W1_L02", name: "Stone Wall", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood, -3.9f, -2.2f, 1.2f, 0.6f),  // wooden palisade wall
-                B(BlockType.Wood, -2.7f, -2.2f, 1.2f, 0.6f),
-                B(BlockType.Wood, -1.5f, -2.2f, 1.2f, 0.6f),
-                B(BlockType.Wood, -2.7f, -1.6f, 1.2f, 0.4f),  // platform on top
+                B(BlockType.Wood, -0.727f, -6.30f, 1.2f, 0.6f),  // wooden palisade wall
+                B(BlockType.Wood,  0.473f, -6.30f, 1.2f, 0.6f),
+                B(BlockType.Wood,  1.673f, -6.30f, 1.2f, 0.6f),
+                B(BlockType.Wood,  0.473f, -5.70f, 1.2f, 0.4f),  // platform on top
             },
-            robots: new[] { R(-0.3f, -2.1f) });
+            robots: new[] { R(2.873f, -6.20f) });
 
         // ── W1_L03  The Tower ─────────────────────────────────────────────────
+        // Migrated 2026-07-27 (same delta as L02). Original design unchanged: 3-tier wood
+        // tower, one robot on the ground and one perched on top of the tower.
         Make(folder, "L03_TheTower",
             id: "W1_L03", name: "The Tower", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Bessie, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood, -2.7f, -2.3f, 2.4f, 0.4f),  // wide wood base
-                B(BlockType.Wood, -2.7f, -1.9f, 2.4f, 0.4f),  // wide wood mid
-                B(BlockType.Wood, -2.7f, -1.5f, 1.6f, 0.4f),  // narrower top
+                B(BlockType.Wood, 0.473f, -6.40f, 2.4f, 0.4f),  // wide wood base
+                B(BlockType.Wood, 0.473f, -6.00f, 2.4f, 0.4f),  // wide wood mid
+                B(BlockType.Wood, 0.473f, -5.60f, 1.6f, 0.4f),  // narrower top
             },
-            robots: new[] { R(-1.1f, -2.1f), R(-2.7f, -0.9f) });
+            robots: new[] { R(2.073f, -6.20f), R(0.473f, -5.00f) });
 
         // ── W1_L04  Egg Practice ──────────────────────────────────────────────
+        // Migrated 2026-07-27 (same delta as L02/L03). Original design unchanged: 3-high wood
+        // wall, 4 grouped robots behind it as a Cluck cluster-bomb showcase.
         Make(folder, "L04_EggPractice",
             id: "W1_L04", name: "Egg Practice", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood, -3.9f, -2.3f, 1.2f, 0.4f),  // 3-high wood wall
-                B(BlockType.Wood, -3.9f, -1.9f, 1.2f, 0.4f),
-                B(BlockType.Wood, -3.9f, -1.5f, 1.2f, 0.4f),
+                B(BlockType.Wood, -0.727f, -6.40f, 1.2f, 0.4f),  // 3-high wood wall
+                B(BlockType.Wood, -0.727f, -6.00f, 1.2f, 0.4f),
+                B(BlockType.Wood, -0.727f, -5.60f, 1.2f, 0.4f),
             },
-            robots: new[] { R(-2.7f, -2.1f), R(-2.0f, -2.1f), R(-1.3f, -2.1f), R(-0.6f, -2.1f) });
+            robots: new[] { R(0.473f, -6.20f), R(1.173f, -6.20f), R(1.873f, -6.20f), R(2.573f, -6.20f) });
 
         // ── W1_L05  The Fortress ──────────────────────────────────────────────
         Make(folder, "L05_TheFortress",

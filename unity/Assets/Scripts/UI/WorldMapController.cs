@@ -60,10 +60,11 @@ public class WorldMapController : MonoBehaviour
     [Header("Art (wired via FarmFury -> Wire Scene References)")]
     [SerializeField] private Sprite _backgroundSprite;      // SunriseMeadows.png
     [SerializeField] private Sprite _lockedSprite;          // LevelMarker_Locked.png
-    [SerializeField] private Sprite _unlockedSprite;        // LevelMarker_Unlocked.png
-    [SerializeField] private Sprite _star1Sprite;           // LevelMarker_1star.png
-    [SerializeField] private Sprite _star2Sprite;           // no dedicated art yet — falls back to 3-star
-    [SerializeField] private Sprite _star3Sprite;           // LevelMarker_3stars.png
+    // Every unlocked marker (any star count) now renders the same LevelMarker_tick.png,
+    // replacing the old per-star-tier art (Unlocked/1star/3stars) per user request 2026-07-27 —
+    // star count is still tracked (ScoreManager.GetBestStars) for unlock-gating, just no longer
+    // drives which marker sprite shows.
+    [SerializeField] private Sprite _unlockedSprite;        // LevelMarker_tick.png
     [SerializeField] private Sprite _playerPositionSprite;  // PlayerPosition.png
     // Removed, then re-added same day (2026-07-19): briefly deleted because the OLD
     // SunriseMeadows.png baked NEXT LEVEL/Home art directly into the background, so a second
@@ -184,9 +185,7 @@ public class WorldMapController : MonoBehaviour
         for (int i = 0; i < LevelCount; i++)
         {
             bool unlocked = IsUnlocked(i);
-            int  stars    = ScoreManager.GetBestStars(i);
-            _markers[i].Refresh(unlocked, stars,
-                _lockedSprite, _unlockedSprite, _star1Sprite, _star2Sprite, _star3Sprite);
+            _markers[i].Refresh(unlocked, _lockedSprite, _unlockedSprite);
             if (unlocked) highestUnlocked = i;
         }
 

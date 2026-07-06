@@ -2866,10 +2866,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldMapController
   _backgroundSprite: {fileID: 21300000, guid: 5999b5e21e8d097499fa3d90d51b5c89, type: 3}
   _lockedSprite: {fileID: 21300000, guid: dcab2c7735dab8341b7c3d64cfabc1b1, type: 3}
-  _unlockedSprite: {fileID: 21300000, guid: e74618a4c6b0cdb42a34e98ca605f390, type: 3}
-  _star1Sprite: {fileID: 21300000, guid: ee0d676dd37f9374ab254bace7903c31, type: 3}
-  _star2Sprite: {fileID: 0}
-  _star3Sprite: {fileID: 21300000, guid: 2eed94ae6a65d9745816aeb7dc75362d, type: 3}
+  _unlockedSprite: {fileID: 21300000, guid: 51c0026b7d8139f4b9271d3ac87d28d0, type: 3}
   _playerPositionSprite: {fileID: 21300000, guid: be146f42572afb9498e79d75727957e8, type: 3}
   _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
   _homeButtonSprite: {fileID: 21300000, guid: d4ca48065cb59984b89e8382405d5040, type: 3}

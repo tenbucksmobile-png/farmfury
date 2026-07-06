@@ -47,19 +47,12 @@ public class LevelMarker : MonoBehaviour
         btn.onClick.AddListener(() => _onClicked?.Invoke(LevelIndex));
     }
 
-    // Sprite params may be null individually — falls back to the nearest available state art,
-    // then to a tinted placeholder square if nothing is wired at all. There is currently no
-    // dedicated 2-star marker asset (only Locked/Unlocked/1star/3stars exist — see CLAUDE.md
-    // checklist), so a 2-star result borrows the 3-star art.
-    public void Refresh(bool unlocked, int stars,
-        Sprite lockedSpr, Sprite unlockedSpr, Sprite star1Spr, Sprite star2Spr, Sprite star3Spr)
+    // Sprite params may be null individually — falls back to a tinted placeholder square if
+    // nothing is wired at all. Every unlocked level (any star count) shows the same tick art
+    // (LevelMarker_tick.png, wired as unlockedSpr) — there is no per-star-tier marker art.
+    public void Refresh(bool unlocked, Sprite lockedSpr, Sprite unlockedSpr)
     {
-        Sprite chosen =
-            !unlocked      ? lockedSpr :
-            stars >= 3     ? (star3Spr != null ? star3Spr : unlockedSpr) :
-            stars == 2     ? (star2Spr != null ? star2Spr : (star3Spr != null ? star3Spr : unlockedSpr)) :
-            stars == 1     ? (star1Spr != null ? star1Spr : unlockedSpr) :
-                             unlockedSpr;
+        Sprite chosen = unlocked ? unlockedSpr : lockedSpr;
 
         if (chosen != null)
         {
@@ -69,9 +62,8 @@ public class LevelMarker : MonoBehaviour
         else
         {
             _image.sprite = _fallbackSpr;
-            _image.color  = !unlocked ? new Color(0.35f, 0.35f, 0.40f)
-                          : stars > 0 ? new Color(1.00f, 0.82f, 0.20f)
-                                      : new Color(0.55f, 0.75f, 0.55f);
+            _image.color  = unlocked ? new Color(0.55f, 0.75f, 0.55f)
+                                      : new Color(0.35f, 0.35f, 0.40f);
         }
     }
 
