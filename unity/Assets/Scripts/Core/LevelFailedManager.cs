@@ -22,7 +22,11 @@ public class LevelFailedManager : MonoBehaviour
     [Header("Timing")]
     [SerializeField] private float _slowMotionScale    = 0.3f;
     [SerializeField] private float _slowMotionDuration  = 0.5f;
-    [SerializeField] private float _tauntDuration       = 4f;
+    // Taunt clips run ~4.04-4.05s (measured). This used to be 4f, which cut the hold off
+    // fractionally before the clip's own last frame finished, then immediately started fading —
+    // user-reported "ends very abruptly." Bumped to the clip length plus a full 1s of held-still
+    // breathing room before the fade/panel transition begins.
+    [SerializeField] private float _tauntDuration       = 5f;
     [SerializeField] private float _fadeOutDuration     = 0.3f;
 
     // Indexed by level number (0-based, matching GameManager.CurrentLevelIndex) — one taunt clip

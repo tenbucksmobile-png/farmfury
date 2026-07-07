@@ -25,9 +25,10 @@ using TMPro;
 // Player-chosen-animal (a possible future feature once animals are unlockable) is intentionally
 // NOT built here — Show() always uses the level's birds[0].
 //
-// AUDIO NOTE — intentionally left out of this pass (countdown beeps, whoosh/impact stings, etc.)
-// per explicit instruction; the user will add it later. Every beat below is a natural hook point
-// for a future AudioManager.Play(...) call (see the per-beat comments in PlaySequence()).
+// AUDIO NOTE — the countdown beat (3/2/1/READY) plays Countdown.mp3 once, and the four numeral
+// pops are timed to its four beeps rather than an arbitrary fixed pace (added 2026-07-07, see
+// CountdownBeat's timing comment). Every other beat (whoosh/impact stings) is still a hook point
+// for a future AudioManager.Play(...) call.
 public class MatchUpScreen : MonoBehaviour
 {
     // Card art — 8-slot array indexed by AnimalType, 2-slot array indexed by RobotType. Sourced
@@ -53,6 +54,8 @@ public class MatchUpScreen : MonoBehaviour
     private Sprite _countdown2Sprite;
     private Sprite _countdown1Sprite;
     private Sprite _countdownReadySprite;
+    private AudioClip _countdownClip;   // Countdown.mp3 — see CountdownBeat's timing comment
+    private AudioSource _countdownAudioSrc;
 
     private GameObject      _panel;
     private Image            _fadeOverlayImg; // fades to opaque black just before auto-launch, see PlaySequence step 6
@@ -85,9 +88,21 @@ public class MatchUpScreen : MonoBehaviour
     private const float OffscreenOffset = 900f; // how far off-screen each card starts before sliding in
     private const float CardRotationDeg = 10f;  // outward tilt — animal +10 (leans left), robot -10 (leans right)
 
+    // Countdown.mp3 timing (measured via waveform analysis, 2026-07-07): four beeps — three short
+    // taps at 0.02s/1.02s/2.02s (1.0s apart) for 3/2/1, then one longer confirmation tone starting
+    // at 3.02s and running to the clip's end (~4.05s total). Each numeral's pop-in/hold/pop-out is
+    // paced to total exactly one beep interval, so consecutive numerals land back-to-back on each
+    // beep instead of the old arbitrary fixed 2s-per-numeral pacing.
+    private const float CountdownBeepInterval = 1.0f;
+    private const float CountdownDigitPopIn   = 0.15f;
+    private const float CountdownDigitPopOut  = 0.30f;
+    private const float CountdownReadyPopIn   = 0.25f;
+    private const float CountdownClipLength   = 4.05f; // Countdown.mp3's measured duration
+
     public void Init(Sprite squareSpr, Sprite backgroundSprite, Sprite vsSprite,
         Sprite levelHeaderSprite,
         Sprite countdown3Sprite, Sprite countdown2Sprite, Sprite countdown1Sprite, Sprite countdownReadySprite,
+        AudioClip countdownClip,
         Sprite[] animalCardSprites, Sprite[] robotCardSprites)
     {
         _backgroundSprite      = backgroundSprite;
@@ -97,6 +112,7 @@ public class MatchUpScreen : MonoBehaviour
         _countdown2Sprite       = countdown2Sprite;
         _countdown1Sprite       = countdown1Sprite;
         _countdownReadySprite   = countdownReadySprite;
+        _countdownClip          = countdownClip;
         _animalCardSprites      = animalCardSprites;
         _robotCardSprites       = robotCardSprites;
         BuildUI(squareSpr);
@@ -145,6 +161,7 @@ public class MatchUpScreen : MonoBehaviour
     public void Hide()
     {
         if (_sequenceRoutine != null) { StopCoroutine(_sequenceRoutine); _sequenceRoutine = null; }
+        if (_countdownAudioSrc != null && _countdownAudioSrc.isPlaying) _countdownAudioSrc.Stop();
         _panel.SetActive(false);
     }
 
@@ -183,19 +200,29 @@ public class MatchUpScreen : MonoBehaviour
         // instruction.
         yield return new WaitForSecondsRealtime(2.0f);
 
-        // 4) Countdown: 3, 2, 1 — each pops in, holds ~2s, pops back out. Only one numeral is
-        // ever visible at a time. (Future hook: a beep per numeral.)
-        yield return CountdownBeat(_countdown3Sprite, 2.0f);
-        yield return CountdownBeat(_countdown2Sprite, 2.0f);
-        yield return CountdownBeat(_countdown1Sprite, 2.0f);
+        // 4) Countdown: 3, 2, 1 — synced to Countdown.mp3's three short beeps (see the timing
+        // constants above). The clip plays once, right as "3" appears; each numeral's
+        // pop-in/hold/pop-out totals exactly one beep interval so the next numeral lands on the
+        // next beep. Only one numeral is ever visible at a time.
+        if (_countdownClip != null && _countdownAudioSrc != null)
+        {
+            _countdownAudioSrc.mute = !AudioManager.SfxEnabled;
+            _countdownAudioSrc.clip = _countdownClip;
+            _countdownAudioSrc.Play();
+        }
+        yield return CountdownBeat(_countdown3Sprite, CountdownBeepInterval);
+        yield return CountdownBeat(_countdown2Sprite, CountdownBeepInterval);
+        yield return CountdownBeat(_countdown1Sprite, CountdownBeepInterval);
 
-        // 5) READY! — same pop-in language, held for a beat, does not pop back out (the whole
-        // panel fades instead, immediately below).
+        // 5) READY! — lands on the clip's longer fourth tone at 3.02s. Same pop-in language, held
+        // until the clip finishes, does not pop back out (the whole panel fades instead,
+        // immediately below).
         _countdownImg.sprite  = _countdownReadySprite;
         _countdownImg.enabled = _countdownReadySprite != null;
         Color rc = _countdownImg.color; rc.a = 1f; _countdownImg.color = rc;
-        yield return AnimateScale(_countdownRT, 0f, 1f, 0.25f, bounce: true);
-        yield return new WaitForSecondsRealtime(1.2f);
+        yield return AnimateScale(_countdownRT, 0f, 1f, CountdownReadyPopIn, bounce: true);
+        yield return new WaitForSecondsRealtime(
+            CountdownClipLength - 3f * CountdownBeepInterval - CountdownReadyPopIn);
 
         // 6) Fade to solid black, then auto-launch into gameplay — no tap required.
         //
@@ -232,16 +259,20 @@ public class MatchUpScreen : MonoBehaviour
         yield return vsRoutine;
     }
 
-    // One numeral: pop in, hold, pop back out (scale + fade), then hide.
-    IEnumerator CountdownBeat(Sprite spr, float holdDuration)
+    // One numeral: pop in, hold, pop back out (scale + fade), then hide. totalDuration is paced
+    // to exactly one Countdown.mp3 beep interval (see the class-level timing constants above) so
+    // consecutive numerals land back-to-back on each beep — pop-in and pop-out are fixed lengths,
+    // the remainder becomes the hold.
+    IEnumerator CountdownBeat(Sprite spr, float totalDuration)
     {
         _countdownImg.sprite  = spr;
         _countdownImg.enabled = spr != null;
         Color c = _countdownImg.color; c.a = 1f; _countdownImg.color = c;
 
-        yield return AnimateScale(_countdownRT, 0f, 1f, 0.2f, bounce: true);
-        yield return new WaitForSecondsRealtime(holdDuration);
-        yield return AnimateScaleAndFade(_countdownRT, _countdownImg, 1f, 0f, 0.2f);
+        float hold = Mathf.Max(0f, totalDuration - CountdownDigitPopIn - CountdownDigitPopOut);
+        yield return AnimateScale(_countdownRT, 0f, 1f, CountdownDigitPopIn, bounce: true);
+        yield return new WaitForSecondsRealtime(hold);
+        yield return AnimateScaleAndFade(_countdownRT, _countdownImg, 1f, 0f, CountdownDigitPopOut);
 
         _countdownImg.enabled = false;
     }
@@ -340,6 +371,9 @@ public class MatchUpScreen : MonoBehaviour
         rootRT.anchorMax = Vector2.one;
         rootRT.offsetMin = rootRT.offsetMax = Vector2.zero;
         _panel = gameObject;
+
+        _countdownAudioSrc             = gameObject.AddComponent<AudioSource>();
+        _countdownAudioSrc.playOnAwake = false;
 
         // Background — MatchUpBackground.png, full-bleed, deliberately OUTSIDE the SafeArea
         // below (should paint edge-to-edge including under a notch/rounded corner). Also blocks

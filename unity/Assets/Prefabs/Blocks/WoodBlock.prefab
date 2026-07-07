@@ -191,6 +191,8 @@ MonoBehaviour:
   _sprDamaged: {fileID: 0}
   _sprExplode: {fileID: 0}
   _stayKinematic: 0
+  _silentHit: 0
+  _destroyClipOverride: {fileID: 0}
   _fragmentPrefabs: []
   _fragmentCount: 5
   _fragmentSpeed: 4

@@ -172,9 +172,14 @@ public static class SceneSetup
         var bc = go.GetComponent<BackgroundController>();
         if (bc == null) bc = go.AddComponent<BackgroundController>();
 
-        const string skyPath = "Assets/Sprites/Environment/Skies/SkyPainting.png";
+        // "SkyPainting.png" doesn't exist on disk — the actual sky art committed to the project
+        // is Background_SkyV1.png (see Assets/Sprites/Environment/Skies/). This path pointed at
+        // a nonexistent file, so this whole wiring step silently no-op'd (LogWarning only) and
+        // relied entirely on the hand-authored Background_SkyV1 scene GO already having its own
+        // sprite set — which is why the live in-game sky always looked correct despite this.
+        const string skyPath = "Assets/Sprites/Environment/Skies/Background_SkyV1.png";
 
-        // SkyPainting is 1920×1080 art — ensure it is imported as a Sprite before loading.
+        // Background_SkyV1 is 1920×1080 art — ensure it is imported as a Sprite before loading.
         // If it was imported as the default Texture2D, LoadAssetAtPath<Sprite> returns null.
         var skyImp = AssetImporter.GetAtPath(skyPath) as TextureImporter;
         if (skyImp != null)
@@ -184,10 +189,10 @@ public static class SceneSetup
             if (skyImp.spritePixelsPerUnit != 100)                                   { skyImp.spritePixelsPerUnit = 100;                                  dirty = true; }
             if (!skyImp.alphaIsTransparency)                                         { skyImp.alphaIsTransparency = true;                                 dirty = true; }
             if (skyImp.spriteImportMode    != SpriteImportMode.Single)              { skyImp.spriteImportMode    = SpriteImportMode.Single;              dirty = true; }
-            if (dirty) { skyImp.SaveAndReimport(); Debug.Log("[FarmFury] SkyPainting.png re-imported as Sprite (PPU=100)."); }
+            if (dirty) { skyImp.SaveAndReimport(); Debug.Log("[FarmFury] Background_SkyV1.png re-imported as Sprite (PPU=100)."); }
         }
         else
-            Debug.LogWarning($"[FarmFury] SkyPainting.png not found at {skyPath} — copy it there and re-run Wire Scene References.");
+            Debug.LogWarning($"[FarmFury] Background_SkyV1.png not found at {skyPath} — copy it there and re-run Wire Scene References.");
 
         var skySprite = AssetDatabase.LoadAssetAtPath<Sprite>(skyPath);
         if (skySprite != null)
@@ -195,12 +200,11 @@ public static class SceneSetup
             var so = new SerializedObject(bc);
             so.FindProperty("_skySprite").objectReferenceValue = skySprite;
             so.ApplyModifiedProperties();
-            Debug.Log("[FarmFury] Background: SkyPainting wired.");
+            Debug.Log("[FarmFury] Background: Background_SkyV1 wired.");
         }
         else
         {
-            Debug.LogWarning($"[FarmFury] SkyPainting.png not found at {skyPath}. " +
-                             "Copy assets/Backdrops/SkyPainting.png there and re-run Wire Scene References.");
+            Debug.LogWarning($"[FarmFury] Background_SkyV1.png not found at {skyPath}.");
         }
     }
 
@@ -363,16 +367,17 @@ public static class SceneSetup
             Debug.LogWarning("[FarmFury] LandingPage.png not found at Assets/Sprites/UI/LandingPage.png.");
         }
 
-        // Wire PLAY and SETTINGS button sprites (bottom-left/bottom-right corner icons, per the
-        // 2026-07-16 LandingPage_New.png mockup). These live at Assets/Sprites/UI/Icon/ and are
-        // already imported (Single mode, PPU=100) by SpriteAutoImporter's generic "Sprites/UI/"
-        // rule — no reimport step needed, unlike the old Assets/Sprites/UI/Play.png path this
-        // replaces (that file never actually existed, so _playButtonSprite silently fell back
-        // to a plain orange square at runtime — see MainMenuController's fallback color).
+        // Wire the PLAY button sprite (bottom-left corner icon, per the 2026-07-16
+        // LandingPage_New.png mockup). Lives at Assets/Sprites/UI/Icon/ and is already imported
+        // (Single mode, PPU=100) by SpriteAutoImporter's generic "Sprites/UI/" rule — no reimport
+        // step needed, unlike the old Assets/Sprites/UI/Play.png path this replaces (that file
+        // never actually existed, so _playButtonSprite silently fell back to a plain orange
+        // square at runtime — see MainMenuController's fallback color). The SETTINGS icon was
+        // removed from the landing page entirely (2026-07-07, user request) along with its
+        // Music/SFX popup — no icon to wire any more.
         var mainMenu = go.GetComponent<MainMenuController>();
         var mmSo = new SerializedObject(mainMenu);
-        WireSprite(mmSo, "_playButtonSprite",     "Assets/Sprites/UI/Icon/Btn_play.png");
-        WireSprite(mmSo, "_settingsButtonSprite", "Assets/Sprites/UI/Icon/Btn_settings.png");
+        WireSprite(mmSo, "_playButtonSprite", "Assets/Sprites/UI/Icon/Btn_play.png");
         mmSo.ApplyModifiedProperties();
     }
 
@@ -437,6 +442,7 @@ public static class SceneSetup
         WireSprite(mapSo, "_countdown2Sprite",        $"{matchUpFolder}/countdown2.png");
         WireSprite(mapSo, "_countdown1Sprite",        $"{matchUpFolder}/countdown1.png");
         WireSprite(mapSo, "_countdownReadySprite",    $"{matchUpFolder}/Countdown_Ready.png");
+        WireAudioClip(mapSo, "_countdownClip",        "Assets/Audio/Countdown.mp3");
 
         WireArrayByKeyword(mapSo, "_animalCardSprites", matchUpFolder, CardKeywords, "animal");
 
@@ -517,6 +523,21 @@ public static class SceneSetup
         Debug.Log($"[FarmFury] Wired {fieldName} <- {path}");
     }
 
+    // SerializedObject-based overload of WireAudioClip(GameObject, ...) below, for components
+    // other than AudioManager (e.g. WorldMapController's _countdownClip) — same shape as
+    // WireSprite above, just for AudioClip.
+    static void WireAudioClip(SerializedObject so, string fieldName, string path)
+    {
+        var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+        if (clip == null)
+        {
+            Debug.LogWarning($"[FarmFury] Audio clip not found at {path} (target field: {fieldName}).");
+            return;
+        }
+        so.FindProperty(fieldName).objectReferenceValue = clip;
+        Debug.Log($"[FarmFury] Wired {fieldName} <- {path}");
+    }
+
     // ── AudioManager ──────────────────────────────────────────────────────────
     // Dedicated scene GameObject (not runtime-AddComponent'd like before) so external
     // clips can be serialized into Game.unity and survive into real builds — AssetDatabase
@@ -539,7 +560,7 @@ public static class SceneSetup
         WireAudioClip(go, "_fallingClip",    "Assets/Audio/Cluck_falling.mp3");
         // Landing page + Sunrise Meadows world map (GameState.Idle) — separate track/AudioSource
         // from the gameplay loop above, see AudioManager.OnStateChanged.
-        WireAudioClip(go, "_menuMusicClip",  "Assets/Sprites/UI/Video_Sound/SunriseMeadows_TransitionMusic.mp3");
+        WireAudioClip(go, "_menuMusicClip",  "Assets/Audio/SunriseMeadows_TransitionMusic.mp3");
     }
 
     static void WireAudioClip(GameObject go, string fieldName, string path)
@@ -575,9 +596,9 @@ public static class SceneSetup
 
         var so = new SerializedObject(go.GetComponent<LevelCompleteManager>());
         WireArrayElement<VideoClip>(so, "_celebrationClips", (int)AnimalType.Cluck, 8,
-            "Assets/Sprites/UI/Video_Sound/Cluck_Celebration.mp4");
+            "Assets/Video/Cluck_Celebration.mp4");
         WireArrayElement<AudioClip>(so, "_celebrationAudioClips", (int)AnimalType.Cluck, 8,
-            "Assets/Sprites/UI/Video_Sound/Cluck_CelebratingLaugh.mp3");
+            "Assets/Audio/Cluck_CelebratingLaugh.mp3");
         so.ApplyModifiedProperties();
     }
 
@@ -596,9 +617,9 @@ public static class SceneSetup
         // Index 0 = L01 — the only robot taunt clips that exist today; every other level falls
         // back to index 0 at runtime (see LevelFailedManager.GetTauntClip/GetTauntAudioClip).
         WireArrayElement<VideoClip>(so, "_robotTauntClips", 0, 1,
-            "Assets/Sprites/UI/Video_Sound/Robot_Celebration.mp4");
+            "Assets/Video/Robot_Celebration.mp4");
         WireArrayElement<AudioClip>(so, "_robotTauntAudioClips", 0, 1,
-            "Assets/Sprites/UI/Video_Sound/Robot_CelebrateSound.mp3");
+            "Assets/Audio/Robot_CelebrateSound.mp3");
         so.ApplyModifiedProperties();
     }
 
@@ -607,17 +628,21 @@ public static class SceneSetup
     // character itself look like a translucent "ghost" hidden in the background. A plain sky
     // backdrop behind the video (same asset EnsureBackground() already wires for the live scene,
     // reimported as a Sprite there) gives Cluck/the robot a clean, consistent surface to stand
-    // on regardless of which level is paused. Must run after EnsureBackground() so SkyPainting's
-    // Sprite import settings are already correct by the time this loads it.
+    // on regardless of which level is paused. Must run after EnsureBackground() so
+    // Background_SkyV1's Sprite import settings are already correct by the time this loads it.
     static void EnsureCelebrationVideoBackground()
     {
         var vck = VideoChromaKey.FindOrCreate();
         var so  = new SerializedObject(vck);
-        const string skyPath = "Assets/Sprites/Environment/Skies/SkyPainting.png";
+        // Was "SkyPainting.png", which doesn't exist on disk — see the identical fix/comment in
+        // EnsureBackground() above. This meant _backgroundSprite was never actually wired, so the
+        // celebration overlay's transparent regions fell through to the frozen gameplay scene
+        // instead of a clean sky, unlike what the class comment on VideoChromaKey describes.
+        const string skyPath = "Assets/Sprites/Environment/Skies/Background_SkyV1.png";
         var sky = AssetDatabase.LoadAssetAtPath<Sprite>(skyPath);
         if (sky == null)
         {
-            Debug.LogWarning($"[FarmFury] SkyPainting.png not found at {skyPath} for CelebrationVideo backdrop.");
+            Debug.LogWarning($"[FarmFury] Background_SkyV1.png not found at {skyPath} for CelebrationVideo backdrop.");
             return;
         }
         so.FindProperty("_backgroundSprite").objectReferenceValue = sky;
@@ -839,12 +864,23 @@ public static class SceneSetup
         // three untouched bales visibly shifted/tumbled even though nothing hit them directly.
         // Setting this true on the prefab keeps every haybale Static until it's the one actually
         // destroyed — no physical shift, ever.
+        //
+        // _silentHit + _destroyClipOverride (2026-07-07): every haybail hit is a guaranteed
+        // same-frame one-shot kill, so the generic WoodHit + BlockDestroy sounds plus the
+        // chicken's own pass-through punch sound (removed from CluckAnimal.cs) all firing at once
+        // for one "pop" read as cluttered — user-requested a single dedicated explosion sound.
         var contents = PrefabUtility.LoadPrefabContents(prefabPath);
         var block    = contents.GetComponent<BlockBase>();
         if (block != null)
         {
             var so = new SerializedObject(block);
             so.FindProperty("_stayKinematic").boolValue = true;
+            so.FindProperty("_silentHit").boolValue      = true;
+            var explodeClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Haybail_Exploding.mp3");
+            if (explodeClip != null)
+                so.FindProperty("_destroyClipOverride").objectReferenceValue = explodeClip;
+            else
+                Debug.LogWarning("[FarmFury] Haybail_Exploding.mp3 not found at Assets/Audio/Haybail_Exploding.mp3.");
             so.ApplyModifiedProperties();
             PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
         }

@@ -259,7 +259,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuController
   _landingSprite: {fileID: -7436237830664669438, guid: 97757046d8bee274ebe2f3f843104b7f, type: 3}
   _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
-  _settingsButtonSprite: {fileID: 21300000, guid: 70471a128358f6a4ca9554a97b76abfa, type: 3}
 --- !u!4 &80042615
 Transform:
   m_ObjectHideFlags: 0
@@ -919,7 +918,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e5e84ce70e1714439ed73be1c6a9614, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackgroundController
-  _skySprite: {fileID: 0}
+  _skySprite: {fileID: 21300000, guid: 9ffb1e3a75dc2da4bb4fa00456174701, type: 3}
 --- !u!1 &458748294
 GameObject:
   m_ObjectHideFlags: 0
@@ -1377,7 +1376,7 @@ MonoBehaviour:
   _videoPlayer: {fileID: 0}
   _rawImage: {fileID: 0}
   _background: {fileID: 0}
-  _backgroundSprite: {fileID: 0}
+  _backgroundSprite: {fileID: 21300000, guid: 9ffb1e3a75dc2da4bb4fa00456174701, type: 3}
   _chromaKeyShader: {fileID: 0}
   _keyColor: {r: 0, g: 0.6941177, b: 0.2509804, a: 1}
   tolerance: 0.3
@@ -1663,10 +1662,10 @@ MonoBehaviour:
   _videoChromaKey: {fileID: 0}
   _slowMotionScale: 0.2
   _slowMotionDuration: 0.5
-  _celebrationDuration: 4
+  _celebrationDuration: 5
   _fadeOutDuration: 0.3
   _celebrationClips:
-  - {fileID: 32900000, guid: ed24ec6e92f478d41830908f6b8e6f03, type: 3}
+  - {fileID: 32900000, guid: dca97c0ff03ee444db6d83682b6fea73, type: 3}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
@@ -1887,10 +1886,10 @@ MonoBehaviour:
   _videoChromaKey: {fileID: 0}
   _slowMotionScale: 0.3
   _slowMotionDuration: 0.5
-  _tauntDuration: 4
+  _tauntDuration: 5
   _fadeOutDuration: 0.3
   _robotTauntClips:
-  - {fileID: 32900000, guid: 2007f2498ce87024089dc616c184f851, type: 3}
+  - {fileID: 32900000, guid: 98d192957e90c9942a8c40b85c40e16c, type: 3}
   _robotTauntAudioClips:
   - {fileID: 8300000, guid: 8bf8da18a52591b48afbc645ec909a9f, type: 3}
 --- !u!4 &1238060524
@@ -3218,6 +3217,7 @@ MonoBehaviour:
   _countdown2Sprite: {fileID: 21300000, guid: d08fa34e6909cc542bf331ee837b665a, type: 3}
   _countdown1Sprite: {fileID: 21300000, guid: dff2ddbeb02234148bf6adde0901f6d4, type: 3}
   _countdownReadySprite: {fileID: 21300000, guid: 306020828991d0f47ac5cc30275e6693, type: 3}
+  _countdownClip: {fileID: 8300000, guid: f1059912e10693442bd249cbe68382af, type: 3}
   _animalCardSprites:
   - {fileID: 21300000, guid: c3af207aa6c867d4db24a5c85fd611a3, type: 3}
   - {fileID: 21300000, guid: e1df3a77efa688641a58ec1a679fb833, type: 3}

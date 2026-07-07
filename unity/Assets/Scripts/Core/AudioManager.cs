@@ -8,7 +8,7 @@ using UnityEngine;
 [DefaultExecutionOrder(-90)]
 public class AudioManager : MonoBehaviour
 {
-    public enum Sound { Launch, WoodHit, StoneHit, RobotDeath, Win, Fail, BlockDestroy, RobotHit }
+    public enum Sound { Launch, WoodHit, StoneHit, RobotDeath, BlockDestroy, RobotHit }
 
     public static AudioManager Instance { get; private set; }
 
@@ -45,8 +45,6 @@ public class AudioManager : MonoBehaviour
         0.8f, // WoodHit
         0.8f, // StoneHit
         0.8f, // RobotDeath
-        0.8f, // Win
-        0.8f, // Fail
         0.8f, // BlockDestroy
         0.8f, // RobotHit
     };
@@ -112,8 +110,6 @@ public class AudioManager : MonoBehaviour
             BuildWoodHit(),
             BuildStoneHit(),
             BuildRobotDeath(),
-            BuildWinFanfare(),
-            BuildFailBuzzer(),
             BuildBlockDestroy(),
             BuildRobotHit(),
         };
@@ -143,8 +139,14 @@ public class AudioManager : MonoBehaviour
 
     void OnStateChanged(GameState state)
     {
-        if (state == GameState.LevelComplete) Play(Sound.Win);
-        if (state == GameState.LevelFailed)   Play(Sound.Fail);
+        // Level Complete/Failed now play their own celebration/taunt clip's accompanying audio
+        // (see VideoChromaKey.Play's audioClip param) — the procedural Win/Fail jingle used to
+        // play right on top of it, and gameplay music kept looping underneath both. Stop the
+        // music here so the video's own sound is the only thing heard during that sequence.
+        if (state == GameState.LevelComplete || state == GameState.LevelFailed)
+        {
+            if (_musicSrc != null && _musicSrc.isPlaying) _musicSrc.Stop();
+        }
 
         // Starts once on the first Playing transition and simply keeps looping across
         // levels (isPlaying guard below means later transitions back to Playing don't
@@ -177,6 +179,16 @@ public class AudioManager : MonoBehaviour
         if (cooldown > 0f && Time.time - Instance._lastPlayTime[idx] < cooldown) return;
         Instance._lastPlayTime[idx] = Time.time;
         Instance._src.PlayOneShot(Instance._clips[idx], VolumeScale[idx]);
+    }
+
+    // Plays an arbitrary external AudioClip (e.g. a block's own dedicated destroy sound) through
+    // the shared SFX AudioSource, uncached and un-throttled — unlike Play(Sound, cooldown) above,
+    // there's no cooldown gate here, since callers that reach for this want a guarantee the clip
+    // always plays (e.g. HaybaleBlock's explosion sound).
+    public static void PlayClip(AudioClip clip, float volume = 0.8f)
+    {
+        if (Instance == null || clip == null || !SfxEnabled) return;
+        Instance._src.PlayOneShot(clip, volume);
     }
 
     // ── Falling sound (Cluck airborne) ───────────────────────────────────────
@@ -283,38 +295,6 @@ public class AudioManager : MonoBehaviour
         return Clip("RobotDeath", Mix(Scale(bang, 0.80f), Scale(rumble, 0.55f)));
     }
 
-    // Ascending major arpeggio: C4 – E4 – G4 – C5, each note 0.18 s
-    static AudioClip BuildWinFanfare()
-    {
-        float[] freqs = { 261.6f, 329.6f, 392.0f, 523.3f };
-        var parts = new float[freqs.Length][];
-        for (int i = 0; i < freqs.Length; i++)
-        {
-            var note = Sine(freqs[i], 0.18f, 0.70f);
-            note = Adsr(note, a: 0.01f, d: 0.02f, s: 0.70f, r: 0.10f);
-            parts[i] = note;
-        }
-        return Clip("Win", Concat(parts));
-    }
-
-    // Descending sawtooth with vibrato (wah-wah fail tone)
-    static AudioClip BuildFailBuzzer()
-    {
-        int n = N(0.55f);
-        var s = new float[n];
-        float phase = 0f;
-        for (int i = 0; i < n; i++)
-        {
-            float t    = i / (float)SR;
-            float freq = Mathf.Lerp(320f, 85f, (float)i / n);
-            freq += Mathf.Sin(2f * Mathf.PI * 9f * t) * 14f; // vibrato
-            phase += freq / SR;
-            s[i] = 0.65f * (2f * (phase % 1f) - 1f);         // sawtooth
-        }
-        s = Adsr(s, a: 0.01f, d: 0.04f, s: 0.75f, r: 0.22f);
-        return Clip("Fail", s);
-    }
-
     // ── DSP primitives ────────────────────────────────────────────────────────
 
     static int N(float dur) => Mathf.Max(1, Mathf.RoundToInt(SR * dur));
@@ -386,16 +366,6 @@ public class AudioManager : MonoBehaviour
         var dst = new float[src.Length];
         for (int i = 0; i < src.Length; i++) dst[i] = src[i] * amp;
         return dst;
-    }
-
-    static float[] Concat(float[][] parts)
-    {
-        int total = 0;
-        foreach (var p in parts) total += p.Length;
-        var buf = new float[total];
-        int pos = 0;
-        foreach (var p in parts) { p.CopyTo(buf, pos); pos += p.Length; }
-        return buf;
     }
 
     static AudioClip Clip(string name, float[] samples)

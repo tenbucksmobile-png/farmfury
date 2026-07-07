@@ -41,6 +41,17 @@ public abstract class BlockBase : MonoBehaviour
     // rest stay exactly where they were placed.
     [SerializeField] protected bool _stayKinematic;
 
+    // Per-prefab audio overrides — both null/false by default, so WoodBlock/StoneBlock keep the
+    // existing generic WoodHit/StoneHit + BlockDestroy behaviour unchanged. Added 2026-07-07 for
+    // HaybaleBlock: at hp=10 every haybail hit is a guaranteed same-frame one-shot kill (see
+    // CluckAnimal.OnCollisionEnter2D's pass-through branch), so the generic hit sound plus the
+    // generic destroy sound plus the chicken's own pass-through punch sound all firing on top of
+    // each other for one "pop" read as cluttered — user-requested a single dedicated explosion
+    // sound instead. _silentHit skips PlayHitSound() entirely; _destroyClipOverride, when set,
+    // plays instead of the generic BlockDestroy sound in DestroyBlock().
+    [SerializeField] protected bool       _silentHit;
+    [SerializeField] protected AudioClip  _destroyClipOverride;
+
     [Header("Fragments")]
     [SerializeField] private GameObject[] _fragmentPrefabs;
     [SerializeField] private int          _fragmentCount = 5;
@@ -135,7 +146,7 @@ public abstract class BlockBase : MonoBehaviour
             WakeAllStaticBlocks();
 
         Health = Mathf.Max(0f, Health - amount);
-        PlayHitSound();
+        if (!_silentHit) PlayHitSound();
         OnHealthChanged();
         PlayDamageFlash();
         if (Health <= 0f) DestroyBlock();
@@ -210,7 +221,10 @@ public abstract class BlockBase : MonoBehaviour
         if (_sprExplode != null) SpawnExplosion();
         else                     SpawnFragments();
         SpawnImpactFlash();
-        AudioManager.Play(AudioManager.Sound.BlockDestroy, 0.05f);
+        if (_destroyClipOverride != null)
+            AudioManager.PlayClip(_destroyClipOverride);
+        else
+            AudioManager.Play(AudioManager.Sound.BlockDestroy, 0.05f);
         OnBlockDestroyed?.Invoke(this);
         ScoreManager.Instance?.AddBlockScore(this);
         Destroy(gameObject);

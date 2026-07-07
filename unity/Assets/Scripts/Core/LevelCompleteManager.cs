@@ -20,7 +20,11 @@ public class LevelCompleteManager : MonoBehaviour
     [Header("Timing")]
     [SerializeField] private float _slowMotionScale    = 0.2f;
     [SerializeField] private float _slowMotionDuration  = 0.5f;
-    [SerializeField] private float _celebrationDuration = 4f;
+    // Celebration clips run ~4.04-4.05s (measured). This used to be 4f, which cut the hold off
+    // fractionally before the clip's own last frame finished, then immediately started fading —
+    // user-reported "ends very abruptly." Bumped to the clip length plus a full 1s of held-still
+    // breathing room before the fade/panel transition begins.
+    [SerializeField] private float _celebrationDuration = 5f;
     [SerializeField] private float _fadeOutDuration     = 0.3f;
 
     // Indexed by AnimalType (Cluck, Bessie, Percy, Woolly, Ducky, Horace, Gerald, Billy — see

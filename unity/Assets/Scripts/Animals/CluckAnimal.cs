@@ -59,7 +59,6 @@ public class CluckAnimal : AnimalBase
                 wood.TakeDamage(wood.MaxHealth); // guaranteed one-hit kill, regardless of impact speed
 
                 StartCoroutine(FlashPassThrough());
-                AudioManager.Play(AudioManager.Sound.WoodHit, cooldown: 0f);
                 return; // skip base stop-and-hide
             }
         }
