@@ -56,6 +56,7 @@ public class HUDController : MonoBehaviour
     private readonly RectTransform[]  _lcStarRTs  = new RectTransform[3];
     private readonly Image[]          _lcStarImgs = new Image[3];
     private Coroutine                  _lcAnim;
+    private Coroutine                  _lcScoreAnim;
     private RectTransform               _lcLevelUpStarRT;
     private Coroutine                  _lcLevelUpPulse;
 
@@ -74,6 +75,8 @@ public class HUDController : MonoBehaviour
 
     private GameObject       _lfPanel;
     private TextMeshProUGUI  _lfScoreText;
+    private RectTransform    _lfTryAgainRT;
+    private Coroutine        _lfRetryPulse;
 
     [SerializeField] private Sprite _lfTitleSprite; // LevelFailed.png
 
@@ -159,13 +162,18 @@ public class HUDController : MonoBehaviour
         switch (state)
         {
             case GameState.LevelComplete:
+                // Panel is NOT shown here any more — LevelCompleteManager owns the transition
+                // into LevelComplete (slow-motion -> freeze -> celebration video -> fade) and
+                // calls ShowLevelCompletePanel() itself once that sequence finishes, so the
+                // panel is always the reward's second beat, never the first.
                 HideLevelFailedPanel();
-                ShowLevelCompletePanel();
                 SetTopBarVisible(false);
                 break;
             case GameState.LevelFailed:
+                // Panel is NOT shown here any more — LevelFailedManager owns the transition into
+                // LevelFailed (slow-motion -> freeze -> robot taunt video -> fade) and calls
+                // ShowLevelFailedPanel() itself once that sequence finishes.
                 HideLevelCompletePanel();
-                ShowLevelFailedPanel();
                 SetTopBarVisible(false);
                 break;
             default:
@@ -579,14 +587,16 @@ public class HUDController : MonoBehaviour
         _lcPanel.SetActive(false);
     }
 
-    void ShowLevelCompletePanel()
+    // Called by LevelCompleteManager once its celebration sequence (slow-motion -> freeze ->
+    // video -> fade) finishes — not by this class's own OnStateChanged any more (see above).
+    public void ShowLevelCompletePanel()
     {
         if (_lcPanel == null) return;
 
         int score = ScoreManager.Instance?.Score ?? 0;
         int stars = ScoreManager.Instance?.Stars ?? 0;
 
-        _lcScoreText.text = score.ToString("N0");
+        _lcScoreText.text = "0";
 
         // Reset all stars to grey at normal scale before animating.
         for (int i = 0; i < 3; i++)
@@ -600,6 +610,9 @@ public class HUDController : MonoBehaviour
         if (_lcAnim != null) StopCoroutine(_lcAnim);
         _lcAnim = StartCoroutine(AnimateStars(stars));
 
+        if (_lcScoreAnim != null) StopCoroutine(_lcScoreAnim);
+        _lcScoreAnim = StartCoroutine(AnimateScore(score));
+
         if (_lcLevelUpPulse != null) StopCoroutine(_lcLevelUpPulse);
         if (_lcLevelUpStarRT != null) _lcLevelUpPulse = StartCoroutine(LevelUpStarPulse());
     }
@@ -607,9 +620,28 @@ public class HUDController : MonoBehaviour
     void HideLevelCompletePanel()
     {
         if (_lcAnim != null) { StopCoroutine(_lcAnim); _lcAnim = null; }
+        if (_lcScoreAnim != null) { StopCoroutine(_lcScoreAnim); _lcScoreAnim = null; }
         if (_lcLevelUpPulse != null) { StopCoroutine(_lcLevelUpPulse); _lcLevelUpPulse = null; }
         if (_lcLevelUpStarRT != null) _lcLevelUpStarRT.localScale = Vector3.one;
         if (_lcPanel != null) _lcPanel.SetActive(false);
+    }
+
+    // Counts 0 -> finalScore over ScoreCountUpDuration, in step with the star pops above
+    // (last star pops at ~1.58s in) so the score lands right as the stars finish. Runs on
+    // unscaled time so it still plays correctly if timeScale is ever non-1 when the panel opens.
+    const float ScoreCountUpDuration = 1.6f;
+
+    IEnumerator AnimateScore(int finalScore)
+    {
+        float elapsed = 0f;
+        while (elapsed < ScoreCountUpDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            int value = Mathf.RoundToInt(Mathf.Lerp(0, finalScore, Mathf.Clamp01(elapsed / ScoreCountUpDuration)));
+            _lcScoreText.text = value.ToString("N0");
+            yield return null;
+        }
+        _lcScoreText.text = finalScore.ToString("N0");
     }
 
     // Continuous "breathing" pulse (scale 1 <-> 1.12, sine wave) while the panel is up — draws
@@ -706,6 +738,7 @@ public class HUDController : MonoBehaviour
                               new Color(1.00f, 0.55f, 0.05f),
                               pos: new Vector2(-170f, -260f), size: new Vector2(130f, 130f));
         tryAgainBtn.onClick.AddListener(OnTryAgainClicked);
+        _lfTryAgainRT = tryAgainBtn.GetComponent<RectTransform>();
 
         var menuBtn = MakeIconButton(box.transform, "MenuBtn", _homeButtonSprite,
                           new Color(1.00f, 0.55f, 0.05f),
@@ -715,16 +748,38 @@ public class HUDController : MonoBehaviour
         _lfPanel.SetActive(false);
     }
 
-    void ShowLevelFailedPanel()
+    // Called by LevelFailedManager once its taunt sequence (slow-motion -> freeze -> robot
+    // taunt video -> fade) finishes — not by this class's own OnStateChanged any more (see above).
+    public void ShowLevelFailedPanel()
     {
         if (_lfPanel == null) return;
         _lfScoreText.text = (ScoreManager.Instance?.Score ?? 0).ToString("N0");
         _lfPanel.SetActive(true);
+
+        if (_lfRetryPulse != null) StopCoroutine(_lfRetryPulse);
+        if (_lfTryAgainRT != null) _lfRetryPulse = StartCoroutine(RetryButtonPulse());
     }
 
     void HideLevelFailedPanel()
     {
+        if (_lfRetryPulse != null) { StopCoroutine(_lfRetryPulse); _lfRetryPulse = null; }
+        if (_lfTryAgainRT != null) _lfTryAgainRT.localScale = Vector3.one;
         if (_lfPanel != null) _lfPanel.SetActive(false);
+    }
+
+    // Gentle pulse (scale 1.0 -> 1.05 -> 1.0, never dipping below 1.0, unlike the Level Complete
+    // level-up star's symmetric ±0.12 pulse) looping every 0.8s — draws the eye to RETRY without
+    // being intrusive, communicating "come on, you can beat that robot."
+    IEnumerator RetryButtonPulse()
+    {
+        const float period = 0.8f;
+        while (true)
+        {
+            float t = (Time.unscaledTime % period) / period;
+            float s = 1f + 0.025f * (1f - Mathf.Cos(t * Mathf.PI * 2f));
+            _lfTryAgainRT.localScale = Vector3.one * s;
+            yield return null;
+        }
     }
 
     void OnTryAgainClicked()

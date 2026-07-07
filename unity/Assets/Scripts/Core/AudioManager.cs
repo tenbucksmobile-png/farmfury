@@ -14,11 +14,14 @@ public class AudioManager : MonoBehaviour
 
     [Header("External Clips (wired via FarmFury -> Wire Scene References)")]
     [SerializeField] private AudioClip _musicClip;       // SunriseMeadows_Background.mp3, loops during gameplay
+    [SerializeField] private AudioClip _menuMusicClip;   // SunriseMeadows_TransitionMusic.mp3, loops on the landing
+                                                          // page and the Sunrise Meadows world map (GameState.Idle)
     [SerializeField] private AudioClip _cannonShotClip;  // CannonShot.mp3, replaces the procedural Launch sound
     [SerializeField] private AudioClip _fallingClip;     // Cluck_falling.mp3, loops while Cluck is airborne
 
     private AudioSource _src;
     private AudioSource _musicSrc;
+    private AudioSource _menuMusicSrc;
     private AudioSource _fallingSrc;
     private AudioClip[] _clips;
     private float[]     _lastPlayTime;
@@ -65,8 +68,11 @@ public class AudioManager : MonoBehaviour
         MusicEnabled = value;
         PlayerPrefs.SetInt("ff_music_enabled", value ? 1 : 0);
         PlayerPrefs.Save();
-        if (Instance != null && Instance._musicSrc != null)
-            Instance._musicSrc.mute = !value;
+        if (Instance != null)
+        {
+            if (Instance._musicSrc != null) Instance._musicSrc.mute = !value;
+            if (Instance._menuMusicSrc != null) Instance._menuMusicSrc.mute = !value;
+        }
     }
 
     void Awake()
@@ -86,6 +92,13 @@ public class AudioManager : MonoBehaviour
         _musicSrc.volume      = MusicVolume;
         _musicSrc.clip        = _musicClip;
         _musicSrc.mute        = !MusicEnabled;
+
+        _menuMusicSrc             = gameObject.AddComponent<AudioSource>();
+        _menuMusicSrc.playOnAwake = false;
+        _menuMusicSrc.loop        = true;
+        _menuMusicSrc.volume      = MusicVolume;
+        _menuMusicSrc.clip        = _menuMusicClip;
+        _menuMusicSrc.mute        = !MusicEnabled;
 
         _fallingSrc             = gameObject.AddComponent<AudioSource>();
         _fallingSrc.playOnAwake = false;
@@ -111,7 +124,15 @@ public class AudioManager : MonoBehaviour
     {
         // Subscribe in Start() so GameManager.Instance is guaranteed to be set
         if (GameManager.Instance != null)
+        {
             GameManager.Instance.OnStateChanged += OnStateChanged;
+            // GameManager.State starts as Idle by default, without ever firing a transition
+            // event for it (TransitionTo only fires on an actual change) — so on a fresh launch
+            // landing on the menu, nothing would otherwise tell us to start the menu music. Sync
+            // once against whatever the state already is (mirrors HUDController.Start()'s own
+            // "CatapultLauncher may have already forced Playing before us" catch-up).
+            OnStateChanged(GameManager.Instance.State);
+        }
     }
 
     void OnDestroy()
@@ -128,8 +149,24 @@ public class AudioManager : MonoBehaviour
         // Starts once on the first Playing transition and simply keeps looping across
         // levels (isPlaying guard below means later transitions back to Playing don't
         // restart it) — "continuously playing while the user is playing the game".
-        if (state == GameState.Playing && _musicSrc != null && _musicSrc.clip != null && !_musicSrc.isPlaying)
-            _musicSrc.Play();
+        // Untouched by the menu-music addition below: gameplay music, cannon fire, and the
+        // Cluck falling loop all keep their exact existing behaviour.
+        if (state == GameState.Playing)
+        {
+            if (_menuMusicSrc != null && _menuMusicSrc.isPlaying) _menuMusicSrc.Stop();
+            if (_musicSrc != null && _musicSrc.clip != null && !_musicSrc.isPlaying)
+                _musicSrc.Play();
+        }
+        // GameState.Idle covers both the landing page (MainMenuController) and the Sunrise
+        // Meadows world map (WorldMapController) — both react to this same state, so hooking it
+        // once here plays the transition music under either screen without needing to know
+        // which one is actually visible.
+        else if (state == GameState.Idle)
+        {
+            if (_musicSrc != null && _musicSrc.isPlaying) _musicSrc.Stop();
+            if (_menuMusicSrc != null && _menuMusicSrc.clip != null && !_menuMusicSrc.isPlaying)
+                _menuMusicSrc.Play();
+        }
     }
 
     // cooldown: ignore the call if this sound played within the last N seconds

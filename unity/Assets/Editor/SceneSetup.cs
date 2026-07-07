@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Video;
 
 public static class SceneSetup
 {
@@ -29,6 +30,9 @@ public static class SceneSetup
         EnsureMainMenu();       // MainMenuController GO (Canvas sortingOrder 400)
         EnsureWorldMap();       // WorldMapController GO (Sunrise Meadows level-map — PLAY's destination)
         EnsureAudioManager();   // AudioManager GO wired with music/cannon/falling clips
+        EnsureLevelCompleteManager();  // Cluck celebration video + laugh audio
+        EnsureLevelFailedManager();    // Robot taunt video + taunt audio
+        EnsureCelebrationVideoBackground(); // Sky backdrop behind both of the above (shared overlay)
         WireGameManager();      // _levels array
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
         WireLauncher();         // CatapultLauncher + LevelLoader ref + counterweight sprite
@@ -533,6 +537,9 @@ public static class SceneSetup
         WireAudioClip(go, "_musicClip",      "Assets/Audio/SunriseMeadows_Background.mp3");
         WireAudioClip(go, "_cannonShotClip", "Assets/Audio/CannonShot.mp3");
         WireAudioClip(go, "_fallingClip",    "Assets/Audio/Cluck_falling.mp3");
+        // Landing page + Sunrise Meadows world map (GameState.Idle) — separate track/AudioSource
+        // from the gameplay loop above, see AudioManager.OnStateChanged.
+        WireAudioClip(go, "_menuMusicClip",  "Assets/Sprites/UI/Video_Sound/SunriseMeadows_TransitionMusic.mp3");
     }
 
     static void WireAudioClip(GameObject go, string fieldName, string path)
@@ -547,6 +554,94 @@ public static class SceneSetup
         so.FindProperty(fieldName).objectReferenceValue = clip;
         so.ApplyModifiedProperties();
         Debug.Log($"[FarmFury] AudioManager: wired {fieldName} <- {path}");
+    }
+
+    // ── LevelCompleteManager / LevelFailedManager: celebration + taunt clips ──────
+
+    // Both managers otherwise self-bootstrap at runtime (CatapultLauncher.Awake() adds one if
+    // missing — see LevelCompleteManager/LevelFailedManager class comments), but that fallback
+    // can't reach into Assets to assign clips, so Wire Scene References does it here instead,
+    // the same division of labour as EnsureAudioManager()/WireAudioClip() above.
+    static void EnsureLevelCompleteManager()
+    {
+        var go = GameObject.Find("LevelCompleteManager");
+        if (go == null)
+        {
+            go = new GameObject("LevelCompleteManager");
+            Debug.Log("[FarmFury] Created 'LevelCompleteManager' GameObject.");
+        }
+        if (go.GetComponent<LevelCompleteManager>() == null)
+            go.AddComponent<LevelCompleteManager>();
+
+        var so = new SerializedObject(go.GetComponent<LevelCompleteManager>());
+        WireArrayElement<VideoClip>(so, "_celebrationClips", (int)AnimalType.Cluck, 8,
+            "Assets/Sprites/UI/Video_Sound/Cluck_Celebration.mp4");
+        WireArrayElement<AudioClip>(so, "_celebrationAudioClips", (int)AnimalType.Cluck, 8,
+            "Assets/Sprites/UI/Video_Sound/Cluck_CelebratingLaugh.mp3");
+        so.ApplyModifiedProperties();
+    }
+
+    static void EnsureLevelFailedManager()
+    {
+        var go = GameObject.Find("LevelFailedManager");
+        if (go == null)
+        {
+            go = new GameObject("LevelFailedManager");
+            Debug.Log("[FarmFury] Created 'LevelFailedManager' GameObject.");
+        }
+        if (go.GetComponent<LevelFailedManager>() == null)
+            go.AddComponent<LevelFailedManager>();
+
+        var so = new SerializedObject(go.GetComponent<LevelFailedManager>());
+        // Index 0 = L01 — the only robot taunt clips that exist today; every other level falls
+        // back to index 0 at runtime (see LevelFailedManager.GetTauntClip/GetTauntAudioClip).
+        WireArrayElement<VideoClip>(so, "_robotTauntClips", 0, 1,
+            "Assets/Sprites/UI/Video_Sound/Robot_Celebration.mp4");
+        WireArrayElement<AudioClip>(so, "_robotTauntAudioClips", 0, 1,
+            "Assets/Sprites/UI/Video_Sound/Robot_CelebrateSound.mp3");
+        so.ApplyModifiedProperties();
+    }
+
+    // The chroma-keyed video's transparent areas used to show whatever the frozen gameplay
+    // camera happened to be rendering behind it (busy level art) — user-reported as making the
+    // character itself look like a translucent "ghost" hidden in the background. A plain sky
+    // backdrop behind the video (same asset EnsureBackground() already wires for the live scene,
+    // reimported as a Sprite there) gives Cluck/the robot a clean, consistent surface to stand
+    // on regardless of which level is paused. Must run after EnsureBackground() so SkyPainting's
+    // Sprite import settings are already correct by the time this loads it.
+    static void EnsureCelebrationVideoBackground()
+    {
+        var vck = VideoChromaKey.FindOrCreate();
+        var so  = new SerializedObject(vck);
+        const string skyPath = "Assets/Sprites/Environment/Skies/SkyPainting.png";
+        var sky = AssetDatabase.LoadAssetAtPath<Sprite>(skyPath);
+        if (sky == null)
+        {
+            Debug.LogWarning($"[FarmFury] SkyPainting.png not found at {skyPath} for CelebrationVideo backdrop.");
+            return;
+        }
+        so.FindProperty("_backgroundSprite").objectReferenceValue = sky;
+        so.ApplyModifiedProperties();
+        Debug.Log("[FarmFury] CelebrationVideo: wired sky backdrop.");
+    }
+
+    // Loads an asset of type T and drops it into arrayField[index], growing the array to
+    // minSize first if it's smaller (SerializedProperty arrays don't auto-grow). Shared by both
+    // Ensure*Manager methods above since they wire the exact same shape (video + audio array,
+    // indexed, Inspector-resizable) for two different components.
+    static void WireArrayElement<T>(SerializedObject so, string arrayField, int index, int minSize, string path)
+        where T : Object
+    {
+        var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+        if (asset == null)
+        {
+            Debug.LogWarning($"[FarmFury] {typeof(T).Name} not found at {path}.");
+            return;
+        }
+        var arr = so.FindProperty(arrayField);
+        if (arr.arraySize < minSize) arr.arraySize = minSize;
+        arr.GetArrayElementAtIndex(index).objectReferenceValue = asset;
+        Debug.Log($"[FarmFury] {so.targetObject.GetType().Name}: wired {arrayField}[{index}] <- {path}");
     }
 
     // ── GameManager: wire the levels array ────────────────────────────────────

@@ -115,6 +115,12 @@ public class CatapultLauncher : MonoBehaviour
     private SpriteRenderer   _cannonSR;
     private ParticleSystem   _smokePS;
 
+    // Type of the most recently fired bird — read by LevelCompleteManager to pick which
+    // animal's celebration video plays over the Level Complete freeze-frame. Static rather
+    // than an instance lookup since there's exactly one cannon per scene and this outlives
+    // any single AnimalBase instance (which gets destroyed on landing).
+    public static AnimalType LastAnimalUsed { get; private set; } = AnimalType.Cluck;
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     void Awake()
@@ -128,6 +134,14 @@ public class CatapultLauncher : MonoBehaviour
         // guarantees that instance claims Instance first, so this is a null-safety fallback
         // only (e.g. a scene that hasn't run Wire Scene References yet), never a duplicate.
         if (AudioManager.Instance == null) gameObject.AddComponent<AudioManager>();
+
+        // Same null-safety fallback as AudioManager above — LevelCompleteManager/LevelFailedManager
+        // normally live on their own dedicated scene GOs, but a scene that hasn't been re-wired
+        // since these systems were added still needs the celebration/taunt sequences to run.
+        if (FindAnyObjectByType<LevelCompleteManager>() == null)
+            new GameObject("LevelCompleteManager").AddComponent<LevelCompleteManager>();
+        if (FindAnyObjectByType<LevelFailedManager>() == null)
+            new GameObject("LevelFailedManager").AddComponent<LevelFailedManager>();
 
         // Ensure 2D orthographic view regardless of scene camera settings
         if (_camera != null)
@@ -329,6 +343,7 @@ public class CatapultLauncher : MonoBehaviour
         Vector2 velocity = LaunchVelocity();
         if (velocity.magnitude < 0.1f) return; // not enough pull — nothing fires
         if (!_levelLoader.TryConsumeBird(out AnimalType birdType)) return;
+        LastAnimalUsed = birdType;
 
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
 

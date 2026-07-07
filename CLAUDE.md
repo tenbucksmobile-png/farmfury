@@ -18,6 +18,22 @@ Full GDD: `C:\Users\Personel\Desktop\FarmFury_GDD_v2.docx`
 
 ---
 
+## Git Repository Scope (Important)
+
+This project's `.git` lives at `C:\Users\Personel\.git` — **the entire home directory is one
+shared git repository**, not a repo scoped to `FarmFury\`. Running `git status`/`git add .`/
+`git add -A`/`git commit -a` from anywhere inside it can pick up files from *any* other project
+on this machine (CryptoAlgoBot, IndabaCares, Kaya, personal documents, spreadsheets, etc.) — this
+has already happened historically; the commit history contains files from `Desktop/IndabaCares/`
+and `Claude/Projects/Kaya/` that have nothing to do with this game. Two remotes are configured:
+`farmfury` → `github.com/tenbucksmobile-png/farmfury.git` (this project) and `origin` →
+`github.com/tenbucksmobile-png/crypto-algo.git` (a **different, unrelated** project — never push
+here by mistake). Always stage explicit file paths one at a time when committing FarmFury work;
+never use a wildcard/`-a` add. Discovered 2026-07-07 — not yet restructured into its own repo
+(the user's call whether/when to do that; it's a bigger, more consequential change).
+
+---
+
 ## Current Status & Known Issues
 
 - **World 1 Levels 1–4 are playable; L05–L06 are not.** `L02_StoneWall`, `L03_TheTower`, and `L04_EggPractice` were migrated 2026-07-27 to the current coordinate system (ground Y=−6.60, launcher X=−2.327) via a uniform rigid-translation delta (dx=+3.173, dy=−4.10) from the old pre-rebuild system (ground Y=−2.5, launcher X=−5.5) — see `docs/HISTORY.md` for the exact math and why a pure delta was safe (preserves ground-resting/stacked-block relationships exactly, so no free-fall glitch on first hit). `L05_TheFortress`/`L06_BessiesDebut` still use the old system and still spawn floating above the ground — same migration, not yet applied. This is now the single highest-leverage next step toward a fully playable World 1.
@@ -31,6 +47,7 @@ Full GDD: `C:\Users\Personel\Desktop\FarmFury_GDD_v2.docx`
 - **`LevelSelectController` removed entirely 2026-07-26** — user-reported the old "SELECT LEVEL" grid screen kept appearing instead of/behind the Sunrise Meadows world map. Root cause: it subscribed to `GameManager.OnStateChanged` and showed itself on `GameState.Idle` using the exact same Canvas `sortingOrder` (300) `WorldMapController` uses — the two were silently racing to show themselves on every Idle transition ever since `WorldMapController` superseded it for World 1 (2026-07-15); it was never actually disabled, just left running unused in the background until now. The script, its `SceneSetup.EnsureLevelSelect()` wiring, and the leftover `LevelSelect` scene GameObject (auto-cleaned by `WireAll()` on next run) are all gone. World 2+ needs its own map screen built following `WorldMapController`'s pattern when that content exists — not a resurrected grid select.
 - **Pause access restored 2026-07-26** via a new top-right 3-button row (Quit/Mute/Pause, real icon art) — see HUDController.cs entry above. Briefly removed earlier the same day alongside the top-centre score readout ("0" box, still gone) before being reinstated in this fuller form.
 - **L01 haybale pile Y-shifted +1.0 on 2026-07-26** (user-reported: pile sat below the camera's visible safe line — bottom edge was at Y≈−6.73 against a visible-camera-bottom of Y=−6.5). New positions put the lowest bale's bottom edge at Y≈−5.73, matching where the other hand-placed props visually sit rather than the (mostly off-screen) true physics ground line. All 4 bales are `_stayKinematic` (see BlockBase.cs entry), so once placed they never move again regardless of being struck.
+- **Level Complete/Failed celebration videos added 2026-07-07** — see the "Video Chroma Key / Celebration System" section below for the full architecture. **Ghosting bug fixed same day**: the chroma-key shader originally computed pure RGB-Euclidean distance to the key colour, which can't distinguish a desaturated dark pixel (character outline/shadow shading) from a mid-tone green — both sit numerically "close" to `#00B140` in flat RGB space. User-reported symptom: Cluck's own body looked like a translucent "ghost" instead of a solid character, not just the greenscreen going transparent. Fixed in `ChromaKeyVideo.shader` with a saturation gate — pixels less than half as saturated as the key colour are forced fully opaque regardless of raw RGB distance. Also added an explicit sky-backdrop layer (`VideoChromaKey._backgroundSprite`, wired to `SkyPainting.png`) behind the keyed video, since the transparent areas previously fell through to whatever the frozen gameplay camera happened to be rendering (busy level art), which read as messy — a clean sky gives the character a consistent surface to stand on regardless of which level is paused.
 - **L01 top haybale re-lowered 0.35u + recentred on 2026-07-06** — user reported it "still too high and off the mark": it previously balanced on a single point directly above one base-row bale (X=4.029, Y=−4.497). Moved to X=3.935 (base row's mean X), Y=−4.85, nesting it into the row instead of perching on one corner. The internal single-bale-height stacking math (0.7365u gap, from Haybail.png's measured trimmed content) was previously verified and is unaffected by this change — see `LevelDataGenerator.cs`'s comment above the `Make("L01_FirstContact", ...)` call. Unverified visually in this environment (no Unity render access) — re-check against a fresh screenshot.
 
 ---
@@ -187,6 +204,44 @@ unity/Assets/Scripts/
                               scale is now a per-Sound VolumeScale[] array with Launch specifically dropped
                               to 0.5 — every other SFX (WoodHit/StoneHit/RobotDeath/Win/Fail/BlockDestroy/
                               RobotHit) keeps the original 0.8.
+                              **Menu music added 2026-07-07**: a second _menuMusicClip
+                              (SunriseMeadows_TransitionMusic.mp3) + dedicated _menuMusicSrc AudioSource,
+                              independent of the gameplay loop above. OnStateChanged starts/stops the two
+                              tracks so exactly one plays at a time: GameState.Idle (covers both the landing
+                              page and the Sunrise Meadows world map — both react to that same state, so
+                              hooking it once here plays under either screen without needing to know which
+                              is visible) starts menu music and stops gameplay music; GameState.Playing does
+                              the reverse. Start() syncs once against GameManager.Instance.State on
+                              subscribe, since State defaults to Idle at boot without ever firing a
+                              transition event for it (TransitionTo only fires on an actual change) — without
+                              this, a fresh launch landing on the menu would never start any music at all.
+                              Gameplay music, cannon fire, and the Cluck falling loop are all untouched by
+                              this addition (explicit user request when adding it, to avoid regressions).
+    LevelCompleteManager.cs  — [DefaultExecutionOrder(-40)] owns the Level Complete "reward" beat, added
+                              2026-07-07. Old flow: GameState -> LevelComplete fires HUDController's panel
+                              immediately. New flow: Time.timeScale=0.2 for 0.5s (WaitForSecondsRealtime) ->
+                              Time.timeScale=0 (hard freeze) -> CatapultLauncher.LastAnimalUsed's celebration
+                              VideoClip + AudioClip play via the shared VideoChromaKey overlay (see below) ->
+                              holds 4s -> fades 0.3s -> Time.timeScale=1 -> HUDController.ShowLevelCompletePanel()
+                              (now public — HUDController's own OnStateChanged no longer calls it directly,
+                              this class is the only caller). _celebrationClips[]/_celebrationAudioClips[] are
+                              both indexed by AnimalType (8 slots) with an empty-slot fallback to index
+                              Cluck, so every animal gets a celebration before every clip exists — wired via
+                              SceneSetup.EnsureLevelCompleteManager() from Assets/Sprites/UI/Video_Sound/
+                              (Cluck_Celebration.mp4 + Cluck_CelebratingLaugh.mp3 today). Self-bootstraps via
+                              CatapultLauncher.Awake() (same null-safety fallback pattern as AudioManager) if
+                              missing from the scene, so it works even before a Wire Scene References pass.
+    LevelFailedManager.cs    — mirrors LevelCompleteManager.cs exactly (added same day), but keys its clip
+                              off GameManager.CurrentLevelIndex (which robot the player is up against) rather
+                              than which animal was last fired: Time.timeScale=0.3 for 0.5s -> freeze -> the
+                              current level's robot taunt VideoClip + AudioClip play -> hold 4s -> fade 0.3s
+                              -> HUDController.ShowLevelFailedPanel() (now public, same decoupling as above).
+                              _robotTauntClips[]/_robotTauntAudioClips[] are indexed by level number
+                              (0-based), any level past the array's end or an empty slot falls back to index
+                              0 — wired via SceneSetup.EnsureLevelFailedManager() from Robot_Celebration.mp4 +
+                              Robot_CelebrateSound.mp3 (index 0 = L01, the only pair that exists today). Also
+                              drives the Level Failed panel's RETRY button pulse once shown (see
+                              HUDController.RetryButtonPulse below).
     CameraShake.cs           — singleton; tracks its own per-frame contribution as a delta and subtracts it
                               back out, so repeated shakes always net to exactly zero (never permanently
                               drifts the camera — see docs/HISTORY.md Round 7 for the bug this fixed)
@@ -282,6 +337,14 @@ unity/Assets/Scripts/
                               verified (same substep model as DrawTrajectory) to span L01's play area across
                               multiple angle/power combinations rather than one fixed landing zone. Paired
                               with AnimalBase.Launch()'s gravityScale=0.18 for a slower, loopier arc (2026-07-14).
+                              LastAnimalUsed (public static AnimalType, added 2026-07-07) is set the instant
+                              Fire() actually consumes a bird — read by LevelCompleteManager to pick which
+                              animal's celebration video plays. Static rather than an instance lookup since
+                              there's exactly one cannon per scene and this outlives any single AnimalBase
+                              instance (destroyed on landing). Awake() also self-bootstraps
+                              LevelCompleteManager/LevelFailedManager onto their own scene GOs if missing,
+                              same null-safety fallback pattern as the existing AudioManager bootstrap right
+                              above it in the same method.
                               MinAimRadius=0.6f: drag ANGLE (only) freezes until the pointer has moved that far
                               from the pivot, preventing hair-trigger full-power swings from small movements
                               (mobile touch fix, 2026-07-18) — pull distance/power tracks the pointer from the
@@ -391,6 +454,27 @@ unity/Assets/Scripts/
                               via the Level Failed panel's Try Again/Home buttons — only in-pause access to
                               them was removed, not the underlying `GameManager.RestartLevel()`/`LoadMenu()`
                               calls, which both panels still use.
+                              **Panel triggers decoupled from OnStateChanged 2026-07-07**:
+                              `ShowLevelCompletePanel()`/`ShowLevelFailedPanel()` are now `public` and no
+                              longer called from this class's own `OnStateChanged` on the LevelComplete/
+                              LevelFailed transitions — `LevelCompleteManager`/`LevelFailedManager` (see
+                              Core/) call them directly once their slow-motion -> freeze -> celebration/taunt
+                              video -> fade sequence finishes, so the panel is always the reward/defeat
+                              beat's *second* step, never the first. `OnStateChanged` still handles
+                              `HideLevelFailedPanel()`/`HideLevelCompletePanel()`/`SetTopBarVisible(false)`
+                              on those same transitions, just not the show calls.
+                              **Score count-up added 2026-07-07**: `ShowLevelCompletePanel()` now animates
+                              the score text 0 -> final over `ScoreCountUpDuration` (1.6s, unscaled time),
+                              timed to land right as the last star pop finishes (staggered 0.3/0.75/1.2s + a
+                              0.38s pop each, see `AnimateStars`/`PopStar` above) — previously the score text
+                              was set instantly.
+                              **RETRY button pulse added 2026-07-07**: `ShowLevelFailedPanel()` now starts
+                              `RetryButtonPulse()` on the Try Again button (`_lfTryAgainRT`) — scale eases
+                              `1.0 -> 1.05 -> 1.0` on an 0.8s loop via `1 + 0.025*(1-cos(2πt))`, deliberately
+                              *never* dipping below 1.0 (unlike the Level Complete level-up star's symmetric
+                              ±0.12 `LevelUpStarPulse`) — meant to read as an inviting nudge ("come on, you
+                              can beat that robot"), not a wobble. Stops and resets to scale 1 in
+                              `HideLevelFailedPanel()`.
     MainMenuController.cs             — LandingPage.png background (title/character art baked in); PLAY
                               (bottom-left) and SETTINGS (bottom-right), both corner-anchored; PLAY opens
                               WorldMapController; SETTINGS opens a Music/SFX popup sharing AudioManager state
@@ -459,6 +543,22 @@ unity/Assets/Scripts/
                               them silently never saves (see docs/HISTORY.md Round 11) — put art fields on
                               the top-level persisted component and thread down via Init() for any future
                               nested UI component.
+    VideoChromaKey.cs                    — added 2026-07-07. Drives a `VideoPlayer` through the
+                              `FarmFury/ChromaKeyVideo` shader onto a full-screen `RawImage`, so a green-
+                              screen character/robot clip can play over the frozen game scene with the
+                              #00B140 background keyed out (see "Video Chroma Key / Celebration System"
+                              below). `[RequireComponent(typeof(VideoPlayer))]`; `FindOrCreate()` is a
+                              static factory — finds the scene's existing overlay or builds the whole
+                              Canvas(sortingOrder=150)+Background `Image`+`RawImage`+`VideoPlayer` hierarchy
+                              from scratch, the same "nothing needs pre-wiring" pattern `HUDController` uses
+                              for its own Canvas. Exactly one instance ever exists — shared by
+                              `LevelCompleteManager` and `LevelFailedManager` since their celebrations never
+                              play simultaneously. `Play(clip, audioClip)`/`FadeOut(duration)`/`Stop()` are
+                              the only playback API; owns an `AudioSource` for the accompanying one-shot
+                              laugh/taunt sound, started and faded in lockstep with the video. The
+                              `Background` `Image` (sky art, sits behind the `RawImage` in sibling/render
+                              order) is shown/hidden and faded together with the video too — see the
+                              ghosting-bug Known Issues entry above for why it exists.
 
 unity/Assets/Editor/
   SceneSetup.cs           — FarmFury > Wire Scene References; wires all Inspector refs; sets camera
@@ -475,6 +575,16 @@ unity/Assets/Editor/
                               nothing near ground level reads as "sinking into nothing." Delete this
                               GameObject once real ground/grass art replaces it — EnsureGroundVisual() only
                               (re)creates it if missing.
+                              **EnsureLevelCompleteManager()/EnsureLevelFailedManager()/
+                              EnsureCelebrationVideoBackground()** (2026-07-07) — create/find each manager's
+                              scene GO and wire its video+audio clip arrays from
+                              `Assets/Sprites/UI/Video_Sound/` via the shared `WireArrayElement<T>` helper
+                              (same shape as `WireAudioClip` above, generalised to any `Object`-derived asset
+                              type and array index). `EnsureCelebrationVideoBackground()` must run after
+                              `EnsureBackground()` so `SkyPainting.png`'s Sprite import settings are already
+                              correct by the time it loads it for `VideoChromaKey._backgroundSprite`. Also
+                              extended `EnsureAudioManager()`/`WireAudioClip()` calls with `_menuMusicClip`
+                              the same day (see AudioManager.cs above).
   LevelDataGenerator.cs    — FarmFury > Generate All Level Data; LXX_ filenames must sort alphabetically;
                               header comment documents which levels (L01 only) use the current coordinate
                               system vs. which (L02-L06) are still on the old one
@@ -504,12 +614,46 @@ unity/Assets/Editor/
 `GameManager.ForceStartLevel(idx)` (Editor play, and Replay/Restart) or `GameManager.StartLevel(idx)` (menu, full scene load) → `TransitionTo(Playing)` → fires `OnLevelStarted` → `LevelLoader.HandleLevelStarted(data)` → `LoadLevel()` spawns blocks/robots/birds → `ScoreManager.InitLevel()` resets counters → `CatapultLauncher` loads the first bird → `SnapCameraToRest()`.
 
 **Level complete:**
-All robots destroyed → `LevelLoader.NotifyRobotDestroyed()` → `_spawnedRobots.Count == 0` → `DelayedLevelComplete()` (2s wait) → `ScoreManager.FinaliseLevel()` → `GameManager.CompleteLevel()` → `TransitionTo(LevelComplete)` → `HUDController` shows panel.
+All robots destroyed → `LevelLoader.NotifyRobotDestroyed()` → `_spawnedRobots.Count == 0` → `DelayedLevelComplete()` (2s wait) → `ScoreManager.FinaliseLevel()` → `GameManager.CompleteLevel()` → `TransitionTo(LevelComplete)` → `LevelCompleteManager.HandleStateChanged` runs the celebration sequence (slow-motion → freeze → `CatapultLauncher.LastAnimalUsed`'s video+audio via the shared `VideoChromaKey` → fade) → only then calls `HUDController.ShowLevelCompletePanel()`. `HUDController`'s own `OnStateChanged` no longer shows the panel directly on this transition (see HUDController.cs above).
 
 **Level failed:**
-`CatapultLauncher` detects no more birds and calls `LevelLoader.NotifyBirdsExhausted()` → `DelayedLevelFailed()` (1.5s wait) → `GameManager.FailLevel()` → `TransitionTo(LevelFailed)` → `HUDController` shows panel.
+`CatapultLauncher` detects no more birds and calls `LevelLoader.NotifyBirdsExhausted()` → `DelayedLevelFailed()` (1.5s wait) → `GameManager.FailLevel()` → `TransitionTo(LevelFailed)` → `LevelFailedManager.HandleStateChanged` runs the taunt sequence (slow-motion → freeze → the current level's robot taunt video+audio via the same shared `VideoChromaKey` → fade) → only then calls `HUDController.ShowLevelFailedPanel()` (same decoupling as above).
 
 **Replay / Try Again / Restart:** all route through `GameManager.RestartLevel()` → `ForceStartLevel(CurrentLevelIndex)` — the same no-reload path Editor play uses, not a full `SceneManager.LoadScene()`.
+
+### Video Chroma Key / Celebration System (added 2026-07-07)
+
+Green-screen character/robot clips play directly over the frozen game scene between the moment a
+level ends and its result panel appearing — Cluck (or the robot) appears to stand in the actual
+paused level environment rather than on a plain title card.
+
+- **`unity/Assets/Shaders/ChromaKeyVideo.shader`** — URP unlit UI shader, `FarmFury/ChromaKeyVideo`.
+  Keys out `_KeyColor` (default `#00B140`) with a `_Tolerance`-driven soft edge. Includes standard
+  Unity UI stencil/clip-rect boilerplate so it still respects a `RectMask2D`/`Mask` ancestor if ever
+  placed under one. **Saturation-gated** (fixed 2026-07-07, see Known Issues above) — pixels less
+  than half as saturated as the key colour are forced fully opaque no matter how numerically close
+  their raw RGB sits to the key, which is what makes plain RGB-distance chroma keying mistake dark/
+  desaturated character shading for green in the first place.
+- **`VideoChromaKey.cs`** (`Scripts/UI/`) — the runtime driver; one instance ever exists in a scene
+  (`FindOrCreate()`), shared by `LevelCompleteManager` and `LevelFailedManager`. Owns the
+  `VideoPlayer` (switched to `RenderTexture` mode so its output can feed the shader as `_MainTex`),
+  the `RawImage` the shader renders onto, a `Background` `Image` behind it (sky art, fixes the
+  ghosting/messy-backdrop issue), and an `AudioSource` for an accompanying one-shot laugh/taunt
+  clip. `Play(clip, audioClip)` starts both; `FadeOut(duration)` fades video alpha + backdrop alpha
+  + audio volume together over unscaled time (safe to call while `Time.timeScale == 0`); `Stop()`
+  hides everything and resets state for the next `Play()`. Note: `VideoPlayer` and `AudioSource`
+  both run on their own wall-clock timeline regardless of `Time.timeScale`, which is exactly why
+  they can play correctly during the freeze-frame below.
+- **`LevelCompleteManager.cs`** / **`LevelFailedManager.cs`** (`Scripts/Core/`) — orchestrate the
+  actual sequence per state transition: brief slow-motion (`Time.timeScale` 0.2/0.3 for 0.5s
+  real-time) → hard freeze (`Time.timeScale = 0`) → `VideoChromaKey.Play(...)` with the
+  animal's/level's clip → hold 4s → `FadeOut(0.3s)` → `Time.timeScale = 1` →
+  `HUDController.ShowLevelCompletePanel()`/`ShowLevelFailedPanel()`. Both self-bootstrap onto their
+  own scene GO via `CatapultLauncher.Awake()` if missing (same pattern as `AudioManager`), and both
+  have their video/audio clip arrays wired by `SceneSetup` (`EnsureLevelCompleteManager()`/
+  `EnsureLevelFailedManager()`) from `Assets/Sprites/UI/Video_Sound/` — run **FarmFury → Wire Scene
+  References** after adding new clips there. See the Core/ script tree entries above for the exact
+  indexing/fallback rules for each manager's clip arrays.
 
 ### Key Implementation Rules
 - **Input System ONLY:** `using UnityEngine.InputSystem;` — `UnityEngine.Input` is incompatible. Use `Pointer.current` (shared base class for Mouse/Pen/Touchscreen), not `Mouse.current` — this already covers touch input without needing the `EnhancedTouch` module. `Pointer.current.press.wasPressedThisFrame`/`.isPressed`/`.wasReleasedThisFrame`, `pointer.position.ReadValue()` → `Vector2`.
