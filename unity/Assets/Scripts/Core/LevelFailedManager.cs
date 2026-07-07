@@ -86,6 +86,9 @@ public class LevelFailedManager : MonoBehaviour
         if (_videoChromaKey != null && clip != null)
         {
             _videoChromaKey.Play(clip, GetTauntAudioClip(levelIndex));
+            // See VideoChromaKey.WaitUntilFirstFrame — don't burn the hold countdown on decode
+            // latency, same fix as LevelCompleteManager.
+            yield return _videoChromaKey.WaitUntilFirstFrame(2f);
             yield return new WaitForSecondsRealtime(_tauntDuration);
             yield return _videoChromaKey.FadeOut(_fadeOutDuration);
         }

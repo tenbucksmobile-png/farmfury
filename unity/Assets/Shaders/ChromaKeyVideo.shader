@@ -122,7 +122,22 @@ Shader "FarmFury/ChromaKeyVideo"
                 half keySat     = max(_KeyColor.r, max(_KeyColor.g, _KeyColor.b))
                                  - min(_KeyColor.r, min(_KeyColor.g, _KeyColor.b));
                 half satRatio   = saturate(sampleSat / max(keySat * 0.5, 0.0001));
-                half dist       = lerp(10.0, rgbDist, satRatio);
+
+                // The saturation gate above protects any desaturated pixel equally, but a
+                // desaturated pixel can mean two very different things: genuine dark shadow
+                // shading on the character (must stay opaque) or a bright, washed-out anti-
+                // aliasing/compression blend right on the character's silhouette edge, where its
+                // true colour is partway between the character and the green screen (should still
+                // be keyed, not force-protected — this was showing up as a bright "shiny lining"
+                // traced around the whole character). Brightness tells them apart: real shadow
+                // detail is dark, the edge-blend artifact is bright/near-white. Treating bright
+                // pixels as if they were fully saturated (i.e. subject to the real distance check)
+                // lets that edge fringe key out normally, while dark desaturated pixels keep full
+                // protection exactly as before.
+                half value        = max(col.r, max(col.g, col.b));
+                half brightWashout = smoothstep(0.75, 0.95, value);
+                half effSatRatio   = max(satRatio, brightWashout);
+                half dist          = lerp(10.0, rgbDist, effSatRatio);
 
                 // Soft edge proportional to tolerance itself — a hard cutoff at low tolerance
                 // reads as jagged, so the transition band scales with how aggressive the key is.

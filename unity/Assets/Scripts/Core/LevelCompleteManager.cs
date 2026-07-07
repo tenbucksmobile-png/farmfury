@@ -82,6 +82,10 @@ public class LevelCompleteManager : MonoBehaviour
         if (_videoChromaKey != null && clip != null)
         {
             _videoChromaKey.Play(clip, GetCelebrationAudioClip(lastAnimal));
+            // Don't start the hold countdown until the clip is actually visible (or 2s have
+            // passed and it's evidently not going to prepare in time) — see the comment on
+            // WaitUntilFirstFrame for why this matters.
+            yield return _videoChromaKey.WaitUntilFirstFrame(2f);
             yield return new WaitForSecondsRealtime(_celebrationDuration);
             yield return _videoChromaKey.FadeOut(_fadeOutDuration);
         }

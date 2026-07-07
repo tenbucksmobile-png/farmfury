@@ -1379,7 +1379,7 @@ MonoBehaviour:
   _backgroundSprite: {fileID: 21300000, guid: 9ffb1e3a75dc2da4bb4fa00456174701, type: 3}
   _chromaKeyShader: {fileID: 0}
   _keyColor: {r: 0, g: 0.6941177, b: 0.2509804, a: 1}
-  tolerance: 0.3
+  tolerance: 0.2
 --- !u!328 &645401470
 VideoPlayer:
   m_ObjectHideFlags: 0
@@ -1727,8 +1727,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HUDController
   _cardSprites:
-  - {fileID: 21300000, guid: 591b1591284cd334e9002e6c3105f9e3, type: 3}
-  - {fileID: 21300000, guid: 77ff4fa7a2fc9d04489f3c550139f738, type: 3}
+  - {fileID: 21300000, guid: c3af207aa6c867d4db24a5c85fd611a3, type: 3}
+  - {fileID: 21300000, guid: e1df3a77efa688641a58ec1a679fb833, type: 3}
   - {fileID: 21300000, guid: de1b937cb24d1954499bc866a86b6a16, type: 3}
   - {fileID: 21300000, guid: 51a21742c26079745a939e4efd6da58d, type: 3}
   - {fileID: 21300000, guid: bbf2e149ec82fde4e856eac1b169795b, type: 3}

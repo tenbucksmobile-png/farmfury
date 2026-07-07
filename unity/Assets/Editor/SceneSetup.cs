@@ -263,6 +263,20 @@ public static class SceneSetup
         "Goat",    // 7 Billy   → Billy_Goat.png
     };
 
+    static Sprite FindSpriteByKeyword(string[] guids, string keywordLower)
+    {
+        foreach (var g in guids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(g);
+            if (path.ToLower().Contains(keywordLower))
+            {
+                var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                if (spr != null) return spr;
+            }
+        }
+        return null;
+    }
+
     static void EnsureHUD()
     {
         var go = GameObject.Find("HUD");
@@ -274,31 +288,31 @@ public static class SceneSetup
         if (go.GetComponent<HUDController>() == null)
             go.AddComponent<HUDController>();
 
-        // Wire card sprites into _cardSprites[]
-        const string cardsFolder = "Assets/Sprites/UI/Cards";
+        // Wire card sprites into _cardSprites[]. Primary source is Assets/Sprites/UI/Cards
+        // (populated from assets/FarmCards/*.png by EditorAutoSetup) — but assets/ (the raw art
+        // source) is currently deleted from disk, so that folder is empty for now. Assets/Sprites/UI/
+        // MatchUp/ already has real per-animal art (Cluck_Chicken.png, Bessie_Cow.png, wired for the
+        // pre-match screen) that happens to match the same filename keywords, so it's searched as a
+        // fallback for any animal the Cards folder doesn't cover, rather than leaving the HUD cards
+        // on the plain tinted-square fallback.
+        const string cardsFolder   = "Assets/Sprites/UI/Cards";
+        const string matchUpFolder = "Assets/Sprites/UI/MatchUp";
         var hud = go.GetComponent<HUDController>();
         var so  = new SerializedObject(hud);
         var arr = so.FindProperty("_cardSprites");
         arr.arraySize = CardKeywords.Length;
 
-        var guids = AssetDatabase.FindAssets("t:Sprite", new[] { cardsFolder });
+        var guids       = AssetDatabase.FindAssets("t:Sprite", new[] { cardsFolder });
+        var matchUpGuids = AssetDatabase.FindAssets("t:Sprite", new[] { matchUpFolder });
         int wired = 0;
         for (int i = 0; i < CardKeywords.Length; i++)
         {
             string kw = CardKeywords[i].ToLower();
-            foreach (var g in guids)
+            Sprite spr = FindSpriteByKeyword(guids, kw) ?? FindSpriteByKeyword(matchUpGuids, kw);
+            if (spr != null)
             {
-                string path = AssetDatabase.GUIDToAssetPath(g);
-                if (path.ToLower().Contains(kw))
-                {
-                    var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-                    if (spr != null)
-                    {
-                        arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
-                        wired++;
-                        break;
-                    }
-                }
+                arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
+                wired++;
             }
         }
         // Level Complete / Level Failed panel art — Scoreboard/LevelComplete/LevelFailed/
@@ -322,9 +336,9 @@ public static class SceneSetup
         so.ApplyModifiedProperties();
 
         if (wired > 0)
-            Debug.Log($"[FarmFury] HUD: wired {wired}/8 card sprites from {cardsFolder}.");
+            Debug.Log($"[FarmFury] HUD: wired {wired}/8 card sprites from {cardsFolder} / {matchUpFolder}.");
         else
-            Debug.LogWarning($"[FarmFury] HUD: no card sprites found in {cardsFolder}. " +
+            Debug.LogWarning($"[FarmFury] HUD: no card sprites found in {cardsFolder} or {matchUpFolder}. " +
                              "Copy assets/FarmCards/*.png there first.");
     }
 
@@ -646,8 +660,14 @@ public static class SceneSetup
             return;
         }
         so.FindProperty("_backgroundSprite").objectReferenceValue = sky;
+        // Explicitly re-synced every pass rather than left to the C# field default — `tolerance`
+        // is a public (not [SerializeField]-only-default) field, so a value tweaked once in the
+        // Inspector during earlier debugging would otherwise silently survive in Game.unity
+        // forever regardless of code changes (the project's own documented stale-serialized-value
+        // trap). See the comment on VideoChromaKey.tolerance for why 0.20 was chosen.
+        so.FindProperty("tolerance").floatValue = 0.20f;
         so.ApplyModifiedProperties();
-        Debug.Log("[FarmFury] CelebrationVideo: wired sky backdrop.");
+        Debug.Log("[FarmFury] CelebrationVideo: wired sky backdrop, tolerance=0.20.");
     }
 
     // Loads an asset of type T and drops it into arrayField[index], growing the array to
