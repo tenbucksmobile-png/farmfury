@@ -42,6 +42,7 @@ public class VideoChromaKey : MonoBehaviour
     private RenderTexture _renderTexture;
     private AudioSource _audioSrc;
     private bool _gotFirstFrame;
+    private bool _plainRender;
 
     // Finds the scene's existing overlay (there should only ever be one — Level Complete and
     // Level Failed celebrations never play simultaneously, so both LevelCompleteManager and
@@ -142,7 +143,13 @@ public class VideoChromaKey : MonoBehaviour
     // audioClip (e.g. the animal's celebratory laugh or the robot's taunt sound) started in the
     // same frame. Safe to call repeatedly with a different clip — HandlePrepared only reallocates
     // the RenderTexture if dimensions changed.
-    public void Play(VideoClip clip, AudioClip audioClip = null)
+    //
+    // plainRender skips the chroma-key shader entirely and renders the clip's own pixels as-is —
+    // for clips that already have their backdrop composited in at generation time (see the
+    // "future clips skip green screen" decision in Known Issues / project memory) rather than
+    // shot on a green screen. The separate _backgroundSprite sky layer is also suppressed in this
+    // mode since it would just sit uselessly behind an already-opaque frame.
+    public void Play(VideoClip clip, AudioClip audioClip = null, bool plainRender = false)
     {
         if (clip == null) return;
 
@@ -151,8 +158,11 @@ public class VideoChromaKey : MonoBehaviour
         // The sky backdrop is static art (not video output), so it's safe to show right away.
         _rawImage.gameObject.SetActive(false);
         _gotFirstFrame = false;
+        _plainRender = plainRender;
+        _rawImage.material = plainRender ? null : _material;
 
-        if (_background != null) _background.gameObject.SetActive(_backgroundSprite != null);
+        if (_background != null)
+            _background.gameObject.SetActive(!plainRender && _backgroundSprite != null);
 
         _videoPlayer.clip = clip;
         _videoPlayer.Prepare();
@@ -220,6 +230,8 @@ public class VideoChromaKey : MonoBehaviour
         _videoPlayer.Stop();
         _audioSrc.Stop();
         _gotFirstFrame = false;
+        _plainRender = false;
+        _rawImage.material = _material;
         var c = _rawImage.color;
         c.a = 0f;
         _rawImage.color = c;

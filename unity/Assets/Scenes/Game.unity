@@ -1682,6 +1682,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  _celebrationPlainRender: 0100000000000000
 --- !u!4 &908990636
 Transform:
   m_ObjectHideFlags: 0

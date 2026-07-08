@@ -38,6 +38,14 @@ public class LevelCompleteManager : MonoBehaviour
     [Header("Celebration Audio (indexed by AnimalType)")]
     [SerializeField] private AudioClip[] _celebrationAudioClips = new AudioClip[8];
 
+    // Per-animal flag: true if that animal's clip already has its backdrop composited in at
+    // generation time, so VideoChromaKey should skip the green-screen shader entirely for it
+    // (see VideoChromaKey.Play's plainRender parameter). False/unset = chroma-keyed, the
+    // original behaviour. No Cluck-fallback here — an unset slot just means "not plain," which
+    // is the correct default for any animal that doesn't have a baked-background clip yet.
+    [Header("Plain Render (indexed by AnimalType — true = backdrop baked into clip)")]
+    [SerializeField] private bool[] _celebrationPlainRender = new bool[8];
+
     private Coroutine _sequence;
 
     private void Awake()
@@ -81,7 +89,7 @@ public class LevelCompleteManager : MonoBehaviour
         VideoClip clip = GetCelebrationClip(lastAnimal);
         if (_videoChromaKey != null && clip != null)
         {
-            _videoChromaKey.Play(clip, GetCelebrationAudioClip(lastAnimal));
+            _videoChromaKey.Play(clip, GetCelebrationAudioClip(lastAnimal), GetPlainRender(lastAnimal));
             // Don't start the hold countdown until the clip is actually visible (or 2s have
             // passed and it's evidently not going to prepare in time) — see the comment on
             // WaitUntilFirstFrame for why this matters.
@@ -119,5 +127,12 @@ public class LevelCompleteManager : MonoBehaviour
             clip = _celebrationAudioClips[(int)AnimalType.Cluck];
 
         return clip;
+    }
+
+    private bool GetPlainRender(AnimalType animal)
+    {
+        int idx = (int)animal;
+        return _celebrationPlainRender != null && idx >= 0 && idx < _celebrationPlainRender.Length
+            && _celebrationPlainRender[idx];
     }
 }

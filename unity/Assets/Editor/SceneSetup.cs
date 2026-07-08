@@ -613,6 +613,10 @@ public static class SceneSetup
             "Assets/Video/Cluck_Celebration.mp4");
         WireArrayElement<AudioClip>(so, "_celebrationAudioClips", (int)AnimalType.Cluck, 8,
             "Assets/Audio/Cluck_CelebratingLaugh.mp3");
+        // 2026-07-08: Cluck_Celebration.mp4 was re-exported with its sky backdrop composited in
+        // at generation time instead of a green screen (see the "future clips skip green screen"
+        // decision in Known Issues) — skip VideoChromaKey's chroma-key shader for it entirely.
+        WireBoolArrayElement(so, "_celebrationPlainRender", (int)AnimalType.Cluck, 8, true);
         so.ApplyModifiedProperties();
     }
 
@@ -687,6 +691,14 @@ public static class SceneSetup
         if (arr.arraySize < minSize) arr.arraySize = minSize;
         arr.GetArrayElementAtIndex(index).objectReferenceValue = asset;
         Debug.Log($"[FarmFury] {so.targetObject.GetType().Name}: wired {arrayField}[{index}] <- {path}");
+    }
+
+    static void WireBoolArrayElement(SerializedObject so, string arrayField, int index, int minSize, bool value)
+    {
+        var arr = so.FindProperty(arrayField);
+        if (arr.arraySize < minSize) arr.arraySize = minSize;
+        arr.GetArrayElementAtIndex(index).boolValue = value;
+        Debug.Log($"[FarmFury] {so.targetObject.GetType().Name}: wired {arrayField}[{index}] <- {value}");
     }
 
     // ── GameManager: wire the levels array ────────────────────────────────────
