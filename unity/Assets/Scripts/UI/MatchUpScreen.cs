@@ -71,9 +71,11 @@ public class MatchUpScreen : MonoBehaviour
     private Image             _robotImg;
     private TextMeshProUGUI  _robotFallbackLabel;
     // Second robot card — only shown when a level's robots[] contains a SECOND distinct
-    // RobotType beyond robots[0] (e.g. L02 "Harvest Yard": Harvester + SemiHarvester). Sits
-    // behind the primary card in render order and offset, fanned out "like a deck of cards"
-    // (added 2026-07-09 per explicit request) rather than a second full slide-in beat.
+    // RobotType beyond robots[0] (e.g. L02 "Harvest Yard": Harvester + SemiHarvester). Sits IN
+    // FRONT of the primary card in render order (see BuildUI — created after "RobotCard") and
+    // offset, fanned out "like a deck of cards" (added 2026-07-09 per explicit request; changed
+    // from behind to in-front the same day per follow-up "make the new card slide over, not
+    // under") rather than a second full slide-in beat.
     private RectTransform    _robot2RT;
     private Image             _robot2Img;
     private RectTransform    _vsRT;
@@ -500,26 +502,6 @@ public class MatchUpScreen : MonoBehaviour
         _animalImg.preserveAspect = true;
         _animalImg.raycastTarget  = false;
 
-        // Second robot card — "deck of cards" overlay behind the primary robot card (see class
-        // comment + Robot2RestOffset/Robot2RotationDeg above). Created BEFORE "RobotCard" below
-        // so it sits earlier in sibling order and therefore renders behind it; only shown by
-        // Show() when a level actually has a second distinct RobotType. Slightly smaller than
-        // the primary card (500x500 vs 560x560) to reinforce the "peeking out from behind" depth
-        // cue rather than just being a same-size card offset to the side.
-        var robot2GO = new GameObject("RobotCard2");
-        robot2GO.transform.SetParent(safe, false);
-        _robot2RT = robot2GO.AddComponent<RectTransform>();
-        _robot2RT.anchorMin        = new Vector2(0.5f, 0.5f);
-        _robot2RT.anchorMax        = new Vector2(0.5f, 0.5f);
-        _robot2RT.pivot            = new Vector2(0.5f, 0.5f);
-        _robot2RT.anchoredPosition = RobotRestPos + Robot2RestOffset;
-        _robot2RT.sizeDelta        = new Vector2(500f, 500f);
-        _robot2RT.localEulerAngles = new Vector3(0f, 0f, Robot2RotationDeg);
-        _robot2Img = robot2GO.AddComponent<Image>();
-        _robot2Img.preserveAspect = true;
-        _robot2Img.raycastTarget  = false;
-        _robot2Img.enabled        = false; // only enabled by Show() when a second robot type exists
-
         // Right card — the robot(s) this level's player will face. Mirrors the animal card.
         var robotGO = new GameObject("RobotCard");
         robotGO.transform.SetParent(safe, false);
@@ -541,6 +523,27 @@ public class MatchUpScreen : MonoBehaviour
         _robotFallbackLabel = MakeLabel(safe, "RobotFallbackLabel",
             RobotRestPos, new Vector2(400f, 200f), 36f, new Color(0.25f, 0.20f, 0.12f));
         _robotFallbackLabel.fontStyle = FontStyles.Bold;
+
+        // Second robot card — "deck of cards" overlay IN FRONT of the primary robot card (see
+        // class comment + Robot2RestOffset/Robot2RotationDeg above). Created AFTER "RobotCard"
+        // above so it sits later in sibling order and therefore renders on top of it (changed
+        // 2026-07-09 — user-reported "make the new card slide over, not under"; originally
+        // behind). Only shown by Show() when a level actually has a second distinct RobotType.
+        // Slightly smaller than the primary card (500x500 vs 560x560) so it still reads as a
+        // second card overlaying the first rather than a same-size card just offset to the side.
+        var robot2GO = new GameObject("RobotCard2");
+        robot2GO.transform.SetParent(safe, false);
+        _robot2RT = robot2GO.AddComponent<RectTransform>();
+        _robot2RT.anchorMin        = new Vector2(0.5f, 0.5f);
+        _robot2RT.anchorMax        = new Vector2(0.5f, 0.5f);
+        _robot2RT.pivot            = new Vector2(0.5f, 0.5f);
+        _robot2RT.anchoredPosition = RobotRestPos + Robot2RestOffset;
+        _robot2RT.sizeDelta        = new Vector2(500f, 500f);
+        _robot2RT.localEulerAngles = new Vector3(0f, 0f, Robot2RotationDeg);
+        _robot2Img = robot2GO.AddComponent<Image>();
+        _robot2Img.preserveAspect = true;
+        _robot2Img.raycastTarget  = false;
+        _robot2Img.enabled        = false; // only enabled by Show() when a second robot type exists
 
         // VS graphic, centred between the two cards, touching both — enlarged (220x220, was 160)
         // to match the bigger cards.

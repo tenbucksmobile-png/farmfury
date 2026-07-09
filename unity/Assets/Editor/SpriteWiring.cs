@@ -121,6 +121,14 @@ public static class SpriteWiring
         AssignSprite(so, "_sprAbility",  spriteDir,
             charKey + "_abilitytrigger", charKey + "_trigger1", charKey + "_trigger",
             "abilitytrigger", "trigger", "trigger1", "ability");
+
+        // Shared "impact stars" VFX (ImpactStars1.png) — same asset on every animal, not a
+        // per-character keyword match like the poses above.
+        var impactStars = AssetDatabase.LoadAssetAtPath<Sprite>(
+            "Assets/Sprites/Environment/World1Props/ImpactStars1.png");
+        if (impactStars != null)
+            so.FindProperty("_sprImpactStars").objectReferenceValue = impactStars;
+
         so.ApplyModifiedProperties();
 
         PrefabUtility.SaveAsPrefabAsset(contents, path);

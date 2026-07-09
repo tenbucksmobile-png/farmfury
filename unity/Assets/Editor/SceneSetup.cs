@@ -1040,11 +1040,25 @@ public static class SceneSetup
         {
             var so = new SerializedObject(robot);
             so.FindProperty("_robotSprite").objectReferenceValue = spriteAsset;
+            WireRobotDeathFx(so);
             so.ApplyModifiedProperties();
         }
         PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
         PrefabUtility.UnloadPrefabContents(go);
         Debug.Log("[FarmFury] Robot: wired Robot_Idle.png into _robotSprite (PPU=1746).");
+    }
+
+    // Shared death VFX/SFX wiring for all 3 robot prefabs (Robot/HarvesterRobot/
+    // SemiHarvesterRobot) — Explosion.png comic burst + Explosion_Robot.mp3, replacing the
+    // procedural fragments/RobotDeath jingle fallback in RobotEnemy.DeathSequence(). User-
+    // requested 2026-07-09.
+    static void WireRobotDeathFx(SerializedObject so)
+    {
+        var explosion = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Environment/World1Props/Explosion.png");
+        if (explosion != null) so.FindProperty("_deathExplosionSprite").objectReferenceValue = explosion;
+
+        var deathClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Explosion_Robot.mp3");
+        if (deathClip != null) so.FindProperty("_deathSoundOverride").objectReferenceValue = deathClip;
     }
 
     // ── HarvesterRobot: create a SEPARATE prefab (distinct from Robot.prefab) ───
@@ -1127,6 +1141,7 @@ public static class SceneSetup
             // margin after the hay-clearing hit, while a second solid hit (~34-40 direct, or
             // another ~24-28 pass-through) still reliably finishes it — matching L01's par=2.
             so.FindProperty("_maxHealth").floatValue = 40f;
+            WireRobotDeathFx(so);
             so.ApplyModifiedProperties();
         }
 
@@ -1216,6 +1231,7 @@ public static class SceneSetup
             if (damagedSprite != null)
                 so.FindProperty("_robotDamagedSprite").objectReferenceValue = damagedSprite;
             so.FindProperty("_maxHealth").floatValue = 38f;
+            WireRobotDeathFx(so);
             so.ApplyModifiedProperties();
         }
 

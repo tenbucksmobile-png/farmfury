@@ -185,3 +185,5 @@ MonoBehaviour:
   _minDamageImpulse: 1.5
   _robotSprite: {fileID: 21300000, guid: 07886339befb9504eb55ae959d3e12c4, type: 3}
   _robotDamagedSprite: {fileID: 21300000, guid: 70fbb0378feeac744ae06b6ae49a4cfe, type: 3}
+  _deathExplosionSprite: {fileID: 21300000, guid: 4f6ed50ed421ceb41b2606157c2ba1ea, type: 3}
+  _deathSoundOverride: {fileID: 8300000, guid: 59a272fa646d2ef4794592438a9ec9ab, type: 3}

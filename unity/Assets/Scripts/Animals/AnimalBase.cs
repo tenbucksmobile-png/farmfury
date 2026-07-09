@@ -18,6 +18,13 @@ public abstract class AnimalBase : MonoBehaviour
     [SerializeField] private Sprite _sprImpact;
     [SerializeField] private Sprite _sprAbility;
 
+    // Shared "impact stars" VFX burst (ImpactStars1.png) shown on every real collision hit
+    // (not CluckAnimal's pass-through punches, which skip base.OnCollisionEnter2D entirely) —
+    // wired identically on all 8 animal prefabs via SpriteWiring.WireAll(), since it's a
+    // generic "just got hit" reaction, not per-character art. User-requested 2026-07-09:
+    // "appears when cluck or any further animal is damaged."
+    [SerializeField] private Sprite _sprImpactStars;
+
     [Header("Flight")]
     [SerializeField] private float _contactTimeout = 1f;
 
@@ -127,12 +134,27 @@ public abstract class AnimalBase : MonoBehaviour
         // on the ground").
         if (_sprImpact != null) _sr.sprite = _sprImpact;
         else                    _sr.enabled = false;
+        SpawnImpactStars();
         OnAnimalImpact?.Invoke(this);
         if (!_contactStarted)
         {
             _contactStarted = true;
             _contactTimer   = _contactTimeout;
         }
+    }
+
+    // Quick VFX burst at the impact point — reuses FragmentFader (defined in BlockBase.cs, same
+    // assembly) for the fade-out, same pattern as BlockBase.SpawnImpactFlash()/SpawnExplosion().
+    void SpawnImpactStars()
+    {
+        if (_sprImpactStars == null) return;
+        var go = new GameObject("ImpactStars");
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite       = _sprImpactStars;
+        sr.sortingOrder = 10;
+        go.transform.position   = transform.position;
+        go.transform.localScale = new Vector3(1.2f, 1.2f, 1f);
+        go.AddComponent<FragmentFader>();
     }
 
     protected void FireOnAnimalDestroyed() => OnAnimalDestroyed?.Invoke(this);

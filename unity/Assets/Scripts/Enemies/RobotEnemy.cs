@@ -20,6 +20,13 @@ public class RobotEnemy : MonoBehaviour
     // and FlashDamage() falls back to its old plain white tint below).
     [SerializeField] private Sprite _robotDamagedSprite;
 
+    // Death VFX/SFX — wired on all 3 robot prefabs (Robot/HarvesterRobot/SemiHarvesterRobot)
+    // from Explosion.png / Explosion_Robot.mp3 (see SceneSetup.WireRobotDeathFx). Both null =
+    // falls back to the existing procedural fragments (SpawnDeathParticles) and the
+    // AudioManager.Sound.RobotDeath DSP jingle — user-requested 2026-07-09.
+    [SerializeField] private Sprite     _deathExplosionSprite;
+    [SerializeField] private AudioClip  _deathSoundOverride;
+
     // Steel blue-grey fallback when no art sprite is wired
     private static readonly Color BaseColor = new Color(0.38f, 0.44f, 0.54f);
 
@@ -162,9 +169,11 @@ public class RobotEnemy : MonoBehaviour
 
     IEnumerator DeathSequence()
     {
-        AudioManager.Play(AudioManager.Sound.RobotDeath);
+        if (_deathSoundOverride != null) AudioManager.PlayClip(_deathSoundOverride);
+        else                              AudioManager.Play(AudioManager.Sound.RobotDeath);
         CameraShake.Shake(0.35f, 0.30f);
         SpawnDeathParticles();
+        SpawnDeathExplosion();
 
         // Squish: flatten robot into the ground, then disappear
         Vector3 startScale = transform.localScale;   // (0.7, 0.8, 1)
@@ -183,6 +192,25 @@ public class RobotEnemy : MonoBehaviour
 
         yield return new WaitForSeconds(0.06f);
         Destroy(gameObject);
+    }
+
+    // Comic-style explosion burst on death (Explosion.png) — sized off the robot's own
+    // transform.localScale (its actual rendered size, e.g. L01's oversized Harvester) rather
+    // than the collider bounds, which stay pinned to a small fixed 0.6x0.9 hitbox regardless of
+    // visual scale (see SpawnRobot's collider re-derivation) and would give a disproportionately
+    // tiny explosion on a large robot. Reuses FragmentFader (defined in BlockBase.cs, same
+    // assembly) for the fade-out, same pattern as BlockBase.SpawnExplosion().
+    void SpawnDeathExplosion()
+    {
+        if (_deathExplosionSprite == null) return;
+        var go = new GameObject("RobotExplosion");
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite       = _deathExplosionSprite;
+        sr.sortingOrder = 10;
+        go.transform.position   = transform.position;
+        float sz = Mathf.Max(transform.localScale.x, transform.localScale.y) * 1.8f;
+        go.transform.localScale = new Vector3(sz, sz, 1f);
+        go.AddComponent<FragmentFader>();
     }
 
     void SpawnDeathParticles()
