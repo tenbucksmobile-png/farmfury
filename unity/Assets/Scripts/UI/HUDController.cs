@@ -76,6 +76,8 @@ public class HUDController : MonoBehaviour
     private GameObject       _lfPanel;
     private TextMeshProUGUI  _lfScoreText;
     private RectTransform    _lfTryAgainRT;
+    private readonly RectTransform[] _lfStarRTs  = new RectTransform[3];
+    private readonly Image[]         _lfStarImgs = new Image[3];
     private Coroutine        _lfRetryPulse;
 
     [SerializeField] private Sprite _lfTitleSprite; // LevelFailed.png
@@ -723,9 +725,35 @@ public class HUDController : MonoBehaviour
                 color: new Color(0.82f, 0.14f, 0.10f));
         }
 
-        // Score value only (no "SCORE" label), centred dead-middle of the backdrop
+        // Three star slots, same shape/coloring as the Level Complete panel's row — shown only
+        // when a score was actually earned (see ShowLevelFailedPanel). A genuine fail always
+        // means not every robot was destroyed, so ScoreManager.Stars reads 0 here in practice
+        // (FinaliseLevel(), the only place stars are calculated, is never called on the fail
+        // path) — the row still renders (3 empty stars) rather than being skipped, since the
+        // ask was to "present the stars with a score," not to hide them until non-zero.
+        for (int i = 0; i < 3; i++)
+        {
+            float xOff = -130f + i * 130f;
+            var starGO = new GameObject($"LFStar_{i}");
+            starGO.transform.SetParent(box.transform, false);
+            var rt = starGO.AddComponent<RectTransform>();
+            rt.anchorMin        = new Vector2(0.5f, 0.5f);
+            rt.anchorMax        = new Vector2(0.5f, 0.5f);
+            rt.pivot            = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(xOff, 70f);
+            rt.sizeDelta        = new Vector2(85f, 85f);
+            var img = starGO.AddComponent<Image>();
+            img.sprite         = _starSprite != null ? _starSprite : _circleSpr;
+            img.color          = StarEmpty;
+            img.preserveAspect = true;
+            _lfStarRTs[i]  = rt;
+            _lfStarImgs[i] = img;
+        }
+
+        // Score value only (no "SCORE" label). Shifted down slightly (0 -> -20) to make room for
+        // the star row above it; doubles as the "No Score" fallback text (see ShowLevelFailedPanel).
         _lfScoreText = MakeCentredText(box.transform, "LFScore",
-            pos: new Vector2(0f, 0f), size: new Vector2(400f, 64f),
+            pos: new Vector2(0f, -20f), size: new Vector2(400f, 64f),
             fontSize: 52f, text: "0",
             color: new Color(0.20f, 0.10f, 0.03f));
         StyleAsGameNumber(_lfScoreText);
@@ -753,7 +781,27 @@ public class HUDController : MonoBehaviour
     public void ShowLevelFailedPanel()
     {
         if (_lfPanel == null) return;
-        _lfScoreText.text = (ScoreManager.Instance?.Score ?? 0).ToString("N0");
+
+        int score = ScoreManager.Instance?.Score ?? 0;
+        int stars = ScoreManager.Instance?.Stars ?? 0;
+
+        if (score <= 0)
+        {
+            _lfScoreText.text = "No Score";
+            for (int i = 0; i < 3; i++)
+                _lfStarRTs[i]?.gameObject.SetActive(false);
+        }
+        else
+        {
+            _lfScoreText.text = score.ToString("N0");
+            for (int i = 0; i < 3; i++)
+            {
+                if (_lfStarRTs[i] == null) continue;
+                _lfStarRTs[i].gameObject.SetActive(true);
+                _lfStarImgs[i].color = i < stars ? StarFilled : StarEmpty;
+            }
+        }
+
         _lfPanel.SetActive(true);
 
         if (_lfRetryPulse != null) StopCoroutine(_lfRetryPulse);
