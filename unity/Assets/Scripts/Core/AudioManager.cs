@@ -171,6 +171,24 @@ public class AudioManager : MonoBehaviour
         }
     }
 
+    // ── Menu music pause/resume (match-up/countdown screen) ─────────────────
+    // MatchUpScreen pauses the menu music the instant it appears so only the countdown SFX is
+    // audible, then resumes it if the player ends up back on the map without actually launching
+    // (the level has no data yet — "COMING SOON"). Uses Pause/UnPause rather than Stop/Play so
+    // the track resumes from where it left off instead of restarting. If the level DOES launch,
+    // GameManager's Idle->Playing transition (OnStateChanged above) already Stops this track and
+    // starts gameplay music, so no explicit resume is needed on that path.
+    public static void PauseMenuMusic()
+    {
+        if (Instance?._menuMusicSrc != null && Instance._menuMusicSrc.isPlaying) Instance._menuMusicSrc.Pause();
+    }
+
+    public static void ResumeMenuMusic()
+    {
+        if (Instance?._menuMusicSrc != null && Instance._menuMusicSrc.clip != null && !Instance._menuMusicSrc.isPlaying)
+            Instance._menuMusicSrc.UnPause();
+    }
+
     // cooldown: ignore the call if this sound played within the last N seconds
     public static void Play(Sound sound, float cooldown = 0f)
     {

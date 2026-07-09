@@ -153,6 +153,14 @@ public class MatchUpScreen : MonoBehaviour
             _robotFallbackLabel.text    = "COMING\nSOON";
         }
 
+        // Menu music (looping under the world map/landing page) is paused for the whole
+        // match-up/countdown sequence so only the countdown SFX plays underneath it — see
+        // AudioManager.PauseMenuMusic. Resumed in PlaySequence's "no level data" branch below if
+        // the player ends up back on the map without launching; if the level does launch, the
+        // Idle->Playing state transition already swaps to gameplay music, so no resume is needed
+        // on that path.
+        AudioManager.PauseMenuMusic();
+
         _panel.SetActive(true);
         if (_sequenceRoutine != null) StopCoroutine(_sequenceRoutine);
         _sequenceRoutine = StartCoroutine(PlaySequence());
@@ -241,7 +249,10 @@ public class MatchUpScreen : MonoBehaviour
         if (_hasData)
             GameManager.Instance?.ForceStartLevel(_levelIndex);
         else
+        {
             _panel.SetActive(false); // no level to launch — just return to the map
+            AudioManager.ResumeMenuMusic(); // no Playing transition will happen, so resume it ourselves
+        }
         _sequenceRoutine = null;
     }
 
