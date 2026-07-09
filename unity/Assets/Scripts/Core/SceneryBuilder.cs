@@ -68,6 +68,16 @@ public class SceneryBuilder : MonoBehaviour
         // permanent scene objects are not overwritten.
         if (_useExactPlacement && levelIdx == 0) return;
 
+        // RNG auto-scatter DISABLED for every level (2026-07-09, user request) — this was a
+        // rough placeholder that scattered leftover World1Props art with no design intent, and
+        // kept surfacing as "old sprites"/"random sprites still visible" bug reports on L02
+        // once the user started hand-building each level's actual gameplay content (blocks/
+        // robots) via LevelLayoutDumper without also hand-building scenery. Every level now
+        // gets a clean sky/ground backdrop with nothing auto-placed, matching L01's fully
+        // hand-authored approach — re-enable (delete this early return) once there's an actual
+        // plan for designed, per-level RNG scenery rather than the code below's rough ranges.
+        return;
+
         var rng = new System.Random(levelIdx * 137 + 42);
 
         // ── Far background ────────────────────────────────────────────────
