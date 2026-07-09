@@ -217,6 +217,7 @@ public abstract class BlockBase : MonoBehaviour
     {
         if (IsDestroyed) return;
         IsDestroyed = true;
+        CheckForRobotsOnTop(); // must run before Destroy(gameObject) below, needs _col still valid
         CameraShake.Shake(0.22f, 0.20f);
         if (_sprExplode != null) SpawnExplosion();
         else                     SpawnFragments();
@@ -228,6 +229,28 @@ public abstract class BlockBase : MonoBehaviour
         OnBlockDestroyed?.Invoke(this);
         ScoreManager.Instance?.AddBlockScore(this);
         Destroy(gameObject);
+    }
+
+    // Checks for a robot resting directly on top of this block and, if found, makes it fall
+    // (RobotEnemy.MakeDynamicFromSupportLoss switches it from Static to Dynamic so gravity takes
+    // over) rather than leaving it floating in place once its support is gone — user-requested
+    // 2026-07-09: "if the robot is on top of a structure and the structure is hit (disappears)
+    // then naturally the robot should fall, which helps in destroying them." Checks a thin box
+    // just above this block's collider bounds against layer 9 (Robot — see CLAUDE.md's layer
+    // table); only robots directly overlapping THIS block's footprint fall, so destroying one
+    // block in a taller stack doesn't affect a robot resting on a different block.
+    void CheckForRobotsOnTop()
+    {
+        const int robotLayerMask = 1 << 9;
+        Bounds b = _col.bounds;
+        Vector2 checkCenter = new Vector2(b.center.x, b.max.y + 0.05f);
+        Vector2 checkSize   = new Vector2(b.size.x * 0.9f, 0.3f);
+        var hits = Physics2D.OverlapBoxAll(checkCenter, checkSize, 0f, robotLayerMask);
+        foreach (var hit in hits)
+        {
+            var robot = hit.GetComponentInParent<RobotEnemy>();
+            if (robot != null) robot.MakeDynamicFromSupportLoss();
+        }
     }
 
     // Death burst for block types with dedicated explosion art (see _sprExplode) — replaces the

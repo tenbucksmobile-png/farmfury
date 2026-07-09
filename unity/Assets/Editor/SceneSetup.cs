@@ -54,7 +54,7 @@ public static class SceneSetup
         // report, 2026-07-09, after L02's design sprites were left behind following a dump).
         // Always deleted here once its data has presumably already been dumped/pasted into
         // LevelDataGenerator.cs.
-        foreach (var placeholderName in new[] { "Cluck_Loaded_0", "HarvesterRobot", "SemiHarvesterRobot", "LevelScratch" })
+        foreach (var placeholderName in new[] { "Cluck_Loaded_0", "Cluck_InFlight", "HarvesterRobot", "SemiHarvesterRobot", "LevelScratch" })
         {
             var ph = GameObject.Find(placeholderName);
             if (ph != null)

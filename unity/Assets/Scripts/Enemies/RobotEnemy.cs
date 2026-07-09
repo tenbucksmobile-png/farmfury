@@ -90,6 +90,19 @@ public class RobotEnemy : MonoBehaviour
         _invincibleUntil = Time.time + 0.8f; // ignore spawn-settling impacts
     }
 
+    // Called by BlockBase.DestroyBlock() when a block directly beneath this robot is destroyed
+    // (see BlockBase.CheckForRobotsOnTop) — a structural collapse should bring the robot down
+    // with it rather than leaving it floating in place on a Static rigidbody that no longer has
+    // anything under it. Switches to Dynamic so gravity takes over; subsequent collisions (e.g.
+    // landing on a lower block, or the ground) go through the normal OnCollisionEnter2D damage
+    // path like any other impact, making a knocked-down robot easier to finish off — user-
+    // requested 2026-07-09.
+    public void MakeDynamicFromSupportLoss()
+    {
+        if (IsDestroyed) return;
+        _rb.bodyType = RigidbodyType2D.Dynamic;
+    }
+
     public void TakeDamage(float amount)
     {
         if (IsDestroyed) return;

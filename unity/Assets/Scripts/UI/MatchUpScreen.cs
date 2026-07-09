@@ -99,8 +99,12 @@ public class MatchUpScreen : MonoBehaviour
 
     // Second robot card's rest position, relative to RobotRestPos — offset down-right and behind
     // (lower sibling index, see BuildUI) the primary robot card so it peeks out from underneath,
-    // reading as a second card fanned in a deck rather than a separate full card.
-    private static readonly Vector2 Robot2RestOffset = new(55f, -45f);
+    // reading as a second card fanned in a deck rather than a separate full card. Raised from an
+    // original (55,-45) (2026-07-09, user-reported "the second card does not come out over the
+    // first") — against 560px/500px cards that only left a ~25px sliver visible past the primary
+    // card's edge, easy to miss entirely. This offset intentionally pushes a large enough portion
+    // of the card past the primary's bounds to read clearly as a second card, not just a shadow.
+    private static readonly Vector2 Robot2RestOffset = new(130f, -100f);
     private const float Robot2RotationDeg = -22f; // steeper tilt than the primary robot card's -10
 
     // Countdown.mp3 timing (measured via waveform analysis, 2026-07-07): four beeps — three short
