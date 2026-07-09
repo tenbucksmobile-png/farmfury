@@ -133,6 +133,7 @@ public class MatchUpScreen : MonoBehaviour
     private const float CluckFlyY      = 110f;
     private const float CluckFlyStartX = -1400f;
     private const float CluckFlyEndX   = 1400f;
+    private const float CluckFlyArcHeight = 90f; // vertical bump added at the midpoint of the flight — see CluckFlyBy
 
     public void Init(Sprite squareSpr, Sprite backgroundSprite, Sprite vsSprite,
         Sprite[] levelHeaderSprites,
@@ -407,7 +408,10 @@ public class MatchUpScreen : MonoBehaviour
     // Cluck flies across the bottom of the screen, behind the cards, over `duration` (matched to
     // CountdownClipLength by the caller so it "lands" — finishes its pass — exactly as the
     // countdown ends). Plays the cannon-shot/launch sound at the moment it starts, reusing the
-    // existing gameplay launch SFX rather than a new dedicated clip.
+    // existing gameplay launch SFX rather than a new dedicated clip. Path is a single arc (sine
+    // bump peaking at the midpoint), not a straight line — user-reported 2026-07-09 a pure
+    // horizontal line looked too flat; this reads more like an actual arced flight, similar in
+    // spirit to the gameplay cannon's own trajectory.
     IEnumerator CluckFlyBy(float duration)
     {
         AudioManager.Play(AudioManager.Sound.Launch);
@@ -417,7 +421,9 @@ public class MatchUpScreen : MonoBehaviour
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-            _cluckFlyRT.anchoredPosition = new Vector2(Mathf.Lerp(CluckFlyStartX, CluckFlyEndX, t), CluckFlyY);
+            float x = Mathf.Lerp(CluckFlyStartX, CluckFlyEndX, t);
+            float y = CluckFlyY + Mathf.Sin(t * Mathf.PI) * CluckFlyArcHeight;
+            _cluckFlyRT.anchoredPosition = new Vector2(x, y);
             yield return null;
         }
         _cluckFlyRT.anchoredPosition = new Vector2(CluckFlyEndX, CluckFlyY);
