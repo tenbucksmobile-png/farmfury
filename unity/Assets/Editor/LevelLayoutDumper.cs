@@ -91,11 +91,15 @@ public static class LevelLayoutDumper
         foreach (var robot in Object.FindObjectsByType<RobotEnemy>(FindObjectsInactive.Exclude))
         {
             string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(robot.gameObject);
+            // "SemiHarvesterRobot" must be checked before "HarvesterRobot" — it contains
+            // "HarvesterRobot" as a substring, so the reverse order would misclassify it (same
+            // class of bug as the sprite-name check above).
             RobotType? type = prefabPath switch
             {
-                string p when p.Contains("HarvesterRobot") => RobotType.Harvester,
-                string p when p.Contains("Robot")          => RobotType.Basic,
-                _                                          => null,
+                string p when p.Contains("SemiHarvesterRobot") => RobotType.SemiHarvester,
+                string p when p.Contains("HarvesterRobot")     => RobotType.Harvester,
+                string p when p.Contains("Robot")              => RobotType.Basic,
+                _                                              => null,
             };
             if (type == null)
             {
@@ -107,9 +111,12 @@ public static class LevelLayoutDumper
             Vector3 pos   = robot.transform.position;
             Vector3 scale = robot.transform.localScale;
 
-            robotLines.Add(type == RobotType.Harvester
-                ? $"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.Harvester),"
-                : $"R({F(pos.x)}f, {F(pos.y)}f),");
+            robotLines.Add(type switch
+            {
+                RobotType.Harvester     => $"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.Harvester),",
+                RobotType.SemiHarvester => $"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.SemiHarvester),",
+                _                       => $"R({F(pos.x)}f, {F(pos.y)}f),",
+            });
         }
 
         // Path B — raw sprites dropped under a "LevelScratch" empty GameObject. Only scanned
@@ -135,13 +142,20 @@ public static class LevelLayoutDumper
                     blockLines.Add($"B(BlockType.Stone, {F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f), // sprite '{sr.sprite.name}'");
                 else if (spriteName.Contains("wood") || spriteName.Contains("plank"))
                     blockLines.Add($"B(BlockType.Wood, {F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f), // sprite '{sr.sprite.name}'");
+                // "semiharvest" must be checked before "harvester"/"robot" — "Robot_SemiHarvest"
+                // contains both "robot" and (once the underscore is stripped by ToLowerInvariant
+                // leaving "semiharvest") no "harvester" substring, but it DOES contain "robot",
+                // so the generic "robot" check below would wrongly claim it as Basic if checked
+                // first (this was a real bug — first found via an actual level-2 dump 2026-07-09).
+                else if (spriteName.Contains("semiharvest"))
+                    robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.SemiHarvester), // sprite '{sr.sprite.name}'");
                 else if (spriteName.Contains("harvester"))
                     robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.Harvester), // sprite '{sr.sprite.name}'");
                 else if (spriteName.Contains("robot"))
                     robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f), // sprite '{sr.sprite.name}'");
                 else
                 {
-                    Debug.LogWarning($"[LevelLayoutDumper] Skipping '{sr.gameObject.name}' under LevelScratch — sprite name '{sr.sprite.name}' doesn't match a known keyword (hay/stone/wood/plank/robot/harvester).");
+                    Debug.LogWarning($"[LevelLayoutDumper] Skipping '{sr.gameObject.name}' under LevelScratch — sprite name '{sr.sprite.name}' doesn't match a known keyword (hay/stone/wood/plank/robot/harvester/semiharvest).");
                     skipped++;
                 }
             }

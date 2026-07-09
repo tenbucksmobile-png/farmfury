@@ -94,20 +94,30 @@ public static class LevelDataGenerator
                 R(5.7f, -5.36f, 5.7065f, 7.009f, RobotType.Harvester), // sheltering behind the hay
             });
 
-        // ── W1_L02  Stone Wall ────────────────────────────────────────────────
-        // Migrated 2026-07-27 (dx=+3.173, dy=-4.10 from the old ground/launcher — see header
-        // comment above). Original design unchanged: wooden palisade + platform, 1 robot behind it.
+        // ── W1_L02  Harvest Yard ──────────────────────────────────────────────
+        // Rebuilt 2026-07-09 by the user — designed by dragging raw sprites (Haybail,
+        // Plank_Horizontal, HarvesterRobot, Robot_SemiHarvest) into the Scene view under a
+        // LevelScratch container and running FarmFury -> Debug -> Dump Level Layout To Log (see
+        // LevelLayoutDumper.cs), which converted the placed transforms directly into the B()/R()
+        // calls below — replaces the old wooden-palisade "Stone Wall" design entirely. Introduces
+        // RobotType.SemiHarvester (Robot_SemiHarvest.png — see LevelData.cs/SceneSetup.cs's
+        // EnsureSemiHarvesterRobotPrefab()).
         Make(folder, "L02_StoneWall",
-            id: "W1_L02", name: "Stone Wall", par: 2,
+            id: "W1_L02", name: "Harvest Yard", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood, -0.727f, -6.30f, 1.2f, 0.6f),  // wooden palisade wall
-                B(BlockType.Wood,  0.473f, -6.30f, 1.2f, 0.6f),
-                B(BlockType.Wood,  1.673f, -6.30f, 1.2f, 0.6f),
-                B(BlockType.Wood,  0.473f, -5.70f, 1.2f, 0.4f),  // platform on top
+                B(BlockType.Haybale, 4.224f, -5.563f, 1f, 1f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 4.964f, -5.583f, 1f, 1f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 5.744f, -5.623f, 1f, 1f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Wood,    4.444f, -5.233f, 1f, 1f),
+                B(BlockType.Wood,    5.344f, -5.243f, 1f, 1f),
             },
-            robots: new[] { R(2.873f, -6.20f) });
+            robots: new[]
+            {
+                R(5.064f, -4.593f, 4.269f, 5.649f, RobotType.Harvester),
+                R(6.724f, -5.583f, 4.96f,  4.251f, RobotType.SemiHarvester),
+            });
 
         // ── W1_L03  The Tower ─────────────────────────────────────────────────
         // Migrated 2026-07-27 (same delta as L02). Original design unchanged: 3-tier wood

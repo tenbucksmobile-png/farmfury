@@ -38,4 +38,4 @@ public class LevelData : ScriptableObject
 
 public enum AnimalType { Cluck, Bessie, Percy, Woolly, Ducky, Horace, Gerald, Billy }
 public enum BlockType  { Wood,  Stone,  Haybale }
-public enum RobotType  { Basic, Harvester }
+public enum RobotType  { Basic, Harvester, SemiHarvester }

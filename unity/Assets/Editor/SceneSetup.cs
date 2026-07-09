@@ -38,6 +38,7 @@ public static class SceneSetup
         WireLauncher();         // CatapultLauncher + LevelLoader ref + counterweight sprite
         WireRobotSprite();                // Robot_Idle.png → Robot prefab SpriteRenderer
         EnsureHarvesterRobotPrefab();  // Create/update HarvesterRobot.prefab (separate from Robot)
+        EnsureSemiHarvesterRobotPrefab();  // Create/update SemiHarvesterRobot.prefab (separate from Robot/HarvesterRobot)
         EnsureHaybaleBlockPrefab();    // Create/update HaybaleBlock.prefab (WoodBlock + Haybail.png art)
         WireBlockSprites();     // Art sprites into WoodBlock + StoneBlock prefabs
         PositionCamera();       // Move camera to see the play area
@@ -46,7 +47,7 @@ public static class SceneSetup
         // Delete visual-only placeholder GOs that duplicate code-spawned gameplay objects.
         // These are scene GOs pasted in for reference during layout — they must be gone
         // before Play mode so the code-spawned prefabs are the only instances.
-        foreach (var placeholderName in new[] { "Cluck_Loaded_0", "HarvesterRobot" })
+        foreach (var placeholderName in new[] { "Cluck_Loaded_0", "HarvesterRobot", "SemiHarvesterRobot" })
         {
             var ph = GameObject.Find(placeholderName);
             if (ph != null)
@@ -442,16 +443,33 @@ public static class SceneSetup
 
     // MatchUpScreen art — dedicated folder, distinct from the HUD's Assets/Sprites/UI/Cards/
     // (see CardKeywords above, still used by EnsureHUD). Only Cluck/Bessie (animal) and
-    // Basic/Harvester (robot) have art here today, matching what L01-L06 actually use — other
-    // AnimalType slots are left null and MatchUpScreen already tolerates that (hides the card
-    // image rather than crashing).
+    // Basic/Harvester/SemiHarvester (robot) have art here today, matching what L01-L06 actually
+    // use — other AnimalType slots are left null and MatchUpScreen already tolerates that (hides
+    // the card image rather than crashing).
     static void WireMatchUpCards(SerializedObject mapSo)
     {
         const string matchUpFolder = "Assets/Sprites/UI/MatchUp";
 
         WireSprite(mapSo, "_matchUpBackgroundSprite", $"{matchUpFolder}/MatchUpBackground.png");
         WireSprite(mapSo, "_vsSprite",                $"{matchUpFolder}/VS.png");
-        WireSprite(mapSo, "_levelHeaderSprite",       $"{matchUpFolder}/LevelHeader1.png");
+
+        // Level header art — index 0 (LevelHeader1.png) is the fallback MatchUpScreen.Show()
+        // uses for any level whose own slot is empty. Levels 2-5 already have their own header
+        // art (different naming, since they were added individually rather than following
+        // LevelHeader1.png's naming pattern) — wired directly by filename.
+        var headerArr = mapSo.FindProperty("_levelHeaderSprites");
+        headerArr.arraySize = WorldMapController.LevelCount;
+        headerArr.GetArrayElementAtIndex(0).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/LevelHeader1.png");
+        headerArr.GetArrayElementAtIndex(1).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level2.png");
+        headerArr.GetArrayElementAtIndex(2).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level3-removebg-preview.png");
+        headerArr.GetArrayElementAtIndex(3).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level4.png");
+        headerArr.GetArrayElementAtIndex(4).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level5.png");
+
         WireSprite(mapSo, "_countdown3Sprite",        $"{matchUpFolder}/countdown3.png");
         WireSprite(mapSo, "_countdown2Sprite",        $"{matchUpFolder}/countdown2.png");
         WireSprite(mapSo, "_countdown1Sprite",        $"{matchUpFolder}/countdown1.png");
@@ -465,7 +483,7 @@ public static class SceneSetup
         // contain "robot" — a naive keyword search (like WireArrayByKeyword uses for animals)
         // would ambiguously match all three off either keyword.
         var robotArr = mapSo.FindProperty("_robotCardSprites");
-        robotArr.arraySize = 2;
+        robotArr.arraySize = 3;
         robotArr.GetArrayElementAtIndex(0).objectReferenceValue = // Basic
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Robot.png");
         // Prefer the newer Harvestor_Robot1.png (revised art, added a day after the original)
@@ -473,6 +491,12 @@ public static class SceneSetup
         Sprite harvester = AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Harvestor_Robot1.png")
                          ?? AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Harvestor_Robot.png");
         robotArr.GetArrayElementAtIndex(1).objectReferenceValue = harvester; // Harvester
+
+        // SemiHarvester — no dedicated MatchUp card art exists yet, so fall back to the enemy
+        // sprite itself (Assets/Sprites/Enemies/Robot/Robot_SemiHarvest.png), same fallback
+        // pattern HUDController's card wiring already uses between Cards/ and MatchUp/ folders.
+        robotArr.GetArrayElementAtIndex(2).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Enemies/Robot/Robot_SemiHarvest.png");
     }
 
     // Added 2026-07-24 — a Sunrise Meadows screenshot showed level markers rendering with
@@ -747,6 +771,7 @@ public static class SceneSetup
         SetPrefab(so, "_billyPrefab",  "BillyAnimal",  "Assets/Prefabs/Animals",  typeof(BillyAnimal));
         SetPrefab(so, "_robotPrefab",      "Robot",           "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_harvesterPrefab",  "HarvesterRobot",  "Assets/Prefabs/Enemies", typeof(RobotEnemy));
+        SetPrefab(so, "_semiHarvesterPrefab", "SemiHarvesterRobot", "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_haybalePrefab",    "HaybaleBlock",    "Assets/Prefabs/Blocks",  typeof(WoodBlock));
 
         so.FindProperty("_blockParent").objectReferenceValue =
@@ -1109,6 +1134,95 @@ public static class SceneSetup
         }
         AssetDatabase.Refresh();
         Debug.Log("[FarmFury] HarvesterRobot.prefab created with HarvesterRobot.png (PPU=1746).");
+    }
+
+    // ── SemiHarvesterRobot: create a SEPARATE prefab (distinct from Robot/HarvesterRobot) ───
+    // LevelLoader picks this prefab when RobotSpawnData.robotType == RobotType.SemiHarvester.
+    // Introduced for L02 (2026-07-09). Both Robot_SemiHarvest.png and its damaged counterpart
+    // are the same 500x500 canvas (unlike HarvesterRobot's mismatched normal/damaged sizes), so
+    // both use the same PPU=1746 already established for Robot_Idle.png/HarvesterRobot.png —
+    // no cross-sprite scale compensation needed. HP=38, between Basic's 35 and Harvester's 40
+    // (a mid-tier variant, matching the "Semi-Harvester" name).
+    static void EnsureSemiHarvesterRobotPrefab()
+    {
+        const string prefabPath        = "Assets/Prefabs/Enemies/SemiHarvesterRobot.prefab";
+        const string spritePath        = "Assets/Sprites/Enemies/Robot/Robot_SemiHarvest.png";
+        const string damagedSpritePath = "Assets/Sprites/Enemies/Robot/Robot_SemiHarvest_Damage.png";
+
+        var imp = AssetImporter.GetAtPath(spritePath) as TextureImporter;
+        if (imp == null)
+        {
+            Debug.LogWarning($"[FarmFury] Robot_SemiHarvest.png not found at {spritePath}.");
+            return;
+        }
+        bool dirty = false;
+        if (imp.textureType         != TextureImporterType.Sprite)         { imp.textureType         = TextureImporterType.Sprite;         dirty = true; }
+        if (imp.spritePixelsPerUnit != 1746)                                { imp.spritePixelsPerUnit = 1746;                               dirty = true; }
+        if (!imp.alphaIsTransparency)                                       { imp.alphaIsTransparency = true;                               dirty = true; }
+        if (imp.spriteImportMode    != SpriteImportMode.Single)            { imp.spriteImportMode    = SpriteImportMode.Single;            dirty = true; }
+        if (dirty) imp.SaveAndReimport();
+
+        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+        if (sprite == null) { Debug.LogWarning("[FarmFury] Robot_SemiHarvest.png failed to load as Sprite."); return; }
+
+        var dImp = AssetImporter.GetAtPath(damagedSpritePath) as TextureImporter;
+        Sprite damagedSprite = null;
+        if (dImp == null)
+        {
+            Debug.LogWarning($"[FarmFury] Robot_SemiHarvest_Damage.png not found at {damagedSpritePath} — hit-flash will fall back to the plain white tint.");
+        }
+        else
+        {
+            bool dDirty = false;
+            if (dImp.textureType         != TextureImporterType.Sprite)  { dImp.textureType         = TextureImporterType.Sprite;  dDirty = true; }
+            if (dImp.spritePixelsPerUnit != 1746)                         { dImp.spritePixelsPerUnit = 1746;                        dDirty = true; }
+            if (!dImp.alphaIsTransparency)                                { dImp.alphaIsTransparency = true;                        dDirty = true; }
+            if (dImp.spriteImportMode    != SpriteImportMode.Single)     { dImp.spriteImportMode    = SpriteImportMode.Single;     dDirty = true; }
+            if (dDirty) dImp.SaveAndReimport();
+            damagedSprite = AssetDatabase.LoadAssetAtPath<Sprite>(damagedSpritePath);
+        }
+
+        bool exists = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null;
+        GameObject go;
+        if (exists)
+        {
+            go = PrefabUtility.LoadPrefabContents(prefabPath);
+        }
+        else
+        {
+            go       = new GameObject("SemiHarvesterRobot");
+            go.layer = 9;
+            var rb   = go.AddComponent<Rigidbody2D>();
+            rb.mass  = 20f;
+            var bc   = go.AddComponent<BoxCollider2D>();
+            bc.size  = new Vector2(1f, 1f);
+            go.AddComponent<SpriteRenderer>();
+            go.AddComponent<RobotEnemy>();
+        }
+
+        var robot = go.GetComponent<RobotEnemy>();
+        if (robot != null)
+        {
+            var so = new SerializedObject(robot);
+            so.FindProperty("_robotSprite").objectReferenceValue = sprite;
+            if (damagedSprite != null)
+                so.FindProperty("_robotDamagedSprite").objectReferenceValue = damagedSprite;
+            so.FindProperty("_maxHealth").floatValue = 38f;
+            so.ApplyModifiedProperties();
+        }
+
+        if (exists)
+        {
+            PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+            PrefabUtility.UnloadPrefabContents(go);
+        }
+        else
+        {
+            PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+            Object.DestroyImmediate(go);
+        }
+        AssetDatabase.Refresh();
+        Debug.Log("[FarmFury] SemiHarvesterRobot.prefab created with Robot_SemiHarvest.png (PPU=1746).");
     }
 
     // ── Egg prefab: create if missing, wire into CluckAnimal prefab ─────────────

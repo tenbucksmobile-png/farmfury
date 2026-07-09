@@ -94,14 +94,14 @@ public class WorldMapController : MonoBehaviour
     // backdrop with nothing else baked into it exists; see docs/HISTORY.md for that history.)
     [SerializeField] private Sprite   _matchUpBackgroundSprite; // MatchUpBackground.png
     [SerializeField] private Sprite   _vsSprite;                // VS.png
-    [SerializeField] private Sprite   _levelHeaderSprite;       // LevelHeader1.png (level 1 only)
+    [SerializeField] private Sprite[] _levelHeaderSprites = new Sprite[LevelCount]; // level-indexed, fallback to index 0 (LevelHeader1.png)
     [SerializeField] private Sprite   _countdown3Sprite;        // countdown3.png
     [SerializeField] private Sprite   _countdown2Sprite;        // countdown2.png
     [SerializeField] private Sprite   _countdown1Sprite;        // countdown1.png
     [SerializeField] private Sprite   _countdownReadySprite;    // Countdown_Ready.png
     [SerializeField] private AudioClip _countdownClip;          // Assets/Audio/Countdown.mp3
     [SerializeField] private Sprite[] _animalCardSprites = new Sprite[8]; // Sprites/UI/MatchUp/, AnimalType-indexed
-    [SerializeField] private Sprite[] _robotCardSprites  = new Sprite[2]; // Sprites/UI/MatchUp/, RobotType-indexed
+    [SerializeField] private Sprite[] _robotCardSprites  = new Sprite[3]; // Sprites/UI/MatchUp/, RobotType-indexed
 
     private GameObject       _panel;
     private Sprite           _squareSpr;
@@ -409,7 +409,7 @@ public class WorldMapController : MonoBehaviour
         var matchGO = new GameObject("MatchUpScreen");
         matchGO.transform.SetParent(root, false);
         _matchUpScreen = matchGO.AddComponent<MatchUpScreen>();
-        _matchUpScreen.Init(_squareSpr, _matchUpBackgroundSprite, _vsSprite, _levelHeaderSprite,
+        _matchUpScreen.Init(_squareSpr, _matchUpBackgroundSprite, _vsSprite, _levelHeaderSprites,
             _countdown3Sprite, _countdown2Sprite, _countdown1Sprite, _countdownReadySprite, _countdownClip,
             _animalCardSprites, _robotCardSprites);
 

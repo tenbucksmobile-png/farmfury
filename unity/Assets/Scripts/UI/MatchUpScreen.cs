@@ -15,10 +15,13 @@ using TMPro;
 // sequence — the old ✕ close button and tap-to-continue catcher are both gone (removed per
 // explicit instruction; there is currently no way to back out once a marker is tapped).
 //
-// SCOPE NOTE — "concentrating on level 1 only" per explicit instruction: the level-header art
-// is hardcoded to LevelHeader1.png (no LevelHeader2/3/... exist yet and none are attempted here).
-// If Show() is ever called for a different level, the header will still read "LEVEL 1" — a known,
-// accepted inaccuracy for now, not a bug to chase.
+// LEVEL HEADER ART — indexed by level (0-based), same fallback-to-index-0 convention as
+// LevelCompleteManager's/LevelFailedManager's clip arrays (see Core/ scripts): Show(levelIndex)
+// picks _levelHeaderSprites[levelIndex] if that slot is wired, else falls back to index 0
+// (LevelHeader1.png). Originally hardcoded to LevelHeader1.png only ("concentrating on level 1
+// only" per the original explicit instruction) — extended once LevelHeader-equivalent art for
+// levels 2+ existed (level2.png/level3-removebg-preview.png/level4.png/level5.png, wired by
+// SceneSetup.WireMatchUpCards).
 //
 // MATCHUP NOTE — both cards are read fresh from GameManager.GetLevelData(levelIndex) on every
 // Show(): the animal card is birds[0] and the robot card is robots[0].robotType for THAT level.
@@ -49,7 +52,7 @@ public class MatchUpScreen : MonoBehaviour
 
     private Sprite _backgroundSprite;   // MatchUpBackground.png — full-bleed backdrop
     private Sprite _vsSprite;           // VS.png
-    private Sprite _levelHeaderSprite;  // LevelHeader1.png (level 1 only — see SCOPE NOTE above)
+    private Sprite[] _levelHeaderSprites; // level-indexed, fallback to index 0 — see class comment above
     private Sprite _countdown3Sprite;
     private Sprite _countdown2Sprite;
     private Sprite _countdown1Sprite;
@@ -67,6 +70,12 @@ public class MatchUpScreen : MonoBehaviour
     private RectTransform    _robotRT;
     private Image             _robotImg;
     private TextMeshProUGUI  _robotFallbackLabel;
+    // Second robot card — only shown when a level's robots[] contains a SECOND distinct
+    // RobotType beyond robots[0] (e.g. L02 "Harvest Yard": Harvester + SemiHarvester). Sits
+    // behind the primary card in render order and offset, fanned out "like a deck of cards"
+    // (added 2026-07-09 per explicit request) rather than a second full slide-in beat.
+    private RectTransform    _robot2RT;
+    private Image             _robot2Img;
     private RectTransform    _vsRT;
     private Image             _vsImg;
     private RectTransform    _countdownRT;
@@ -88,6 +97,12 @@ public class MatchUpScreen : MonoBehaviour
     private const float OffscreenOffset = 900f; // how far off-screen each card starts before sliding in
     private const float CardRotationDeg = 10f;  // outward tilt — animal +10 (leans left), robot -10 (leans right)
 
+    // Second robot card's rest position, relative to RobotRestPos — offset down-right and behind
+    // (lower sibling index, see BuildUI) the primary robot card so it peeks out from underneath,
+    // reading as a second card fanned in a deck rather than a separate full card.
+    private static readonly Vector2 Robot2RestOffset = new(55f, -45f);
+    private const float Robot2RotationDeg = -22f; // steeper tilt than the primary robot card's -10
+
     // Countdown.mp3 timing (measured via waveform analysis, 2026-07-07): four beeps — three short
     // taps at 0.02s/1.02s/2.02s (1.0s apart) for 3/2/1, then one longer confirmation tone starting
     // at 3.02s and running to the clip's end (~4.05s total). Each numeral's pop-in/hold/pop-out is
@@ -100,14 +115,14 @@ public class MatchUpScreen : MonoBehaviour
     private const float CountdownClipLength   = 4.05f; // Countdown.mp3's measured duration
 
     public void Init(Sprite squareSpr, Sprite backgroundSprite, Sprite vsSprite,
-        Sprite levelHeaderSprite,
+        Sprite[] levelHeaderSprites,
         Sprite countdown3Sprite, Sprite countdown2Sprite, Sprite countdown1Sprite, Sprite countdownReadySprite,
         AudioClip countdownClip,
         Sprite[] animalCardSprites, Sprite[] robotCardSprites)
     {
         _backgroundSprite      = backgroundSprite;
         _vsSprite               = vsSprite;
-        _levelHeaderSprite      = levelHeaderSprite;
+        _levelHeaderSprites     = levelHeaderSprites;
         _countdown3Sprite       = countdown3Sprite;
         _countdown2Sprite       = countdown2Sprite;
         _countdown1Sprite       = countdown1Sprite;
@@ -121,6 +136,13 @@ public class MatchUpScreen : MonoBehaviour
     public void Show(int levelIndex)
     {
         _levelIndex = levelIndex;
+
+        Sprite header = (_levelHeaderSprites != null && levelIndex < _levelHeaderSprites.Length && _levelHeaderSprites[levelIndex] != null)
+            ? _levelHeaderSprites[levelIndex]
+            : (_levelHeaderSprites != null && _levelHeaderSprites.Length > 0 ? _levelHeaderSprites[0] : null);
+        _headerImg.sprite  = header;
+        _headerImg.enabled = header != null;
+
         var data = GameManager.Instance?.GetLevelData(levelIndex);
         _hasData = data != null;
 
@@ -140,6 +162,21 @@ public class MatchUpScreen : MonoBehaviour
             _robotImg.enabled           = robotSpr != null;
             _robotFallbackLabel.enabled = robotSpr == null;
             _robotFallbackLabel.text    = robot == RobotType.Harvester ? "HARVESTER\nROBOT" : "ROBOT";
+
+            // Second card — only shown if this level's robots[] contains a distinct RobotType
+            // beyond robots[0] (e.g. L02 "Harvest Yard": Harvester then SemiHarvester).
+            RobotType? robot2 = null;
+            if (data.robots != null)
+            {
+                foreach (var r in data.robots)
+                {
+                    if (r.robotType != robot) { robot2 = r.robotType; break; }
+                }
+            }
+            Sprite robot2Spr = robot2.HasValue && _robotCardSprites != null && (int)robot2.Value < _robotCardSprites.Length
+                ? _robotCardSprites[(int)robot2.Value] : null;
+            _robot2Img.sprite  = robot2Spr;
+            _robot2Img.enabled = robot2Spr != null;
         }
         else
         {
@@ -149,6 +186,7 @@ public class MatchUpScreen : MonoBehaviour
             // returns to the map instead of crashing on a null level.
             _animalImg.enabled          = false;
             _robotImg.enabled           = false;
+            _robot2Img.enabled          = false;
             _robotFallbackLabel.enabled = true;
             _robotFallbackLabel.text    = "COMING\nSOON";
         }
@@ -193,6 +231,7 @@ public class MatchUpScreen : MonoBehaviour
         _headerRT.localScale     = Vector3.zero;
         _animalRT.anchoredPosition = AnimalRestPos + new Vector2(-OffscreenOffset, 0f);
         _robotRT.anchoredPosition  = RobotRestPos + new Vector2(OffscreenOffset, 0f);
+        _robot2RT.anchoredPosition = RobotRestPos + Robot2RestOffset + new Vector2(OffscreenOffset, 0f);
         _vsRT.localScale         = Vector3.zero;
         _vsImg.enabled           = _vsSprite != null; // defensive re-assert, see class comment
         _countdownImg.enabled    = false;
@@ -298,6 +337,8 @@ public class MatchUpScreen : MonoBehaviour
     {
         Vector2 animalStart = _animalRT.anchoredPosition;
         Vector2 robotStart  = _robotRT.anchoredPosition;
+        Vector2 robot2Start = _robot2RT.anchoredPosition;
+        Vector2 robot2Rest  = RobotRestPos + Robot2RestOffset;
         float elapsed = 0f;
         while (elapsed < duration)
         {
@@ -305,10 +346,12 @@ public class MatchUpScreen : MonoBehaviour
             float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
             _animalRT.anchoredPosition = Vector2.Lerp(animalStart, AnimalRestPos, t);
             _robotRT.anchoredPosition  = Vector2.Lerp(robotStart, RobotRestPos, t);
+            _robot2RT.anchoredPosition = Vector2.Lerp(robot2Start, robot2Rest, t);
             yield return null;
         }
         _animalRT.anchoredPosition = AnimalRestPos;
         _robotRT.anchoredPosition  = RobotRestPos;
+        _robot2RT.anchoredPosition = robot2Rest;
     }
 
     // from -> to scale over duration; bounce=true uses an ease-out-back overshoot (only sensible
@@ -430,8 +473,7 @@ public class MatchUpScreen : MonoBehaviour
         _headerRT.anchoredPosition = new Vector2(0f, -30f);
         _headerRT.sizeDelta        = new Vector2(560f, 280f);
         _headerImg = headerGO.AddComponent<Image>();
-        _headerImg.sprite         = _levelHeaderSprite;
-        _headerImg.enabled        = _levelHeaderSprite != null;
+        _headerImg.enabled        = false; // set per-level in Show() — see _levelHeaderSprites
         _headerImg.preserveAspect = true;
         _headerImg.raycastTarget  = false;
 
@@ -453,6 +495,26 @@ public class MatchUpScreen : MonoBehaviour
         _animalImg = animGO.AddComponent<Image>();
         _animalImg.preserveAspect = true;
         _animalImg.raycastTarget  = false;
+
+        // Second robot card — "deck of cards" overlay behind the primary robot card (see class
+        // comment + Robot2RestOffset/Robot2RotationDeg above). Created BEFORE "RobotCard" below
+        // so it sits earlier in sibling order and therefore renders behind it; only shown by
+        // Show() when a level actually has a second distinct RobotType. Slightly smaller than
+        // the primary card (500x500 vs 560x560) to reinforce the "peeking out from behind" depth
+        // cue rather than just being a same-size card offset to the side.
+        var robot2GO = new GameObject("RobotCard2");
+        robot2GO.transform.SetParent(safe, false);
+        _robot2RT = robot2GO.AddComponent<RectTransform>();
+        _robot2RT.anchorMin        = new Vector2(0.5f, 0.5f);
+        _robot2RT.anchorMax        = new Vector2(0.5f, 0.5f);
+        _robot2RT.pivot            = new Vector2(0.5f, 0.5f);
+        _robot2RT.anchoredPosition = RobotRestPos + Robot2RestOffset;
+        _robot2RT.sizeDelta        = new Vector2(500f, 500f);
+        _robot2RT.localEulerAngles = new Vector3(0f, 0f, Robot2RotationDeg);
+        _robot2Img = robot2GO.AddComponent<Image>();
+        _robot2Img.preserveAspect = true;
+        _robot2Img.raycastTarget  = false;
+        _robot2Img.enabled        = false; // only enabled by Show() when a second robot type exists
 
         // Right card — the robot(s) this level's player will face. Mirrors the animal card.
         var robotGO = new GameObject("RobotCard");

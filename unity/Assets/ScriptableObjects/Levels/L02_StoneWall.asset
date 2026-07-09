@@ -13,35 +13,44 @@ MonoBehaviour:
   m_Name: L02_StoneWall
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelId: W1_L02
-  levelName: Stone Wall
+  levelName: Harvest Yard
   parBirds: 2
   birds: 000000000000000000000000
   blocks:
+  - type: 2
+    position: {x: 4.224, y: -5.563}
+    size: {x: 1, y: 1}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+  - type: 2
+    position: {x: 4.964, y: -5.583}
+    size: {x: 1, y: 1}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+  - type: 2
+    position: {x: 5.744, y: -5.623}
+    size: {x: 1, y: 1}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
   - type: 0
-    position: {x: -0.727, y: -6.3}
-    size: {x: 1.2, y: 0.6}
+    position: {x: 4.444, y: -5.233}
+    size: {x: 1, y: 1}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
   - type: 0
-    position: {x: 0.473, y: -6.3}
-    size: {x: 1.2, y: 0.6}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-  - type: 0
-    position: {x: 1.673, y: -6.3}
-    size: {x: 1.2, y: 0.6}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-  - type: 0
-    position: {x: 0.473, y: -5.7}
-    size: {x: 1.2, y: 0.4}
+    position: {x: 5.344, y: -5.243}
+    size: {x: 1, y: 1}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
   robots:
-  - robotType: 0
-    position: {x: 2.873, y: -6.2}
-    scale: {x: 0, y: 0}
+  - robotType: 1
+    position: {x: 5.064, y: -4.593}
+    scale: {x: 4.269, y: 5.649}
+  - robotType: 2
+    position: {x: 6.724, y: -5.583}
+    scale: {x: 4.96, y: 4.251}

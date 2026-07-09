@@ -24,6 +24,7 @@ public class LevelLoader : MonoBehaviour
     [Header("Enemy Prefabs")]
     [SerializeField] private RobotEnemy _robotPrefab;
     [SerializeField] private RobotEnemy _harvesterPrefab;
+    [SerializeField] private RobotEnemy _semiHarvesterPrefab;
 
     [Header("Parents")]
     [SerializeField] private Transform _blockParent;
@@ -198,9 +199,12 @@ public class LevelLoader : MonoBehaviour
 
     void SpawnRobot(LevelData.RobotSpawnData data)
     {
-        var prefab = data.robotType == RobotType.Harvester && _harvesterPrefab != null
-            ? _harvesterPrefab
-            : _robotPrefab;
+        var prefab = data.robotType switch
+        {
+            RobotType.Harvester     when _harvesterPrefab     != null => _harvesterPrefab,
+            RobotType.SemiHarvester when _semiHarvesterPrefab != null => _semiHarvesterPrefab,
+            _                                                          => _robotPrefab,
+        };
         if (prefab == null) { Debug.LogWarning("[LevelLoader] Robot prefab null — run Wire Scene References."); return; }
         var robot = Instantiate(prefab,
             new Vector3(data.position.x, data.position.y, 0f),
