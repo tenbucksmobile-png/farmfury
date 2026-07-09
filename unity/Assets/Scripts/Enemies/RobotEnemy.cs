@@ -208,8 +208,9 @@ public class RobotEnemy : MonoBehaviour
         sr.sprite       = _deathExplosionSprite;
         sr.sortingOrder = 10;
         go.transform.position   = transform.position;
-        // Multiplier lowered 1.8 -> 1.1 (2026-07-09, user-reported "a little bit oversized").
-        float sz = Mathf.Max(transform.localScale.x, transform.localScale.y) * 1.1f;
+        // Multiplier lowered 1.8 -> 1.1 -> 0.6 (2026-07-09, user-reported still oversized after
+        // the first reduction).
+        float sz = Mathf.Max(transform.localScale.x, transform.localScale.y) * 0.6f;
         go.transform.localScale = new Vector3(sz, sz, 1f);
         go.AddComponent<FragmentFader>();
     }
