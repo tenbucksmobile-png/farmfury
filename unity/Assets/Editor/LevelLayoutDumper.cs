@@ -27,10 +27,14 @@
 //   2. Run this menu command. It writes unity/Logs/level_layout_dump.txt AND logs to the Console.
 //   3. Paste the output into a new Make("LXX_Name", ...) call in LevelDataGenerator.cs, then run
 //      FarmFury -> Generate All Level Data + Wire Scene References.
-//   4. Delete the scratch objects from the scene afterward (or leave them — Generate All Level
-//      Data reads from LevelDataGenerator.cs, not from stray scene objects, and LevelLoader only
-//      ever spawns its own prefab instances at runtime under BlockParent/RobotParent — hand-placed
-//      scratch objects sitting elsewhere in the scene have no gameplay effect).
+//   4. Delete the "LevelScratch" container from the scene afterward — IMPORTANT, not optional:
+//      unlike a real prefab instance, it is NOT tied to LevelLoader's per-level spawn/clear
+//      cycle, so if left in place it renders permanently regardless of which level is actually
+//      loaded, visually bleeding into every other level ("level 1 and level 2 compiled over
+//      each other" — real symptom hit 2026-07-09 after leaving L02's design sprites behind).
+//      SceneSetup's "Wire Scene References" pass now auto-deletes any GameObject literally
+//      named "LevelScratch" as a safety net (same list as its other placeholder cleanup), but
+//      don't rely on remembering to run that — delete it yourself right after a successful dump.
 //
 // TYPE DETECTION (prefab path, A): identifies each object's BlockType/RobotType from which SOURCE
 // PREFAB it's an instance of (via PrefabUtility), not from its component type — HaybaleBlock and

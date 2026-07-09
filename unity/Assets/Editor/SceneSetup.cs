@@ -47,7 +47,14 @@ public static class SceneSetup
         // Delete visual-only placeholder GOs that duplicate code-spawned gameplay objects.
         // These are scene GOs pasted in for reference during layout — they must be gone
         // before Play mode so the code-spawned prefabs are the only instances.
-        foreach (var placeholderName in new[] { "Cluck_Loaded_0", "HarvesterRobot", "SemiHarvesterRobot" })
+        // "LevelScratch" is LevelLayoutDumper's raw-sprite design container (see that file) —
+        // NOT tied to LevelLoader's per-level spawn/clear cycle, so if left in the scene it
+        // renders permanently regardless of which level is actually loaded, visually bleeding
+        // into every other level ("level 1 and level 2 compiled over each other" — real user
+        // report, 2026-07-09, after L02's design sprites were left behind following a dump).
+        // Always deleted here once its data has presumably already been dumped/pasted into
+        // LevelDataGenerator.cs.
+        foreach (var placeholderName in new[] { "Cluck_Loaded_0", "HarvesterRobot", "SemiHarvesterRobot", "LevelScratch" })
         {
             var ph = GameObject.Find(placeholderName);
             if (ph != null)
