@@ -499,11 +499,12 @@ public static class SceneSetup
                          ?? AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Harvestor_Robot.png");
         robotArr.GetArrayElementAtIndex(1).objectReferenceValue = harvester; // Harvester
 
-        // SemiHarvester — no dedicated MatchUp card art exists yet, so fall back to the enemy
-        // sprite itself (Assets/Sprites/Enemies/Robot/Robot_SemiHarvest.png), same fallback
-        // pattern HUDController's card wiring already uses between Cards/ and MatchUp/ folders.
+        // SemiHarvester — dedicated framed MatchUp card art (Semi_Harvestor.png, matches
+        // Harvestor_Robot.png's style), replacing the earlier fallback to the plain enemy
+        // sprite (Assets/Sprites/Enemies/Robot/Robot_SemiHarvest.png — 2026-07-09, user-reported
+        // "that's not the right card").
         robotArr.GetArrayElementAtIndex(2).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Enemies/Robot/Robot_SemiHarvest.png");
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Semi_Harvestor.png");
     }
 
     // Added 2026-07-24 — a Sunrise Meadows screenshot showed level markers rendering with
