@@ -481,6 +481,8 @@ public class HUDController : MonoBehaviour
     {
         _isPaused      = pause;
         Time.timeScale = pause ? 0f : 1f;
+        if (pause) AudioManager.PauseGameplayMusic();
+        else       AudioManager.ResumeGameplayMusic();
         RefreshTopPauseIcon();
     }
 

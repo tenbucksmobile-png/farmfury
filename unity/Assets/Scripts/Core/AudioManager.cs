@@ -189,6 +189,23 @@ public class AudioManager : MonoBehaviour
             Instance._menuMusicSrc.UnPause();
     }
 
+    // ── Gameplay music pause/resume (top-right Pause button) ────────────────
+    // Time.timeScale=0 freezes physics/animation but NOT audio playback — AudioSources run on
+    // their own wall-clock timeline regardless of timeScale (same reason VideoChromaKey/
+    // LevelCompleteManager's celebration clips can play during that freeze). Without this, the
+    // gameplay music kept looping right through a paused game. HUDController.SetPaused() calls
+    // these in lockstep with the Time.timeScale flip.
+    public static void PauseGameplayMusic()
+    {
+        if (Instance?._musicSrc != null && Instance._musicSrc.isPlaying) Instance._musicSrc.Pause();
+    }
+
+    public static void ResumeGameplayMusic()
+    {
+        if (Instance?._musicSrc != null && Instance._musicSrc.clip != null && !Instance._musicSrc.isPlaying)
+            Instance._musicSrc.UnPause();
+    }
+
     // cooldown: ignore the call if this sound played within the last N seconds
     public static void Play(Sound sound, float cooldown = 0f)
     {
