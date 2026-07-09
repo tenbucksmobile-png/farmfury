@@ -18,19 +18,18 @@ Full GDD: `C:\Users\Personel\Desktop\FarmFury_GDD_v2.docx`
 
 ---
 
-## Git Repository Scope (Important)
+## Git Repository Scope
 
-This project's `.git` lives at `C:\Users\Personel\.git` — **the entire home directory is one
-shared git repository**, not a repo scoped to `FarmFury\`. Running `git status`/`git add .`/
-`git add -A`/`git commit -a` from anywhere inside it can pick up files from *any* other project
-on this machine (CryptoAlgoBot, IndabaCares, Kaya, personal documents, spreadsheets, etc.) — this
-has already happened historically; the commit history contains files from `Desktop/IndabaCares/`
-and `Claude/Projects/Kaya/` that have nothing to do with this game. Two remotes are configured:
-`farmfury` → `github.com/tenbucksmobile-png/farmfury.git` (this project) and `origin` →
-`github.com/tenbucksmobile-png/crypto-algo.git` (a **different, unrelated** project — never push
-here by mistake). Always stage explicit file paths one at a time when committing FarmFury work;
-never use a wildcard/`-a` add. Discovered 2026-07-07 — not yet restructured into its own repo
-(the user's call whether/when to do that; it's a bigger, more consequential change).
+`Desktop/FarmFury/.git` is now a standalone repo (single remote: `origin` →
+`github.com/tenbucksmobile-png/farmfury.git`) — safe to use ordinary `git add -A`/`git commit -a`
+from inside it. This was NOT always true: until 2026-07-09 this directory was part of a single
+git repo covering the entire home directory (`C:\Users\Personel\.git`), shared with CryptoAlgoBot,
+Kaya, and an old IndabaCares copy, pushed to both `farmfury.git` and (accidentally)
+`crypto-algo.git`. That history was extracted via `git subtree split --prefix=Desktop/FarmFury`
+and force-pushed as this repo's current `master`, so FarmFury's commit history before that date is
+preserved intact, but the home-dir mega-repo no longer exists for this project. If you ever find
+`.git` missing from this directory or discover FarmFury files tracked from a parent directory's
+repo again, something has regressed — this should be a normal, self-contained repo going forward.
 
 ---
 
@@ -52,11 +51,11 @@ never use a wildcard/`-a` add. Discovered 2026-07-07 — not yet restructured in
 - **Level Complete/Failed videos held 1s longer before fading — 2026-07-07.** `LevelCompleteManager._celebrationDuration`/`LevelFailedManager._tauntDuration` were `4f`, but the actual clips run ~4.04-4.05s — the hold was cutting off fractionally before the clip's own last frame finished and immediately fading, which read as "ends very abruptly" (user report). Bumped both to `5f` (clip length + a full 1s of held-still breathing room). **Both the C# defaults AND the already-serialized values in `Game.unity` were updated** — see the `[SerializeField]` stale-value trap below; changing only the code default would not have affected the live scene.
 - **Haybail impact/destroy sound replaced with a dedicated explosion clip — 2026-07-07.** Every haybail hit is a guaranteed same-frame one-shot kill (hp=10, `passThrough=true` — see `CluckAnimal.OnCollisionEnter2D`'s pass-through branch), so the old sound stack for one "pop" was: the chicken's own explicit `AudioManager.Play(Sound.WoodHit)` punch sound, PLUS `BlockBase.PlayHitSound()`'s generic `WoodHit` (fired unconditionally inside `TakeDamage()`), PLUS `BlockBase.DestroyBlock()`'s generic `BlockDestroy` — three sounds stacked on one moment. Fixed by: (1) deleting the chicken's own punch-sound line in `CluckAnimal.cs` entirely; (2) adding two new generic per-prefab override fields directly on `BlockBase` — `_silentHit` (skips `PlayHitSound()` when true) and `_destroyClipOverride` (an `AudioClip` that plays via a new `AudioManager.PlayClip()` instead of the generic `BlockDestroy` sound when set) — same shape as the existing `_stayKinematic`/`_sprExplode` per-prefab overrides, so `WoodBlock`/`StoneBlock` are unaffected (both fields default to false/null); (3) wiring both fields on `HaybaleBlock.prefab` in `SceneSetup.EnsureHaybaleBlockPrefab()` from `Assets/Audio/Haybail_Exploding.mp3`. Unlike `AudioManager.Play(Sound, cooldown)`, `PlayClip()` has no cooldown gate — the user explicitly wants this sound to fire every single time, never throttled.
 - **Landing page SETTINGS icon removed entirely — 2026-07-07, user request.** `MainMenuController`'s gear-icon button and its Music/SFX toggle popup (`BuildSettingsPopup`, `OnSettingsClicked`, etc.) are gone, not hidden — there is currently no way to toggle audio from the landing page. The equivalent toggle is still reachable in-game via `HUDController`'s top-right Mute button (same `AudioManager.MusicEnabled`/`SfxEnabled` state).
-- **World 1 Levels 1–4 are playable; L05–L06 are not.** `L02_StoneWall`, `L03_TheTower`, and `L04_EggPractice` were migrated 2026-07-27 to the current coordinate system (ground Y=−6.60, launcher X=−2.327) via a uniform rigid-translation delta (dx=+3.173, dy=−4.10) from the old pre-rebuild system (ground Y=−2.5, launcher X=−5.5) — see `docs/HISTORY.md` for the exact math and why a pure delta was safe (preserves ground-resting/stacked-block relationships exactly, so no free-fall glitch on first hit). `L05_TheFortress`/`L06_BessiesDebut` still use the old system and still spawn floating above the ground — same migration, not yet applied. This is now the single highest-leverage next step toward a fully playable World 1.
+- **All 6 World 1 levels are now on the current coordinate system and playable — migration complete 2026-07-09.** `L02_StoneWall`, `L03_TheTower`, and `L04_EggPractice` were migrated 2026-07-27; `L05_TheFortress` and `L06_BessiesDebut` were migrated 2026-07-09, closing out the last of the old pre-rebuild coordinates. All five used the same uniform rigid-translation delta (dx=+3.173, dy=−4.10) from the old system (ground Y=−2.5, launcher X=−5.5) to the current one (ground Y=−6.60, launcher X=−2.327) — see `docs/HISTORY.md` for the exact math and why a pure delta was safe (preserves ground-resting/stacked-block relationships exactly, so no free-fall glitch on first hit). Regenerated via **FarmFury → Generate All Level Data** + **Wire Scene References**; not yet visually verified in the Editor in this environment (no Play-mode access) — worth a live check next session, particularly L05's robot resting heights (see the delta note in `LevelDataGenerator.cs` — robots share the wood row's Y rather than being re-derived from their own collider height, same as the original pre-migration design).
 - **`assets/` (raw art source) is currently absent from disk** — all 236 files were deleted outside any Claude Code session, but remain fully tracked in git (`git checkout -- assets/` restores them). The user has chosen to leave it deleted for now. `python tools/remove_backgrounds.py` will not work until it's restored.
 - **`unity/Assets/Sprites/` (processed game art) is gitignored and exists in exactly one place: this machine's disk.** Not tracked by git in any commit. If lost, the only recovery path is restoring `assets/` and re-running the full art pipeline.
 - **Monetisation/backend: 0% built.** `unity/Assets/Scripts/Monetisation/` exists but is empty — no Firebase, Unity IAP, AdMob, RevenueCat, or UGS references anywhere. Expected — this is Phase 6, correctly sequenced after content.
-- **No level validator exists** (GDD §04 calls for one — a physics-sim script checking stability/solvability before a level ships). The L02–L06 bug above would have been caught by this.
+- **No level validator exists** (GDD §04 calls for one — a physics-sim script checking stability/solvability before a level ships). The L02–L06 coordinate-migration bug (now fixed, see above) would have been caught by this.
 - **No "Perfect" star tier** — `ScoreManager` implements 1/2/3★ only; the GDD's 4th tier (3★ + all blocks destroyed) is not implemented.
 - 6 World 1 levels exist of 18 required (4 tutorial, 8 build, 4 twist, 2 boss — no boss level yet). L07–L18 are unwritten.
 - **No ground/grass visual ever existed for L01 — fixed 2026-07-26 with a placeholder.** `EnsureGround()`'s physics collider is deliberately invisible (top edge Y=−6.60), and no one had hand-authored a replacement, so the sky backdrop ran straight to the bottom of the screen. Symptom reported by the user: haybails/HarvesterRobot/a landing Cluck all looked like they were sinking or "falling through the floor" near the bottom of the screen. Root cause confirmed NOT a physics bug (Ground's collider/Rigidbody2D/layer-collision setup all check out) — the camera's visible range at rest (Y −6.5 to +2.5) already clips 0.1 units above the true ground surface, so anything settling near true ground level visually vanishes with nothing to anchor it. `SceneSetup.EnsureGroundVisual()` now creates a tinted placeholder strip (top edge Y=−5.3, matching where props already rest) to close that gap — replace with real ground/grass art when available, then delete `GroundVisual_Placeholder` from the scene.
@@ -178,7 +177,7 @@ World 1 props live directly in Unity (not `assets/`): `unity/Assets/Sprites/Envi
 ### Stack
 Unity 6.5 (6000.5.0f1), URP 2D, Physics2D, New Input System, TextMeshPro.
 
-### Coordinate System (current — do not use older values seen in L02–L06 or stale comments)
+### Coordinate System (current — all 6 World 1 levels now use this; do not use older values seen in stale comments)
 - 1 Unity unit = 50 Phaser pixels (`x_unity = x_phaser / 50`, `y_unity = -(y_phaser - 770) / 50` — legacy conversion from the Phaser prototype).
 - **Ground surface at Y = −6.60.** Launcher GO at (−2.327, −6.60, 0) — an abstract aim-math anchor only since the 2026-07-02 cannon swap; no visual GameObject corresponds to it any more.
 - **Visual launcher is `FarmCannon`**, independent of the Launcher GO's position: at (−3.0012, −5.1223, 0), scale (1.4711188, 1.3868444), sortingOrder=4. (User-verified ground truth as of 2026-07-03 — do not re-derive from camera/sprite math.)
@@ -763,7 +762,7 @@ Prefabs/Environment/ Ground (static)
 5. Run **FarmFury → Wire Scene References**
 
 ### Adding a New Level
-Add `LevelData` ScriptableObject in `Assets/ScriptableObjects/Levels/` with filename `LXX_<Name>.asset` (alphabetical order = load order). Run **Wire Scene References**. Or add a `Make(...)` call to `LevelDataGenerator` and run **FarmFury → Generate All Level Data**. Use the current coordinate system (see above) — do not copy Y/X values from L02–L06, which are on the old, broken system.
+Add `LevelData` ScriptableObject in `Assets/ScriptableObjects/Levels/` with filename `LXX_<Name>.asset` (alphabetical order = load order). Run **Wire Scene References**. Or add a `Make(...)` call to `LevelDataGenerator` and run **FarmFury → Generate All Level Data**. Use the current coordinate system (see above) — all 6 existing World 1 levels are now on it, so L01–L06 are all safe references for new level authoring.
 
 ---
 
@@ -772,11 +771,11 @@ Add `LevelData` ScriptableObject in `Assets/ScriptableObjects/Levels/` with file
 - **Phase 1 — Core Feel:** ✅ done (slingshot→cannon aim, trajectory arc, destruction feedback, audio, camera follow).
 - **Phase 2 — UI/UX Shell:** ✅ done (HUD, Level Complete/Failed panels, pause/resume toggle, Sunrise Meadows world map, main menu).
 - **Phase 3 — Character Roster:** ✅ done (all 8 animals scripted and art-wired).
-- **Phase 4 — World 1 Completion:** current phase. Only L01 is playable; L02–L06 need coordinate migration (see Current Status); L07–L18 unwritten; no boss level yet; no level validator.
+- **Phase 4 — World 1 Completion:** current phase. All 6 existing levels (L01–L06) are playable on the current coordinate system; L07–L18 unwritten; no boss level yet; no level validator.
 - **Phase 5 — Worlds 2–6:** not started (0%).
 - **Phase 6 — Polish & Release:** not started. Monetisation stack per GDD §06 (Firebase, UGS, AdMob + AppLovin MAX, Unity IAP + RevenueCat, 7 revenue streams — full pricing/mechanics in GDD §05). Guardrails: no ads in first 20 levels, no pay-to-win, no energy system, cosmetics never randomised.
 
-**Practical read:** the single highest-leverage next step is fixing the L02–L06 coordinate bug (small, well-understood — see Current Status above), followed by authoring L07–L18. Monetisation is correctly sequenced last.
+**Practical read:** the coordinate-migration bug is fixed — the single highest-leverage next step now is authoring L07–L18. Monetisation is correctly sequenced last.
 
 ---
 

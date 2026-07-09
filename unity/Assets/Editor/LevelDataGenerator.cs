@@ -1,14 +1,12 @@
 // FarmFury — Editor utility. Run via menu: FarmFury ▶ Generate All Level Data
 // Coordinate system (current, post-rebuild): ground surface Y = -6.60, launcher X = -2.327.
 // Block/robot positions are raw world-space — LevelLoader applies no offset at spawn time.
-// L01-L04 use this current system (see their Make() calls below). L02-L04 were migrated
-// 2026-07-27 via a uniform rigid-translation delta from the OLD pre-rebuild system
-// (ground Y=-2.5, launcher X=-5.5): dx=+3.173, dy=-4.10 (new = old + delta). A pure delta
-// preserves every relative relationship the original design had (bottom rows still rest
-// exactly on the ground line, stacked gaps unchanged, the L03 robot still stands on its
-// tower) without needing to hand-retune anything. L05-L06 below still use the OLD system
-// and are NOT yet migrated — they spawn floating above the current ground. See CLAUDE.md
-// Known Issues before touching them.
+// All 6 levels now use this current system. L02-L06 were migrated from the OLD pre-rebuild
+// system (ground Y=-2.5, launcher X=-5.5) via the same uniform rigid-translation delta:
+// dx=+3.173, dy=-4.10 (new = old + delta) — L02-L04 on 2026-07-27, L05-L06 on 2026-07-09.
+// A pure delta preserves every relative relationship the original design had (bottom rows
+// still rest exactly on the ground line, stacked gaps unchanged, the L03 robot still stands
+// on its tower) without needing to hand-retune anything.
 
 using UnityEngine;
 using UnityEditor;
@@ -140,6 +138,9 @@ public static class LevelDataGenerator
             robots: new[] { R(0.473f, -6.20f), R(1.173f, -6.20f), R(1.873f, -6.20f), R(2.573f, -6.20f) });
 
         // ── W1_L05  The Fortress ──────────────────────────────────────────────
+        // Migrated 2026-07-09 (same delta as L02-L04: dx=+3.173, dy=-4.10 from the old
+        // ground/launcher — see header comment above). Original design unchanged: 3-segment
+        // stone pillar guarding a 3×3 wood grid, 3 robots sheltering behind it.
         Make(folder, "L05_TheFortress",
             id: "W1_L05", name: "The Fortress", par: 3,
             birds: new[]
@@ -149,33 +150,35 @@ public static class LevelDataGenerator
             },
             blocks: new[]
             {
-                B(BlockType.Stone, -4.7f, -1.7f, 0.4f, 1.6f), // left stone pillar — 3 segments
-                B(BlockType.Stone, -4.7f, -0.1f, 0.4f, 1.6f),
-                B(BlockType.Stone, -4.7f,  1.5f, 0.4f, 1.6f),
-                B(BlockType.Wood,  -3.3f, -2.1f, 0.8f, 0.8f), // 3×3 wood grid
-                B(BlockType.Wood,  -2.5f, -2.1f, 0.8f, 0.8f),
-                B(BlockType.Wood,  -1.7f, -2.1f, 0.8f, 0.8f),
-                B(BlockType.Wood,  -3.3f, -1.3f, 0.8f, 0.8f),
-                B(BlockType.Wood,  -2.5f, -1.3f, 0.8f, 0.8f),
-                B(BlockType.Wood,  -1.7f, -1.3f, 0.8f, 0.8f),
-                B(BlockType.Wood,  -3.3f, -0.5f, 0.8f, 0.8f),
-                B(BlockType.Wood,  -2.5f, -0.5f, 0.8f, 0.8f),
-                B(BlockType.Wood,  -1.7f, -0.5f, 0.8f, 0.8f),
+                B(BlockType.Stone, -1.527f, -5.80f, 0.4f, 1.6f), // left stone pillar — 3 segments
+                B(BlockType.Stone, -1.527f, -4.20f, 0.4f, 1.6f),
+                B(BlockType.Stone, -1.527f, -2.60f, 0.4f, 1.6f),
+                B(BlockType.Wood,  -0.127f, -6.20f, 0.8f, 0.8f), // 3×3 wood grid
+                B(BlockType.Wood,   0.673f, -6.20f, 0.8f, 0.8f),
+                B(BlockType.Wood,   1.473f, -6.20f, 0.8f, 0.8f),
+                B(BlockType.Wood,  -0.127f, -5.40f, 0.8f, 0.8f),
+                B(BlockType.Wood,   0.673f, -5.40f, 0.8f, 0.8f),
+                B(BlockType.Wood,   1.473f, -5.40f, 0.8f, 0.8f),
+                B(BlockType.Wood,  -0.127f, -4.60f, 0.8f, 0.8f),
+                B(BlockType.Wood,   0.673f, -4.60f, 0.8f, 0.8f),
+                B(BlockType.Wood,   1.473f, -4.60f, 0.8f, 0.8f),
             },
-            robots: new[] { R(-0.7f, -2.1f), R(0.0f, -2.1f), R(0.7f, -2.1f) });
+            robots: new[] { R(2.473f, -6.20f), R(3.173f, -6.20f), R(3.873f, -6.20f) });
 
         // ── W1_L06  Bessie's Debut ────────────────────────────────────────────
+        // Migrated 2026-07-09 (same delta as L02-L05). Original design unchanged: 2 flanking
+        // stone pillar pairs, 3 robots between them — a Bessie ground-slam showcase.
         Make(folder, "L06_BessiesDebut",
             id: "W1_L06", name: "Bessie's Debut", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Bessie, AnimalType.Bessie, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Stone, -3.3f, -1.7f, 0.4f, 1.6f), // left flanking pillar
-                B(BlockType.Stone, -3.3f, -0.1f, 0.4f, 1.6f),
-                B(BlockType.Stone, -0.1f, -1.7f, 0.4f, 1.6f), // right flanking pillar
-                B(BlockType.Stone, -0.1f, -0.1f, 0.4f, 1.6f),
+                B(BlockType.Stone, -0.127f, -5.80f, 0.4f, 1.6f), // left flanking pillar
+                B(BlockType.Stone, -0.127f, -4.20f, 0.4f, 1.6f),
+                B(BlockType.Stone,  3.073f, -5.80f, 0.4f, 1.6f), // right flanking pillar
+                B(BlockType.Stone,  3.073f, -4.20f, 0.4f, 1.6f),
             },
-            robots: new[] { R(-2.3f, -2.1f), R(-1.6f, -2.1f), R(-0.9f, -2.1f) });
+            robots: new[] { R(0.873f, -6.20f), R(1.573f, -6.20f), R(2.273f, -6.20f) });
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();

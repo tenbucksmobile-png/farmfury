@@ -18,36 +18,36 @@ MonoBehaviour:
   birds: 00000000010000000100000000000000
   blocks:
   - type: 1
-    position: {x: -3.3, y: -1.7}
+    position: {x: -0.127, y: -5.8}
     size: {x: 0.4, y: 1.6}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
   - type: 1
-    position: {x: -3.3, y: -0.1}
+    position: {x: -0.127, y: -4.2}
     size: {x: 0.4, y: 1.6}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
   - type: 1
-    position: {x: -0.1, y: -1.7}
+    position: {x: 3.073, y: -5.8}
     size: {x: 0.4, y: 1.6}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
   - type: 1
-    position: {x: -0.1, y: -0.1}
+    position: {x: 3.073, y: -4.2}
     size: {x: 0.4, y: 1.6}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
   robots:
   - robotType: 0
-    position: {x: -2.3, y: -2.1}
+    position: {x: 0.873, y: -6.2}
     scale: {x: 0, y: 0}
   - robotType: 0
-    position: {x: -1.6, y: -2.1}
+    position: {x: 1.573, y: -6.2}
     scale: {x: 0, y: 0}
   - robotType: 0
-    position: {x: -0.9, y: -2.1}
+    position: {x: 2.273, y: -6.2}
     scale: {x: 0, y: 0}
