@@ -482,6 +482,7 @@ public static class SceneSetup
         WireSprite(mapSo, "_countdown1Sprite",        $"{matchUpFolder}/countdown1.png");
         WireSprite(mapSo, "_countdownReadySprite",    $"{matchUpFolder}/Countdown_Ready.png");
         WireAudioClip(mapSo, "_countdownClip",        "Assets/Audio/Countdown.mp3");
+        WireSprite(mapSo, "_cluckFlySprite",           "Assets/Sprites/Characters/Cluck/Cluck_InFlight.png");
 
         WireArrayByKeyword(mapSo, "_animalCardSprites", matchUpFolder, CardKeywords, "animal");
 

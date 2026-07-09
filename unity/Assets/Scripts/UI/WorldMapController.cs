@@ -100,6 +100,7 @@ public class WorldMapController : MonoBehaviour
     [SerializeField] private Sprite   _countdown1Sprite;        // countdown1.png
     [SerializeField] private Sprite   _countdownReadySprite;    // Countdown_Ready.png
     [SerializeField] private AudioClip _countdownClip;          // Assets/Audio/Countdown.mp3
+    [SerializeField] private Sprite   _cluckFlySprite;           // Cluck_InFlight.png — flies across the bottom during the countdown
     [SerializeField] private Sprite[] _animalCardSprites = new Sprite[8]; // Sprites/UI/MatchUp/, AnimalType-indexed
     [SerializeField] private Sprite[] _robotCardSprites  = new Sprite[3]; // Sprites/UI/MatchUp/, RobotType-indexed
 
@@ -411,7 +412,7 @@ public class WorldMapController : MonoBehaviour
         _matchUpScreen = matchGO.AddComponent<MatchUpScreen>();
         _matchUpScreen.Init(_squareSpr, _matchUpBackgroundSprite, _vsSprite, _levelHeaderSprites,
             _countdown3Sprite, _countdown2Sprite, _countdown1Sprite, _countdownReadySprite, _countdownClip,
-            _animalCardSprites, _robotCardSprites);
+            _cluckFlySprite, _animalCardSprites, _robotCardSprites);
 
         _panel.SetActive(false);
     }

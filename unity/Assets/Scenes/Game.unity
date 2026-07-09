@@ -3053,6 +3053,7 @@ MonoBehaviour:
   _countdown1Sprite: {fileID: 21300000, guid: dff2ddbeb02234148bf6adde0901f6d4, type: 3}
   _countdownReadySprite: {fileID: 21300000, guid: 306020828991d0f47ac5cc30275e6693, type: 3}
   _countdownClip: {fileID: 8300000, guid: f1059912e10693442bd249cbe68382af, type: 3}
+  _cluckFlySprite: {fileID: 21300000, guid: 32e79013f72d108419d102d434973265, type: 3}
   _animalCardSprites:
   - {fileID: 21300000, guid: c3af207aa6c867d4db24a5c85fd611a3, type: 3}
   - {fileID: 21300000, guid: e1df3a77efa688641a58ec1a679fb833, type: 3}

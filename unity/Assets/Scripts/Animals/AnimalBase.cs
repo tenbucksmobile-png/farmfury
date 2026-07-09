@@ -134,7 +134,11 @@ public abstract class AnimalBase : MonoBehaviour
         // on the ground").
         if (_sprImpact != null) _sr.sprite = _sprImpact;
         else                    _sr.enabled = false;
-        SpawnImpactStars();
+        // Only on the actual first impact, not every subsequent roll/bounce contact — a rolling
+        // or bouncing animal fires OnCollisionEnter2D repeatedly, and re-bursting the stars each
+        // time read as spammy (user-reported 2026-07-09: "should not appear everytime cluck
+        // rolls — perhaps only once upon impact").
+        if (!_contactStarted) SpawnImpactStars();
         OnAnimalImpact?.Invoke(this);
         if (!_contactStarted)
         {
@@ -145,6 +149,11 @@ public abstract class AnimalBase : MonoBehaviour
 
     // Quick VFX burst at the impact point — reuses FragmentFader (defined in BlockBase.cs, same
     // assembly) for the fade-out, same pattern as BlockBase.SpawnImpactFlash()/SpawnExplosion().
+    // Sized off this animal's own collider diameter (world-space, accounts for both the per-
+    // character collider radius set in each subclass's Awake() and any parent scale) rather than
+    // a fixed scale — user-reported 2026-07-09 the burst needs to read as sized to whichever
+    // animal got dazed (Bessie's collider is ~1.4x Cluck's, see SpriteWiring's CharPPU comments),
+    // not the same size regardless of which animal was hit.
     void SpawnImpactStars()
     {
         if (_sprImpactStars == null) return;
@@ -152,8 +161,10 @@ public abstract class AnimalBase : MonoBehaviour
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite       = _sprImpactStars;
         sr.sortingOrder = 10;
-        go.transform.position   = transform.position;
-        go.transform.localScale = new Vector3(1.2f, 1.2f, 1f);
+        go.transform.position = transform.position;
+        float diameter = _col.radius * 2f * transform.lossyScale.x;
+        float sz = diameter * 2f; // bigger than the character so the burst reads clearly around it
+        go.transform.localScale = new Vector3(sz, sz, 1f);
         go.AddComponent<FragmentFader>();
     }
 

@@ -59,6 +59,7 @@ public class MatchUpScreen : MonoBehaviour
     private Sprite _countdownReadySprite;
     private AudioClip _countdownClip;   // Countdown.mp3 — see CountdownBeat's timing comment
     private AudioSource _countdownAudioSrc;
+    private Sprite _cluckFlySprite;     // Cluck_InFlight.png — see the CluckFlyBy() timing comment
 
     private GameObject      _panel;
     private Image            _fadeOverlayImg; // fades to opaque black just before auto-launch, see PlaySequence step 6
@@ -82,6 +83,8 @@ public class MatchUpScreen : MonoBehaviour
     private Image             _vsImg;
     private RectTransform    _countdownRT;
     private Image             _countdownImg;
+    private RectTransform    _cluckFlyRT;  // flies across the bottom behind the cards, see CluckFlyBy()
+    private Image             _cluckFlyImg;
 
     private int       _levelIndex;
     private bool      _hasData;
@@ -120,10 +123,20 @@ public class MatchUpScreen : MonoBehaviour
     private const float CountdownReadyPopIn   = 0.25f;
     private const float CountdownClipLength   = 4.05f; // Countdown.mp3's measured duration
 
+    // Cluck flies across the bottom of the screen, behind the cards, timed to the countdown —
+    // starts the instant "3" appears (Countdown.mp3 starts playing) and finishes ("lands")
+    // exactly as the READY hold ends, i.e. over the same CountdownClipLength duration. User-
+    // requested 2026-07-09. Y is a fixed height above the safe area's bottom edge (same
+    // anchor style as the Countdown numeral below); X range covers off-screen-left to
+    // off-screen-right so the whole flight is a clean pass through frame.
+    private const float CluckFlyY      = 110f;
+    private const float CluckFlyStartX = -1400f;
+    private const float CluckFlyEndX   = 1400f;
+
     public void Init(Sprite squareSpr, Sprite backgroundSprite, Sprite vsSprite,
         Sprite[] levelHeaderSprites,
         Sprite countdown3Sprite, Sprite countdown2Sprite, Sprite countdown1Sprite, Sprite countdownReadySprite,
-        AudioClip countdownClip,
+        AudioClip countdownClip, Sprite cluckFlySprite,
         Sprite[] animalCardSprites, Sprite[] robotCardSprites)
     {
         _backgroundSprite      = backgroundSprite;
@@ -134,6 +147,7 @@ public class MatchUpScreen : MonoBehaviour
         _countdown1Sprite       = countdown1Sprite;
         _countdownReadySprite   = countdownReadySprite;
         _countdownClip          = countdownClip;
+        _cluckFlySprite         = cluckFlySprite;
         _animalCardSprites      = animalCardSprites;
         _robotCardSprites       = robotCardSprites;
         BuildUI(squareSpr);
@@ -241,6 +255,7 @@ public class MatchUpScreen : MonoBehaviour
         _vsRT.localScale         = Vector3.zero;
         _vsImg.enabled           = _vsSprite != null; // defensive re-assert, see class comment
         _countdownImg.enabled    = false;
+        _cluckFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY); // in case Show() re-fires mid-flight
 
         // 1) Level header pops in. (Future hook: AudioManager whoosh/pop SFX.)
         yield return PopIn(_headerRT, 0.6f);
@@ -248,6 +263,17 @@ public class MatchUpScreen : MonoBehaviour
         // 2) Cards slide in from both sides and meet in the middle, VS slamming in between them
         // right as they land — one continuous beat, not three separate ones.
         yield return CardsAndVsClash(slideDuration: 0.9f, vsPopDuration: 0.4f, vsPeak: 1.4f);
+
+        // 2b) Second robot card ("deck of cards" overlay) slides in separately, after a short
+        // delay following the primary clash above — user-requested 2026-07-09: "first the one -
+        // delay - then the second" (previously slid in at the same time as the primary card,
+        // which read as one single motion rather than two distinct arrivals). Skipped entirely
+        // for levels with only one robot type — Show() already left _robot2Img disabled there.
+        if (_robot2Img.enabled)
+        {
+            yield return new WaitForSecondsRealtime(0.3f);
+            yield return SlideRobot2CardIn(0.5f);
+        }
 
         // 3) Hold so the full matchup registers before the countdown starts — 2s per explicit
         // instruction.
@@ -263,6 +289,10 @@ public class MatchUpScreen : MonoBehaviour
             _countdownAudioSrc.clip = _countdownClip;
             _countdownAudioSrc.Play();
         }
+        // Cluck flies across the bottom of the screen, behind the cards, over the exact same
+        // duration as the countdown — started here (not yielded) so it runs concurrently with
+        // the countdown beats below rather than blocking them.
+        if (_cluckFlyImg.enabled) StartCoroutine(CluckFlyBy(CountdownClipLength));
         yield return CountdownBeat(_countdown3Sprite, CountdownBeepInterval);
         yield return CountdownBeat(_countdown2Sprite, CountdownBeepInterval);
         yield return CountdownBeat(_countdown1Sprite, CountdownBeepInterval);
@@ -343,8 +373,6 @@ public class MatchUpScreen : MonoBehaviour
     {
         Vector2 animalStart = _animalRT.anchoredPosition;
         Vector2 robotStart  = _robotRT.anchoredPosition;
-        Vector2 robot2Start = _robot2RT.anchoredPosition;
-        Vector2 robot2Rest  = RobotRestPos + Robot2RestOffset;
         float elapsed = 0f;
         while (elapsed < duration)
         {
@@ -352,12 +380,46 @@ public class MatchUpScreen : MonoBehaviour
             float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
             _animalRT.anchoredPosition = Vector2.Lerp(animalStart, AnimalRestPos, t);
             _robotRT.anchoredPosition  = Vector2.Lerp(robotStart, RobotRestPos, t);
-            _robot2RT.anchoredPosition = Vector2.Lerp(robot2Start, robot2Rest, t);
             yield return null;
         }
         _animalRT.anchoredPosition = AnimalRestPos;
         _robotRT.anchoredPosition  = RobotRestPos;
-        _robot2RT.anchoredPosition = robot2Rest;
+    }
+
+    // Second robot card's own slide-in, run separately (after a delay) from the primary clash
+    // above — see the "2b" step comment in PlaySequence for why this was split out.
+    IEnumerator SlideRobot2CardIn(float duration)
+    {
+        Vector2 start = _robot2RT.anchoredPosition;
+        Vector2 rest  = RobotRestPos + Robot2RestOffset;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+            _robot2RT.anchoredPosition = Vector2.Lerp(start, rest, t);
+            yield return null;
+        }
+        _robot2RT.anchoredPosition = rest;
+    }
+
+    // Cluck flies across the bottom of the screen, behind the cards, over `duration` (matched to
+    // CountdownClipLength by the caller so it "lands" — finishes its pass — exactly as the
+    // countdown ends). Plays the cannon-shot/launch sound at the moment it starts, reusing the
+    // existing gameplay launch SFX rather than a new dedicated clip.
+    IEnumerator CluckFlyBy(float duration)
+    {
+        AudioManager.Play(AudioManager.Sound.Launch);
+        _cluckFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            _cluckFlyRT.anchoredPosition = new Vector2(Mathf.Lerp(CluckFlyStartX, CluckFlyEndX, t), CluckFlyY);
+            yield return null;
+        }
+        _cluckFlyRT.anchoredPosition = new Vector2(CluckFlyEndX, CluckFlyY);
     }
 
     // from -> to scale over duration; bounce=true uses an ease-out-back overshoot (only sensible
@@ -462,6 +524,24 @@ public class MatchUpScreen : MonoBehaviour
         var safeRT = safeGO.AddComponent<RectTransform>();
         ApplySafeArea(safeRT);
         Transform safe = safeRT;
+
+        // Cluck flying across the bottom of the screen, behind the cards — created FIRST inside
+        // "safe" (before header/cards below) so it's the earliest sibling and therefore renders
+        // behind all of them. See CluckFlyBy() for the countdown-synced timing. Bottom-anchored
+        // like the countdown numeral below, animated purely via anchoredPosition.x in CluckFlyBy.
+        var cluckFlyGO = new GameObject("CluckFlyBy");
+        cluckFlyGO.transform.SetParent(safe, false);
+        _cluckFlyRT = cluckFlyGO.AddComponent<RectTransform>();
+        _cluckFlyRT.anchorMin        = new Vector2(0.5f, 0f);
+        _cluckFlyRT.anchorMax        = new Vector2(0.5f, 0f);
+        _cluckFlyRT.pivot            = new Vector2(0.5f, 0.5f);
+        _cluckFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY);
+        _cluckFlyRT.sizeDelta        = new Vector2(180f, 180f);
+        _cluckFlyImg = cluckFlyGO.AddComponent<Image>();
+        _cluckFlyImg.sprite         = _cluckFlySprite;
+        _cluckFlyImg.enabled        = _cluckFlySprite != null;
+        _cluckFlyImg.preserveAspect = true;
+        _cluckFlyImg.raycastTarget  = false;
 
         // Level header — LevelHeader1.png (see SCOPE NOTE at the top of this file). Top-anchored
         // within the safe area with a small fixed inset, NOT centre-anchored with a guessed
