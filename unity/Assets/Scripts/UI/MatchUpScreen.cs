@@ -133,7 +133,7 @@ public class MatchUpScreen : MonoBehaviour
     private const float CluckFlyY      = 110f;
     private const float CluckFlyStartX = -1400f;
     private const float CluckFlyEndX   = 1400f;
-    private const float CluckFlyArcHeight = 90f; // vertical bump added at the midpoint of the flight — see CluckFlyBy
+    private const float CluckFlyArcHeight = 260f; // vertical bump added at the midpoint of the flight — see CluckFlyBy; raised from 90f 2026-07-09, user-requested "even more" arc
 
     public void Init(Sprite squareSpr, Sprite backgroundSprite, Sprite vsSprite,
         Sprite[] levelHeaderSprites,
