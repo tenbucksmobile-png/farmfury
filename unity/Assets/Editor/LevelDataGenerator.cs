@@ -119,7 +119,15 @@ public static class LevelDataGenerator
             robots: new[]
             {
                 R(5.064f, -4.593f, 4.269f, 5.649f, RobotType.Harvester),
-                R(6.724f, -5.583f, 4.96f,  4.251f, RobotType.SemiHarvester),
+                // Scale corrected 2026-07-09 (was 4.96,4.251, user-reported "renders noticeably
+                // smaller than the Harvester") — Robot_SemiHarvest.png's auto-trimmed sprite
+                // rect is only 215x273px out of its 500x500 canvas (lots of padding around the
+                // character), vs HarvesterRobot.png's 495x305px out of 612x408 (fills most of
+                // its canvas). At the same PPU (1746) and the dumped scale, SemiHarvester was
+                // rendering at roughly half the Harvester's world height. This scale is
+                // computed to match Harvester's ~0.987u world height exactly; not yet visually
+                // re-verified in the Editor (no Play-mode access here) — worth a live check.
+                R(6.724f, -5.583f, 7.37f, 6.31f, RobotType.SemiHarvester),
             });
 
         // L03-L06 REMOVED 2026-07-09 (user request) — these were never actually built by the
