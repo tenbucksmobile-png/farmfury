@@ -6,24 +6,36 @@
 // ready-to-paste B(...)/R(...) code lines in the exact format LevelDataGenerator.Make() expects —
 // pixel/unit-exact to wherever the object was dropped, no manual coordinate math needed.
 //
-// WORKFLOW:
+// WORKFLOW — two supported ways to place objects, freely mixed in the same pass:
+//   A) Drag real prefabs (WoodBlock.prefab / StoneBlock.prefab / HaybaleBlock.prefab /
+//      Robot.prefab / HarvesterRobot.prefab from Assets/Prefabs/) into the Scene view. These are
+//      found anywhere in the scene via their BlockBase/RobotEnemy component.
+//   B) Drag raw sprite assets (Haybail.png, Block_Stone_Normal.png, Plank_Horizontal.png,
+//      Robot_Idle.png, HarvesterRobot.png, etc. — no prefab needed) straight from the Project
+//      window. These must be parented under an empty GameObject named exactly "LevelScratch"
+//      (create one via GameObject -> Create Empty, rename it) so the dumper can tell "a sprite
+//      I'm designing a level with" apart from ordinary scene art (background, scenery props,
+//      HUD) without accidentally sweeping up the whole scene. Type is inferred from the sprite's
+//      name (case-insensitive keyword match — "hay"->Haybale, "stone"->Stone, "wood"/"plank"->
+//      Wood, "harvester"->Harvester robot, "robot"->Basic robot); unrecognised sprite names are
+//      skipped with a warning telling you what didn't match.
+//
+// Either way:
 //   1. Open Game.unity in Edit mode (Play mode is NOT required — positions are read from the
-//      scene as authored, not from a running simulation).
-//   2. Drag WoodBlock.prefab / StoneBlock.prefab / HaybaleBlock.prefab / Robot.prefab /
-//      HarvesterRobot.prefab from Assets/Prefabs/ into the Scene view, positioning and scaling
-//      them by eye relative to the existing Ground/Launcher.
-//   3. Run this menu command. It writes unity/Logs/level_layout_dump.txt AND logs to the Console.
-//   4. Paste the output into a new Make("LXX_Name", ...) call in LevelDataGenerator.cs, then run
+//      scene as authored, not from a running simulation). Position/scale by eye relative to the
+//      existing Ground/Launcher.
+//   2. Run this menu command. It writes unity/Logs/level_layout_dump.txt AND logs to the Console.
+//   3. Paste the output into a new Make("LXX_Name", ...) call in LevelDataGenerator.cs, then run
 //      FarmFury -> Generate All Level Data + Wire Scene References.
-//   5. Delete the scratch objects from the scene afterward (or leave them — Generate All Level
+//   4. Delete the scratch objects from the scene afterward (or leave them — Generate All Level
 //      Data reads from LevelDataGenerator.cs, not from stray scene objects, and LevelLoader only
 //      ever spawns its own prefab instances at runtime under BlockParent/RobotParent — hand-placed
 //      scratch objects sitting elsewhere in the scene have no gameplay effect).
 //
-// TYPE DETECTION: identifies each object's BlockType/RobotType from which SOURCE PREFAB it's an
-// instance of (via PrefabUtility), not from its component type — HaybaleBlock and WoodBlock both
-// use the WoodBlock component (see CLAUDE.md), so component type alone can't tell them apart.
-// Objects that aren't instances of one of the five known prefabs are skipped with a warning.
+// TYPE DETECTION (prefab path, A): identifies each object's BlockType/RobotType from which SOURCE
+// PREFAB it's an instance of (via PrefabUtility), not from its component type — HaybaleBlock and
+// WoodBlock both use the WoodBlock component (see CLAUDE.md), so component type alone can't tell
+// them apart. Objects that aren't instances of one of the five known prefabs are skipped.
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -98,6 +110,41 @@ public static class LevelLayoutDumper
             robotLines.Add(type == RobotType.Harvester
                 ? $"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.Harvester),"
                 : $"R({F(pos.x)}f, {F(pos.y)}f),");
+        }
+
+        // Path B — raw sprites dropped under a "LevelScratch" empty GameObject. Only scanned
+        // inside that container so ordinary scene art (background, scenery, HUD) is never swept
+        // up by name-matching alone.
+        var scratchRoot = GameObject.Find("LevelScratch");
+        if (scratchRoot != null)
+        {
+            foreach (var sr in scratchRoot.GetComponentsInChildren<SpriteRenderer>(includeInactive: false))
+            {
+                if (sr.sprite == null) continue;
+                // Already handled by the BlockBase/RobotEnemy loops above if this object is a
+                // real prefab instance — don't double-count it here.
+                if (sr.GetComponent<BlockBase>() != null || sr.GetComponent<RobotEnemy>() != null) continue;
+
+                string spriteName = sr.sprite.name.ToLowerInvariant();
+                Vector3 pos   = sr.transform.position;
+                Vector3 scale = sr.transform.localScale;
+
+                if (spriteName.Contains("hay"))
+                    blockLines.Add($"B(BlockType.Haybale, {F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, passThrough: true, hp: 10f, mass: 3f), // sprite '{sr.sprite.name}'");
+                else if (spriteName.Contains("stone"))
+                    blockLines.Add($"B(BlockType.Stone, {F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f), // sprite '{sr.sprite.name}'");
+                else if (spriteName.Contains("wood") || spriteName.Contains("plank"))
+                    blockLines.Add($"B(BlockType.Wood, {F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f), // sprite '{sr.sprite.name}'");
+                else if (spriteName.Contains("harvester"))
+                    robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.Harvester), // sprite '{sr.sprite.name}'");
+                else if (spriteName.Contains("robot"))
+                    robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f), // sprite '{sr.sprite.name}'");
+                else
+                {
+                    Debug.LogWarning($"[LevelLayoutDumper] Skipping '{sr.gameObject.name}' under LevelScratch — sprite name '{sr.sprite.name}' doesn't match a known keyword (hay/stone/wood/plank/robot/harvester).");
+                    skipped++;
+                }
+            }
         }
 
         var sb = new StringBuilder();
