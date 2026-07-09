@@ -179,7 +179,7 @@ MonoBehaviour:
   _sprImpact: {fileID: 0}
   _sprAbility: {fileID: 0}
   _sprImpactStars: {fileID: 21300000, guid: 29a3399c4bd78ea41a2903fd9d1809b5, type: 3}
-  _contactTimeout: 3
+  _contactTimeout: 0.25
   _puffScale: 3
   _puffMassMul: 4
   _puffImpulse: 6

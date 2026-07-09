@@ -26,7 +26,13 @@ public abstract class AnimalBase : MonoBehaviour
     [SerializeField] private Sprite _sprImpactStars;
 
     [Header("Flight")]
-    [SerializeField] private float _contactTimeout = 1f;
+    // Lowered from 1f (2026-07-09, user-reported "should disappear immediately" — 1s read as
+    // far too long once the animal is frozen in place on impact rather than rolling, see
+    // OnCollisionEnter2D). Still non-zero so the impact pose/stars get one visible beat instead
+    // of the pre-2026-07-26 instant-hide bug. NOTE the [SerializeField] stale-value trap applies
+    // here — SpriteWiring.WireAll() re-syncs this on all 8 prefabs since they already had 1f
+    // serialized from before this change.
+    [SerializeField] private float _contactTimeout = 0.25f;
 
     public bool IsInFlight  { get; protected set; }
     public bool IsLaunched  { get; private set; }
@@ -142,6 +148,18 @@ public abstract class AnimalBase : MonoBehaviour
         OnAnimalImpact?.Invoke(this);
         if (!_contactStarted)
         {
+            // Freeze in place immediately instead of letting physics carry it rolling/bouncing
+            // across the screen for the rest of the _contactTimeout window — user-reported
+            // 2026-07-09: "the sprite should disappear immediately - currently it rolls off
+            // screen then disappears." Kinematic so nothing can push it further either. Done
+            // here (not by immediately calling DestroyAnimal()) because BessieAnimal.
+            // OnCollisionEnter2D calls base.OnCollisionEnter2D() THEN starts its Shockwave()
+            // coroutine on this same GameObject — destroying it synchronously here would risk
+            // that coroutine never running.
+            _rb.linearVelocity  = Vector2.zero;
+            _rb.angularVelocity = 0f;
+            _rb.bodyType        = RigidbodyType2D.Kinematic;
+
             _contactStarted = true;
             _contactTimer   = _contactTimeout;
         }

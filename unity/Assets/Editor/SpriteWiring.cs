@@ -129,6 +129,10 @@ public static class SpriteWiring
         if (impactStars != null)
             so.FindProperty("_sprImpactStars").objectReferenceValue = impactStars;
 
+        // Re-sync the lowered _contactTimeout (1f -> 0.25f, 2026-07-09) — already-serialized
+        // prefabs keep their old baked-in value otherwise (see the class comment on this field).
+        so.FindProperty("_contactTimeout").floatValue = 0.25f;
+
         so.ApplyModifiedProperties();
 
         PrefabUtility.SaveAsPrefabAsset(contents, path);

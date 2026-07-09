@@ -34,10 +34,11 @@ using TMPro;
 // for a future AudioManager.Play(...) call.
 public class MatchUpScreen : MonoBehaviour
 {
-    // Card art — 8-slot array indexed by AnimalType, 2-slot array indexed by RobotType. Sourced
+    // Card art — 8-slot array indexed by AnimalType, 3-slot array indexed by RobotType. Sourced
     // from Assets/Sprites/UI/MatchUp/ (see SceneSetup.WireMatchUpCards) — a dedicated art set for
     // this screen, distinct from the HUD's Assets/Sprites/UI/Cards/. Only Cluck/Bessie (animal)
-    // and Basic/Harvester (robot) have art there today, matching what L01-L06 actually use.
+    // and Basic/Harvester/SemiHarvester (robot) have art there today, matching what L01-L02
+    // actually use (L03-L06 removed 2026-07-09 — see LevelDataGenerator.cs).
     //
     // NOT [SerializeField] on this component — MatchUpScreen is a child GameObject created at
     // runtime inside WorldMapController.BuildUI(), which only executes when Awake() actually
@@ -200,7 +201,7 @@ public class MatchUpScreen : MonoBehaviour
         }
         else
         {
-            // Level data doesn't exist yet (only L01-L06 are authored right now, out of 18
+            // Level data doesn't exist yet (only L01-L02 are authored right now, out of 18
             // marker slots — see CLAUDE.md Gap Analysis). The sequence still plays (see SCOPE
             // NOTE at the top of this file) but skips the auto-launch at the end and just
             // returns to the map instead of crashing on a null level.

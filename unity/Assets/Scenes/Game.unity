@@ -1516,10 +1516,6 @@ MonoBehaviour:
   _levels:
   - {fileID: 11400000, guid: 0c5e566069cdbfa4b96e528fdece2642, type: 2}
   - {fileID: 11400000, guid: 1ca61772f2ecc144492ee6557b82250f, type: 2}
-  - {fileID: 11400000, guid: ac94e9e35b59e2f4c8231b32734b6910, type: 2}
-  - {fileID: 11400000, guid: 13c1875c2d8db544192748c435996204, type: 2}
-  - {fileID: 11400000, guid: fa00eec93ce98c74fa87d9385c7265e4, type: 2}
-  - {fileID: 11400000, guid: 4e7d4f07306d346439380dbeead2b234, type: 2}
   _menuSceneName: MainMenu
   _gameSceneName: Game
 --- !u!4 &809980729

@@ -1,12 +1,15 @@
 // FarmFury — Editor utility. Run via menu: FarmFury ▶ Generate All Level Data
 // Coordinate system (current, post-rebuild): ground surface Y = -6.60, launcher X = -2.327.
 // Block/robot positions are raw world-space — LevelLoader applies no offset at spawn time.
-// All 6 levels now use this current system. L02-L06 were migrated from the OLD pre-rebuild
-// system (ground Y=-2.5, launcher X=-5.5) via the same uniform rigid-translation delta:
-// dx=+3.173, dy=-4.10 (new = old + delta) — L02-L04 on 2026-07-27, L05-L06 on 2026-07-09.
-// A pure delta preserves every relative relationship the original design had (bottom rows
-// still rest exactly on the ground line, stacked gaps unchanged, the L03 robot still stands
-// on its tower) without needing to hand-retune anything.
+//
+// Only L01 and L02 exist below as of 2026-07-09 — L03-L06 were removed (user request): they
+// were auto-generated placeholder layouts (originally on the OLD pre-rebuild coordinate system,
+// ground Y=-2.5/launcher X=-5.5, then just rigid-translated onto the current system by a fixed
+// delta dx=+3.173/dy=-4.10 — never actually hand-built/verified level designs). Going forward,
+// every level is built individually via LevelLayoutDumper (drag real content into the Scene
+// view, dump to code — see that file's header comment), the same way L02 "Harvest Yard" was
+// built, replacing the old auto-generated stand-in. See DeleteStaleAsset below for how old
+// generated assets get cleaned up when a level's Make(...) call is removed.
 
 using UnityEngine;
 using UnityEditor;
@@ -119,86 +122,43 @@ public static class LevelDataGenerator
                 R(6.724f, -5.583f, 4.96f,  4.251f, RobotType.SemiHarvester),
             });
 
-        // ── W1_L03  The Tower ─────────────────────────────────────────────────
-        // Migrated 2026-07-27 (same delta as L02). Original design unchanged: 3-tier wood
-        // tower, one robot on the ground and one perched on top of the tower.
-        Make(folder, "L03_TheTower",
-            id: "W1_L03", name: "The Tower", par: 3,
-            birds: new[] { AnimalType.Cluck, AnimalType.Bessie, AnimalType.Cluck, AnimalType.Cluck },
-            blocks: new[]
-            {
-                B(BlockType.Wood, 0.473f, -6.40f, 2.4f, 0.4f),  // wide wood base
-                B(BlockType.Wood, 0.473f, -6.00f, 2.4f, 0.4f),  // wide wood mid
-                B(BlockType.Wood, 0.473f, -5.60f, 1.6f, 0.4f),  // narrower top
-            },
-            robots: new[] { R(2.073f, -6.20f), R(0.473f, -5.00f) });
-
-        // ── W1_L04  Egg Practice ──────────────────────────────────────────────
-        // Migrated 2026-07-27 (same delta as L02/L03). Original design unchanged: 3-high wood
-        // wall, 4 grouped robots behind it as a Cluck cluster-bomb showcase.
-        Make(folder, "L04_EggPractice",
-            id: "W1_L04", name: "Egg Practice", par: 2,
-            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
-            blocks: new[]
-            {
-                B(BlockType.Wood, -0.727f, -6.40f, 1.2f, 0.4f),  // 3-high wood wall
-                B(BlockType.Wood, -0.727f, -6.00f, 1.2f, 0.4f),
-                B(BlockType.Wood, -0.727f, -5.60f, 1.2f, 0.4f),
-            },
-            robots: new[] { R(0.473f, -6.20f), R(1.173f, -6.20f), R(1.873f, -6.20f), R(2.573f, -6.20f) });
-
-        // ── W1_L05  The Fortress ──────────────────────────────────────────────
-        // Migrated 2026-07-09 (same delta as L02-L04: dx=+3.173, dy=-4.10 from the old
-        // ground/launcher — see header comment above). Original design unchanged: 3-segment
-        // stone pillar guarding a 3×3 wood grid, 3 robots sheltering behind it.
-        Make(folder, "L05_TheFortress",
-            id: "W1_L05", name: "The Fortress", par: 3,
-            birds: new[]
-            {
-                AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck,
-                AnimalType.Cluck, AnimalType.Cluck,
-            },
-            blocks: new[]
-            {
-                B(BlockType.Stone, -1.527f, -5.80f, 0.4f, 1.6f), // left stone pillar — 3 segments
-                B(BlockType.Stone, -1.527f, -4.20f, 0.4f, 1.6f),
-                B(BlockType.Stone, -1.527f, -2.60f, 0.4f, 1.6f),
-                B(BlockType.Wood,  -0.127f, -6.20f, 0.8f, 0.8f), // 3×3 wood grid
-                B(BlockType.Wood,   0.673f, -6.20f, 0.8f, 0.8f),
-                B(BlockType.Wood,   1.473f, -6.20f, 0.8f, 0.8f),
-                B(BlockType.Wood,  -0.127f, -5.40f, 0.8f, 0.8f),
-                B(BlockType.Wood,   0.673f, -5.40f, 0.8f, 0.8f),
-                B(BlockType.Wood,   1.473f, -5.40f, 0.8f, 0.8f),
-                B(BlockType.Wood,  -0.127f, -4.60f, 0.8f, 0.8f),
-                B(BlockType.Wood,   0.673f, -4.60f, 0.8f, 0.8f),
-                B(BlockType.Wood,   1.473f, -4.60f, 0.8f, 0.8f),
-            },
-            robots: new[] { R(2.473f, -6.20f), R(3.173f, -6.20f), R(3.873f, -6.20f) });
-
-        // ── W1_L06  Bessie's Debut ────────────────────────────────────────────
-        // Migrated 2026-07-09 (same delta as L02-L05). Original design unchanged: 2 flanking
-        // stone pillar pairs, 3 robots between them — a Bessie ground-slam showcase.
-        Make(folder, "L06_BessiesDebut",
-            id: "W1_L06", name: "Bessie's Debut", par: 2,
-            birds: new[] { AnimalType.Cluck, AnimalType.Bessie, AnimalType.Bessie, AnimalType.Cluck },
-            blocks: new[]
-            {
-                B(BlockType.Stone, -0.127f, -5.80f, 0.4f, 1.6f), // left flanking pillar
-                B(BlockType.Stone, -0.127f, -4.20f, 0.4f, 1.6f),
-                B(BlockType.Stone,  3.073f, -5.80f, 0.4f, 1.6f), // right flanking pillar
-                B(BlockType.Stone,  3.073f, -4.20f, 0.4f, 1.6f),
-            },
-            robots: new[] { R(0.873f, -6.20f), R(1.573f, -6.20f), R(2.273f, -6.20f) });
+        // L03-L06 REMOVED 2026-07-09 (user request) — these were never actually built by the
+        // user; they were auto-generated placeholder layouts (originally on the old pre-rebuild
+        // coordinate system, then just rigid-translated onto the current one by delta, never
+        // redesigned from scratch). User is now hand-building every level individually via
+        // LevelLayoutDumper (drag real content into the Scene view, dump to code) the same way
+        // L02 "Harvest Yard" was built — auto-generated stand-ins for unbuilt levels are exactly
+        // the "random sprites" that read as bugs when a real level should be there instead.
+        // DeleteStaleAsset calls below remove any leftover .asset files from earlier runs of this
+        // generator so GameManager (which loads EVERY LevelData asset found in this folder,
+        // regardless of what this method currently generates) can't pick them back up. Add a new
+        // Make(folder, "L03_...", ...) call here once L03 is actually built.
+        DeleteStaleAsset(folder, "L03_TheTower");
+        DeleteStaleAsset(folder, "L04_EggPractice");
+        DeleteStaleAsset(folder, "L05_TheFortress");
+        DeleteStaleAsset(folder, "L06_BessiesDebut");
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         if (!silent)
             EditorUtility.DisplayDialog("FarmFury",
-                "Generated 6 LevelData assets in\nAssets/ScriptableObjects/Levels", "OK");
+                "Generated 2 LevelData assets in\nAssets/ScriptableObjects/Levels\n(L03-L06 removed — build these individually)", "OK");
         Debug.Log("[FarmFury] Level data generation complete.");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    // Deletes a previously-generated LevelData asset that no longer has a Make(...) call —
+    // see the L03-L06 removal comment above for why this exists.
+    static void DeleteStaleAsset(string folder, string filename)
+    {
+        string path = $"{folder}/{filename}.asset";
+        if (AssetDatabase.LoadAssetAtPath<LevelData>(path) != null)
+        {
+            AssetDatabase.DeleteAsset(path);
+            Debug.Log($"[FarmFury] Deleted stale level asset {path}");
+        }
+    }
 
     static void Make(string folder, string filename,
         string id, string name, int par,
