@@ -91,6 +91,15 @@ public class MatchUpScreen : MonoBehaviour
     private RectTransform    _cluckFlyRT;  // flies across the bottom behind the cards, see CluckFlyBy()
     private Image             _cluckFlyImg;
 
+    // Skip button (2026-07-10, user request: "allow the player to skip the match up scene").
+    // Bottom-right corner, same anchoring convention as WorldMapController's own corner-anchored
+    // buttons — always tappable for the whole non-interactive sequence (cards/countdown/etc. are
+    // otherwise unskippable, per the class comment's ANIMATION REDESIGN note), immediately cuts
+    // to gameplay rather than waiting for the rest of the scripted beats. Hidden/disabled when
+    // this level has no LevelData yet ("COMING SOON") since there's no gameplay to skip into.
+    private GameObject _skipGO;
+    private Button      _skipButton;
+
     private int       _levelIndex;
     private bool      _hasData;
     private Coroutine _sequenceRoutine;
@@ -180,6 +189,20 @@ public class MatchUpScreen : MonoBehaviour
         if (data != null)
         {
             AnimalType animal = (data.birds != null && data.birds.Length > 0) ? data.birds[0] : AnimalType.Cluck;
+            // If a later bird slot introduces a DIFFERENT species than birds[0] (e.g. L07's
+            // "Cluck, Cluck, Bessie" — Bessie fires last, not first), showcase that one instead —
+            // 2026-07-10, user report: "level 7 — bessie_card does not swipe in from the left."
+            // Root cause: this screen always showed birds[0] regardless of what else was queued,
+            // so Bessie's actual debut level was previewing Cluck instead of her. Mirrors the
+            // existing "second distinct RobotType" convention just below rather than adding a
+            // separate mechanism. L01-L06 (all-Cluck) find no divergent type and are unaffected.
+            if (data.birds != null)
+            {
+                foreach (var b in data.birds)
+                {
+                    if (b != animal) { animal = b; break; }
+                }
+            }
             RobotType  robot  = (data.robots != null && data.robots.Length > 0) ? data.robots[0].robotType : RobotType.Basic;
 
             Sprite animalSpr = _animalCardSprites != null && (int)animal < _animalCardSprites.Length
@@ -231,6 +254,8 @@ public class MatchUpScreen : MonoBehaviour
         AudioManager.PauseMenuMusic();
 
         _panel.SetActive(true);
+        _skipGO.SetActive(_hasData);
+        if (_skipButton != null) _skipButton.interactable = _hasData;
         if (_sequenceRoutine != null) StopCoroutine(_sequenceRoutine);
         _sequenceRoutine = StartCoroutine(PlaySequence());
     }
@@ -240,6 +265,31 @@ public class MatchUpScreen : MonoBehaviour
         if (_sequenceRoutine != null) { StopCoroutine(_sequenceRoutine); _sequenceRoutine = null; }
         if (_countdownAudioSrc != null && _countdownAudioSrc.isPlaying) _countdownAudioSrc.Stop();
         _panel.SetActive(false);
+    }
+
+    // Cuts the whole scripted sequence short and jumps straight to gameplay — no-op if this
+    // level has no LevelData yet (Show() disables/hides the button in that case, so this is a
+    // defensive guard, not the normal path). Disables the button immediately so a double-tap
+    // can't fire ForceStartLevel() twice.
+    void OnSkipClicked()
+    {
+        if (!_hasData) return;
+        _skipButton.interactable = false;
+
+        if (_sequenceRoutine != null) { StopCoroutine(_sequenceRoutine); _sequenceRoutine = null; }
+        if (_countdownAudioSrc != null && _countdownAudioSrc.isPlaying) _countdownAudioSrc.Stop();
+        if (_cluckFallingAudioSrc != null && _cluckFallingAudioSrc.isPlaying) _cluckFallingAudioSrc.Stop();
+
+        StartCoroutine(SkipSequence());
+    }
+
+    // Same fade-to-opaque-black-then-launch beat as PlaySequence's own step 6 (see that method's
+    // comment for why it fades an overlay IN rather than the panel to transparent) — just reached
+    // immediately instead of after the full cards/countdown motion sequence.
+    IEnumerator SkipSequence()
+    {
+        yield return FadeImageAlpha(_fadeOverlayImg, _fadeOverlayImg.color.a, 1f, 0.25f);
+        GameManager.Instance?.ForceStartLevel(_levelIndex);
     }
 
     // ── Motion sequence ───────────────────────────────────────────────────────
@@ -783,6 +833,31 @@ public class MatchUpScreen : MonoBehaviour
         _countdownImg.preserveAspect = true;
         _countdownImg.raycastTarget  = false;
         _countdownImg.enabled        = false;
+
+        // Skip button — bottom-right corner of the safe area, always on top of the cards/
+        // countdown (created after them, so later in sibling order) but still under the fade
+        // overlay below (created outside "safe" entirely, so it renders on top of everything,
+        // including this). No dedicated art exists for this yet — plain dark rounded-ish box +
+        // TMP label, same "functional placeholder" approach as the robot fallback label above.
+        _skipGO = new GameObject("SkipButton");
+        _skipGO.transform.SetParent(safe, false);
+        var skipRT = _skipGO.AddComponent<RectTransform>();
+        skipRT.anchorMin        = new Vector2(1f, 0f);
+        skipRT.anchorMax        = new Vector2(1f, 0f);
+        skipRT.pivot            = new Vector2(1f, 0f);
+        skipRT.anchoredPosition = new Vector2(-40f, 40f);
+        skipRT.sizeDelta        = new Vector2(220f, 90f);
+        var skipImg = _skipGO.AddComponent<Image>();
+        skipImg.sprite = squareSpr;
+        skipImg.color  = new Color(0f, 0f, 0f, 0.55f);
+        _skipButton = _skipGO.AddComponent<Button>();
+        _skipButton.targetGraphic = skipImg;
+        _skipButton.onClick.AddListener(OnSkipClicked);
+
+        var skipLabel = MakeLabel(skipRT, "SkipLabel", Vector2.zero, skipRT.sizeDelta, 40f, Color.white);
+        skipLabel.text          = "SKIP";
+        skipLabel.fontStyle     = FontStyles.Bold;
+        skipLabel.raycastTarget = false;
 
         // Fade-to-black overlay — full-bleed, added LAST (outside the safe area, like the
         // background) so it renders on top of literally everything else in this screen. See

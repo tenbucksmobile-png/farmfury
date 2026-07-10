@@ -2,14 +2,17 @@
 // Coordinate system (current, post-rebuild): ground surface Y = -6.60, launcher X = -2.327.
 // Block/robot positions are raw world-space — LevelLoader applies no offset at spawn time.
 //
-// L01-L05 exist below as of 2026-07-10 — L06 remains removed (user request 2026-07-09):
-// it was an auto-generated placeholder layout (originally on the OLD pre-rebuild coordinate system,
-// ground Y=-2.5/launcher X=-5.5, then just rigid-translated onto the current system by a fixed
-// delta dx=+3.173/dy=-4.10 — never actually hand-built/verified). Going forward, every level is
-// built individually via LevelLayoutDumper (drag real content into the Scene view, dump to code —
-// see that file's header comment), the same way L02 "Harvest Yard" through L05 "Bessie's Debut"
-// were built, replacing the old auto-generated stand-ins. See DeleteStaleAsset below for how old
-// generated assets get cleaned up when a level's Make(...) call is removed.
+// L01-L07 all exist below as of 2026-07-10 (L06 built LAST, out of order, after L07 — nothing
+// requires strict numeric sequencing since GameManager auto-discovers every LevelData asset
+// regardless of gaps). The original auto-generated L06 (on the OLD pre-rebuild coordinate system,
+// ground Y=-2.5/launcher X=-5.5, rigid-translated by a fixed delta dx=+3.173/dy=-4.10, never
+// hand-built/verified) was removed 2026-07-09 and replaced by a real hand-built layout 2026-07-10.
+// Every level from L02 onward is built individually via LevelLayoutDumper (drag real content into
+// the Scene view, dump to code — see that file's header comment). See DeleteStaleAsset below for
+// how old generated assets get cleaned up when a level's Make(...) call is removed or renamed.
+// Bessie debuts at L07 (revised 2026-07-10 — an earlier same-day plan had her debuting at L05
+// instead) — L06 stays Cluck-only even though it was built after L07, since L06 sits before L07
+// in level order/progression.
 
 using UnityEngine;
 using UnityEditor;
@@ -142,9 +145,10 @@ public static class LevelDataGenerator
         // ── W1_L03  ────────────────────────────────────────────────────────────
         // Built 2026-07-10 via LevelLayoutDumper (same workflow as L02 "Harvest Yard" — drag
         // real prefabs/sprites into the Scene view, run FarmFury -> Debug -> Dump Level Layout
-        // To Log, paste the result here). Still Cluck-only — Bessie and Cluck's own ability
-        // don't unlock until L05 (user decision 2026-07-10), so birds[] stays 3x Cluck like
-        // L01/L02. Robots are 1x Harvester + 2x SemiHarvester, so the match-up screen's existing
+        // To Log, paste the result here). Still Cluck-only — Cluck's own ability unlocks at L04
+        // (AnimalBase.AbilityIntroLevelIndex) and Bessie isn't introduced until L07 (user decision
+        // 2026-07-10, moved from an earlier L05 plan — see L05's own comment below), so birds[]
+        // stays 3x Cluck like L01/L02. Robots are 1x Harvester + 2x SemiHarvester, so the match-up screen's existing
         // "second distinct RobotType" logic (MatchUpScreen.cs ~line 189) automatically shows
         // both the Harvester and SemiHarvester cards, same as L02 — no MatchUpScreen changes
         // needed for this level.
@@ -233,7 +237,8 @@ public static class LevelDataGenerator
         // (previously unwired/invisible) and fire in a fixed forward-and-down cone ("like being
         // fired from a cannon") instead of a spread centred on Cluck's exact in-flight velocity
         // angle — see CluckAnimal.cs/SceneSetup.EnsureEggPrefab() same-day comments. birds[]
-        // stays 3x Cluck (Bessie is introduced at L05 instead).
+        // stays 3x Cluck (Bessie is introduced at L07 instead — see L05's own comment below for
+        // the plan revision).
         //
         // Layout compacted 2026-07-10 (same precaution as L03 — the raw dump spanned X 3.8-8.27,
         // 4.47 units, wider than any previously-verified-safe level): uniformly compressed toward
@@ -269,25 +274,24 @@ public static class LevelDataGenerator
                 R(4.97f, -4.14f, 4.845f, 6.025f, RobotType.Harvester),
             });
 
-        // ── W1_L05  Bessie's Debut ────────────────────────────────────────────
+        // ── W1_L05  The Gauntlet ──────────────────────────────────────────────
         // Built 2026-07-10 via LevelLayoutDumper (same workflow as L02-L04 — dumped layout pasted
         // from unity/Logs/level_layout_dump.txt). Densest level yet: 2 Harvester + 3 SemiHarvester
-        // (5 robots total, vs L04's 4). Introduces Bessie AND unlocks Cluck's ability one level
-        // later than originally implied — per the L03 comment above ("Bessie and Cluck's own
-        // ability don't unlock until L05, user decision 2026-07-10"), this is that level. birds[]
-        // is 2x Cluck + 1x Bessie (still 3 total, matching every level so far) rather than adding
-        // a 4th bird, since par stays 2 like every other level.
+        // (5 robots total, vs L04's 4). Originally built as "Bessie's Debut" (birds[] = 2x Cluck +
+        // 1x Bessie) the same day, but the user revised the plan later that session: Bessie is now
+        // introduced at L07 instead, not here — so this level reverted to Cluck-only (3x Cluck,
+        // matching L01-L04) and was renamed off its now-inaccurate old name. Layout/blocks/robots
+        // below are otherwise unchanged from the original build.
         //
         // Layout compacted using the same pivot-and-compress approach as L03/L04 (raw dump spanned
         // X 3.72-8.05, 4.33 units — wider than the established safe range): pivot = leftmost
         // element (the first barrel, X=3.72, held fixed), factor = 0.85, landing the widest
         // element (the second Harvester) at X~7.4, matching L03/L04's own right edge. Not yet
         // visually verified in the Editor (no Play-mode access here) — worth a live check,
-        // particularly given this is the first level with 5 robots and Bessie's ground-slam
-        // ability (large shockwave radius) in play at the same time.
-        Make(folder, "L05_BessiesDebut",
-            id: "W1_L05", name: "Bessie's Debut", par: 2,
-            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+        // particularly given this is the first level with 5 robots.
+        Make(folder, "L05_TheGauntlet",
+            id: "W1_L05", name: "The Gauntlet", par: 2,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
                 B(BlockType.Haybale, 4.536f, -5.4f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
@@ -308,16 +312,113 @@ public static class LevelDataGenerator
                 R(5.25f,  -3.83f, 5.408f, 5.501f, RobotType.SemiHarvester),
             });
 
-        // L06 still removed (see L03's own comment above for the fuller history) — build via
-        // LevelLayoutDumper the same way L02-L05 were, then add a Make(folder, "L06_...", ...)
-        // call here.
-        DeleteStaleAsset(folder, "L06_BessiesDebut");
+        // Old L05 asset filename, orphaned by the rename above (L05_BessiesDebut -> L05_TheGauntlet
+        // — GameManager auto-loads every LevelData asset it finds in this folder, so the stale
+        // file would otherwise linger as a phantom extra level).
+        DeleteStaleAsset(folder, "L05_BessiesDebut");
+
+        DeleteStaleAsset(folder, "L06_BessiesDebut"); // stale old-plan filename, orphaned since the L05/L07 rename
+
+        // ── W1_L06  Double Barrel ─────────────────────────────────────────────
+        // Built 2026-07-10 via LevelLayoutDumper (dumped layout pasted from
+        // unity/Logs/level_layout_dump.txt) — user request: "build L06." Built out of order
+        // AFTER L07 (which already exists) — nothing requires levels to be built in strict
+        // numeric sequence, since GameManager auto-discovers every LevelData asset in this folder
+        // regardless of gaps. Still Cluck-only (3x Cluck) even though L07 already introduces
+        // Bessie — L06 sits BEFORE L07 in level order/progression, so keeping her out here
+        // preserves "Bessie debuts at L07" as the actual player-facing introduction rather than
+        // spoiling it a level early just because of build order.
+        //
+        // 5 robots (2 Harvester + 3 SemiHarvester — same composition as L05 "The Gauntlet", but a
+        // distinct layout) + 9 blocks (4 vertical wood, 2 horizontal wood, 2 barrels, 1 haybale) —
+        // introduces a SECOND exploding barrel in the same level for the first time (L03-L05/L07
+        // each had 1-3, but always clustered; here the two barrels sit apart, at opposite ends of
+        // the structure).
+        //
+        // Layout compacted using the same pivot-and-compress approach as every prior level (raw
+        // dump spanned X 3.81-7.94, 4.13 units — wider than the established safe range): pivot =
+        // leftmost element (the first Harvester, X=3.81, held fixed), factor = 0.869, landing the
+        // widest element (the third SemiHarvester) at X~7.4, matching every other level's
+        // established right edge. Y values untouched. Not yet visually verified in the Editor (no
+        // Play-mode access here) — worth a live check, particularly the two barrels' now-2x robot
+        // explosion strength (see WoodBlock/ExplodingBarrelBlock's _explosionStrengthMultiplier)
+        // against 2 Harvesters in the same level for the first time.
+        Make(folder, "L06_DoubleBarrel",
+            id: "W1_L06", name: "Double Barrel", par: 2,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
+            blocks: new[]
+            {
+                B(BlockType.Wood,    4.659f, -5.407f, 1.053f, 1.29f,  artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood,    4.983f, -5.42f,  1.053f, 1.29f,  artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood,    6.434f, -4.49f,  1.053f, 1.29f,  artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood,    6.825f, -4.48f,  1.053f, 1.29f,  artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Barrel,  6.591f, -5.36f,  1.349f, 1.402f),
+                B(BlockType.Barrel,  4.749f, -4.17f,  1.349f, 1.402f),
+                B(BlockType.Wood,    4.780f, -4.827f, 1.292f, 0.987f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood,    6.556f, -3.86f,  1.292f, 0.987f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Haybale, 5.678f, -5.43f,  1.176f, 1.176f, passThrough: true, hp: 10f, mass: 3f),
+            },
+            robots: new[]
+            {
+                R(3.81f,  -5.38f, 5.663f, 7.369f, RobotType.Harvester),
+                R(6.469f, -3.05f, 5.663f, 7.369f, RobotType.Harvester),
+                R(5.670f, -4.6f,  6.197f, 6.29f,  RobotType.SemiHarvester),
+                R(4.714f, -3.28f, 6.197f, 6.29f,  RobotType.SemiHarvester),
+                R(7.399f, -5.34f, 6.197f, 6.29f,  RobotType.SemiHarvester),
+            });
+
+        // ── W1_L07  Bessie's Debut ────────────────────────────────────────────
+        // Built 2026-07-10 via LevelLayoutDumper (dumped layout pasted from
+        // unity/Logs/level_layout_dump.txt) — user request: "I have built level 7... let's
+        // introduce Bessie." L06 is intentionally still skipped/removed (see above); nothing
+        // requires levels to be built in strict numeric order since GameManager auto-discovers
+        // every LevelData asset in this folder regardless of gaps. birds[] is 2x Cluck + 1x
+        // Bessie (still 3 total, par 2, matching every level so far) — this is the actual debut
+        // originally planned for L05 before the user moved it here.
+        //
+        // First level to use BlockType.Stone (StoneBlock, baseMaxHealth=220 — much tankier than
+        // Wood/Haybale/Barrel's ~10 effective HP) and 3 barrels instead of the usual 1-2 — a
+        // heavier, more defensive layout befitting the harder-hitting animal introduced here.
+        // 4 robots: 1 Harvester + 3 SemiHarvester.
+        //
+        // Layout compacted using the same pivot-and-compress approach as L03-L05 (raw dump
+        // spanned X 3.615-7.867, 4.252 units — wider than the established safe range): pivot =
+        // leftmost element (the first barrel, X=3.615, held fixed), factor = 0.89, landing the
+        // widest element (the Harvester) at X~7.4, matching every other level's established right
+        // edge. Y values untouched. Not yet visually verified in the Editor (no Play-mode access
+        // here) — worth a live check, particularly Bessie's Ground Slam shockwave (3.6u radius)
+        // against this level's tighter block spacing, and that her match-up card slides in from
+        // the left the same generic way every other animal's card does (MatchUpScreen.SlideCardsIn
+        // isn't species-specific — Bessie's card art was already wired via SceneSetup.
+        // WireMatchUpCards' keyword lookup, "Bessie" -> Bessie_Cow.png, well before this level
+        // existed, so no MatchUpScreen code changes were needed for this request).
+        Make(folder, "L07_BessiesDebut",
+            id: "W1_L07", name: "Bessie's Debut", par: 2,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Barrel, 3.615f, -5.512f, 1.109f, 1.07f),
+                B(BlockType.Barrel, 6.428f, -5.322f, 1.056f, 1.083f),
+                B(BlockType.Barrel, 6.437f, -4.622f, 1.056f, 1.083f),
+                B(BlockType.Wood,   5.743f, -5.246f, 0.827f, 1.744f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood,   4.194f, -5.246f, 0.827f, 1.744f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood,   4.149f, -4.462f, 1f, 1f, artVariant: WoodArtVariant.Flat),
+                B(BlockType.Wood,   5.680f, -4.48f,  1f, 1f, artVariant: WoodArtVariant.Flat),
+                B(BlockType.Stone,  7.373f, -5.517f, 1.452f, 1.066f),
+            },
+            robots: new[]
+            {
+                R(7.401f, -4.34f,  5.398f, 7.824f, RobotType.Harvester),
+                R(4.123f, -3.987f, 5.687f, 5.919f, RobotType.SemiHarvester),
+                R(5.680f, -3.937f, 5.64f,  5.919f, RobotType.SemiHarvester),
+                R(4.915f, -5.412f, 5.779f, 6.243f, RobotType.SemiHarvester),
+            });
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         if (!silent)
             EditorUtility.DisplayDialog("FarmFury",
-                "Generated 5 LevelData assets in\nAssets/ScriptableObjects/Levels\n(L06 removed — build individually)", "OK");
+                "Generated 7 LevelData assets in\nAssets/ScriptableObjects/Levels\n(L01-L07)", "OK");
         Debug.Log("[FarmFury] Level data generation complete.");
     }
 

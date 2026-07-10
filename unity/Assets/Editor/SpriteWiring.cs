@@ -122,6 +122,15 @@ public static class SpriteWiring
             charKey + "_abilitytrigger", charKey + "_trigger1", charKey + "_trigger",
             "abilitytrigger", "trigger", "trigger1", "ability");
 
+        // Fallback: no dedicated Idle art exists (e.g. Bessie's folder has Loaded/InFlight/
+        // Impact/Trigger but no Bessie_Idle.png) but Loaded art does — reuse it for Idle too,
+        // rather than leaving _sprIdle/IdleSprite null (2026-07-10, part of the "why is Bessie
+        // pink" fix — see AnimalBase.HasRealSprites' own comment for the other half of it).
+        var idleProp = so.FindProperty("_sprIdle");
+        var loadedProp = so.FindProperty("_sprLoaded");
+        if (idleProp.objectReferenceValue == null && loadedProp.objectReferenceValue != null)
+            idleProp.objectReferenceValue = loadedProp.objectReferenceValue;
+
         // Shared "impact stars" VFX (ImpactStars1.png) — same asset on every animal, not a
         // per-character keyword match like the poses above.
         var impactStars = AssetDatabase.LoadAssetAtPath<Sprite>(

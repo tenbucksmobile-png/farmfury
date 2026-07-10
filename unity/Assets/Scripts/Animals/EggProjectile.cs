@@ -4,6 +4,11 @@ using UnityEngine;
 [RequireComponent(typeof(CircleCollider2D))]
 public class EggProjectile : MonoBehaviour
 {
+    // Flat damage vs blocks only — robot damage uses RobotEnemy.TakeEggDamage()'s own
+    // fraction-of-max-HP factor instead (2026-07-10 fifth balance pass, damage-factor model v2:
+    // "eggs... apply your determined damage factor" — see RobotEnemy.cs's class comment), so egg
+    // damage scales consistently across every robot type rather than being a flat number that
+    // happened to be ~half of some robots' HP and a third of others'.
     [SerializeField] private float _damage = 15f;
 
     private bool _hit;
@@ -30,7 +35,7 @@ public class EggProjectile : MonoBehaviour
         if (collision.gameObject.TryGetComponent<BlockBase>(out var block))
             block.TakeDamage(_damage);
         else if (collision.gameObject.TryGetComponent<RobotEnemy>(out var robot))
-            robot.TakeDamage(_damage);
+            robot.TakeEggDamage();
 
         Destroy(gameObject);
     }

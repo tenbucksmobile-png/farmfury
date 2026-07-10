@@ -48,7 +48,17 @@ public abstract class AnimalBase : MonoBehaviour
     protected CircleCollider2D _col;
     protected SpriteRenderer   _sr;
 
-    protected bool HasRealSprites => _sprIdle != null;
+    // 2026-07-10, user report: "check why Bessie is pink?" Root cause: this only checked
+    // _sprIdle, but Bessie's character folder has Loaded/InFlight/Impact/Trigger art and no
+    // Bessie_Idle.png specifically — every subclass's Awake() uses !HasRealSprites to decide
+    // whether to apply a solid placeholder tint (Bessie's was pink), and that tint, once set,
+    // is never reset when a later REAL sprite (Loaded/InFlight/etc.) is assigned — so the single
+    // missing Idle art poisoned the tint for her entire lifetime even though every other pose she
+    // actually shows in-game is real art. Broadened to check every pose so "has real sprites" no
+    // longer hinges on one specific (and, for a mid-flight animal, rarely-seen) slot.
+    protected bool HasRealSprites =>
+        _sprIdle != null || _sprLoaded != null || _sprInFlight != null ||
+        _sprImpact != null || _sprAbility != null;
 
     public Sprite IdleSprite => _sprIdle;
 

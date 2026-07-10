@@ -203,6 +203,16 @@ public abstract class BlockBase : MonoBehaviour
         if (!_silentHit) PlayHitSound();
         OnHealthChanged();
         PlayDamageFlash();
+
+        // A robot resting on top should fall the instant its support is disturbed by ANY real
+        // hit — not only once the block is fully destroyed (2026-07-10, user request: "make sure
+        // that robots fall if structure under them are disturbed, even if one haybale or wood is
+        // fractured"). Runs here unconditionally (every hit, lethal or not) rather than inside
+        // DestroyBlock() as before — moved, not duplicated, so a lethal hit still only checks
+        // once (DestroyBlock() below no longer has its own call). _col/transform are still fully
+        // valid at this point regardless of whether this hit is about to destroy the block.
+        CheckForRobotsOnTop();
+
         if (Health <= 0f) DestroyBlock();
     }
 
@@ -271,7 +281,10 @@ public abstract class BlockBase : MonoBehaviour
     {
         if (IsDestroyed) return;
         IsDestroyed = true;
-        CheckForRobotsOnTop(); // must run before Destroy(gameObject) below, needs _col still valid
+        // CheckForRobotsOnTop() no longer lives here — TakeDamage() now calls it once on every
+        // hit (lethal or not), see that method's comment. Calling it again here would double-fire
+        // for the specific hit that both damages AND destroys the block (the common case for any
+        // one-hit-kill block like Haybale/Wood/Barrel).
         CameraShake.Shake(0.22f, 0.20f);
         if (_sprExplode != null) SpawnExplosion();
         else                     SpawnFragments();

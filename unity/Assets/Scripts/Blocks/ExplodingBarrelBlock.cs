@@ -16,15 +16,22 @@ public class ExplodingBarrelBlock : WoodBlock
         // survive multiple impacts before its explosion actually triggers.
         baseMaxHealth = 5f;
 
-        // Bigger and more damaging than a plain wood/haybale break (WoodBlock's own defaults,
-        // inherited otherwise, cover the actual chain-reaction logic via DamageNearby() — this
-        // class no longer needs its own copy, just bigger numbers) — a barrel is meant to read
-        // as a dramatic explosion, not a nick. Raised 1.8/60 -> 2.5/80 (2026-07-10, "ease the
-        // damage requirements"), then dialed back down to 2.0/55 same day, third pass
-        // (user-reported robots now "explode on the slightest of touches" — see WoodBlock's own
-        // comment for the fuller context; expect more tuning passes on these numbers).
-        _areaDamageRadius = 2.0f;
+        // A barrel is a genuine explosive prop — unlike plain Wood (see WoodBlock's
+        // _explodesOnRobots comment, 2026-07-10 fifth balance pass), its death always fires
+        // RobotEnemy.TakeExplosionDamage() at any robot caught in its (now sprite-size-relative,
+        // see EffectiveBlastRadius) blast. Block-to-block chain damage stays bigger than plain
+        // Wood's default too, matching a barrel's "dramatic explosion, not a nick" identity.
+        _explodesOnRobots = true;
         _areaDamage       = 55f;
+
+        // "These barrels must explode like the haybales, only with stronger strength" (2026-07-10,
+        // user request, after L07's barrel-heavy layout) — a barrel now deals 2x the robot-facing
+        // explosion fraction Haybale uses (RobotEnemy.ExplosionDamageFraction * 2, i.e. always
+        // guarantees a kill on any robot caught in its blast regardless of current HP), rather
+        // than sharing an identical fraction with Haybale despite reading as the bigger, more
+        // dramatic explosion of the two. Lives here (not per-level data), so every level that
+        // already uses ExplodingBarrelBlock — L03, L04, L05, L07 — gets this automatically.
+        _explosionStrengthMultiplier = 2f;
     }
 
     protected override void DestroyBlock()

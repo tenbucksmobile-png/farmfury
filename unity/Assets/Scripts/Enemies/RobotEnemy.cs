@@ -9,24 +9,46 @@ public class RobotEnemy : MonoBehaviour
     [SerializeField] private float _impulseDamageMultiplier = 1.0f;
     [SerializeField] private float _minDamageImpulse        = 1.5f;
 
-    // Precise damage-percentage model (2026-07-10, fourth balance pass — user report: "still too
-    // easy, increase the damage for the robots; if directly struck by an animal, lose only 50%
-    // damage — so technically it should be hit directly twice. If indirectly hit then lessen the
-    // damage to 25% per explosion — so 4 things must explode around it for the robot to
-    // explode... apply the math, let's see what difficulty it renders"). Replaces the previous
-    // impulse-derived/flat-floor system for these two specific cases with a deterministic,
-    // countable one: a direct animal collision (TakeDirectHitDamage) always costs exactly half
-    // max HP regardless of impact speed/angle, so it's always exactly 2 direct hits to kill; an
-    // explosion hit (TakeExplosionDamage — from a nearby block's WoodBlock.DamageNearby(), or a
-    // robot's own support being destroyed under it) always costs exactly a quarter, so it's
-    // always exactly 4 to kill via chain reaction alone (mixing the two obviously finishes
-    // faster). Robot-vs-robot contact damage (_robotContactDamage below) is a separate,
-    // unrequested category — left as its existing impulse-plus-floor formula.
-    private const float DirectHitDamageFraction    = 0.5f;
-    // 0.25 -> 0.20 (2026-07-10, immediate follow-up: "also reduce the damage from explosions to
-    // 20% to robots") — 5 explosions now needed to kill a robot via chain reaction alone,
-    // instead of 4. Direct-hit fraction above is unchanged.
-    private const float ExplosionDamageFraction    = 0.20f;
+    // Damage-factor model v2 (2026-07-10, fifth balance pass — user report: "from level 3 the
+    // gameplay and destruction has become only one hit... we have made this too easy"). Root
+    // cause of the "one hit" complaint: the previous model (see git history) let ANY wood plank
+    // breaking fire a flat, no-falloff ExplosionDamageFraction hit at every robot within a wide
+    // (1.6-2.0u) radius — in a packed L03+ tower, one swing could chain-break 4-5 neighbouring
+    // planks, each one landing a "free" 20% hit with zero player skill involved. Redesigned
+    // around 4 distinct, deliberately harder damage factors, each a fixed fraction of max HP
+    // (still no impulse/speed dependency — a "hit" always costs the same regardless of how hard
+    // the physics engine happened to resolve it):
+    //   - Direct hit   (TakeDirectHitDamage) — a launched animal physically colliding with the
+    //     robot. 2 hits to kill.
+    //   - Explosion    (TakeExplosionDamage) — ONLY from a genuine explosive prop dying next to
+    //     the robot (Haybale or ExplodingBarrelBlock — see WoodBlock._explodesOnRobots). Plain
+    //     Wood breaking apart no longer triggers this at all (see WoodBlock.DamageNearby) — wood
+    //     is now purely structural, see the Fall category below. 2 hits to kill.
+    //   - Egg          (TakeEggDamage) — Cluck's Cluster Bomb ability, one call per egg that
+    //     actually connects. Deliberately the weakest of the four (a supplementary tool, not a
+    //     solo-kill weapon) — ~9 eggs (nearly two full 5-egg bursts) to kill unassisted.
+    //   - Fall         (TakeFallDamage) — a robot's supporting block is destroyed and it drops
+    //     (MakeDynamicFromSupportLoss). This is the ONLY damage wood's own destruction can still
+    //     cause to a robot, and only when the robot was actually resting on the block that broke,
+    //     not just "nearby" — matches the requested rule "wood breaking... should not affect any
+    //     damage to the robot, this is only a structural feature... in its falling presents
+    //     fractional damage." Weaker than a real explosion. ~7 falls to kill unassisted (in
+    //     practice the subsequent landing impact via OnCollisionEnter2D usually adds more on top).
+    // Sixth balance pass (2026-07-10, same day — user report: "I am not able to destroy all
+    // robots within the 3 animals... retune the factors so 3 birds works"): raised Direct-hit and
+    // Explosion 0.34/0.28 -> 0.55 each (both now exactly 2 hits to kill, matching this project's
+    // long-standing "always exactly 2 direct hits" design language from the fourth balance pass,
+    // just now shared by explosions too) so a level's 3 birds have real room to clear a dense
+    // multi-robot layout (e.g. L05's 5 robots) via a mix of direct hits, an explosive prop or two,
+    // and incidental fall/contact damage, without needing to widen blast radius back out (which
+    // would reintroduce the "one hit chain-kills everything" bug this pass fixed). Egg/Fall left
+    // untouched — still the deliberately weaker supplementary categories.
+    // Robot-vs-robot contact damage (_robotContactDamage below) remains its own, separate,
+    // impulse-plus-floor category, untouched by this pass.
+    private const float DirectHitDamageFraction    = 0.55f;
+    private const float ExplosionDamageFraction    = 0.55f;
+    private const float EggDamageFraction          = 0.12f;
+    private const float FallDamageFraction         = 0.15f;
     [SerializeField] private float _robotContactDamage      = 18f;
 
     public float Health      { get; private set; }
@@ -219,24 +241,49 @@ public class RobotEnemy : MonoBehaviour
     public void MakeDynamicFromSupportLoss()
     {
         if (IsDestroyed) return;
+        // Guard against re-stacking fall damage: BlockBase.TakeDamage() now calls
+        // CheckForRobotsOnTop() on EVERY hit to a supporting block, not just its destroying one
+        // (2026-07-10, user request: "robots fall if structure under them are disturbed, even if
+        // one haybale or wood is fractured") — so a tanky block (e.g. StoneBlock) taking several
+        // non-lethal hits while a robot rests on it would otherwise call this once per hit. Once
+        // truly falling (Dynamic), further disturbances to whatever's below don't matter — the
+        // robot already left its perch.
+        if (_rb.bodyType == RigidbodyType2D.Dynamic) return;
         _rb.bodyType = RigidbodyType2D.Dynamic;
 
-        // Structural collapse counts as one "explosion"-tier hit (see the damage-model comment
-        // at the top of this class) — on top of whatever the eventual fall/landing impact adds
-        // via OnCollisionEnter2D below, since a gentle drop onto the next block down could
-        // otherwise produce near-zero impulse and read as "nothing happened" even though its
-        // support was just blown out from under it.
-        TakeExplosionDamage();
+        // Structural collapse counts as one "fall"-tier hit (its own, weaker category — see the
+        // damage-model comment at the top of this class) — on top of whatever the eventual fall/
+        // landing impact adds via OnCollisionEnter2D below, since a gentle drop onto the next
+        // block down could otherwise produce near-zero impulse and read as "nothing happened"
+        // even though its support was just blown out from under it. Deliberately NOT
+        // TakeExplosionDamage() — a structural collapse from wood is not a real explosion, per
+        // the 2026-07-10 fifth balance pass.
+        TakeFallDamage();
     }
 
-    // Direct hit from a launched animal (Cluck etc.) — always exactly half max HP, regardless of
-    // impact speed/angle. See the damage-model comment at the top of this class.
+    // Direct hit from a launched animal (Cluck etc.) — always exactly this fraction of max HP,
+    // regardless of impact speed/angle. See the damage-model comment at the top of this class.
     public void TakeDirectHitDamage() => TakeDamage(_maxHealth * DirectHitDamageFraction);
 
-    // Indirect hit from a nearby explosion (WoodBlock.DamageNearby()) or a structural collapse
-    // (MakeDynamicFromSupportLoss()) — always exactly a quarter max HP. See the damage-model
-    // comment at the top of this class.
-    public void TakeExplosionDamage() => TakeDamage(_maxHealth * ExplosionDamageFraction);
+    // A genuine explosive prop (Haybale or ExplodingBarrelBlock — see
+    // WoodBlock._explodesOnRobots) dying within blast range. See the damage-model comment at the
+    // top of this class. strengthMultiplier lets a specific prop type hit harder than the shared
+    // base fraction (2026-07-10, user request: "these barrels must explode like the haybales,
+    // only with stronger strength") — Haybale/plain explosive Wood pass the default 1x
+    // (WoodBlock._explosionStrengthMultiplier's own default), ExplodingBarrelBlock overrides
+    // theirs higher.
+    public void TakeExplosionDamage(float strengthMultiplier = 1f) =>
+        TakeDamage(_maxHealth * ExplosionDamageFraction * strengthMultiplier);
+
+    // One connecting egg from Cluck's Cluster Bomb ability. Deliberately the weakest category —
+    // see the damage-model comment at the top of this class.
+    public void TakeEggDamage() => TakeDamage(_maxHealth * EggDamageFraction);
+
+    // A structural collapse dropping this robot (MakeDynamicFromSupportLoss above) — "wood
+    // breaking is structural only, falling presents fractional damage", per the 2026-07-10 fifth
+    // balance pass. Weaker than a real explosion. See the damage-model comment at the top of
+    // this class.
+    public void TakeFallDamage() => TakeDamage(_maxHealth * FallDamageFraction);
 
     public void TakeDamage(float amount)
     {

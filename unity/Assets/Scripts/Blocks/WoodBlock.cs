@@ -6,24 +6,42 @@ public class WoodBlock : BlockBase
     // Set by LevelLoader after spawn when BlockSpawnData.passThrough is true.
     [SerializeField] public bool _passThrough;
 
-    // Fundamental gameplay rule (user-requested 2026-07-10 — "levels are too difficult... we
-    // need to ease the damage requirements... what we're looking for is destruction and mayhem,
-    // one hit must cause a chain reaction"): every block destruction in this family (Wood,
-    // Haybale — same class, just different wired art — and ExplodingBarrelBlock below, which
-    // overrides these two fields with bigger numbers) damages BOTH nearby robots AND nearby
-    // blocks, not just robots. Originally (same day, first pass) this only hit robots and left
-    // block-to-block chaining as an ExplodingBarrelBlock-only "exploding barrel" special case —
-    // that wasn't enough to reliably clear a level within 3 birds, so the chain reaction was
-    // widened to every block type, and the radius/damage themselves raised (1.3->2.0, 20->35).
-    // Dialed back down (2.0->1.6, 35->25) same day, second pass — user-reported the combination
-    // of this plus the lowered robot HP (see SceneSetup's HarvesterRobot/SemiHarvesterRobot
-    // wiring) made robots "explode on the slightest of touches," overcorrecting the original
-    // "too hard" complaint into "too easy." User expects this to need further iteration ("it
-    // will take some tweaking to get the correct strength ratio") — treat these numbers as a
-    // rough middle ground, not a final tuning. Lives here (not per-level data) so it
-    // automatically applies to every level, current and future.
-    [SerializeField] protected float _areaDamageRadius = 1.6f;
+    // Damage-factor model v2 (2026-07-10, fifth balance pass — see the comment block at the top
+    // of RobotEnemy.cs for the full rationale). Root cause of the "level 3 onward is one hit"
+    // complaint: EVERY block in this family firing a flat, no-falloff robot explosion hit at a
+    // wide (1.6-2.0u) radius on death let one swing chain-break a whole packed tower, each break
+    // landing a "free" hit on any nearby robot. Two changes fix this:
+    //   1. Plain Wood no longer damages robots on death AT ALL — it is now purely structural.
+    //      Only _explodesOnRobots=true blocks (Haybale, ExplodingBarrelBlock) still call
+    //      RobotEnemy.TakeExplosionDamage() when they die near a robot. A robot standing on wood
+    //      that gets destroyed still suffers — via BlockBase.CheckForRobotsOnTop() ->
+    //      RobotEnemy.MakeDynamicFromSupportLoss() -> TakeFallDamage(), a distinct, weaker
+    //      category — but breaking wood 2 units away from a robot now does nothing to it.
+    //   2. Blast radius ("explosive force") is no longer an arbitrary flat number independent of
+    //      the block's own size — it's now ExplosiveForceScale (40%) of the block's own rendered
+    //      footprint (see EffectiveBlastRadius below), computed fresh from the actual collider
+    //      bounds at the moment of death. A ~1x1 block now has a ~0.4u blast radius instead of
+    //      1.6-2.0u, so a single break can only ever reach directly-touching neighbours, not an
+    //      entire tower — this is what actually "minimises the chain reaction," not the damage
+    //      amount below (_areaDamage), which is unchanged and still governs block-to-block
+    //      falloff damage only.
+    [SerializeField] protected bool  _explodesOnRobots = false;
+    protected const float ExplosiveForceScale = 0.4f;
     [SerializeField] protected float _areaDamage        = 25f;
+
+    // Multiplies RobotEnemy.TakeExplosionDamage()'s usual fraction for THIS block type only —
+    // added 2026-07-10, user request: "these barrels must explode like the haybales, only with
+    // stronger strength." Haybale and plain explosive Wood both use the default 1x (identical to
+    // RobotEnemy.ExplosionDamageFraction, the same "genuine explosion" tier every explosive prop
+    // shares); ExplodingBarrelBlock overrides this higher so a barrel reads as a dramatically
+    // bigger threat without needing a second, parallel damage category.
+    [SerializeField] protected float _explosionStrengthMultiplier = 1f;
+
+    // Radius of this block's blast, derived from its own actual world-space size (not a flat
+    // constant) — see the class comment above. Falls back to a plain 1u footprint if the
+    // collider somehow isn't ready yet.
+    protected float EffectiveBlastRadius =>
+        (_col != null ? Mathf.Max(_col.bounds.size.x, _col.bounds.size.y) : 1f) * ExplosiveForceScale;
 
     protected override void Awake()
     {
@@ -66,34 +84,31 @@ public class WoodBlock : BlockBase
         DamageNearby();
     }
 
-    // Damages every OTHER block and robot within _areaDamageRadius — one block dying can now set
-    // off its neighbours (chain reaction) as well as hurt any nearby robot, not just robots.
-    // ExplodingBarrelBlock overrides _areaDamageRadius/_areaDamage with bigger numbers and adds
-    // camera shake on top, but reuses this exact method rather than a separate implementation.
-    //
-    // Robot damage changed 2026-07-10 (fourth balance pass) from _areaDamage-with-distance-
-    // falloff to a flat RobotEnemy.TakeExplosionDamage() call (exactly 25% of that robot's own
-    // max HP, no falloff) — see the damage-model comment at the top of RobotEnemy.cs. User
-    // wanted a precisely countable "4 explosions to kill" rule, which a distance-falloff amount
-    // can't guarantee (a robot at the radius edge would take much less than a robot at ground
-    // zero). Block-to-block chain damage (below) still uses _areaDamage with falloff — that part
-    // of the system wasn't part of this request.
+    // Damages every OTHER block within EffectiveBlastRadius (structural chain reaction — applies
+    // to every block in this family, Wood included) and, ONLY if _explodesOnRobots is true
+    // (Haybale, ExplodingBarrelBlock — plain Wood never), every robot in that same now-much-
+    // smaller radius via the flat, no-falloff RobotEnemy.TakeExplosionDamage(). Wood dying near a
+    // robot but NOT under it does nothing to that robot at all — see the class comment above.
     protected void DamageNearby()
     {
-        var hits = Physics2D.OverlapCircleAll(transform.position, _areaDamageRadius);
+        float radius = EffectiveBlastRadius;
+        var hits = Physics2D.OverlapCircleAll(transform.position, radius);
         foreach (var hit in hits)
         {
             if (hit == null || hit.gameObject == gameObject) continue;
 
-            var robot = hit.GetComponentInParent<RobotEnemy>();
-            if (robot != null && !robot.IsDestroyed)
+            if (_explodesOnRobots)
             {
-                robot.TakeExplosionDamage();
-                continue;
+                var robot = hit.GetComponentInParent<RobotEnemy>();
+                if (robot != null && !robot.IsDestroyed)
+                {
+                    robot.TakeExplosionDamage(_explosionStrengthMultiplier);
+                    continue;
+                }
             }
 
             float dist    = Vector2.Distance(transform.position, hit.transform.position);
-            float falloff = Mathf.Clamp01(1f - dist / _areaDamageRadius);
+            float falloff = Mathf.Clamp01(1f - dist / radius);
             if (falloff <= 0f) continue;
 
             var block = hit.GetComponentInParent<BlockBase>();

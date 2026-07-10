@@ -174,7 +174,7 @@ MonoBehaviour:
   mass: 8
   bounciness: 0.4
   linearDrag: 0.008
-  _sprIdle: {fileID: 0}
+  _sprIdle: {fileID: 21300000, guid: 8e908593088caf640898f71912f156c5, type: 3}
   _sprLoaded: {fileID: 21300000, guid: 8e908593088caf640898f71912f156c5, type: 3}
   _sprInFlight: {fileID: 21300000, guid: a5bef4139b5f47346bd3d5988f3f5964, type: 3}
   _sprImpact: {fileID: 21300000, guid: fe013f32d60b2d341b14d4c6d1efe967, type: 3}

@@ -183,7 +183,7 @@ MonoBehaviour:
   _maxHealth: 35
   _impulseDamageMultiplier: 2.5
   _minDamageImpulse: 2
-  _robotContactDamage: 15
+  _robotContactDamage: 18
   _robotSprite: {fileID: 21300000, guid: e2df018512e4c9947a7895bcc9a35a4a, type: 3}
   _robotDamagedSprite: {fileID: 0}
   _criticalSprite: {fileID: 0}

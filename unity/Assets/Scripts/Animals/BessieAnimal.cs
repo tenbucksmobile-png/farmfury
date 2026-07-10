@@ -12,6 +12,12 @@ public class BessieAnimal : AnimalBase
     [Header("VFX")]
     [SerializeField] private GameObject _shockwaveRingPrefab;
 
+    // Guaranteed-kill amount for a triggered direct robot hit (2026-07-10, user request: "if
+    // trigger hits a robot it destroys"). TakeDamage() clamps Health at 0 internally, so any
+    // sufficiently large value is a safe, deterministic kill regardless of the robot's current
+    // HP — simpler than adding a separate "force kill" method to RobotEnemy's public API.
+    private const float InstantKillDamage = 999999f;
+
     private bool _slammed;
 
     protected override void Awake()
@@ -31,12 +37,33 @@ public class BessieAnimal : AnimalBase
         _rb.linearVelocity += Vector2.down * _slamImpulse;
     }
 
+    // Ground Slam ability rework (2026-07-10, user request): "bessie_trigger... causes a tremor
+    // earthquake when hitting the ground, or crashes through a structure. Also if trigger hits a
+    // robot it destroys. But if trigger is not activated apply normal damage directly to robot —
+    // bessie_impact." Three distinct outcomes once the ability is active (_slammed):
+    //   - Ground or ANY structure (BlockBase) impact -> the tremor/earthquake shockwave below.
+    //     Previously gated on Ground-tag only — "crashes through a structure" broadens it to any
+    //     block, not just the ground surface itself.
+    //   - Direct robot impact -> outright kill (InstantKillDamage), not the usual fractional
+    //     direct-hit amount.
+    // If the ability was never triggered, none of the above fires — RobotEnemy's own generic
+    // OnCollisionEnter2D already applies the standard TakeDirectHitDamage() fraction to any
+    // AnimalBase collision (Bessie included), and base.OnCollisionEnter2D() above already shows
+    // the normal Bessie_Impact.png pose via _sprImpact. That existing default IS the "trigger not
+    // activated" case — no extra code needed for it here.
     protected override void OnCollisionEnter2D(Collision2D col)
     {
         base.OnCollisionEnter2D(col);
 
-        if (_slammed && col.gameObject.CompareTag("Ground"))
+        if (!_slammed) return;
+
+        bool hitGround    = col.gameObject.CompareTag("Ground");
+        bool hitStructure  = col.gameObject.TryGetComponent<BlockBase>(out _);
+        if (hitGround || hitStructure)
             StartCoroutine(Shockwave());
+
+        if (col.gameObject.TryGetComponent<RobotEnemy>(out var robot))
+            robot.TakeDamage(InstantKillDamage);
     }
 
     IEnumerator Shockwave()

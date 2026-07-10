@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1966708deffe45949832dc573867a129, type: 3}
-  m_Name: L05_BessiesDebut
+  m_Name: L05_TheGauntlet
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelId: W1_L05
-  levelName: Bessie's Debut
+  levelName: The Gauntlet
   parBirds: 2
-  birds: 000000000000000001000000
+  birds: 000000000000000000000000
   blocks:
   - type: 2
     position: {x: 4.536, y: -5.4}

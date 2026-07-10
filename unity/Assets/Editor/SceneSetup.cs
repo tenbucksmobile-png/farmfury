@@ -481,6 +481,10 @@ public static class SceneSetup
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level4.png");
         headerArr.GetArrayElementAtIndex(4).objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level5.png");
+        // Index 5 (L06) has no dedicated header art yet — falls back to index 0 (LevelHeader1.png)
+        // via MatchUpScreen.Show()'s existing fallback logic, same as every other unwired slot.
+        headerArr.GetArrayElementAtIndex(6).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level7.png");
 
         WireSprite(mapSo, "_countdown3Sprite",        $"{matchUpFolder}/countdown3.png");
         WireSprite(mapSo, "_countdown2Sprite",        $"{matchUpFolder}/countdown2.png");
@@ -914,6 +918,17 @@ public static class SceneSetup
         // after a brief 1.5 correction was reverted) — WoodBlock matches that same value.
         SetFloatField("Assets/Prefabs/Blocks/WoodBlock.prefab", "_explodeSizeMultiplier", 0.5f);
 
+        // Re-sync _areaDamage to the CURRENT WoodBlock class default (25f) — 2026-07-10, found
+        // during a "review all our damage changes" audit: [SerializeField] fields on an
+        // ALREADY-EXISTING prefab keep whatever value was serialized the first time the prefab
+        // was created, even after the C# field's own default= changes (the documented
+        // "[SerializeField] stale value trap"). WoodBlock.prefab had been sitting at a stale 20
+        // from an early balance pass, silently un-synced through every later "20->35->25" chain-
+        // damage retune — every spawned Wood block was using the OLD 20, not the intended 25.
+        // Explicitly re-writing it here every "Wire Scene References" pass means future code
+        // default changes can never silently drift out of sync with the live prefab again.
+        SetFloatField("Assets/Prefabs/Blocks/WoodBlock.prefab", "_areaDamage", 25f);
+
         WireBlockPrefab("Assets/Prefabs/Blocks/StoneBlock.prefab", folder, new[]
         {
             ("_sprNormal",      "Block_Stone_Normal.png"),
@@ -976,6 +991,15 @@ public static class SceneSetup
             var so = new SerializedObject(block);
             so.FindProperty("_stayKinematic").boolValue = true;
             so.FindProperty("_silentHit").boolValue      = true;
+            // Haybale is a genuine explosive prop (unlike plain Wood, which uses the same
+            // WoodBlock component but stays false here) — 2026-07-10 fifth balance pass, see
+            // WoodBlock._explodesOnRobots.
+            so.FindProperty("_explodesOnRobots").boolValue = true;
+            // Re-sync _areaDamage to WoodBlock's current class default (25f) — same
+            // [SerializeField] stale-value issue as WoodBlock.prefab itself (see
+            // WireBlockSprites' own comment on this); Haybale shares WoodBlock's block-to-block
+            // chain-damage baseline by design, so it must be kept in sync the same way.
+            so.FindProperty("_areaDamage").floatValue = 25f;
             var explodeClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Haybail_Exploding.mp3");
             if (explodeClip != null)
                 so.FindProperty("_destroyClipOverride").objectReferenceValue = explodeClip;
@@ -1149,6 +1173,14 @@ public static class SceneSetup
             var so = new SerializedObject(robot);
             so.FindProperty("_robotSprite").objectReferenceValue = spriteAsset;
             WireRobotDeathFx(so);
+            // Re-sync _robotContactDamage to RobotEnemy's current class default (18f) — 2026-07-10,
+            // found during a "review all our damage changes" audit: every robot prefab was stuck
+            // at a stale 15 (the value serialized before an earlier balance pass raised the class
+            // default 15->18 — see the "Robot-vs-robot contact damage raised" history entry), and
+            // nothing had ever re-written it since (same [SerializeField] stale-value trap as
+            // WoodBlock/HaybaleBlock._areaDamage, fixed in the same pass — see WireBlockSprites'
+            // comment on that one).
+            so.FindProperty("_robotContactDamage").floatValue = 18f;
             so.ApplyModifiedProperties();
         }
         PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
@@ -1271,6 +1303,9 @@ public static class SceneSetup
             // touches" — overcorrected). Expect further tuning passes on this number — the user
             // has explicitly flagged it'll take iteration to land the right strength ratio.
             so.FindProperty("_maxHealth").floatValue = 28f;
+            // Re-sync to RobotEnemy's current class default (18f) — see WireRobotSprite's own
+            // comment on this same [SerializeField] stale-value fix for the full history.
+            so.FindProperty("_robotContactDamage").floatValue = 18f;
             WireRobotDeathFx(so);
             so.ApplyModifiedProperties();
         }
@@ -1362,6 +1397,9 @@ public static class SceneSetup
             // 38->20->26 2026-07-10 — see HarvesterRobot's own _maxHealth comment for the full
             // reasoning (same day, same reports, both floors moved together).
             so.FindProperty("_maxHealth").floatValue = 26f;
+            // Re-sync to RobotEnemy's current class default (18f) — see WireRobotSprite's own
+            // comment on this same [SerializeField] stale-value fix for the full history.
+            so.FindProperty("_robotContactDamage").floatValue = 18f;
             WireRobotDeathFx(so);
             so.ApplyModifiedProperties();
         }
