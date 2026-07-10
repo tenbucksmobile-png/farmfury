@@ -183,7 +183,10 @@ MonoBehaviour:
   _maxHealth: 35
   _impulseDamageMultiplier: 2.5
   _minDamageImpulse: 2
+  _robotContactDamage: 15
   _robotSprite: {fileID: 21300000, guid: e2df018512e4c9947a7895bcc9a35a4a, type: 3}
   _robotDamagedSprite: {fileID: 0}
+  _criticalSprite: {fileID: 0}
   _deathExplosionSprite: {fileID: 21300000, guid: 4f6ed50ed421ceb41b2606157c2ba1ea, type: 3}
   _deathSoundOverride: {fileID: 8300000, guid: 59a272fa646d2ef4794592438a9ec9ab, type: 3}
+  _hitSoundOverride: {fileID: 8300000, guid: b6d672eee1a28e3438cad66079039509, type: 3}

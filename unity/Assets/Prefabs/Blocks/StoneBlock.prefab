@@ -190,6 +190,7 @@ MonoBehaviour:
   _sprVertical: {fileID: 21300000, guid: ae40a6e64991f0b4e8b3a9ff9c3772d1, type: 3}
   _sprDamaged: {fileID: 0}
   _sprExplode: {fileID: 0}
+  _explodeSizeMultiplier: 2.2
   _stayKinematic: 0
   _silentHit: 0
   _destroyClipOverride: {fileID: 0}

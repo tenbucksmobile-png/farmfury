@@ -185,11 +185,12 @@ MonoBehaviour:
   minDamageImpulse: 2
   baseMass: 5
   bounciness: 0.2
-  _sprNormal: {fileID: 21300000, guid: 3a29bd36f1940594886019b5551c5a27, type: 3}
+  _sprNormal: {fileID: 21300000, guid: 4b2ac722e2559534b9c2715200ae6378, type: 3}
   _sprHorizontal: {fileID: 21300000, guid: 4b2ac722e2559534b9c2715200ae6378, type: 3}
   _sprVertical: {fileID: 21300000, guid: e27b005ffb9511d4f986ae05b40d36f5, type: 3}
-  _sprDamaged: {fileID: 0}
-  _sprExplode: {fileID: 0}
+  _sprDamaged: {fileID: 21300000, guid: e26731f087630b8408032cf83ab56319, type: 3}
+  _sprExplode: {fileID: 21300000, guid: e26731f087630b8408032cf83ab56319, type: 3}
+  _explodeSizeMultiplier: 0.5
   _stayKinematic: 0
   _silentHit: 0
   _destroyClipOverride: {fileID: 0}
@@ -197,3 +198,5 @@ MonoBehaviour:
   _fragmentCount: 5
   _fragmentSpeed: 4
   _passThrough: 0
+  _areaDamageRadius: 1.3
+  _areaDamage: 20

@@ -23,30 +23,35 @@ MonoBehaviour:
     passThrough: 1
     healthOverride: 10
     massOverride: 3
+    artVariant: 0
   - type: 2
     position: {x: 4.964, y: -5.583}
     size: {x: 1, y: 1}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
+    artVariant: 0
   - type: 2
     position: {x: 5.744, y: -5.623}
     size: {x: 1, y: 1}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
+    artVariant: 0
   - type: 0
     position: {x: 4.444, y: -5.233}
     size: {x: 1, y: 1}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
+    artVariant: 0
   - type: 0
     position: {x: 5.344, y: -5.243}
     size: {x: 1, y: 1}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
+    artVariant: 0
   robots:
   - robotType: 1
     position: {x: 5.064, y: -4.593}

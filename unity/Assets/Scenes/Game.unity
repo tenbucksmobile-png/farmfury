@@ -259,6 +259,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuController
   _landingSprite: {fileID: -7436237830664669438, guid: 97757046d8bee274ebe2f3f843104b7f, type: 3}
   _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
+  _settingsButtonSprite: {fileID: 21300000, guid: 70471a128358f6a4ca9554a97b76abfa, type: 3}
+  _scoreboardSprite: {fileID: 21300000, guid: 4b9c61b5ffabce84fa6732409a7d4554, type: 3}
 --- !u!4 &80042615
 Transform:
   m_ObjectHideFlags: 0
@@ -900,7 +902,7 @@ Transform:
   m_GameObject: {fileID: 423075981}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -2, z: 10}
+  m_LocalPosition: {x: 0.01, y: -1.99, z: 10}
   m_LocalScale: {x: 0.85, y: 0.85, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1516,6 +1518,8 @@ MonoBehaviour:
   _levels:
   - {fileID: 11400000, guid: 0c5e566069cdbfa4b96e528fdece2642, type: 2}
   - {fileID: 11400000, guid: 1ca61772f2ecc144492ee6557b82250f, type: 2}
+  - {fileID: 11400000, guid: af883b1b61d567e48a6be56516be36c0, type: 2}
+  - {fileID: 11400000, guid: d24bcd4664e183c4b942f0c5ff12e02e, type: 2}
   _menuSceneName: MainMenu
   _gameSceneName: Game
 --- !u!4 &809980729
@@ -3050,6 +3054,8 @@ MonoBehaviour:
   _countdownReadySprite: {fileID: 21300000, guid: 306020828991d0f47ac5cc30275e6693, type: 3}
   _countdownClip: {fileID: 8300000, guid: f1059912e10693442bd249cbe68382af, type: 3}
   _cluckFlySprite: {fileID: 21300000, guid: 32e79013f72d108419d102d434973265, type: 3}
+  _cluckFallingClip: {fileID: 8300000, guid: 04a9e7d60e4831f4b9ca521caa5b0978, type: 3}
+  _eggSprite: {fileID: 21300000, guid: 9e8a89ef2655a1142a454169440affb7, type: 3}
   _animalCardSprites:
   - {fileID: 21300000, guid: c3af207aa6c867d4db24a5c85fd611a3, type: 3}
   - {fileID: 21300000, guid: e1df3a77efa688641a58ec1a679fb833, type: 3}
@@ -3202,6 +3208,7 @@ MonoBehaviour:
   _woodPrefab: {fileID: 8727421806652652202, guid: 6c4e8614e83808848969895c2182d44d, type: 3}
   _stonePrefab: {fileID: 5562793124554834104, guid: 30ed0f14ad802ea48a53b1cff2829c11, type: 3}
   _haybalePrefab: {fileID: 8328252928138882233, guid: 5a05e21fcea2a774792a0fd5c80225c4, type: 3}
+  _barrelPrefab: {fileID: 3263058673982114808, guid: 342545b5060e4a64e8af83bc9d9180a7, type: 3}
   _cluckPrefab: {fileID: 1268805805673511640, guid: 549406e4d4a93e04f809b68b2af2f3cb, type: 3}
   _bessiePrefab: {fileID: 5681157922792048402, guid: 44eb32c7b2292f043811423611751792, type: 3}
   _percyPrefab: {fileID: 7457889529594663721, guid: 074b7e215cee08c43b0ffd1bf6e89bb7, type: 3}

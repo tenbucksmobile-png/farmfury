@@ -19,12 +19,20 @@ public class LevelData : ScriptableObject
     [Serializable]
     public struct BlockSpawnData
     {
-        public BlockType type;
-        public Vector2   position;
-        public Vector2   size;
-        public bool      passThrough;    // Cluck passes through at 70% velocity on impact
-        public float     healthOverride; // 0 = use BlockBase default; >0 overrides maxHealth
-        public float     massOverride;   // 0 = use BlockBase default; >0 overrides mass
+        public BlockType     type;
+        public Vector2       position;
+        public Vector2       size;
+        public bool          passThrough;    // Cluck passes through at 70% velocity on impact
+        public float         healthOverride; // 0 = use BlockBase default; >0 overrides maxHealth
+        public float         massOverride;   // 0 = use BlockBase default; >0 overrides mass
+        // Which wood art sprite to show — Auto (default) picks by aspect ratio in
+        // BlockBase.Initialise() like before, which silently misidentifies any art asset whose
+        // own visual orientation doesn't match its computed w/h aspect (e.g. Plank_2DShork.png is
+        // a clearly VERTICAL plank image but its footprint is nearly square, so aspect-based
+        // guessing put it in the "normal/flat" bucket — found 2026-07-10 investigating an
+        // L03 "wood renders wrong" report). LevelLayoutDumper now sets this directly from the
+        // actual design-time sprite's filename instead of leaving it to aspect-guessing.
+        public WoodArtVariant artVariant;
     }
 
     [Serializable]
@@ -36,6 +44,7 @@ public class LevelData : ScriptableObject
     }
 }
 
-public enum AnimalType { Cluck, Bessie, Percy, Woolly, Ducky, Horace, Gerald, Billy }
-public enum BlockType  { Wood,  Stone,  Haybale }
-public enum RobotType  { Basic, Harvester, SemiHarvester }
+public enum AnimalType    { Cluck, Bessie, Percy, Woolly, Ducky, Horace, Gerald, Billy }
+public enum BlockType     { Wood,  Stone,  Haybale, Barrel }
+public enum RobotType     { Basic, Harvester, SemiHarvester }
+public enum WoodArtVariant { Auto, Flat, Horizontal, Vertical }

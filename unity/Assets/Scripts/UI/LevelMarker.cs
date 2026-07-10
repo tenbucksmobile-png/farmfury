@@ -37,6 +37,17 @@ public class LevelMarker : MonoBehaviour
         _rt.sizeDelta        = MarkerSize;
 
         _image = gameObject.AddComponent<Image>();
+        // LevelMarker_Locked.png is 256x384 (2:3, matches MarkerSize exactly) but
+        // LevelMarker_tick.png is a square 500x500 asset — the two source images have
+        // permanently different native aspect ratios, so no per-sprite fit mode can make them
+        // BOTH undistorted AND identically sized at the same time. Tried preserveAspect=true
+        // 2026-07-10 (avoids distortion) but that made the two sprites render at visibly
+        // different sizes — tick letterboxes down to 80x80 inside the 80x120 box while locked
+        // fills it exactly — which the user then flagged as worse ("they still not the same
+        // sizing, ensure they are the same size"). Reverted to the default stretch-to-fill
+        // (preserveAspect left false/unset): both sprites now render at IDENTICAL 80x120
+        // (MarkerSize) — the tick art is mildly stretched vertically, a smaller visual cost than
+        // 18 markers along the path reading as inconsistent sizes.
 
         var btn = gameObject.AddComponent<Button>();
         btn.targetGraphic = _image;

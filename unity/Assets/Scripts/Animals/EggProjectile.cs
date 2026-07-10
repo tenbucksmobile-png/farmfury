@@ -19,7 +19,7 @@ public class EggProjectile : MonoBehaviour
         rb.collisionDetectionMode  = CollisionDetectionMode2D.Continuous;
 
         var col = GetComponent<CircleCollider2D>();
-        col.radius = 0.15f;
+        col.radius = 0.18f; // matches SceneSetup.EnsureEggPrefab()'s prefab value — keep in sync
     }
 
     void OnCollisionEnter2D(Collision2D collision)

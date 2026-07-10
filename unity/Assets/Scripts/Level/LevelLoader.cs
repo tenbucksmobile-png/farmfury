@@ -10,6 +10,7 @@ public class LevelLoader : MonoBehaviour
     [SerializeField] private BlockBase  _woodPrefab;
     [SerializeField] private BlockBase  _stonePrefab;
     [SerializeField] private BlockBase  _haybalePrefab; // WoodBlock mechanics, Haybail.png art
+    [SerializeField] private BlockBase  _barrelPrefab;  // ExplodingBarrelBlock, WoodenBarrel.png art
 
     [Header("Animal Prefabs")]
     [SerializeField] private CluckAnimal  _cluckPrefab;
@@ -67,6 +68,7 @@ public class LevelLoader : MonoBehaviour
         if (_woodPrefab       == null) _woodPrefab       = LoadPrefabComponent<WoodBlock>("WoodBlock");
         if (_stonePrefab      == null) _stonePrefab      = LoadPrefabComponent<StoneBlock>("StoneBlock");
         if (_haybalePrefab    == null) _haybalePrefab    = LoadPrefabComponent<WoodBlock>("HaybaleBlock");
+        if (_barrelPrefab     == null) _barrelPrefab     = LoadPrefabComponent<ExplodingBarrelBlock>("ExplodingBarrelBlock");
         if (_robotPrefab      == null) _robotPrefab      = LoadPrefabComponent<RobotEnemy>("Robot");
         if (_harvesterPrefab  == null) _harvesterPrefab  = LoadPrefabComponent<RobotEnemy>("HarvesterRobot");
         if (_cluckPrefab  == null) _cluckPrefab  = LoadPrefabComponent<CluckAnimal>("CluckAnimal");
@@ -184,6 +186,7 @@ public class LevelLoader : MonoBehaviour
         {
             BlockType.Stone   => _stonePrefab,
             BlockType.Haybale => _haybalePrefab != null ? _haybalePrefab : _woodPrefab,
+            BlockType.Barrel  => _barrelPrefab  != null ? _barrelPrefab  : _woodPrefab,
             _                 => _woodPrefab,
         };
         if (prefab == null) { Debug.LogWarning("[LevelLoader] Block prefab null — run Wire Scene References."); return; }
@@ -191,7 +194,7 @@ public class LevelLoader : MonoBehaviour
             new Vector3(data.position.x, data.position.y, 0f),
             Quaternion.identity,
             _blockParent);
-        block.Initialise(data.size.x, data.size.y);
+        block.Initialise(data.size.x, data.size.y, data.artVariant);
         block.ApplyOverrides(data.healthOverride, data.massOverride);
         if (data.passThrough && block is WoodBlock wood) wood._passThrough = true;
         _spawnedBlocks.Add(block);

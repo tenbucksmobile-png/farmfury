@@ -30,6 +30,25 @@ public class GameManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Eggs spawn AT the firing Cluck's own position (see CluckAnimal.SpawnEggs()), so with
+        // every layer pair colliding by default (Physics2D's project-wide matrix), each egg
+        // immediately overlapped and collided with the very bird that just fired it — Cluck's
+        // own OnCollisionEnter2D treated that as a real impact and destroyed it a moment later
+        // (2026-07-10, user-reported: "when the player taps on screen, cluck disappears like
+        // he's hit something"). Eggs are a weapon, not a hazard to the birds themselves — ignore
+        // Animal<->Egg collisions globally for the whole session.
+        Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Animal"), LayerMask.NameToLayer("Egg"), true);
+
+        // All 5 eggs from one Cluster Bomb burst spawn at the EXACT SAME position simultaneously
+        // (CluckAnimal.SpawnEggs()) and share the same Egg layer — the very next physics step
+        // would otherwise resolve them as 5 mutually-overlapping circle colliders, and
+        // EggProjectile.OnCollisionEnter2D destroys itself unconditionally on ANY collision,
+        // including egg-vs-egg. That could wipe out the whole burst before it ever visibly
+        // separates (2026-07-10, user still reporting "no eggs at all" after the Animal<->Egg
+        // fix above and the sorting-order fix — this is the remaining candidate). Eggs shouldn't
+        // interact with each other at all, so ignore Egg<->Egg collisions too.
+        Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Egg"), LayerMask.NameToLayer("Egg"), true);
 #if UNITY_EDITOR
         TryAutoLoadLevels();
 #endif

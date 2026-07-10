@@ -33,12 +33,24 @@ public abstract class BlockBase : MonoBehaviour
     // actually see.
     [SerializeField] protected Sprite _sprExplode;
 
-    // When true, this block never transitions to a Dynamic Rigidbody2D — see
-    // WakeAllStaticBlocks() below. Added 2026-07-26 per user report: hitting one haybale in a
-    // cluster woke ALL of them (WakeAllStaticBlocks() is global, not per-instance), so the
-    // undamaged neighbours visibly shifted/tumbled even though nothing hit them. HaybaleBlock
-    // sets this true so a hit only ever destroys the one bale that was actually struck — the
-    // rest stay exactly where they were placed.
+    // SpawnExplosion() multiplies the block's own footprint by this to get the burst's size —
+    // was 2.2 (matching the original Haybail_Damaged.png tuning, ~92%x83% content fill), lowered
+    // to 1.4 for WoodBlock specifically 2026-07-10 (WoodDebris.png is full-bleed, read as
+    // oversized at the same multiplier as haybale). Dropped to a flat 0.5 for every block type
+    // same day, briefly corrected to 1.5 ("half again bigger"), then reverted back to 0.5 by
+    // explicit final user request same day ("change the explosions back to half size smaller") —
+    // 0.5 is the settled value: every burst renders at half the size of whatever died.
+    [SerializeField] protected float _explodeSizeMultiplier = 0.5f;
+
+    // When true, this block never transitions to a Dynamic Rigidbody2D on TakeDamage() (see
+    // that method below). Added 2026-07-26 per user report: hitting one haybale in a cluster
+    // used to wake ALL of them via a level-wide WakeAllStaticBlocks() sweep, so undamaged
+    // neighbours visibly shifted/tumbled even though nothing hit them. That sweep was removed
+    // entirely 2026-07-10 (same class of bug recurred for Wood — "the wood structure should not
+    // fall off screen when the haybale is struck, it should all be independent in its
+    // destruction") — TakeDamage() now only ever wakes the specific block that was actually hit,
+    // never any other block in the level, so _stayKinematic is really only needed for blocks
+    // that must never move even when directly hit themselves (HaybaleBlock still sets this true).
     [SerializeField] protected bool _stayKinematic;
 
     // Per-prefab audio overrides — both null/false by default, so WoodBlock/StoneBlock keep the
@@ -96,16 +108,27 @@ public abstract class BlockBase : MonoBehaviour
         _crackSR2 = MakeCrackOverlay("CrackH", _crackSprite2, sortingOrder: 4);
     }
 
-    public void Initialise(float width, float height)
+    public void Initialise(float width, float height, WoodArtVariant artVariant = WoodArtVariant.Auto)
     {
-        transform.localScale = new Vector3(width, height, 1f);
         _baseColor = _sr.color; // subclass Awake has already set the material colour
 
-        // Select art sprite based on aspect ratio; falls back to procedural colour if none wired
+        // Select art sprite: an explicit artVariant (set by LevelLayoutDumper directly from the
+        // design-time sprite's own filename) always wins over the aspect-ratio guess below —
+        // aspect alone can't tell a near-square VERTICAL plank image (e.g. Plank_2DShork.png,
+        // visually tall/narrow but its measured w/h footprint is close to 1:1) from a genuinely
+        // flat one, so guessing from aspect silently showed the wrong art orientation for that
+        // case (found 2026-07-10). Auto (the default, and what every hand-authored B() call
+        // still uses) falls back to the original aspect-based heuristic unchanged.
         float aspect = width / height;
-        Sprite chosen = aspect < 0.72f ? (_sprVertical   ?? _sprNormal)
-                      : aspect > 1.5f  ? (_sprHorizontal ?? _sprNormal)
-                      : _sprNormal;
+        Sprite chosen = artVariant switch
+        {
+            WoodArtVariant.Vertical   => _sprVertical   ?? _sprNormal,
+            WoodArtVariant.Horizontal => _sprHorizontal ?? _sprNormal,
+            WoodArtVariant.Flat       => _sprNormal,
+            _ => aspect < 0.72f ? (_sprVertical   ?? _sprNormal)
+               : aspect > 1.5f  ? (_sprHorizontal ?? _sprNormal)
+               : _sprNormal,
+        };
         if (chosen != null)
         {
             _sr.sprite = chosen;
@@ -113,6 +136,34 @@ public abstract class BlockBase : MonoBehaviour
             _baseColor = Color.white;
         }
         _normalSprite = _sr.sprite; // restored after a _sprDamaged flash (see TakeDamage())
+
+        // Scale so the rendered sprite matches the requested (width, height) world-space
+        // footprint exactly, regardless of the chosen sprite's own native pixel aspect.
+        // WireBlockPrefab's "PPU = texture width" convention only guarantees a native 1×1
+        // size on the X axis — non-square art (e.g. Plank_Horizontal at 250×123px) has a
+        // native Y size of height_px/width_px, not 1, so setting localScale directly to
+        // (width, height) silently squashed/stretched the Y axis for any non-square sprite.
+        // Dividing by the chosen sprite's actual native bounds corrects for that on both axes.
+        Vector2 native = _sr.sprite != null ? (Vector2)_sr.sprite.bounds.size : Vector2.one;
+        transform.localScale = new Vector3(
+            native.x > 0.0001f ? width  / native.x : width,
+            native.y > 0.0001f ? height / native.y : height,
+            1f);
+
+        // Re-fit the collider's LOCAL size to the sprite's native bounds so, after the SAME
+        // transform.localScale above is applied, its WORLD-space size still lands exactly on
+        // the requested (width, height) footprint — a real bug found 2026-07-10 (user-reported
+        // wood blocks feeling "not active when hit" / misaligned): BoxCollider2D.size defaults
+        // to (1,1) local, which only produced a correct (width,height) world collider back when
+        // localScale WAS literally (width,height). Once localScale changed to account for native
+        // sprite aspect (see above), the collider silently inherited that same correction and
+        // drifted away from the intended footprint too — e.g. a 1.3x0.64 wood block using
+        // Plank_Horizontal.png (native 1.0x0.492) ended up with a ~1.3x1.3 collider, nearly
+        // double the visible sprite's actual height. Setting local size = native cancels the
+        // localScale correction out algebraically (native * (size/native) = size), landing the
+        // world-space collider exactly on (width, height) regardless of the chosen sprite's own
+        // native aspect.
+        if (_col != null) _col.size = native;
 
         float area  = width * height;
         float ratio = area / StdArea;
@@ -142,8 +193,11 @@ public abstract class BlockBase : MonoBehaviour
     public void TakeDamage(float amount)
     {
         if (IsDestroyed) return;
-        if (_rb.bodyType == RigidbodyType2D.Static)
-            WakeAllStaticBlocks();
+        // Only THIS block wakes on its own hit — see the removed WakeAllStaticBlocks() note
+        // below for why a level-wide wake was wrong. _stayKinematic blocks (e.g. HaybaleBlock)
+        // never wake at all, same as before.
+        if (!_stayKinematic && _rb.bodyType == RigidbodyType2D.Static)
+            _rb.bodyType = RigidbodyType2D.Dynamic;
 
         Health = Mathf.Max(0f, Health - amount);
         if (!_silentHit) PlayHitSound();
@@ -235,16 +289,31 @@ public abstract class BlockBase : MonoBehaviour
     // (RobotEnemy.MakeDynamicFromSupportLoss switches it from Static to Dynamic so gravity takes
     // over) rather than leaving it floating in place once its support is gone — user-requested
     // 2026-07-09: "if the robot is on top of a structure and the structure is hit (disappears)
-    // then naturally the robot should fall, which helps in destroying them." Checks a thin box
-    // just above this block's collider bounds against layer 9 (Robot — see CLAUDE.md's layer
-    // table); only robots directly overlapping THIS block's footprint fall, so destroying one
-    // block in a taller stack doesn't affect a robot resting on a different block.
+    // then naturally the robot should fall, which helps in destroying them." Checks a box above
+    // this block's collider bounds against layer 9 (Robot — see CLAUDE.md's layer table); only
+    // robots directly overlapping THIS block's footprint (X-wise) fall, so destroying one block
+    // in a taller stack doesn't affect a robot resting on a different block.
+    //
+    // Box height widened 0.3 -> 2.5 (2026-07-10, user-reported: "L03 works in L02 but the robot
+    // does not tumble in L03"), then 2.5 -> 8 (same day, user-reported again after re-testing:
+    // "the robot on top of structure is still not falling"). Root cause: RobotEnemy's actual
+    // physics collider is always re-derived to a small fixed 0.6x0.9 world-space hitbox
+    // regardless of visual scale (see LevelLoader.SpawnRobot), but a big visually-scaled robot
+    // needs its transform.position placed much higher to make its oversized sprite visually
+    // "stand" on the pile — so the tiny collider can end up well above a modest detection
+    // column, even though the robot reads as clearly resting on the structure by eye. Rather
+    // than keep guessing a height that covers every future robot placement exactly, this is now
+    // deliberately generous (8 units — comfortably taller than this level's entire play area)
+    // so any robot anywhere above a destroyed block's own X footprint falls, no per-level tuning
+    // needed. Still limited to 90% of this block's own width in X, so it can't reach a robot
+    // sitting on an unrelated block elsewhere in the level.
     void CheckForRobotsOnTop()
     {
         const int robotLayerMask = 1 << 9;
+        const float checkHeight = 8f;
         Bounds b = _col.bounds;
-        Vector2 checkCenter = new Vector2(b.center.x, b.max.y + 0.05f);
-        Vector2 checkSize   = new Vector2(b.size.x * 0.9f, 0.3f);
+        Vector2 checkCenter = new Vector2(b.center.x, b.max.y + checkHeight * 0.5f);
+        Vector2 checkSize   = new Vector2(b.size.x * 0.9f, checkHeight);
         var hits = Physics2D.OverlapBoxAll(checkCenter, checkSize, 0f, robotLayerMask);
         foreach (var hit in hits)
         {
@@ -263,7 +332,7 @@ public abstract class BlockBase : MonoBehaviour
         sr.sprite       = _sprExplode;
         sr.sortingOrder = 10;
         go.transform.position   = transform.position;
-        float sz = Mathf.Max(_col.bounds.size.x, _col.bounds.size.y) * 2.2f; // bigger than the block itself
+        float sz = Mathf.Max(_col.bounds.size.x, _col.bounds.size.y) * _explodeSizeMultiplier; // bigger than the block itself
         go.transform.localScale = new Vector3(sz, sz, 1f);
         go.AddComponent<FragmentFader>();
     }
@@ -413,14 +482,6 @@ public abstract class BlockBase : MonoBehaviour
         return (_rb.mass * other.mass) / (_rb.mass + other.mass);
     }
 
-    static void WakeAllStaticBlocks()
-    {
-        foreach (var block in FindObjectsByType<BlockBase>(FindObjectsInactive.Exclude))
-        {
-            if (!block.IsDestroyed && !block._stayKinematic && block._rb.bodyType == RigidbodyType2D.Static)
-                block._rb.bodyType = RigidbodyType2D.Dynamic;
-        }
-    }
 }
 
 // Runs on each fragment GO — fades SpriteRenderer alpha from 1 to 0 over 0.6s then destroys

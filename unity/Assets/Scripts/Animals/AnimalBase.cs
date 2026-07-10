@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -57,6 +58,20 @@ public abstract class AnimalBase : MonoBehaviour
 
     protected virtual void Awake()
     {
+        // Real root cause of "eggs don't appear" (2026-07-10, second report, after the sorting-
+        // order fix didn't resolve it): this class never actually set gameObject.layer, so every
+        // animal instance sat on whatever layer its prefab happened to default to (Default, 0) —
+        // NOT the "Animal" layer (7) the project's own layer convention assumes. That meant
+        // GameManager.Awake()'s Physics2D.IgnoreLayerCollision(Animal, Egg, true) call (added for
+        // the earlier "Cluck disappears on tap" bug) silently did nothing, since Cluck was never
+        // actually ON the Animal layer to begin with — eggs (layer 10, spawning AT Cluck's own
+        // position) kept colliding with Cluck immediately, and EggProjectile.OnCollisionEnter2D
+        // unconditionally Destroy()s itself on ANY collision, including a harmless hit against
+        // its own launching bird — so every egg was self-destructing before its first visible
+        // frame, on every level, not just L04. Explicitly assigning the layer here fixes it for
+        // every AnimalBase subclass at once.
+        gameObject.layer = LayerMask.NameToLayer("Animal");
+
         _rb  = GetComponent<Rigidbody2D>();
         _col = GetComponent<CircleCollider2D>();
         _sr  = GetComponent<SpriteRenderer>();
@@ -79,15 +94,30 @@ public abstract class AnimalBase : MonoBehaviour
         else                    _sr.sprite = MakeCircleSprite(32);
     }
 
+    // 0-based level index where animal abilities are first introduced (L04) — matches
+    // MatchUpScreen.AbilityIntroLevelIndex. Added 2026-07-10, user report: "when the player taps
+    // on screen cluck disappears like he's hit something, this should not happen in the first
+    // levels... from Level 4 when the mouse is clicked mid flight, cluck must change to trigger
+    // and shoot the eggs." Before this level, a tap mid-flight does nothing — after it, the
+    // existing TriggerAbility()/_sprAbility swap below fires as normal.
+    const int AbilityIntroLevelIndex = 3;
+
     protected virtual void Update()
     {
         if (!IsLaunched || IsDestroyed) return;
 
-        if (!_abilityUsed && Pointer.current != null && Pointer.current.press.wasPressedThisFrame)
+        bool abilityUnlocked = GameManager.Instance == null
+            || GameManager.Instance.CurrentLevelIndex >= AbilityIntroLevelIndex;
+
+        if (abilityUnlocked && !_abilityUsed && Pointer.current != null && Pointer.current.press.wasPressedThisFrame)
         {
             _abilityUsed = true;
             TriggerAbility();
-            if (_sprAbility != null) _sr.sprite = _sprAbility;
+            if (_sprAbility != null)
+            {
+                _sr.sprite = _sprAbility;
+                StartCoroutine(RevertAbilitySprite());
+            }
         }
 
         if (_contactStarted)
@@ -95,6 +125,23 @@ public abstract class AnimalBase : MonoBehaviour
             _contactTimer -= Time.deltaTime;
             if (_contactTimer <= 0f) DestroyAnimal();
         }
+    }
+
+    // How long the ability-trigger pose (e.g. Cluck_Trigger1.png) stays up before reverting —
+    // 2026-07-10, user report: "cluck should not stay in trigger but once eggs have been shot to
+    // change back to inflight, if not hit, otherwise to damage." Previously _sprAbility was set
+    // once and never reverted, so the bird stayed in its trigger pose for the rest of the flight
+    // regardless of what happened next.
+    const float AbilitySpriteHoldDuration = 0.3f;
+
+    IEnumerator RevertAbilitySprite()
+    {
+        yield return new WaitForSeconds(AbilitySpriteHoldDuration);
+        // Only revert to the normal flight pose if nothing else has claimed the sprite since —
+        // a real impact's pose (set in OnCollisionEnter2D, gated by _contactStarted) takes
+        // priority and must not be stomped back to InFlight.
+        if (IsLaunched && !IsDestroyed && !_contactStarted && _sprInFlight != null)
+            _sr.sprite = _sprInFlight;
     }
 
     // Call after placing the animal in the sling cup — shows the seated pose.

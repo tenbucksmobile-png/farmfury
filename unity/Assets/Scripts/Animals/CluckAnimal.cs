@@ -7,7 +7,17 @@ public class CluckAnimal : AnimalBase
     [SerializeField] private GameObject _eggPrefab;
     [SerializeField] private int        _eggCount    = 5;
     [SerializeField] private float      _minEggSpeed = 5f;
-    [SerializeField] private float      _spreadDeg   = 120f;
+    // Fixed "cannon blast" cone (2026-07-10, user request: eggs should "fly out of him like
+    // being fired from a cannon into 5 directions forwards and down") rather than the previous
+    // spread centred on Cluck's exact instantaneous flight-velocity angle — that varied wildly
+    // depending on where in the arc the ability was tapped (near-horizontal at the apex, steep
+    // near launch/landing), so the burst never looked like a consistent, deliberate blast.
+    // _coneCenterDeg/_spreadDeg are measured from horizontal-forward (0°) with positive = up, so
+    // a −45° centre with an 80° spread fans the 5 eggs from −5° (barely below horizontal) to
+    // −85° (nearly straight down), always canted forward+down regardless of Cluck's actual
+    // in-flight angle at the moment of the tap.
+    [SerializeField] private float      _coneCenterDeg = -45f;
+    [SerializeField] private float      _spreadDeg     = 80f;
 
     [Header("Flash")]
     [SerializeField] private float _flashDuration = 0.12f;
@@ -83,16 +93,20 @@ public class CluckAnimal : AnimalBase
 
     void SpawnEggs()
     {
-        Vector2 vel       = _rb.linearVelocity;
-        float   baseAngle = Mathf.Atan2(vel.y, vel.x) * Mathf.Rad2Deg;
-        float   speed     = Mathf.Max(vel.magnitude * 0.6f, _minEggSpeed);
+        Vector2 vel   = _rb.linearVelocity;
+        // "Forward" is always the launch direction's horizontal sign (in practice always +1 —
+        // the cannon only ever fires rightward — but Sign() keeps this correct if that ever
+        // changes) rather than the exact current velocity angle; only the sign is used, the
+        // cone's actual shape is fixed by _coneCenterDeg/_spreadDeg above.
+        float forwardSign = vel.x >= 0f ? 1f : -1f;
+        float speed       = Mathf.Max(vel.magnitude * 0.6f, _minEggSpeed);
 
         for (int i = 0; i < _eggCount; i++)
         {
             float t      = _eggCount > 1 ? i / (float)(_eggCount - 1) : 0.5f;
-            float offset = Mathf.Lerp(-_spreadDeg * 0.5f, _spreadDeg * 0.5f, t);
-            float rad    = (baseAngle + offset) * Mathf.Deg2Rad;
-            var   dir    = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+            float angle  = _coneCenterDeg + Mathf.Lerp(-_spreadDeg * 0.5f, _spreadDeg * 0.5f, t);
+            float rad    = angle * Mathf.Deg2Rad;
+            var   dir    = new Vector2(Mathf.Cos(rad) * forwardSign, Mathf.Sin(rad));
 
             var egg = Instantiate(_eggPrefab, transform.position, Quaternion.identity);
 

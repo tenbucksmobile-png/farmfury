@@ -61,6 +61,10 @@ public class MatchUpScreen : MonoBehaviour
     private AudioClip _countdownClip;   // Countdown.mp3 — see CountdownBeat's timing comment
     private AudioSource _countdownAudioSrc;
     private Sprite _cluckFlySprite;     // Cluck_InFlight.png — see the CluckFlyBy() timing comment
+    private AudioClip _cluckFallingClip; // Cluck_falling.mp3 — looped under the CluckFlyBy() pass, see that method
+    private AudioSource _cluckFallingAudioSrc;
+    private Sprite _eggSprite;          // Egg.png — cosmetic mid-flight burst, see CluckFlyBy()/SpawnEggBurst()
+    private Transform _cluckFlyParent;  // burst eggs are spawned as siblings of the Cluck fly-by icon
 
     private GameObject      _panel;
     private Image            _fadeOverlayImg; // fades to opaque black just before auto-launch, see PlaySequence step 6
@@ -134,11 +138,14 @@ public class MatchUpScreen : MonoBehaviour
     private const float CluckFlyStartX = -1400f;
     private const float CluckFlyEndX   = 1400f;
     private const float CluckFlyArcHeight = 260f; // vertical bump added at the midpoint of the flight — see CluckFlyBy; raised from 90f 2026-07-09, user-requested "even more" arc
+    // 0-based level index where Cluck's Cluster Bomb ability is first introduced (L04) — gates
+    // the egg-burst teaser in CluckFlyBy() so it doesn't appear before that level.
+    private const int AbilityIntroLevelIndex = 3;
 
     public void Init(Sprite squareSpr, Sprite backgroundSprite, Sprite vsSprite,
         Sprite[] levelHeaderSprites,
         Sprite countdown3Sprite, Sprite countdown2Sprite, Sprite countdown1Sprite, Sprite countdownReadySprite,
-        AudioClip countdownClip, Sprite cluckFlySprite,
+        AudioClip countdownClip, Sprite cluckFlySprite, AudioClip cluckFallingClip, Sprite eggSprite,
         Sprite[] animalCardSprites, Sprite[] robotCardSprites)
     {
         _backgroundSprite      = backgroundSprite;
@@ -150,6 +157,8 @@ public class MatchUpScreen : MonoBehaviour
         _countdownReadySprite   = countdownReadySprite;
         _countdownClip          = countdownClip;
         _cluckFlySprite         = cluckFlySprite;
+        _cluckFallingClip       = cluckFallingClip;
+        _eggSprite              = eggSprite;
         _animalCardSprites      = animalCardSprites;
         _robotCardSprites       = robotCardSprites;
         BuildUI(squareSpr);
@@ -408,15 +417,31 @@ public class MatchUpScreen : MonoBehaviour
     // Cluck flies across the bottom of the screen, behind the cards, over `duration` (matched to
     // CountdownClipLength by the caller so it "lands" — finishes its pass — exactly as the
     // countdown ends). Plays the cannon-shot/launch sound at the moment it starts, reusing the
-    // existing gameplay launch SFX rather than a new dedicated clip. Path is a single arc (sine
-    // bump peaking at the midpoint), not a straight line — user-reported 2026-07-09 a pure
-    // horizontal line looked too flat; this reads more like an actual arced flight, similar in
-    // spirit to the gameplay cannon's own trajectory.
+    // existing gameplay launch SFX rather than a new dedicated clip, and loops Cluck_falling.mp3
+    // underneath for the whole pass (added 2026-07-10, user-requested — same clip/looping
+    // approach AudioManager.PlayFalling() uses in actual gameplay while a Cluck is airborne),
+    // fading it out over CluckFallingFadeDuration as the flight ends so it doesn't cut off
+    // abruptly right as "READY!" appears. Path is a single arc (sine bump peaking at the
+    // midpoint), not a straight line — user-reported 2026-07-09 a pure horizontal line looked
+    // too flat; this reads more like an actual arced flight, similar in spirit to the gameplay
+    // cannon's own trajectory.
+    const float CluckFallingFadeDuration = 0.3f;
+
     IEnumerator CluckFlyBy(float duration)
     {
         AudioManager.Play(AudioManager.Sound.Launch);
+
+        if (_cluckFallingClip != null)
+        {
+            _cluckFallingAudioSrc.mute   = !AudioManager.SfxEnabled;
+            _cluckFallingAudioSrc.clip   = _cluckFallingClip;
+            _cluckFallingAudioSrc.volume = 1f;
+            _cluckFallingAudioSrc.Play();
+        }
+
         _cluckFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY);
         float elapsed = 0f;
+        bool  eggsFired = false;
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
@@ -424,9 +449,97 @@ public class MatchUpScreen : MonoBehaviour
             float x = Mathf.Lerp(CluckFlyStartX, CluckFlyEndX, t);
             float y = CluckFlyY + Mathf.Sin(t * Mathf.PI) * CluckFlyArcHeight;
             _cluckFlyRT.anchoredPosition = new Vector2(x, y);
+
+            // Cosmetic egg burst at the halfway point (2026-07-10, user request: "when cluck is
+            // halfway across the screen fire off the eggs so the player knows there is a power")
+            // — a teaser for the actual gameplay ability, not a real EggProjectile (this screen
+            // has no physics/damage of its own). Fires exactly once per pass, and only from
+            // AbilityIntroLevelIndex onward (2026-07-10, second pass — user-reported "the eggs
+            // are firing off from level 1, this must only come in on level 4 when the power is
+            // introduced") — the ability itself has always been usable on any Cluck in-game (see
+            // CluckAnimal.cs), but this teaser shouldn't spoil/advertise it before the level
+            // that's actually designed around it.
+            if (!eggsFired && t >= 0.5f && _levelIndex >= AbilityIntroLevelIndex)
+            {
+                eggsFired = true;
+                SpawnEggBurst(_cluckFlyRT.anchoredPosition);
+            }
+
+            // Fade the falling loop out over the final CluckFallingFadeDuration seconds so it
+            // ends smoothly right as the flight lands, rather than an abrupt cut.
+            if (_cluckFallingAudioSrc.isPlaying)
+            {
+                float remaining = duration - elapsed;
+                _cluckFallingAudioSrc.volume = remaining < CluckFallingFadeDuration
+                    ? Mathf.Clamp01(remaining / CluckFallingFadeDuration)
+                    : 1f;
+            }
             yield return null;
         }
         _cluckFlyRT.anchoredPosition = new Vector2(CluckFlyEndX, CluckFlyY);
+        _cluckFallingAudioSrc.Stop();
+    }
+
+    // Spawns 5 small egg icons fanning forward-and-down from originPos and fading out — the same
+    // "cannon blast" cone shape as CluckAnimal.SpawnEggs()'s real gameplay ability (see that
+    // file's comment), reused here purely as a preview/teaser image, not a real projectile.
+    void SpawnEggBurst(Vector2 originPos)
+    {
+        if (_eggSprite == null || _cluckFlyParent == null) return;
+        const int   count      = 5;
+        const float centerDeg  = -45f;
+        const float spreadDeg  = 80f;
+        const float distance   = 220f;
+        // 0.45 -> 0.9 -> 1.6 (2026-07-10, two rounds of "eggs disappear too fast on the matchup
+        // scene" reports) — same travel distance now covered over more than 3x the original
+        // time, reading as a slow, clearly visible toss rather than a quick flick.
+        const float duration   = 1.6f;
+
+        for (int i = 0; i < count; i++)
+        {
+            float t     = count > 1 ? i / (float)(count - 1) : 0.5f;
+            float angle = centerDeg + Mathf.Lerp(-spreadDeg * 0.5f, spreadDeg * 0.5f, t);
+            float rad   = angle * Mathf.Deg2Rad;
+            Vector2 dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+            StartCoroutine(AnimateBurstEgg(originPos, dir, distance, duration));
+        }
+    }
+
+    IEnumerator AnimateBurstEgg(Vector2 origin, Vector2 dir, float distance, float duration)
+    {
+        var go = new GameObject("MatchUpEgg");
+        go.transform.SetParent(_cluckFlyParent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin        = new Vector2(0.5f, 0f);
+        rt.anchorMax        = new Vector2(0.5f, 0f);
+        rt.pivot            = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta         = new Vector2(45f, 60f); // small relative to Cluck's own 180x180 fly icon
+        rt.anchoredPosition  = origin;
+        var img = go.AddComponent<Image>();
+        img.sprite         = _eggSprite;
+        img.preserveAspect = true;
+        img.raycastTarget  = false;
+        var cg = go.AddComponent<CanvasGroup>();
+
+        // Alpha previously faded linearly from frame 1 (1-t), so every egg read as translucent
+        // for its ENTIRE flight, not just near the end (2026-07-10, user-reported "they also seem
+        // translucent"). Now stays fully opaque until FadeStartFraction of the flight, then fades
+        // only over the remaining portion — reads as a solid toss that fades out at the very end,
+        // not a ghost the whole way.
+        const float FadeStartFraction = 0.7f;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            rt.anchoredPosition = origin + dir * (distance * t);
+            cg.alpha            = t < FadeStartFraction
+                ? 1f
+                : 1f - (t - FadeStartFraction) / (1f - FadeStartFraction);
+            yield return null;
+        }
+        Destroy(go);
     }
 
     // from -> to scale over duration; bounce=true uses an ease-out-back overshoot (only sensible
@@ -504,6 +617,10 @@ public class MatchUpScreen : MonoBehaviour
         _countdownAudioSrc             = gameObject.AddComponent<AudioSource>();
         _countdownAudioSrc.playOnAwake = false;
 
+        _cluckFallingAudioSrc             = gameObject.AddComponent<AudioSource>();
+        _cluckFallingAudioSrc.playOnAwake = false;
+        _cluckFallingAudioSrc.loop        = true;
+
         // Background — MatchUpBackground.png, full-bleed, deliberately OUTSIDE the SafeArea
         // below (should paint edge-to-edge including under a notch/rounded corner). Also blocks
         // raycasts to whatever is behind this screen (the world map markers) since
@@ -538,6 +655,7 @@ public class MatchUpScreen : MonoBehaviour
         // like the countdown numeral below, animated purely via anchoredPosition.x in CluckFlyBy.
         var cluckFlyGO = new GameObject("CluckFlyBy");
         cluckFlyGO.transform.SetParent(safe, false);
+        _cluckFlyParent = safe; // burst eggs spawn as siblings here, see SpawnEggBurst()
         _cluckFlyRT = cluckFlyGO.AddComponent<RectTransform>();
         _cluckFlyRT.anchorMin        = new Vector2(0.5f, 0f);
         _cluckFlyRT.anchorMax        = new Vector2(0.5f, 0f);

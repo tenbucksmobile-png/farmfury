@@ -40,6 +40,7 @@ public static class SceneSetup
         EnsureHarvesterRobotPrefab();  // Create/update HarvesterRobot.prefab (separate from Robot)
         EnsureSemiHarvesterRobotPrefab();  // Create/update SemiHarvesterRobot.prefab (separate from Robot/HarvesterRobot)
         EnsureHaybaleBlockPrefab();    // Create/update HaybaleBlock.prefab (WoodBlock + Haybail.png art)
+        EnsureExplodingBarrelPrefab(); // Create/update ExplodingBarrelBlock.prefab (WoodBlock + WoodenBarrel.png art, area damage on death)
         WireBlockSprites();     // Art sprites into WoodBlock + StoneBlock prefabs
         PositionCamera();       // Move camera to see the play area
         SpriteWiring.WireAll(); // Wire character pose sprites into all 8 animal prefabs
@@ -394,12 +395,16 @@ public static class SceneSetup
         // (Single mode, PPU=100) by SpriteAutoImporter's generic "Sprites/UI/" rule — no reimport
         // step needed, unlike the old Assets/Sprites/UI/Play.png path this replaces (that file
         // never actually existed, so _playButtonSprite silently fell back to a plain orange
-        // square at runtime — see MainMenuController's fallback color). The SETTINGS icon was
-        // removed from the landing page entirely (2026-07-07, user request) along with its
-        // Music/SFX popup — no icon to wire any more.
+        // square at runtime — see MainMenuController's fallback color). The SETTINGS icon/popup
+        // was removed 2026-07-07, then re-added 2026-07-10 (both user requests) — Btn_settings.png
+        // already existed on disk the whole time, just unwired while the button was gone.
         var mainMenu = go.GetComponent<MainMenuController>();
         var mmSo = new SerializedObject(mainMenu);
         WireSprite(mmSo, "_playButtonSprite", "Assets/Sprites/UI/Icon/Btn_play.png");
+        WireSprite(mmSo, "_settingsButtonSprite", "Assets/Sprites/UI/Icon/Btn_settings.png");
+        // Settings popup backdrop (2026-07-10) — same Scoreboard.png HUDController's Level
+        // Complete/Failed panels already use.
+        WireSprite(mmSo, "_scoreboardSprite", "Assets/Sprites/UI/MatchUp/Scoreboard.png");
         mmSo.ApplyModifiedProperties();
     }
 
@@ -483,6 +488,8 @@ public static class SceneSetup
         WireSprite(mapSo, "_countdownReadySprite",    $"{matchUpFolder}/Countdown_Ready.png");
         WireAudioClip(mapSo, "_countdownClip",        "Assets/Audio/Countdown.mp3");
         WireSprite(mapSo, "_cluckFlySprite",           "Assets/Sprites/Characters/Cluck/Cluck_InFlight.png");
+        WireAudioClip(mapSo, "_cluckFallingClip",      "Assets/Audio/Cluck_falling.mp3");
+        WireSprite(mapSo, "_eggSprite",                "Assets/Sprites/Characters/Cluck/Egg.png");
 
         WireArrayByKeyword(mapSo, "_animalCardSprites", matchUpFolder, CardKeywords, "animal");
 
@@ -782,6 +789,7 @@ public static class SceneSetup
         SetPrefab(so, "_harvesterPrefab",  "HarvesterRobot",  "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_semiHarvesterPrefab", "SemiHarvesterRobot", "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_haybalePrefab",    "HaybaleBlock",    "Assets/Prefabs/Blocks",  typeof(WoodBlock));
+        SetPrefab(so, "_barrelPrefab",     "ExplodingBarrelBlock", "Assets/Prefabs/Blocks", typeof(ExplodingBarrelBlock));
 
         so.FindProperty("_blockParent").objectReferenceValue =
             GameObject.Find("BlockParent")?.transform;
@@ -875,10 +883,36 @@ public static class SceneSetup
 
         WireBlockPrefab("Assets/Prefabs/Blocks/WoodBlock.prefab", folder, new[]
         {
-            ("_sprNormal",      "Block_Wood_Normal.png"),
+            // "Block_Wood_Normal.png" never existed on disk, so this was originally pointed at
+            // 2D_Block_Wood_Flat.png (2026-07-10) as "the closest existing square wood sprite" —
+            // but its actual drawn plank content only fills 86%x21% of its own square canvas
+            // (measured via PIL alpha bbox), rendering as a near-invisible thin sliver at a
+            // normal 1x1 block size (user-reported "wood... not active when hit", "not rendering
+            // as desired"). Re-pointed to Plank_Horizontal.png instead (90%x50% fill — much more
+            // substantial) same day. Its native aspect (1.0 : 0.492, i.e. flatter than square)
+            // means a plain 1x1 square block request stretches it ~2x vertically via
+            // BlockBase.Initialise()'s native-bounds scaling — a mild, acceptable distortion
+            // (reads as a slightly thicker plank) traded for actually being visible, and the
+            // collider now correctly re-fits to the requested 1x1 regardless (see BlockBase.cs's
+            // _col.size fix same day).
+            ("_sprNormal",      "Plank_Horizontal.png"),
             ("_sprHorizontal",  "Plank_Horizontal.png"),
             ("_sprVertical",    "2D_Block_Wood_Vertical.png"),
+            // WoodDebris.png (broken-splinter burst art) — added 2026-07-10, user-supplied —
+            // wired to both the brief pre-death hit-reaction flash (_sprDamaged) and the actual
+            // death-burst shown by DestroyBlock() (_sprExplode), same dual-use pattern
+            // HaybaleBlock/ExplodingBarrelBlock already use. Previously WoodBlock had neither
+            // wired, so every wood plank died via the generic 4-fragment fade instead of a
+            // dedicated reaction.
+            ("_sprDamaged",     "WoodDebris.png"),
+            ("_sprExplode",     "WoodDebris.png"),
         });
+
+        // Was 1.4 (WoodDebris.png is full-bleed, unlike Haybail_Damaged.png's ~92%x83% fill, so
+        // it read bigger/more dominant than haybale's burst at the old shared 2.2x default).
+        // BlockBase's own default is now a flat 0.5 for every block type (2026-07-10, settled
+        // after a brief 1.5 correction was reverted) — WoodBlock matches that same value.
+        SetFloatField("Assets/Prefabs/Blocks/WoodBlock.prefab", "_explodeSizeMultiplier", 0.5f);
 
         WireBlockPrefab("Assets/Prefabs/Blocks/StoneBlock.prefab", folder, new[]
         {
@@ -947,6 +981,79 @@ public static class SceneSetup
                 so.FindProperty("_destroyClipOverride").objectReferenceValue = explodeClip;
             else
                 Debug.LogWarning("[FarmFury] Haybail_Exploding.mp3 not found at Assets/Audio/Haybail_Exploding.mp3.");
+            so.ApplyModifiedProperties();
+            PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+        }
+        PrefabUtility.UnloadPrefabContents(contents);
+    }
+
+    // ── ExplodingBarrelBlock: a WoodBlock variant that deals area damage on death ────────
+    // WoodenBarrel.png existed in Assets/Sprites/Environment/World1Props/ but had no dedicated
+    // gameplay behaviour before — introduced 2026-07-10 at L03 "The Tower" to "gradually
+    // introduce the exploding barrel" per user request. LevelLoader picks this prefab when
+    // BlockSpawnData.type == BlockType.Barrel.
+    static void EnsureExplodingBarrelPrefab()
+    {
+        const string prefabPath = "Assets/Prefabs/Blocks/ExplodingBarrelBlock.prefab";
+
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+        {
+            var go   = new GameObject("ExplodingBarrelBlock");
+            go.layer = 8; // Block layer
+            go.AddComponent<Rigidbody2D>();
+            var bc   = go.AddComponent<BoxCollider2D>();
+            bc.size  = new Vector2(1f, 1f);
+            go.AddComponent<SpriteRenderer>();
+            go.AddComponent<ExplodingBarrelBlock>();
+            PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+            Object.DestroyImmediate(go);
+            Debug.Log("[FarmFury] Created ExplodingBarrelBlock.prefab.");
+        }
+
+        WireBlockPrefab(prefabPath, "Assets/Sprites/Environment/World1Props", new[]
+        {
+            ("_sprNormal",     "WoodenBarrel.png"),
+            ("_sprHorizontal", "WoodenBarrel.png"),
+            ("_sprVertical",   "WoodenBarrel.png"),
+        });
+
+        // Reuses the same comic-burst art/sound RobotEnemy's death explosion uses (Explosion.png
+        // + Explosion_Robot.mp3) — a barrel popping should read as an explosion, not the generic
+        // flying-fragment default every other WoodBlock uses.
+        var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+        var block    = contents.GetComponent<BlockBase>();
+        if (block != null)
+        {
+            var so = new SerializedObject(block);
+            var explosionSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Environment/World1Props/Explosion.png");
+            if (explosionSprite != null)
+                so.FindProperty("_sprExplode").objectReferenceValue = explosionSprite;
+            var explodeClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Explosion_Robot.mp3");
+            if (explodeClip != null)
+                so.FindProperty("_destroyClipOverride").objectReferenceValue = explodeClip;
+            so.ApplyModifiedProperties();
+            PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+        }
+        PrefabUtility.UnloadPrefabContents(contents);
+    }
+
+    // Generic float-field override on a prefab's BlockBase (or any Component) — same
+    // LoadPrefabContents/SaveAsPrefabAsset shape as EnsureExplodingBarrelPrefab's death-FX
+    // wiring above, factored out since WireBlockSprites needs the same pattern for a plain
+    // numeric field rather than an asset reference.
+    static void SetFloatField(string prefabPath, string fieldName, float value)
+    {
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+        {
+            Debug.LogWarning($"[FarmFury] Block prefab not found: {prefabPath}");
+            return;
+        }
+        var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+        var block    = contents.GetComponent<BlockBase>();
+        if (block != null)
+        {
+            var so = new SerializedObject(block);
+            so.FindProperty(fieldName).floatValue = value;
             so.ApplyModifiedProperties();
             PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
         }
@@ -1060,6 +1167,29 @@ public static class SceneSetup
 
         var deathClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Explosion_Robot.mp3");
         if (deathClip != null) so.FindProperty("_deathSoundOverride").objectReferenceValue = deathClip;
+
+        // Hit SFX (2026-07-10, user request) — replaces the procedural RobotHit DSP ping
+        // entirely (see RobotEnemy.TakeDamage()), same shared wiring across all 3 robot prefabs
+        // as the death FX above.
+        var hitClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Robot_Hit.mp3");
+        if (hitClip != null) so.FindProperty("_hitSoundOverride").objectReferenceValue = hitClip;
+        else Debug.LogWarning("[FarmFury] Robot_Hit.mp3 not found at Assets/Audio/Robot_Hit.mp3.");
+    }
+
+    // Wires a robot's "damaged" art to BOTH its brief per-hit flash (_robotDamagedSprite) AND
+    // its persistent "one hit away from exploding" critical pose (_criticalSprite) in one call —
+    // added 2026-07-10 after SemiHarvesterRobot's critical pose was wired by hand and the user
+    // asked to "keep it consistent across all robots, also that are still to come". Every robot
+    // prefab's damaged-art wiring should call this instead of setting _robotDamagedSprite
+    // directly, so a future robot with dedicated damaged art automatically gets the critical
+    // pose too with no extra step to remember. No-op (does nothing) if damagedSprite is null —
+    // callers already handle that case (e.g. the plain Robot.prefab, which has no damaged art at
+    // all yet and falls back to RobotEnemy's plain white-tint flash / no critical pose).
+    static void WireRobotDamagedArt(SerializedObject so, Sprite damagedSprite)
+    {
+        if (damagedSprite == null) return;
+        so.FindProperty("_robotDamagedSprite").objectReferenceValue = damagedSprite;
+        so.FindProperty("_criticalSprite").objectReferenceValue     = damagedSprite;
     }
 
     // ── HarvesterRobot: create a SEPARATE prefab (distinct from Robot.prefab) ───
@@ -1132,16 +1262,15 @@ public static class SceneSetup
         {
             var so = new SerializedObject(robot);
             so.FindProperty("_robotSprite").objectReferenceValue = sprite;
-            if (damagedSprite != null)
-                so.FindProperty("_robotDamagedSprite").objectReferenceValue = damagedSprite;
-            // _maxHealth raised from the class default (35) to 40 (fixed 2026-07-01) — with the
-            // recalibrated trajectory (LaunchVelocity(), max ~7m/s), a Cluck shot that punches
-            // through the hay pile at 70% speed deals ~24-28 impulse damage. At 35 HP the robot
-            // would survive with only ~7-11 HP — technically not one-shot, but fragile enough to
-            // read as "instant" (any stray contact finishes it). 40 HP leaves a safer ~12-16 HP
-            // margin after the hay-clearing hit, while a second solid hit (~34-40 direct, or
-            // another ~24-28 pass-through) still reliably finishes it — matching L01's par=2.
-            so.FindProperty("_maxHealth").floatValue = 40f;
+            WireRobotDamagedArt(so, damagedSprite);
+            // _maxHealth: raised 35->40 originally (2026-07-01), LOWERED 40->22 same day
+            // 2026-07-10 (user report: "I cannot get past level 2... ease the damage
+            // requirements... one hit must cause a chain reaction"), then RAISED back up 22->28,
+            // same day third pass (user-reported the combination of that plus the widened
+            // chain-reaction blast radius/damage made robots "explode on the slightest of
+            // touches" — overcorrected). Expect further tuning passes on this number — the user
+            // has explicitly flagged it'll take iteration to land the right strength ratio.
+            so.FindProperty("_maxHealth").floatValue = 28f;
             WireRobotDeathFx(so);
             so.ApplyModifiedProperties();
         }
@@ -1229,9 +1358,10 @@ public static class SceneSetup
         {
             var so = new SerializedObject(robot);
             so.FindProperty("_robotSprite").objectReferenceValue = sprite;
-            if (damagedSprite != null)
-                so.FindProperty("_robotDamagedSprite").objectReferenceValue = damagedSprite;
-            so.FindProperty("_maxHealth").floatValue = 38f;
+            WireRobotDamagedArt(so, damagedSprite);
+            // 38->20->26 2026-07-10 — see HarvesterRobot's own _maxHealth comment for the full
+            // reasoning (same day, same reports, both floors moved together).
+            so.FindProperty("_maxHealth").floatValue = 26f;
             WireRobotDeathFx(so);
             so.ApplyModifiedProperties();
         }
@@ -1270,11 +1400,39 @@ public static class SceneSetup
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
         var col    = go.AddComponent<CircleCollider2D>();
-        col.radius = 0.15f;
+        col.radius = 0.18f;
 
         var sr = go.AddComponent<SpriteRenderer>();
-        sr.color        = new Color(1f, 0.95f, 0.7f);
-        sr.sortingOrder = 4;
+        // 4 -> 7 (2026-07-10, user-reported "no eggs are firing" — Cluck's sprite pose visibly
+        // changed on tap so the ability WAS triggering, but every spawned egg was invisible).
+        // Root cause: eggs spawn AT the firing Cluck's own transform.position (SpawnEggs()), and
+        // the project's sortingOrder convention (see CLAUDE.md) has animals at 6 but eggs were
+        // still at 4 — Cluck's own sprite drew directly OVER every egg at the exact moment they
+        // appeared, since they occupied the same screen position. 7 (above every other layer in
+        // the convention) guarantees eggs are always visible in front of the bird that fired
+        // them, not hidden behind it.
+        sr.sortingOrder = 7;
+
+        // Egg.png art + scale (2026-07-10, user-supplied — previously no sprite was ever wired
+        // here at all, so eggs rendered invisible). Cluck's PPU convention (2057, set by
+        // SpriteWiring for the whole Characters/Cluck folder) makes Egg.png's native size a tiny
+        // 0.14x0.19 world units at scale 1 — nowhere near "scaled with Cluck" (the launched bird
+        // itself renders at ~4.92x via CatapultLauncher.BirdScale). 2.3x lands the egg at a
+        // visible ~0.32x0.44 world-unit footprint — a proportionate "small egg relative to a
+        // full-size chicken" rather than same-size or near-invisible.
+        const string eggSpritePath = "Assets/Sprites/Characters/Cluck/Egg.png";
+        var eggSprite = AssetDatabase.LoadAssetAtPath<Sprite>(eggSpritePath);
+        if (eggSprite != null)
+        {
+            sr.sprite = eggSprite;
+            sr.color  = Color.white;
+            go.transform.localScale = new Vector3(2.3f, 2.3f, 1f);
+        }
+        else
+        {
+            sr.color = new Color(1f, 0.95f, 0.7f); // fallback tint if Egg.png isn't imported yet
+            Debug.LogWarning($"[FarmFury] {eggSpritePath} not found — egg will render as a plain circle.");
+        }
 
         go.AddComponent<EggProjectile>();
 

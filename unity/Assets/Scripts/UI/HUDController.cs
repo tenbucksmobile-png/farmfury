@@ -512,12 +512,16 @@ public class HUDController : MonoBehaviour
         // (now 3, not 4 — see star loop below) stars more headroom without moving them at all,
         // since children anchored to box's centre don't rescale with the parent's sizeDelta.
         // Falls back to the old plain cream box if unwired so the panel never renders blank.
+        // Re-supplied by the user 2026-07-10 at a new native aspect (was 653:382≈1.71:1, now
+        // 1600x1200=4:3≈1.33:1, noticeably taller per unit width) — height recomputed to
+        // 680/1.333=510 so preserveAspect doesn't letterbox/waste box area; width kept at 680 to
+        // preserve the same on-screen prominence as before.
         Image box;
         if (_scoreboardSprite != null)
         {
             box = MakeImage(rootRT, "LCBox", _scoreboardSprite, Color.white,
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(680f, 398f));
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(680f, 510f));
             box.preserveAspect = true;
         }
         else
@@ -573,13 +577,16 @@ public class HUDController : MonoBehaviour
             color: new Color(0.20f, 0.10f, 0.03f));
         StyleAsGameNumber(_lcScoreText);
 
-        // Level-up star — replaces the old Btn_play slot (bottom-left, same position/size as
-        // Home so the two mirror each other). Art has "LEVEL UP" baked in, so no separate text
-        // label is needed. Pulses continuously (see LevelUpStarPulse) to draw the tap; tapping
-        // it does exactly what Btn_play used to (OnLevelCompletePlayClicked -> world map flow).
+        // Level-up star — replaces the old Btn_play slot (bottom-left). Art has "LEVEL UP" baked
+        // in, so no separate text label is needed. Pulses continuously (see LevelUpStarPulse) to
+        // draw the tap; tapping it does exactly what Btn_play used to (OnLevelCompletePlayClicked
+        // -> world map flow). Size history 2026-07-10: 130x130 -> 260x260 ("enlarge by 2") ->
+        // user-reported "too big now, make it 1 less" -> 195x195 (splits the difference between
+        // the original and the doubled size — "1 less" read as one step back from the x2 change,
+        // not a full revert to the original).
         var levelUpBtn = MakeIconButton(box.transform, "LevelUpStarBtn", _levelUpStarSprite,
                           new Color(1.00f, 0.82f, 0.00f),
-                          pos: new Vector2(-170f, -260f), size: new Vector2(130f, 130f));
+                          pos: new Vector2(-170f, -260f), size: new Vector2(195f, 195f));
         levelUpBtn.onClick.AddListener(OnLevelCompletePlayClicked);
         _lcLevelUpStarRT = levelUpBtn.GetComponent<RectTransform>();
 
@@ -695,12 +702,14 @@ public class HUDController : MonoBehaviour
 
         // Scoreboard art is the whole backdrop (wooden sign, blank parchment centre) —
         // falls back to the old plain cream box if unwired so the panel never renders blank.
+        // Height recomputed to 620/1.333=465 to match the re-supplied art's new 4:3 aspect
+        // (2026-07-10, see the matching comment on BuildLevelCompletePanel's box above).
         Image box;
         if (_scoreboardSprite != null)
         {
             box = MakeImage(rootRT, "LFBox", _scoreboardSprite, Color.white,
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(620f, 363f));
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(620f, 465f));
             box.preserveAspect = true;
         }
         else

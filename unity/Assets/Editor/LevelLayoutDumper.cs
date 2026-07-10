@@ -83,13 +83,20 @@ public static class LevelLayoutDumper
                 continue;
             }
 
-            Vector3 pos   = block.transform.position;
-            Vector3 scale = block.transform.localScale;
+            Vector3 pos  = block.transform.position;
+            // Use the SpriteRenderer's actual rendered world-space bounds, not raw
+            // transform.localScale — BlockBase.Initialise(width,height) treats these values as
+            // the literal on-screen footprint, so they must reflect what was actually visible
+            // in the Scene view, not just the scale multiplier applied to whatever sprite this
+            // particular prefab/instance happens to be showing at design time.
+            var sr = block.GetComponentInChildren<SpriteRenderer>();
+            Vector2 size = (sr != null && sr.sprite != null) ? (Vector2)sr.bounds.size
+                                                               : (Vector2)block.transform.localScale;
 
             if (type == BlockType.Haybale)
-                blockLines.Add($"B(BlockType.Haybale, {F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, passThrough: true, hp: 10f, mass: 3f),");
+                blockLines.Add($"B(BlockType.Haybale, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f, passThrough: true, hp: 10f, mass: 3f),");
             else
-                blockLines.Add($"B(BlockType.{type}, {F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f),");
+                blockLines.Add($"B(BlockType.{type}, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f),");
         }
 
         foreach (var robot in Object.FindObjectsByType<RobotEnemy>(FindObjectsInactive.Exclude))
@@ -137,15 +144,31 @@ public static class LevelLayoutDumper
                 if (sr.GetComponent<BlockBase>() != null || sr.GetComponent<RobotEnemy>() != null) continue;
 
                 string spriteName = sr.sprite.name.ToLowerInvariant();
-                Vector3 pos   = sr.transform.position;
+                Vector3 pos  = sr.transform.position;
+                // Blocks: record the actual rendered world-space size (sr.bounds.size), not raw
+                // transform.localScale — see the matching comment in the BlockBase loop above.
+                // A raw sprite dropped at its default scale=1 still has whatever native pixel
+                // aspect its own art has (e.g. Plank_2DShork is 250x266px, i.e. taller than
+                // wide), which localScale=(1,1) alone would silently discard.
+                Vector2 size  = (Vector2)sr.bounds.size;
+                // Robots: the runtime robot prefab's own art is applied directly via
+                // transform.localScale (see LevelLoader.SpawnRobot), not re-selected by aspect
+                // like blocks are, so raw localScale is the correct value to record here.
                 Vector3 scale = sr.transform.localScale;
 
                 if (spriteName.Contains("hay"))
-                    blockLines.Add($"B(BlockType.Haybale, {F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, passThrough: true, hp: 10f, mass: 3f), // sprite '{sr.sprite.name}'");
+                    blockLines.Add($"B(BlockType.Haybale, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f, passThrough: true, hp: 10f, mass: 3f), // sprite '{sr.sprite.name}'");
                 else if (spriteName.Contains("stone"))
-                    blockLines.Add($"B(BlockType.Stone, {F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f), // sprite '{sr.sprite.name}'");
+                    blockLines.Add($"B(BlockType.Stone, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f), // sprite '{sr.sprite.name}'");
+                // "barrel" must be checked before "wood" — "WoodenBarrel" contains "wood" as a
+                // substring, so the generic wood/plank check below would misclassify every
+                // barrel as a plain plank (this was a real bug — L03's WoodenBarrel-sourced
+                // block rendered as a wood plank instead of the dedicated exploding-barrel art,
+                // found 2026-07-10).
+                else if (spriteName.Contains("barrel"))
+                    blockLines.Add($"B(BlockType.Barrel, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f), // sprite '{sr.sprite.name}'");
                 else if (spriteName.Contains("wood") || spriteName.Contains("plank"))
-                    blockLines.Add($"B(BlockType.Wood, {F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f), // sprite '{sr.sprite.name}'");
+                    blockLines.Add($"B(BlockType.Wood, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f, artVariant: WoodArtVariant.{InferWoodArtVariant(spriteName)}), // sprite '{sr.sprite.name}'");
                 // "semiharvest" must be checked before "harvester"/"robot" — "Robot_SemiHarvest"
                 // contains both "robot" and (once the underscore is stripped by ToLowerInvariant
                 // leaving "semiharvest") no "harvester" substring, but it DOES contain "robot",
@@ -189,4 +212,21 @@ public static class LevelLayoutDumper
 
     // 3-decimal precision, matching the existing hand-written coordinates in LevelDataGenerator.cs.
     static string F(float v) => v.ToString("0.###", CultureInfo.InvariantCulture);
+
+    // Maps a raw wood-art sprite's filename to which of WoodBlock's 3 wired art slots
+    // (_sprNormal/_sprHorizontal/_sprVertical — see SceneSetup.WireBlockSprites) it actually is,
+    // so the dumped level data shows the SAME art orientation the user placed in the Scene view
+    // instead of leaving it to BlockBase's aspect-ratio guess (which gets it wrong for any art
+    // asset whose visual orientation doesn't match its measured w/h footprint — e.g.
+    // Plank_2DShork.png is a clearly vertical plank bundle but its footprint is nearly square).
+    // Only the specific files actually seen in a real level dump so far are confidently mapped;
+    // anything else falls back to Auto (the original aspect-based guess) rather than guessing
+    // wrong from a keyword alone.
+    static string InferWoodArtVariant(string spriteNameLower)
+    {
+        if (spriteNameLower.Contains("vertical") || spriteNameLower.Contains("shork")) return "Vertical";
+        if (spriteNameLower.Contains("horizontal"))                                     return "Horizontal";
+        if (spriteNameLower.Contains("flat"))                                           return "Flat";
+        return "Auto";
+    }
 }
