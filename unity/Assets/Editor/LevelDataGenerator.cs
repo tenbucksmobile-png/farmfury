@@ -2,14 +2,14 @@
 // Coordinate system (current, post-rebuild): ground surface Y = -6.60, launcher X = -2.327.
 // Block/robot positions are raw world-space — LevelLoader applies no offset at spawn time.
 //
-// L01, L02, and L03 exist below as of 2026-07-10 — L04-L06 remain removed (user request 2026-07-09):
-// they were auto-generated placeholder layouts (originally on the OLD pre-rebuild coordinate system,
+// L01-L05 exist below as of 2026-07-10 — L06 remains removed (user request 2026-07-09):
+// it was an auto-generated placeholder layout (originally on the OLD pre-rebuild coordinate system,
 // ground Y=-2.5/launcher X=-5.5, then just rigid-translated onto the current system by a fixed
-// delta dx=+3.173/dy=-4.10 — never actually hand-built/verified level designs). Going forward,
-// every level is built individually via LevelLayoutDumper (drag real content into the Scene
-// view, dump to code — see that file's header comment), the same way L02 "Harvest Yard" and L03
-// "The Tower" were built, replacing the old auto-generated stand-ins. See DeleteStaleAsset below
-// for how old generated assets get cleaned up when a level's Make(...) call is removed.
+// delta dx=+3.173/dy=-4.10 — never actually hand-built/verified). Going forward, every level is
+// built individually via LevelLayoutDumper (drag real content into the Scene view, dump to code —
+// see that file's header comment), the same way L02 "Harvest Yard" through L05 "Bessie's Debut"
+// were built, replacing the old auto-generated stand-ins. See DeleteStaleAsset below for how old
+// generated assets get cleaned up when a level's Make(...) call is removed.
 
 using UnityEngine;
 using UnityEditor;
@@ -224,15 +224,16 @@ public static class LevelDataGenerator
 
         // ── W1_L04  ────────────────────────────────────────────────────────────
         // Built 2026-07-10 via LevelLayoutDumper (same workflow as L02/L03). Introduces Cluck's
-        // Cluster Bomb ability (egg shower) as a GDD milestone — the ability itself has always
-        // been usable on any Cluck (tap mid-flight, see AnimalBase.Update()/CluckAnimal.
-        // TriggerAbility()), so no code gate exists; L04 is simply the first level with enough
-        // robots (4 — 2 Harvester + 2 SemiHarvester) that using it well actually matters. Same
-        // day, the ability itself was reworked per user request: eggs now use real Egg.png art
-        // at a visible scale (previously unwired/invisible) and fire in a fixed forward-and-down
-        // cone ("like being fired from a cannon") instead of a spread centred on Cluck's exact
-        // in-flight velocity angle — see CluckAnimal.cs/SceneSetup.EnsureEggPrefab() same-day
-        // comments. birds[] stays 3x Cluck (Bessie isn't introduced until a later level).
+        // Cluster Bomb ability (egg shower) as a GDD milestone. Originally usable on any Cluck
+        // from any level (tap mid-flight, see AnimalBase.Update()/CluckAnimal.TriggerAbility());
+        // later the same day a real code gate was added (AnimalBase.AbilityIntroLevelIndex = 3,
+        // 0-based, i.e. L04) so a tap does nothing before this level — L04 is the level that
+        // milestone is actually tied to now, not just "enough robots to matter". Same day, the
+        // ability itself was also reworked: eggs now use real Egg.png art at a visible scale
+        // (previously unwired/invisible) and fire in a fixed forward-and-down cone ("like being
+        // fired from a cannon") instead of a spread centred on Cluck's exact in-flight velocity
+        // angle — see CluckAnimal.cs/SceneSetup.EnsureEggPrefab() same-day comments. birds[]
+        // stays 3x Cluck (Bessie is introduced at L05 instead).
         //
         // Layout compacted 2026-07-10 (same precaution as L03 — the raw dump spanned X 3.8-8.27,
         // 4.47 units, wider than any previously-verified-safe level): uniformly compressed toward
@@ -268,25 +269,55 @@ public static class LevelDataGenerator
                 R(4.97f, -4.14f, 4.845f, 6.025f, RobotType.Harvester),
             });
 
-        // L05-L06 REMOVED 2026-07-09 (user request) — these were never actually built by the
-        // user; they were auto-generated placeholder layouts (originally on the old pre-rebuild
-        // coordinate system, then just rigid-translated onto the current one by delta, never
-        // redesigned from scratch). User is now hand-building every level individually via
-        // LevelLayoutDumper (drag real content into the Scene view, dump to code) the same way
-        // L02/L03/L04 were built — auto-generated stand-ins for unbuilt levels are exactly the
-        // "random sprites" that read as bugs when a real level should be there instead.
-        // DeleteStaleAsset calls below remove any leftover .asset files from earlier runs of
-        // this generator so GameManager (which loads EVERY LevelData asset found in this folder,
-        // regardless of what this method currently generates) can't pick them back up. Add a new
-        // Make(folder, "L05_...", ...) call here once L05 is built.
-        DeleteStaleAsset(folder, "L05_TheFortress");
+        // ── W1_L05  Bessie's Debut ────────────────────────────────────────────
+        // Built 2026-07-10 via LevelLayoutDumper (same workflow as L02-L04 — dumped layout pasted
+        // from unity/Logs/level_layout_dump.txt). Densest level yet: 2 Harvester + 3 SemiHarvester
+        // (5 robots total, vs L04's 4). Introduces Bessie AND unlocks Cluck's ability one level
+        // later than originally implied — per the L03 comment above ("Bessie and Cluck's own
+        // ability don't unlock until L05, user decision 2026-07-10"), this is that level. birds[]
+        // is 2x Cluck + 1x Bessie (still 3 total, matching every level so far) rather than adding
+        // a 4th bird, since par stays 2 like every other level.
+        //
+        // Layout compacted using the same pivot-and-compress approach as L03/L04 (raw dump spanned
+        // X 3.72-8.05, 4.33 units — wider than the established safe range): pivot = leftmost
+        // element (the first barrel, X=3.72, held fixed), factor = 0.85, landing the widest
+        // element (the second Harvester) at X~7.4, matching L03/L04's own right edge. Not yet
+        // visually verified in the Editor (no Play-mode access here) — worth a live check,
+        // particularly given this is the first level with 5 robots and Bessie's ground-slam
+        // ability (large shockwave radius) in play at the same time.
+        Make(folder, "L05_BessiesDebut",
+            id: "W1_L05", name: "Bessie's Debut", par: 2,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Haybale, 4.536f, -5.4f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 4.341f, -5.57f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 4.867f, -5.52f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Barrel,  3.72f,  -5.45f, 1.096f, 1.016f),
+                B(BlockType.Barrel,  6.587f, -5.34f, 1.043f, 0.977f),
+                B(BlockType.Wood,    5.301f, -4.38f, 1f, 0.618f, artVariant: WoodArtVariant.Auto),
+                B(BlockType.Wood,    5.318f, -5.18f, 0.668f, 1.505f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood,    4.494f, -5.05f, 1f, 1f, artVariant: WoodArtVariant.Horizontal),
+            },
+            robots: new[]
+            {
+                R(5.885f, -5.22f, 4.487f, 5.89f,  RobotType.Harvester),
+                R(7.401f, -5.16f, 4.563f, 6.232f, RobotType.Harvester),
+                R(4.485f, -4.57f, 5.176f, 5.316f, RobotType.SemiHarvester),
+                R(6.568f, -4.59f, 5.176f, 5.316f, RobotType.SemiHarvester),
+                R(5.25f,  -3.83f, 5.408f, 5.501f, RobotType.SemiHarvester),
+            });
+
+        // L06 still removed (see L03's own comment above for the fuller history) — build via
+        // LevelLayoutDumper the same way L02-L05 were, then add a Make(folder, "L06_...", ...)
+        // call here.
         DeleteStaleAsset(folder, "L06_BessiesDebut");
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         if (!silent)
             EditorUtility.DisplayDialog("FarmFury",
-                "Generated 4 LevelData assets in\nAssets/ScriptableObjects/Levels\n(L05-L06 removed — build these individually)", "OK");
+                "Generated 5 LevelData assets in\nAssets/ScriptableObjects/Levels\n(L06 removed — build individually)", "OK");
         Debug.Log("[FarmFury] Level data generation complete.");
     }
 
