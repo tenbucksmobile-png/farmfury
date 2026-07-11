@@ -35,6 +35,7 @@ public static class SceneSetup
         EnsureCelebrationVideoBackground(); // Sky backdrop behind both of the above (shared overlay)
         WireGameManager();      // _levels array
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
+        WireBessieAudio();      // BessieAnimal.prefab: _earthquakeClip <- Bessie_Earthquake.mp3
         WireLauncher();         // CatapultLauncher + LevelLoader ref + counterweight sprite
         WireRobotSprite();                // Robot_Idle.png → Robot prefab SpriteRenderer
         EnsureHarvesterRobotPrefab();  // Create/update HarvesterRobot.prefab (separate from Robot)
@@ -466,9 +467,11 @@ public static class SceneSetup
         WireSprite(mapSo, "_vsSprite",                $"{matchUpFolder}/VS.png");
 
         // Level header art — index 0 (LevelHeader1.png) is the fallback MatchUpScreen.Show()
-        // uses for any level whose own slot is empty. Levels 2-5 already have their own header
+        // uses for any level whose own slot is empty. Levels 2-9 already have their own header
         // art (different naming, since they were added individually rather than following
-        // LevelHeader1.png's naming pattern) — wired directly by filename.
+        // LevelHeader1.png's naming pattern) — wired directly by filename. level6.png added
+        // 2026-07-11 (alongside re-supplied level4.png/level5.png — same filenames, so those two
+        // needed no code change, just a re-import to pick up the new content).
         var headerArr = mapSo.FindProperty("_levelHeaderSprites");
         headerArr.arraySize = WorldMapController.LevelCount;
         headerArr.GetArrayElementAtIndex(0).objectReferenceValue =
@@ -481,10 +484,14 @@ public static class SceneSetup
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level4.png");
         headerArr.GetArrayElementAtIndex(4).objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level5.png");
-        // Index 5 (L06) has no dedicated header art yet — falls back to index 0 (LevelHeader1.png)
-        // via MatchUpScreen.Show()'s existing fallback logic, same as every other unwired slot.
+        headerArr.GetArrayElementAtIndex(5).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level6.png");
         headerArr.GetArrayElementAtIndex(6).objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level7.png");
+        headerArr.GetArrayElementAtIndex(7).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level8.png");
+        headerArr.GetArrayElementAtIndex(8).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level9.png");
 
         WireSprite(mapSo, "_countdown3Sprite",        $"{matchUpFolder}/countdown3.png");
         WireSprite(mapSo, "_countdown2Sprite",        $"{matchUpFolder}/countdown2.png");
@@ -493,7 +500,8 @@ public static class SceneSetup
         WireAudioClip(mapSo, "_countdownClip",        "Assets/Audio/Countdown.mp3");
         WireSprite(mapSo, "_cluckFlySprite",           "Assets/Sprites/Characters/Cluck/Cluck_InFlight.png");
         WireAudioClip(mapSo, "_cluckFallingClip",      "Assets/Audio/Cluck_falling.mp3");
-        WireSprite(mapSo, "_eggSprite",                "Assets/Sprites/Characters/Cluck/Egg.png");
+        WireSprite(mapSo, "_bessieFlySprite",          "Assets/Sprites/Characters/Bessie/Bessie_InFlight.png");
+        WireAudioClip(mapSo, "_bessieFallingClip",     "Assets/Audio/Bessie_falling.mp3");
 
         WireArrayByKeyword(mapSo, "_animalCardSprites", matchUpFolder, CardKeywords, "animal");
 
@@ -616,6 +624,7 @@ public static class SceneSetup
         WireAudioClip(go, "_musicClip",      "Assets/Audio/SunriseMeadows_Background.mp3");
         WireAudioClip(go, "_cannonShotClip", "Assets/Audio/CannonShot.mp3");
         WireAudioClip(go, "_fallingClip",    "Assets/Audio/Cluck_falling.mp3");
+        WireAudioClip(go, "_bessieFallingClip", "Assets/Audio/Bessie_falling.mp3");
         // Landing page + Sunrise Meadows world map (GameState.Idle) — separate track/AudioSource
         // from the gameplay loop above, see AudioManager.OnStateChanged.
         WireAudioClip(go, "_menuMusicClip",  "Assets/Audio/SunriseMeadows_TransitionMusic.mp3");
@@ -826,6 +835,14 @@ public static class SceneSetup
         so.FindProperty("_levelLoader").objectReferenceValue = ll;
         so.FindProperty("_cameraRestOffset").vector2Value = new Vector2(2.327f, 4.60f);
         so.FindProperty("_returnDelay").floatValue        = 2.5f;
+
+        // [SerializeField] stale-value trap (see CLAUDE.md) — the Game.unity scene GO already had
+        // its own serialized 3.0/6.0 launch-speed values baked in from before, which changing the
+        // C# class defaults alone would never retroactively update. Re-synced explicitly here so
+        // the "allow for high and strong firing" launch-dynamics change (2026-07-11) actually
+        // takes effect in the live scene, not just for freshly-created GameObjects.
+        so.FindProperty("_minLaunchSpeed").floatValue = 3.5f;
+        so.FindProperty("_maxLaunchSpeed").floatValue = 8.5f;
 
         // ── Farm Cannon (2026-07-02, replaces the trebuchet visual system) ──────
         // Delete the old trebuchet scene GOs — CatapultLauncher no longer references them
@@ -1080,6 +1097,36 @@ public static class SceneSetup
             so.FindProperty(fieldName).floatValue = value;
             so.ApplyModifiedProperties();
             PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+        }
+        PrefabUtility.UnloadPrefabContents(contents);
+    }
+
+    // Wires BessieAnimal.prefab's _earthquakeClip field — same LoadPrefabContents/
+    // SaveAsPrefabAsset shape as SetFloatField above, just for an AudioClip reference on a
+    // different component (BessieAnimal, not BlockBase).
+    static void WireBessieAudio()
+    {
+        const string prefabPath = "Assets/Prefabs/Animals/BessieAnimal.prefab";
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+        {
+            Debug.LogWarning($"[FarmFury] Prefab not found: {prefabPath}");
+            return;
+        }
+        var clip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Bessie_Earthquake.mp3");
+        if (clip == null)
+        {
+            Debug.LogWarning("[FarmFury] Audio clip not found at Assets/Audio/Bessie_Earthquake.mp3.");
+            return;
+        }
+        var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+        var bessie   = contents.GetComponent<BessieAnimal>();
+        if (bessie != null)
+        {
+            var so = new SerializedObject(bessie);
+            so.FindProperty("_earthquakeClip").objectReferenceValue = clip;
+            so.ApplyModifiedProperties();
+            PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+            Debug.Log("[FarmFury] BessieAnimal: wired _earthquakeClip <- Bessie_Earthquake.mp3");
         }
         PrefabUtility.UnloadPrefabContents(contents);
     }
@@ -1567,7 +1614,8 @@ public static class SceneSetup
     {
         const float VisualTop    = -5.3f;
         const float VisualBottom = -12f;
-        float height = VisualTop - VisualBottom;
+        const float width        = 40f;
+        float height  = VisualTop - VisualBottom;
         float centerY = (VisualTop + VisualBottom) / 2f;
 
         var go = GameObject.Find("GroundVisual_Placeholder");
@@ -1577,19 +1625,78 @@ public static class SceneSetup
             Debug.Log("[FarmFury] Created 'GroundVisual_Placeholder' ground/grass stand-in — replace with real art, then delete this GameObject.");
         }
         go.transform.position   = new Vector3(0f, centerY, 0f);
-        go.transform.localScale = new Vector3(40f, height, 1f);
+        // Tiled draw mode (below) handles sizing via SpriteRenderer.size, not transform scale —
+        // a stretched localScale would just re-blur the tile back into a flat gradient.
+        go.transform.localScale = Vector3.one;
 
         var sr = go.GetComponent<SpriteRenderer>();
         if (sr == null) sr = go.AddComponent<SpriteRenderer>();
-        if (sr.sprite == null)
+        // Re-generate if this is still the old flat 1x1-pixel placeholder (or missing) — named
+        // check so re-running Wire Scene References doesn't regenerate the texture every time.
+        if (sr.sprite == null || sr.sprite.name != "MeadowGrassTile")
+            sr.sprite = MakeMeadowGrassSprite();
+        sr.drawMode     = SpriteDrawMode.Tiled;
+        sr.size         = new Vector2(width, height);
+        sr.color        = Color.white; // colour now lives in the tile's own pixels, not a flat tint
+        sr.sortingOrder = -1;
+    }
+
+    // Procedural tileable grass-meadow texture — replaces the earlier flat solid-colour
+    // placeholder (2026-07-11, user report: "the grass we inserted appears as a green bar... is
+    // there a way to give it texture like a meadow feel"). No dedicated ground/grass art has been
+    // supplied yet (see EnsureGroundVisual's own comment above — this is explicitly a stand-in
+    // until real art exists), so this generates a small seamless tile with per-pixel colour noise
+    // across 3 green shades plus scattered short darker "blade" streaks, rendered via
+    // SpriteRenderer.Tiled so it repeats across the strip instead of being stretched into a
+    // single blurred gradient — same procedural-placeholder spirit as this project's other
+    // generated textures (BlockBase's crack overlays, CatapultLauncher's trajectory dot/smoke
+    // sprites). Deterministic seed so the tile doesn't change on every reimport. Replace with real
+    // Kling-generated meadow art via the normal art pipeline when available.
+    static Sprite MakeMeadowGrassSprite()
+    {
+        const int size = 64;
+        var rng = new System.Random(1337);
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.wrapMode   = TextureWrapMode.Repeat;
+        tex.filterMode = FilterMode.Bilinear;
+
+        var baseA = new Color(0.30f, 0.52f, 0.20f);
+        var baseB = new Color(0.38f, 0.60f, 0.26f);
+        var baseC = new Color(0.24f, 0.44f, 0.16f);
+
+        var px = new Color[size * size];
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
         {
-            var tex = new Texture2D(1, 1);
-            tex.SetPixel(0, 0, Color.white);
-            tex.Apply();
-            sr.sprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), Vector2.one * 0.5f, 1f);
+            float n = (float)rng.NextDouble();
+            Color c = n < 0.55f ? baseA : n < 0.85f ? baseB : baseC;
+            float jitter = 0.94f + (float)rng.NextDouble() * 0.12f; // subtle per-pixel brightness variation
+            px[y * size + x] = new Color(c.r * jitter, c.g * jitter, c.b * jitter, 1f);
         }
-        sr.color         = new Color(0.36f, 0.56f, 0.24f);
-        sr.sortingOrder  = -1;
+
+        // Short vertical darker "blade" streaks scattered across the tile, Y-wrapped so the
+        // tile still repeats seamlessly top-to-bottom.
+        const int bladeCount = 40;
+        for (int i = 0; i < bladeCount; i++)
+        {
+            int bx = rng.Next(0, size);
+            int by = rng.Next(0, size);
+            int bh = rng.Next(2, 5);
+            Color blade = baseC * 0.85f;
+            for (int dy = 0; dy < bh; dy++)
+            {
+                int yy = (by + dy) % size;
+                px[yy * size + bx] = new Color(blade.r, blade.g, blade.b, 1f);
+            }
+        }
+
+        tex.SetPixels(px);
+        tex.Apply();
+
+        var spr = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size,
+            0, SpriteMeshType.FullRect, Vector4.zero);
+        spr.name = "MeadowGrassTile";
+        return spr;
     }
 
     // ── Camera: position to see launcher + structures ─────────────────────────

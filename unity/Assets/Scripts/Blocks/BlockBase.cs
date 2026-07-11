@@ -212,6 +212,7 @@ public abstract class BlockBase : MonoBehaviour
         // once (DestroyBlock() below no longer has its own call). _col/transform are still fully
         // valid at this point regardless of whether this hit is about to destroy the block.
         CheckForRobotsOnTop();
+        CheckForBlocksOnTop();
 
         if (Health <= 0f) DestroyBlock();
     }
@@ -332,6 +333,43 @@ public abstract class BlockBase : MonoBehaviour
         {
             var robot = hit.GetComponentInParent<RobotEnemy>();
             if (robot != null) robot.MakeDynamicFromSupportLoss();
+        }
+    }
+
+    // Block-level counterpart to CheckForRobotsOnTop() above — 2026-07-11 fundamental gameplay
+    // rule, user request: "when structure is hit, the structure naturally collapses and whatever
+    // it hits on the way down naturally also topples (like in real life)". Previously only a
+    // resting ROBOT fell when its supporting block was destroyed; a block resting on another
+    // block (e.g. the top plank of a stacked tower) had nothing waking it, so it was left
+    // floating in place — Static rigidbodies ignore gravity entirely regardless of whether
+    // there's still anything beneath them. Wakes any block directly above (Static -> Dynamic, the
+    // same "give real physics control of it" transition TakeDamage() already does to whichever
+    // block was actually hit) so it now genuinely falls/topples under gravity rather than
+    // artificial damage math alone. Real domino propagation up a taller stack needs no extra code
+    // beyond this: once a block is Dynamic it falls, its own eventual landing collision runs
+    // through the normal OnCollisionEnter2D -> TakeDamage() path exactly like any other hit
+    // (including this same check for whatever rests on IT), so a whole tower can cascade down
+    // from one hit at its base without recursion here.
+    //
+    // Unlike CheckForRobotsOnTop's deliberately generous 8-unit column (needed only because a
+    // robot's small physics collider sits far below its scaled-up visual sprite — see that
+    // method's comment), block colliders are already correctly re-fitted to their visuals in
+    // Initialise(), so a much shorter check reliably catches a directly-stacked neighbour without
+    // reaching into an unrelated structure elsewhere in the level.
+    void CheckForBlocksOnTop()
+    {
+        const int blockLayerMask = 1 << 8;
+        const float checkHeight = 1.5f;
+        Bounds b = _col.bounds;
+        Vector2 checkCenter = new Vector2(b.center.x, b.max.y + checkHeight * 0.5f);
+        Vector2 checkSize   = new Vector2(b.size.x * 0.9f, checkHeight);
+        var hits = Physics2D.OverlapBoxAll(checkCenter, checkSize, 0f, blockLayerMask);
+        foreach (var hit in hits)
+        {
+            var block = hit.GetComponentInParent<BlockBase>();
+            if (block == null || block == this || block.IsDestroyed || block._stayKinematic) continue;
+            if (block._rb.bodyType == RigidbodyType2D.Static)
+                block._rb.bodyType = RigidbodyType2D.Dynamic;
         }
     }
 

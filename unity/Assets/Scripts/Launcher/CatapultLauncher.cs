@@ -22,8 +22,21 @@ public class CatapultLauncher : MonoBehaviour
     // Was declared but never actually read before 2026-07-26 — the trebuchet-arm scheme derived
     // power from the clamped drag ANGLE instead. Revived here as the real power axis.
     [SerializeField] private float _maxDragDistance = 2.4f;   // 120 px / 50
-    [SerializeField] private float _minLaunchSpeed  = 3.0f;
-    [SerializeField] private float _maxLaunchSpeed  = 6.0f;
+    // Raised 3.0-6.0 -> 3.5-8.5 (2026-07-11, user report: "with structures beginning to stack it
+    // is impossible to have the animal fly over... allow for high and strong firing"). At the old
+    // 6.0 max, the highest-arcing shot the aim cone allowed (55 deg) could only just barely reach
+    // this level set's far edge (~X 9.9 from the launch point) at roughly LAUNCH HEIGHT — solved
+    // from the standard projectile-height formula y(x) = x*tanθ - g*x^2/(2v^2*cos^2θ) with
+    // g=3.6 (Physics2D.gravity.y * AnimalBase's 0.18 gravityScale), it landed at y≈0.1 above the
+    // barrel, i.e. it could barely REACH that far, let alone clear a robot/block stack sitting
+    // several units above ground there. Re-solved for v at the same angle/distance targeting a
+    // generous ~4.5-unit clearance above launch height gives v≈7.5 — 8.5 keeps a real margin on
+    // top of that (verified: at 55 deg it clears ~6.7 units at that same distance). Min speed
+    // raised proportionally (3.0/6.0 -> 3.5/8.5, keeping the same ~0.5 ratio) so the softest pull
+    // still meaningfully reaches nearby targets rather than reading as unchanged while every
+    // other shot got stronger.
+    [SerializeField] private float _minLaunchSpeed  = 3.5f;
+    [SerializeField] private float _maxLaunchSpeed  = 8.5f;
 
     [Header("Aim Geometry")]
     // Abstract aiming-math anchor. NOT tied to any visual GameObject — drag angle is measured
@@ -33,13 +46,17 @@ public class CatapultLauncher : MonoBehaviour
     // Pull-angle cone (world-space, standard atan2 convention: 0°=+X, 90°=+Y). The player drags
     // the loaded bird backward/away from the target, mirroring it through the pivot (-180°) to
     // get the actual launch angle — same convention the old trebuchet-arm code used, just no
-    // longer discarded. 200°-260° pull mirrors to a 20°-80° launch angle: pulling toward
-    // horizontal-left (200°) gives a flat 20° shot, pulling toward straight-down (260°) gives an
-    // 80° near-vertical lob. Widened from the trebuchet's old 218°-268° (which only ever mirrored
-    // to a barely-varying 38°-88°, and wasn't even used that way — see class comment) so
-    // direction changes are actually visible on release, per explicit user request.
+    // longer discarded. 200°-265° pull mirrors to a 20°-85° launch angle: pulling toward
+    // horizontal-left (200°) gives a flat 20° shot, pulling toward near-straight-down (265°)
+    // gives an 85° near-vertical lob. Widened from the trebuchet's old 218°-268° (which only ever
+    // mirrored to a barely-varying 38°-88°, and wasn't even used that way — see class comment) so
+    // direction changes are actually visible on release, per explicit user request. Upper bound
+    // raised again 80° -> 85° (2026-07-11, alongside the speed increase above, same "allow for
+    // high and strong firing" request) — a near-vertical lob is the only way to clear a tall
+    // structure sitting close to the cannon, where there isn't enough horizontal room for a
+    // shallower high-arcing shot to gain height before reaching it.
     private const float _armRestAngle = 200f;  // drag-angle lower bound
-    private const float MaxLoadAngle  = 60f;   // drag-angle range above _armRestAngle
+    private const float MaxLoadAngle  = 65f;   // drag-angle range above _armRestAngle
 
     // Deadzone radius (world units) around the pivot within which the drag angle is not
     // updated — see HandleInput()'s "Hold" branch. ~11x the pivot-to-loaded-bird distance
@@ -53,6 +70,19 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private float   _cameraFollowSpeed    = 6f;     // exponential follow rate (units/s)
     [SerializeField] private float   _cameraReturnDuration = 1.2f;   // seconds for the pan-back animation
     [SerializeField] private Vector2 _cameraRestOffset     = new Vector2(5.5f, 2.5f);
+
+    // Per-level auto-zoom (2026-07-11, user report: "as the scenes progress it appears as if the
+    // cannon is very close to the robot structures, and the structures are only going to grow all
+    // the way to level 18... zoom out the camera"). Rather than hand-tuning a fixed zoom value per
+    // level (something to remember on every future level build, easy to forget), orthoSize is
+    // recomputed each level load from that level's actual block/robot bounding box — see
+    // ComputeOrthoSizeForLevel(). _minOrthoSize floors it at the original fixed framing so smaller/
+    // earlier levels (L01 in particular, whose camera framing is explicit user-verified ground
+    // truth — see CLAUDE.md) render exactly as before; _maxOrthoSize caps how far it can zoom out
+    // so a very sprawling future level doesn't shrink everything to illegibility.
+    [SerializeField] private float _minOrthoSize = 4.5f;
+    [SerializeField] private float _maxOrthoSize = 8.0f;
+    private const float ZoomPadding = 1.2f; // extra world-units of breathing room around content bounds
 
     [Header("Farm Cannon")]
     [SerializeField] private GameObject _cannonGO;      // wired to "FarmCannon" scene GO
@@ -143,11 +173,13 @@ public class CatapultLauncher : MonoBehaviour
         if (FindAnyObjectByType<LevelFailedManager>() == null)
             new GameObject("LevelFailedManager").AddComponent<LevelFailedManager>();
 
-        // Ensure 2D orthographic view regardless of scene camera settings
+        // Ensure 2D orthographic view regardless of scene camera settings — orthoSize starts at
+        // the floor value here; OnLevelStarted() recomputes it per-level once a level actually
+        // loads (see ComputeOrthoSizeForLevel).
         if (_camera != null)
         {
             _camera.orthographic     = true;
-            _camera.orthographicSize = 4.5f;
+            _camera.orthographicSize = _minOrthoSize;
         }
 
         _rubberBandLine   = MakeLine("RubberBandRenderer", 0.05f, new Color(0.9f, 0.7f, 0.1f, 0.9f));
@@ -355,7 +387,8 @@ public class CatapultLauncher : MonoBehaviour
         _activeAnimal.OnAnimalImpact    += HandleAnimalImpact;
         _activeAnimal.Launch(velocity);
         AudioManager.Play(AudioManager.Sound.Launch);
-        if (birdType == AnimalType.Cluck) AudioManager.Instance?.PlayFalling();
+        if (birdType == AnimalType.Cluck || birdType == AnimalType.Bessie)
+            AudioManager.Instance?.PlayFalling(birdType);
 
         if (_fireRoutine != null) StopCoroutine(_fireRoutine);
         _fireRoutine = StartCoroutine(CannonFireSequence());
@@ -389,7 +422,7 @@ public class CatapultLauncher : MonoBehaviour
             PrepareNextBird();
     }
 
-    void OnLevelStarted(LevelData _)
+    void OnLevelStarted(LevelData data)
     {
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
         _activeAnimal    = null;
@@ -401,6 +434,7 @@ public class CatapultLauncher : MonoBehaviour
         if (_returnRoutine != null) StopCoroutine(_returnRoutine);
         if (_fireRoutine   != null) StopCoroutine(_fireRoutine);
         if (_cannonGO != null) _cannonGO.transform.position = _cannonRestPos;
+        if (_camera != null) _camera.orthographicSize = ComputeOrthoSizeForLevel(data);
         RefreshRestPoint();
         // Restart/Replay now reuses this same handler (GameManager.RestartLevel ->
         // ForceStartLevel, no scene reload — see GameManager.cs), so a leftover mid-pan-back
@@ -408,6 +442,42 @@ public class CatapultLauncher : MonoBehaviour
         // previously this only ever ran once at Start(), which a same-scene restart skips.
         SnapCameraToRest();
         PrepareNextBird();
+    }
+
+    // Grows orthoSize to fit this level's actual block/robot bounding box (plus the cannon's own
+    // position, so it's always still in frame) — see the field comment above for why this is
+    // computed rather than hand-tuned per level. Block bounds use BlockSpawnData.size directly
+    // (BlockBase.Initialise() scales the sprite to exactly that world-space footprint); robot
+    // bounds use RobotSpawnData.scale when set (LevelLoader.SpawnRobot applies it as
+    // transform.localScale directly) or the prefab's default (0.6, 0.9) footprint otherwise.
+    float ComputeOrthoSizeForLevel(LevelData data)
+    {
+        if (data == null) return _minOrthoSize;
+
+        Vector2 min = transform.position;
+        Vector2 max = min;
+        void Expand(Vector2 center, Vector2 size)
+        {
+            Vector2 half = size * 0.5f;
+            min = Vector2.Min(min, center - half);
+            max = Vector2.Max(max, center + half);
+        }
+
+        if (data.blocks != null)
+            foreach (var b in data.blocks) Expand(b.position, b.size);
+        if (data.robots != null)
+            foreach (var r in data.robots)
+                Expand(r.position, r.scale != Vector2.zero ? r.scale : new Vector2(0.6f, 0.9f));
+
+        Vector2 contentSize = max - min + Vector2.one * (ZoomPadding * 2f);
+        float   aspect      = _camera != null && _camera.aspect > 0f ? _camera.aspect : 16f / 9f;
+
+        // orthoSize is HALF the visible height; visible width = orthoSize * 2 * aspect — solve
+        // both ways and take whichever axis needs the bigger zoom-out to fit.
+        float sizeForHeight = contentSize.y * 0.5f;
+        float sizeForWidth  = contentSize.x * 0.5f / aspect;
+
+        return Mathf.Clamp(Mathf.Max(sizeForHeight, sizeForWidth), _minOrthoSize, _maxOrthoSize);
     }
 
     // ── Cannon visual ─────────────────────────────────────────────────────────
@@ -678,13 +748,14 @@ public class CatapultLauncher : MonoBehaviour
         if (powerFrac < 0.05f) return Vector2.zero;
 
         // Direction: the pull angle mirrored through the pivot (-180°) gives the launch angle.
-        // _armRestAngle=200/MaxLoadAngle=60 means _dragAngle ranges 200°-260°, mirroring to a
-        // 20°-80° launch angle — dragging toward horizontal-left gives a flat 20° shot, dragging
-        // toward straight-down gives an 80° near-vertical lob. Numerically verified (same
-        // substep model as DrawTrajectory: grav=-20*0.18, drag fa=0.008, dt=0.02) against
-        // _minLaunchSpeed/_maxLaunchSpeed (3.0-6.0) to comfortably span L01's play area (hay
-        // pile ~X 3.6-4.3, robot ~X 5.7) across a range of angle/power combinations rather than
-        // one fixed landing zone — e.g. speed 5.0 at 20° or speed 4.0 at 35° both land ~X 4-5.6.
+        // _armRestAngle=200/MaxLoadAngle=65 means _dragAngle ranges 200°-265°, mirroring to a
+        // 20°-85° launch angle — dragging toward horizontal-left gives a flat 20° shot, dragging
+        // toward near-straight-down gives an 85° near-vertical lob. _minLaunchSpeed/
+        // _maxLaunchSpeed (3.5-8.5, raised 2026-07-11 — see that field's comment) sized against
+        // the projectile-height formula y(x) = x*tanθ - g*x^2/(2v^2*cos^2θ) (g=-20*0.18=3.6) to
+        // comfortably clear the tallest/farthest structures seen so far (L08/L09's stacked
+        // towers, obstacles up to ~X 8 and several units above launch height) at a real angle/
+        // power combination, not just barely reach that far at ground level.
         float speed    = Mathf.Lerp(_minLaunchSpeed, _maxLaunchSpeed, powerFrac);
         float angleDeg = _dragAngle - 180f;
         float rad      = angleDeg * Mathf.Deg2Rad;

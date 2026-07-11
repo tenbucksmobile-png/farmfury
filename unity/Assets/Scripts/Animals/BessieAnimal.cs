@@ -12,6 +12,9 @@ public class BessieAnimal : AnimalBase
     [Header("VFX")]
     [SerializeField] private GameObject _shockwaveRingPrefab;
 
+    [Header("SFX")]
+    [SerializeField] private AudioClip _earthquakeClip; // Bessie_Earthquake.mp3 — see Shockwave()
+
     // Guaranteed-kill amount for a triggered direct robot hit (2026-07-10, user request: "if
     // trigger hits a robot it destroys"). TakeDamage() clamps Health at 0 internally, so any
     // sufficiently large value is a safe, deterministic kill regardless of the robot's current
@@ -70,6 +73,14 @@ public class BessieAnimal : AnimalBase
     {
         if (_shockwaveRingPrefab)
             Instantiate(_shockwaveRingPrefab, transform.position, Quaternion.identity);
+
+        // Ground Slam earthquake SFX (2026-07-11, user request: "wire up Bessie_Earthquake.mp3
+        // every time Bessie power is triggered and they hit the floor for earthquake") — fires
+        // exactly once per real tremor, i.e. only when the ability was triggered AND she actually
+        // hit the ground/a structure (this coroutine is only ever started from that branch in
+        // OnCollisionEnter2D above), not on every tap or every collision.
+        if (_earthquakeClip != null)
+            AudioManager.PlayClip(_earthquakeClip);
 
         var hits = Physics2D.OverlapCircleAll(transform.position, _shockwaveRadius);
         foreach (var hit in hits)

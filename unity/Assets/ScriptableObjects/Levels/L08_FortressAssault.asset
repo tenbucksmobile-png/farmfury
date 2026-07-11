@@ -1,0 +1,199 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1966708deffe45949832dc573867a129, type: 3}
+  m_Name: L08_FortressAssault
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelId: W1_L08
+  levelName: Fortress Assault
+  parBirds: 3
+  birds: 000000000000000001000000
+  blocks:
+  - type: 2
+    position: {x: 6.177, y: -5.22}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    artVariant: 0
+  - type: 2
+    position: {x: 3.185, y: -5.2}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    artVariant: 0
+  - type: 2
+    position: {x: 6.292, y: -5.45}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    artVariant: 0
+  - type: 2
+    position: {x: 3.147, y: -5.42}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    artVariant: 0
+  - type: 0
+    position: {x: 2.21, y: -5.09}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 3
+  - type: 0
+    position: {x: 2.401, y: -5.28}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 3
+  - type: 0
+    position: {x: 2.631, y: -5.48}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 3
+  - type: 0
+    position: {x: 5.279, y: -5.13}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 3
+  - type: 0
+    position: {x: 5.54, y: -5.3}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 3
+  - type: 0
+    position: {x: 5.757, y: -5.48}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 3
+  - type: 0
+    position: {x: 3.089, y: -4.74}
+    size: {x: 1, y: 0.618}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 0
+  - type: 0
+    position: {x: 6.12, y: -4.72}
+    size: {x: 1, y: 0.618}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 0
+  - type: 0
+    position: {x: 5.853, y: -4.37}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 3
+  - type: 0
+    position: {x: 2.755, y: -4.37}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 3
+  - type: 0
+    position: {x: 3.003, y: -3.56}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 0
+  - type: 0
+    position: {x: 6.024, y: -3.61}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 0
+  - type: 0
+    position: {x: 3.07, y: -3.08}
+    size: {x: 1.146, y: 0.96}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 4.064, y: -3.08}
+    size: {x: 1.146, y: 0.96}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 5.106, y: -3.09}
+    size: {x: 1.146, y: 0.96}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 6.216, y: -3.1}
+    size: {x: 1.16, y: 0.96}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 2
+  - type: 3
+    position: {x: 4.15, y: -2.61}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 0
+  - type: 3
+    position: {x: 4.838, y: -2.61}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 0
+  - type: 3
+    position: {x: 5.54, y: -2.62}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    artVariant: 0
+  robots:
+  - robotType: 2
+    position: {x: 6.326, y: -4.23}
+    scale: {x: 5.826, y: 5.594}
+  - robotType: 2
+    position: {x: 3.281, y: -4.24}
+    scale: {x: 5.64, y: 5.64}
+  - robotType: 2
+    position: {x: 3.261, y: -2.62}
+    scale: {x: 5.64, y: 5.64}
+  - robotType: 2
+    position: {x: 6.15, y: -2.64}
+    scale: {x: 5.64, y: 5.64}
+  - robotType: 1
+    position: {x: 4.294, y: -4.99}
+    scale: {x: 5.246, y: 7.141}
+  - robotType: 1
+    position: {x: 7.4, y: -5.04}
+    scale: {x: 5.246, y: 7.141}

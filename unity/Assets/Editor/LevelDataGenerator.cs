@@ -2,7 +2,7 @@
 // Coordinate system (current, post-rebuild): ground surface Y = -6.60, launcher X = -2.327.
 // Block/robot positions are raw world-space — LevelLoader applies no offset at spawn time.
 //
-// L01-L07 all exist below as of 2026-07-10 (L06 built LAST, out of order, after L07 — nothing
+// L01-L09 all exist below as of 2026-07-11 (L06 built out of order, after L07 — nothing
 // requires strict numeric sequencing since GameManager auto-discovers every LevelData asset
 // regardless of gaps). The original auto-generated L06 (on the OLD pre-rebuild coordinate system,
 // ground Y=-2.5/launcher X=-5.5, rigid-translated by a fixed delta dx=+3.173/dy=-4.10, never
@@ -414,11 +414,126 @@ public static class LevelDataGenerator
                 R(4.915f, -5.412f, 5.779f, 6.243f, RobotType.SemiHarvester),
             });
 
+        // ── W1_L08  Fortress Assault ──────────────────────────────────────────
+        // Built 2026-07-11 via LevelLayoutDumper — the densest level yet: 6 robots
+        // (2 Harvester + 4 SemiHarvester) + 23 blocks (4 haybale, 16 wood, 3 barrel),
+        // arranged as two mirrored towers (left/right) each topped by a barrel row,
+        // guarded by a SemiHarvester pair at ground level and another pair up top,
+        // with the two Harvesters anchoring the base.
+        //
+        // Layout compacted using the same pivot-and-compress approach as L03/L05/L07:
+        // raw dump spanned X 2.21-7.64 (5.43 units) — pivot = leftmost element (the
+        // first vertical wood plank, X=2.21, held fixed), factor = 0.9558, landing the
+        // widest element (the right Harvester) at X=7.40, matching every other level's
+        // established right edge. Y values untouched.
+        // birds[] stays Cluck/Cluck/Bessie, matching L07's introduction of Bessie.
+        // Not yet visually verified (no Play-mode access here) — worth a live check
+        // given this is the heaviest block/robot count shipped so far.
+        Make(folder, "L08_FortressAssault",
+            id: "W1_L08", name: "Fortress Assault", par: 3,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Haybale, 6.177f, -5.22f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 3.185f, -5.2f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 6.292f, -5.45f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 3.147f, -5.42f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Wood, 2.21f,  -5.09f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 2.401f, -5.28f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 2.631f, -5.48f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 5.279f, -5.13f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 5.540f, -5.3f,  1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 5.757f, -5.48f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 3.089f, -4.74f, 1f, 0.618f, artVariant: WoodArtVariant.Auto),
+                B(BlockType.Wood, 6.120f, -4.72f, 1f, 0.618f, artVariant: WoodArtVariant.Auto),
+                B(BlockType.Wood, 5.853f, -4.37f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 2.755f, -4.37f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 3.003f, -3.56f, 1f, 1f, artVariant: WoodArtVariant.Auto),
+                B(BlockType.Wood, 6.024f, -3.61f, 1f, 1f, artVariant: WoodArtVariant.Auto),
+                B(BlockType.Wood, 3.070f, -3.08f, 1.146f, 0.96f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 4.064f, -3.08f, 1.146f, 0.96f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 5.106f, -3.09f, 1.146f, 0.96f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 6.216f, -3.1f,  1.16f,  0.96f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Barrel, 4.150f, -2.61f, 0.977f, 0.977f),
+                B(BlockType.Barrel, 4.838f, -2.61f, 0.977f, 0.977f),
+                B(BlockType.Barrel, 5.540f, -2.62f, 0.977f, 0.977f),
+            },
+            robots: new[]
+            {
+                R(6.326f, -4.23f, 5.826f, 5.594f, RobotType.SemiHarvester),
+                R(3.281f, -4.24f, 5.64f,  5.64f,  RobotType.SemiHarvester),
+                R(3.261f, -2.62f, 5.64f,  5.64f,  RobotType.SemiHarvester),
+                R(6.150f, -2.64f, 5.64f,  5.64f,  RobotType.SemiHarvester),
+                R(4.294f, -4.99f, 5.246f, 7.141f, RobotType.Harvester),
+                R(7.400f, -5.04f, 5.246f, 7.141f, RobotType.Harvester),
+            });
+
+        // ── W1_L09  Stone Bastion ─────────────────────────────────────────────
+        // Built 2026-07-11 via LevelLayoutDumper — heaviest robot count yet: 8 robots
+        // (3 Harvester + 5 SemiHarvester), 5 of them lined up on a top platform row.
+        // Introduces BlockType.Stone as a genuine defensive obstacle (3-piece rubble
+        // wall on the far left, RuinedStoneWall art) rather than the single decorative
+        // piece used once in L07. Two wide horizontal wood beams (3.83/3.05 units)
+        // form the mid platform the top-row SemiHarvesters stand on, with a small
+        // vertical wood tower (4 planks) in the centre gap and short/skew planks
+        // bracing either side.
+        //
+        // Layout compacted using the same pivot-and-compress approach as L03/L05/L07/L08:
+        // raw dump spanned X 0.206-8.027 (7.821 units, by far the widest dump yet) —
+        // pivot = leftmost element (the outer stone rubble piece, X=0.206, held fixed),
+        // factor = 0.9198, landing the widest element (the far-right Haybale) at
+        // X=7.40, matching every other level's established right edge. Y values
+        // untouched.
+        // birds[] stays Cluck/Cluck/Bessie. Not yet visually verified (no Play-mode
+        // access here) — worth a live check, particularly whether 5 SemiHarvesters
+        // packed along the same top row (Y~-1.85 to -1.88) read as distinct targets
+        // or an indistinguishable blob at this density.
+        Make(folder, "L09_StoneBastion",
+            id: "W1_L09", name: "Stone Bastion", par: 3,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Barrel, 4.542f, -5.43f,  0.977f, 0.977f),
+                B(BlockType.Barrel, 5.103f, -5.43f,  0.977f, 0.977f),
+                B(BlockType.Barrel, 2.555f, -3.677f, 1.016f, 1.083f),
+                B(BlockType.Barrel, 7.127f, -3.57f,  1.016f, 1.083f),
+                B(BlockType.Barrel, 6.667f, -5.35f,  1.016f, 1.016f),
+                B(BlockType.Wood, 6.101f, -4.15f,  3.83f,  1.08f,  artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 3.468f, -4.197f, 3.047f, 1.093f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Haybale, 2.525f, -5.367f, 0.963f, 1.043f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 7.400f, -5.297f, 0.99f,  1.043f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Wood, 4.781f, -3.72f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 4.781f, -2.94f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 5.011f, -3.8f,  1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 5.011f, -3.04f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 2.583f, -4.667f, 1.12f, 0.956f, artVariant: WoodArtVariant.Auto),
+                B(BlockType.Wood, 4.818f, -4.63f,  1.12f, 0.956f, artVariant: WoodArtVariant.Auto),
+                B(BlockType.Wood, 7.007f, -4.58f,  1.12f, 0.956f, artVariant: WoodArtVariant.Auto),
+                B(BlockType.Wood, 2.748f, -2.8f,  1f,     1f,     artVariant: WoodArtVariant.Auto),
+                B(BlockType.Wood, 7.035f, -2.73f, 1.044f, 1.052f, artVariant: WoodArtVariant.Auto),
+                B(BlockType.Wood, 3.924f, -2.36f, 2.076f, 0.492f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 5.747f, -2.4f,  2.076f, 0.492f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Stone, 1.810f, -5.373f, 1.394f, 1.123f),
+                B(BlockType.Stone, 0.994f, -5.386f, 1.364f, 0.989f),
+                B(BlockType.Stone, 0.206f, -5.367f, 1.401f, 0.884f),
+            },
+            robots: new[]
+            {
+                R(3.613f, -5.06f, 5.701f, 7.653f, RobotType.Harvester),
+                R(3.815f, -3.27f, 5.701f, 7.653f, RobotType.Harvester),
+                R(5.922f, -3.18f, 5.701f, 7.653f, RobotType.Harvester),
+                R(5.867f, -5.38f, 6.012f, 5.547f, RobotType.SemiHarvester),
+                R(5.269f, -1.86f, 6.012f, 5.547f, RobotType.SemiHarvester),
+                R(6.014f, -1.87f, 6.058f, 5.873f, RobotType.SemiHarvester),
+                R(4.432f, -1.85f, 6.058f, 5.873f, RobotType.SemiHarvester),
+                R(3.641f, -1.88f, 6.058f, 5.873f, RobotType.SemiHarvester),
+            });
+
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         if (!silent)
             EditorUtility.DisplayDialog("FarmFury",
-                "Generated 7 LevelData assets in\nAssets/ScriptableObjects/Levels\n(L01-L07)", "OK");
+                "Generated 9 LevelData assets in\nAssets/ScriptableObjects/Levels\n(L01-L09)", "OK");
         Debug.Log("[FarmFury] Level data generation complete.");
     }
 

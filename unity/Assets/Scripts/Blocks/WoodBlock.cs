@@ -64,6 +64,23 @@ public class WoodBlock : BlockBase
     protected override void PlayHitSound() =>
         AudioManager.Play(AudioManager.Sound.WoodHit, cooldown: 0.08f);
 
+    // 2026-07-11 fundamental gameplay rule, user request: "if a robot falls and lands on a
+    // haybale or dynamite barrel this will automatically explode." Only genuine explosive props
+    // (_explodesOnRobots — Haybale, ExplodingBarrelBlock) are guaranteed to detonate on ANY robot
+    // landing, bypassing BlockBase's normal impulse-threshold math entirely so even a gentle
+    // settle (e.g. a robot dropped by MakeDynamicFromSupportLoss coming to rest on top, not a
+    // hard crash) still always triggers the explosion — a plain structural Wood block still only
+    // reacts to real impact force via the inherited base behaviour below.
+    protected override void OnCollisionEnter2D(Collision2D col)
+    {
+        if (_explodesOnRobots && !IsDestroyed && col.gameObject.GetComponentInParent<RobotEnemy>() != null)
+        {
+            TakeDamage(MaxHealth);
+            return;
+        }
+        base.OnCollisionEnter2D(col);
+    }
+
     protected override void DestroyBlock()
     {
         if (IsDestroyed) return; // BlockBase also guards this, but DamageNearby() must run exactly once

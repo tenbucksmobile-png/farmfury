@@ -18,6 +18,9 @@ public class AudioManager : MonoBehaviour
                                                           // page and the Sunrise Meadows world map (GameState.Idle)
     [SerializeField] private AudioClip _cannonShotClip;  // CannonShot.mp3, replaces the procedural Launch sound
     [SerializeField] private AudioClip _fallingClip;     // Cluck_falling.mp3, loops while Cluck is airborne
+    [SerializeField] private AudioClip _bessieFallingClip; // Bessie_falling.mp3, loops while Bessie is airborne —
+                                                          // see PlayFalling(AnimalType). Impact/landing still goes
+                                                          // through the same StopFallingFade() fade-out either way.
 
     private AudioSource _src;
     private AudioSource _musicSrc;
@@ -226,15 +229,21 @@ public class AudioManager : MonoBehaviour
         Instance._src.PlayOneShot(clip, volume);
     }
 
-    // ── Falling sound (Cluck airborne) ───────────────────────────────────────
-    // Loops from the moment Cluck is fired; CatapultLauncher stops it (with a fade) the
+    // ── Falling sound (animal airborne) ──────────────────────────────────────
+    // Loops from the moment the animal is fired; CatapultLauncher stops it (with a fade) the
     // instant AnimalBase.OnAnimalImpact fires — i.e. on the real hit, not on pass-through
-    // punches (CluckAnimal's pass-through branch never calls base.OnCollisionEnter2D).
+    // punches (CluckAnimal's pass-through branch never calls base.OnCollisionEnter2D). The
+    // fade-out on impact (StopFallingFade/FadeOutFalling below) is shared by every animal —
+    // only which clip loops during the flight itself differs per animal.
 
-    public void PlayFalling()
+    public void PlayFalling(AnimalType animal = AnimalType.Cluck)
     {
-        if (_fallingSrc == null || _fallingSrc.clip == null || !SfxEnabled) return;
+        AudioClip clip = animal == AnimalType.Bessie && _bessieFallingClip != null
+            ? _bessieFallingClip
+            : _fallingClip;
+        if (_fallingSrc == null || clip == null || !SfxEnabled) return;
         if (_fallingFadeRoutine != null) { StopCoroutine(_fallingFadeRoutine); _fallingFadeRoutine = null; }
+        _fallingSrc.clip   = clip;
         _fallingSrc.volume = FallingVolume;
         _fallingSrc.Play();
     }

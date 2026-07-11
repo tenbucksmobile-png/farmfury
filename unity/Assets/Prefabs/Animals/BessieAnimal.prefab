@@ -186,6 +186,7 @@ MonoBehaviour:
   _shockwaveForce: 12
   _shockwaveDamage: 30
   _shockwaveRingPrefab: {fileID: 0}
+  _earthquakeClip: {fileID: 8300000, guid: ed07eccc8ccb1b041936eeb27b9cd053, type: 3}
 --- !u!1001 &1151449182719820639
 PrefabInstance:
   m_ObjectHideFlags: 0

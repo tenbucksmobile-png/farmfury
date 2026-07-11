@@ -63,8 +63,10 @@ public class MatchUpScreen : MonoBehaviour
     private Sprite _cluckFlySprite;     // Cluck_InFlight.png — see the CluckFlyBy() timing comment
     private AudioClip _cluckFallingClip; // Cluck_falling.mp3 — looped under the CluckFlyBy() pass, see that method
     private AudioSource _cluckFallingAudioSrc;
-    private Sprite _eggSprite;          // Egg.png — cosmetic mid-flight burst, see CluckFlyBy()/SpawnEggBurst()
-    private Transform _cluckFlyParent;  // burst eggs are spawned as siblings of the Cluck fly-by icon
+    private Sprite _bessieFlySprite;    // Bessie_InFlight.png — see the BessieFlyBy() timing comment
+    private AudioClip _bessieFallingClip; // Bessie_falling.mp3 — looped under the BessieFlyBy() pass
+    private AudioSource _bessieFallingAudioSrc;
+    private bool _bessieFlyEnabledForLevel; // set in Show() — only true when this level's birds[] includes Bessie
 
     private GameObject      _panel;
     private Image            _fadeOverlayImg; // fades to opaque black just before auto-launch, see PlaySequence step 6
@@ -90,6 +92,8 @@ public class MatchUpScreen : MonoBehaviour
     private Image             _countdownImg;
     private RectTransform    _cluckFlyRT;  // flies across the bottom behind the cards, see CluckFlyBy()
     private Image             _cluckFlyImg;
+    private RectTransform    _bessieFlyRT; // flies the opposite direction, crossing Cluck, see BessieFlyBy()
+    private Image             _bessieFlyImg;
 
     // Skip button (2026-07-10, user request: "allow the player to skip the match up scene").
     // Bottom-right corner, same anchoring convention as WorldMapController's own corner-anchored
@@ -147,14 +151,12 @@ public class MatchUpScreen : MonoBehaviour
     private const float CluckFlyStartX = -1400f;
     private const float CluckFlyEndX   = 1400f;
     private const float CluckFlyArcHeight = 260f; // vertical bump added at the midpoint of the flight — see CluckFlyBy; raised from 90f 2026-07-09, user-requested "even more" arc
-    // 0-based level index where Cluck's Cluster Bomb ability is first introduced (L04) — gates
-    // the egg-burst teaser in CluckFlyBy() so it doesn't appear before that level.
-    private const int AbilityIntroLevelIndex = 3;
 
     public void Init(Sprite squareSpr, Sprite backgroundSprite, Sprite vsSprite,
         Sprite[] levelHeaderSprites,
         Sprite countdown3Sprite, Sprite countdown2Sprite, Sprite countdown1Sprite, Sprite countdownReadySprite,
-        AudioClip countdownClip, Sprite cluckFlySprite, AudioClip cluckFallingClip, Sprite eggSprite,
+        AudioClip countdownClip, Sprite cluckFlySprite, AudioClip cluckFallingClip,
+        Sprite bessieFlySprite, AudioClip bessieFallingClip,
         Sprite[] animalCardSprites, Sprite[] robotCardSprites)
     {
         _backgroundSprite      = backgroundSprite;
@@ -167,7 +169,8 @@ public class MatchUpScreen : MonoBehaviour
         _countdownClip          = countdownClip;
         _cluckFlySprite         = cluckFlySprite;
         _cluckFallingClip       = cluckFallingClip;
-        _eggSprite              = eggSprite;
+        _bessieFlySprite        = bessieFlySprite;
+        _bessieFallingClip      = bessieFallingClip;
         _animalCardSprites      = animalCardSprites;
         _robotCardSprites       = robotCardSprites;
         BuildUI(squareSpr);
@@ -231,9 +234,21 @@ public class MatchUpScreen : MonoBehaviour
                 ? _robotCardSprites[(int)robot2.Value] : null;
             _robot2Img.sprite  = robot2Spr;
             _robot2Img.enabled = robot2Spr != null;
+
+            // Bessie's own fly-by (crossing Cluck's, see BessieFlyBy) only plays on levels that
+            // actually feature her — i.e. from L07 "Bessie's Debut" onward, not L01-L06.
+            _bessieFlyEnabledForLevel = false;
+            if (data.birds != null)
+            {
+                foreach (var b in data.birds)
+                {
+                    if (b == AnimalType.Bessie) { _bessieFlyEnabledForLevel = true; break; }
+                }
+            }
         }
         else
         {
+            _bessieFlyEnabledForLevel = false;
             // Level data doesn't exist yet (only L01-L02 are authored right now, out of 18
             // marker slots — see CLAUDE.md Gap Analysis). The sequence still plays (see SCOPE
             // NOTE at the top of this file) but skips the auto-launch at the end and just
@@ -244,6 +259,8 @@ public class MatchUpScreen : MonoBehaviour
             _robotFallbackLabel.enabled = true;
             _robotFallbackLabel.text    = "COMING\nSOON";
         }
+
+        _bessieFlyImg.enabled = _bessieFlySprite != null && _bessieFlyEnabledForLevel;
 
         // Menu music (looping under the world map/landing page) is paused for the whole
         // match-up/countdown sequence so only the countdown SFX plays underneath it — see
@@ -316,7 +333,8 @@ public class MatchUpScreen : MonoBehaviour
         _vsRT.localScale         = Vector3.zero;
         _vsImg.enabled           = _vsSprite != null; // defensive re-assert, see class comment
         _countdownImg.enabled    = false;
-        _cluckFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY); // in case Show() re-fires mid-flight
+        _cluckFlyRT.anchoredPosition  = new Vector2(CluckFlyStartX, CluckFlyY); // in case Show() re-fires mid-flight
+        _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyEndX, CluckFlyY);   // mirrored start, opposite side
 
         // 1) Level header pops in. (Future hook: AudioManager whoosh/pop SFX.)
         yield return PopIn(_headerRT, 0.6f);
@@ -354,6 +372,7 @@ public class MatchUpScreen : MonoBehaviour
         // duration as the countdown — started here (not yielded) so it runs concurrently with
         // the countdown beats below rather than blocking them.
         if (_cluckFlyImg.enabled) StartCoroutine(CluckFlyBy(CountdownClipLength));
+        if (_bessieFlyImg.enabled) StartCoroutine(BessieFlyBy(CountdownClipLength));
         yield return CountdownBeat(_countdown3Sprite, CountdownBeepInterval);
         yield return CountdownBeat(_countdown2Sprite, CountdownBeepInterval);
         yield return CountdownBeat(_countdown1Sprite, CountdownBeepInterval);
@@ -491,7 +510,6 @@ public class MatchUpScreen : MonoBehaviour
 
         _cluckFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY);
         float elapsed = 0f;
-        bool  eggsFired = false;
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
@@ -499,21 +517,6 @@ public class MatchUpScreen : MonoBehaviour
             float x = Mathf.Lerp(CluckFlyStartX, CluckFlyEndX, t);
             float y = CluckFlyY + Mathf.Sin(t * Mathf.PI) * CluckFlyArcHeight;
             _cluckFlyRT.anchoredPosition = new Vector2(x, y);
-
-            // Cosmetic egg burst at the halfway point (2026-07-10, user request: "when cluck is
-            // halfway across the screen fire off the eggs so the player knows there is a power")
-            // — a teaser for the actual gameplay ability, not a real EggProjectile (this screen
-            // has no physics/damage of its own). Fires exactly once per pass, and only from
-            // AbilityIntroLevelIndex onward (2026-07-10, second pass — user-reported "the eggs
-            // are firing off from level 1, this must only come in on level 4 when the power is
-            // introduced") — the ability itself has always been usable on any Cluck in-game (see
-            // CluckAnimal.cs), but this teaser shouldn't spoil/advertise it before the level
-            // that's actually designed around it.
-            if (!eggsFired && t >= 0.5f && _levelIndex >= AbilityIntroLevelIndex)
-            {
-                eggsFired = true;
-                SpawnEggBurst(_cluckFlyRT.anchoredPosition);
-            }
 
             // Fade the falling loop out over the final CluckFallingFadeDuration seconds so it
             // ends smoothly right as the flight lands, rather than an abrupt cut.
@@ -530,66 +533,45 @@ public class MatchUpScreen : MonoBehaviour
         _cluckFallingAudioSrc.Stop();
     }
 
-    // Spawns 5 small egg icons fanning forward-and-down from originPos and fading out — the same
-    // "cannon blast" cone shape as CluckAnimal.SpawnEggs()'s real gameplay ability (see that
-    // file's comment), reused here purely as a preview/teaser image, not a real projectile.
-    void SpawnEggBurst(Vector2 originPos)
+    // Bessie's own pass, added 2026-07-11 (user request: "we now need to shoot Bessie across the
+    // screen... make Bessie come in from the other side and cross over Cluck") once she has her
+    // own debut level (L07+, see _bessieFlyEnabledForLevel in Show()). Mirrors CluckFlyBy exactly
+    // — same duration, same arc formula — but runs start/end reversed (right-to-left instead of
+    // left-to-right) so at any instant Bessie's X is Cluck's X negated around the screen centre:
+    // both hit X=0 at the same t=0.5, which is what makes them visibly cross paths at the arc's
+    // peak rather than just two unrelated flights sharing a screen. No cannon-shot SFX here (Cluck's
+    // launch already plays one for the pass) — just her own falling loop, faded the same way.
+    IEnumerator BessieFlyBy(float duration)
     {
-        if (_eggSprite == null || _cluckFlyParent == null) return;
-        const int   count      = 5;
-        const float centerDeg  = -45f;
-        const float spreadDeg  = 80f;
-        const float distance   = 220f;
-        // 0.45 -> 0.9 -> 1.6 (2026-07-10, two rounds of "eggs disappear too fast on the matchup
-        // scene" reports) — same travel distance now covered over more than 3x the original
-        // time, reading as a slow, clearly visible toss rather than a quick flick.
-        const float duration   = 1.6f;
-
-        for (int i = 0; i < count; i++)
+        if (_bessieFallingClip != null)
         {
-            float t     = count > 1 ? i / (float)(count - 1) : 0.5f;
-            float angle = centerDeg + Mathf.Lerp(-spreadDeg * 0.5f, spreadDeg * 0.5f, t);
-            float rad   = angle * Mathf.Deg2Rad;
-            Vector2 dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
-            StartCoroutine(AnimateBurstEgg(originPos, dir, distance, duration));
+            _bessieFallingAudioSrc.mute   = !AudioManager.SfxEnabled;
+            _bessieFallingAudioSrc.clip   = _bessieFallingClip;
+            _bessieFallingAudioSrc.volume = 1f;
+            _bessieFallingAudioSrc.Play();
         }
-    }
 
-    IEnumerator AnimateBurstEgg(Vector2 origin, Vector2 dir, float distance, float duration)
-    {
-        var go = new GameObject("MatchUpEgg");
-        go.transform.SetParent(_cluckFlyParent, false);
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin        = new Vector2(0.5f, 0f);
-        rt.anchorMax        = new Vector2(0.5f, 0f);
-        rt.pivot            = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta         = new Vector2(45f, 60f); // small relative to Cluck's own 180x180 fly icon
-        rt.anchoredPosition  = origin;
-        var img = go.AddComponent<Image>();
-        img.sprite         = _eggSprite;
-        img.preserveAspect = true;
-        img.raycastTarget  = false;
-        var cg = go.AddComponent<CanvasGroup>();
-
-        // Alpha previously faded linearly from frame 1 (1-t), so every egg read as translucent
-        // for its ENTIRE flight, not just near the end (2026-07-10, user-reported "they also seem
-        // translucent"). Now stays fully opaque until FadeStartFraction of the flight, then fades
-        // only over the remaining portion — reads as a solid toss that fades out at the very end,
-        // not a ghost the whole way.
-        const float FadeStartFraction = 0.7f;
-
+        _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyEndX, CluckFlyY);
         float elapsed = 0f;
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-            rt.anchoredPosition = origin + dir * (distance * t);
-            cg.alpha            = t < FadeStartFraction
-                ? 1f
-                : 1f - (t - FadeStartFraction) / (1f - FadeStartFraction);
+            float x = Mathf.Lerp(CluckFlyEndX, CluckFlyStartX, t);
+            float y = CluckFlyY + Mathf.Sin(t * Mathf.PI) * CluckFlyArcHeight;
+            _bessieFlyRT.anchoredPosition = new Vector2(x, y);
+
+            if (_bessieFallingAudioSrc.isPlaying)
+            {
+                float remaining = duration - elapsed;
+                _bessieFallingAudioSrc.volume = remaining < CluckFallingFadeDuration
+                    ? Mathf.Clamp01(remaining / CluckFallingFadeDuration)
+                    : 1f;
+            }
             yield return null;
         }
-        Destroy(go);
+        _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY);
+        _bessieFallingAudioSrc.Stop();
     }
 
     // from -> to scale over duration; bounce=true uses an ease-out-back overshoot (only sensible
@@ -671,6 +653,10 @@ public class MatchUpScreen : MonoBehaviour
         _cluckFallingAudioSrc.playOnAwake = false;
         _cluckFallingAudioSrc.loop        = true;
 
+        _bessieFallingAudioSrc             = gameObject.AddComponent<AudioSource>();
+        _bessieFallingAudioSrc.playOnAwake = false;
+        _bessieFallingAudioSrc.loop        = true;
+
         // Background — MatchUpBackground.png, full-bleed, deliberately OUTSIDE the SafeArea
         // below (should paint edge-to-edge including under a notch/rounded corner). Also blocks
         // raycasts to whatever is behind this screen (the world map markers) since
@@ -705,7 +691,6 @@ public class MatchUpScreen : MonoBehaviour
         // like the countdown numeral below, animated purely via anchoredPosition.x in CluckFlyBy.
         var cluckFlyGO = new GameObject("CluckFlyBy");
         cluckFlyGO.transform.SetParent(safe, false);
-        _cluckFlyParent = safe; // burst eggs spawn as siblings here, see SpawnEggBurst()
         _cluckFlyRT = cluckFlyGO.AddComponent<RectTransform>();
         _cluckFlyRT.anchorMin        = new Vector2(0.5f, 0f);
         _cluckFlyRT.anchorMax        = new Vector2(0.5f, 0f);
@@ -717,6 +702,23 @@ public class MatchUpScreen : MonoBehaviour
         _cluckFlyImg.enabled        = _cluckFlySprite != null;
         _cluckFlyImg.preserveAspect = true;
         _cluckFlyImg.raycastTarget  = false;
+
+        // Bessie's own fly-by icon — same parent/anchoring as Cluck's, created right after so it
+        // renders on top of Cluck's icon at the crossing point (still behind header/cards below).
+        // enabled is set per-level in Show() (only true from her debut level onward), not here.
+        var bessieFlyGO = new GameObject("BessieFlyBy");
+        bessieFlyGO.transform.SetParent(safe, false);
+        _bessieFlyRT = bessieFlyGO.AddComponent<RectTransform>();
+        _bessieFlyRT.anchorMin        = new Vector2(0.5f, 0f);
+        _bessieFlyRT.anchorMax        = new Vector2(0.5f, 0f);
+        _bessieFlyRT.pivot            = new Vector2(0.5f, 0.5f);
+        _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyEndX, CluckFlyY);
+        _bessieFlyRT.sizeDelta        = new Vector2(180f, 180f);
+        _bessieFlyImg = bessieFlyGO.AddComponent<Image>();
+        _bessieFlyImg.sprite         = _bessieFlySprite;
+        _bessieFlyImg.enabled        = false;
+        _bessieFlyImg.preserveAspect = true;
+        _bessieFlyImg.raycastTarget  = false;
 
         // Level header — LevelHeader1.png (see SCOPE NOTE at the top of this file). Top-anchored
         // within the safe area with a small fixed inset, NOT centre-anchored with a guessed
