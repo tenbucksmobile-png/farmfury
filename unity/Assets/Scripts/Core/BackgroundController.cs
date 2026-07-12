@@ -29,18 +29,30 @@ public class BackgroundController : MonoBehaviour
         }
     }
 
-    // Start() runs after all Awake() calls, so camera orthoSize is final
-    // (CatapultLauncher.Awake sets orthoSize before this fires).
     void Start()
     {
         ScaleToFillCamera();
     }
+
+    // Re-scales whenever orthoSize actually changes, not just once at Start() — CatapultLauncher.
+    // OnLevelStarted() recomputes orthoSize per level (see ComputeOrthoSizeForLevel) well after
+    // this Start() already ran, so a level needing a bigger orthoSize than whatever was current at
+    // boot used to leave the backdrop too small to cover the new, wider view (2026-07-12 bug:
+    // "the backdrop falls short of the safe area" on later levels). Comparing against the last-seen
+    // orthoSize keeps this a cheap float compare on every other frame's LateUpdate.
+    float _lastOrthoSize = -1f;
 
     void LateUpdate()
     {
         if (_cam == null) return;
         var p = _cam.transform.position;
         transform.position = new Vector3(p.x, p.y, 0f);
+
+        if (!Mathf.Approximately(_cam.orthographicSize, _lastOrthoSize))
+        {
+            _lastOrthoSize = _cam.orthographicSize;
+            ScaleToFillCamera();
+        }
     }
 
     void ScaleToFillCamera()

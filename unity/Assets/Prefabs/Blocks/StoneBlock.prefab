@@ -185,9 +185,23 @@ MonoBehaviour:
   minDamageImpulse: 2
   baseMass: 5
   bounciness: 0.2
-  _sprNormal: {fileID: 21300000, guid: ae40a6e64991f0b4e8b3a9ff9c3772d1, type: 3}
-  _sprHorizontal: {fileID: 21300000, guid: ae40a6e64991f0b4e8b3a9ff9c3772d1, type: 3}
-  _sprVertical: {fileID: 21300000, guid: ae40a6e64991f0b4e8b3a9ff9c3772d1, type: 3}
+  _sprNormal: {fileID: 21300000, guid: cc08f701a51f0444ca45f7b917f7700a, type: 3}
+  _sprHorizontal: {fileID: 21300000, guid: cc08f701a51f0444ca45f7b917f7700a, type: 3}
+  _sprVertical: {fileID: 21300000, guid: db7ce8e2b89399e439e9e010e4b93a77, type: 3}
+  _sprShort: {fileID: 0}
+  _sprVerticalShort: {fileID: 0}
+  _sprHorizontal2D: {fileID: 0}
+  _sprShork2D: {fileID: 0}
+  _sprShork: {fileID: 0}
+  _sprCart: {fileID: 0}
+  _sprBarrelProp: {fileID: 0}
+  _sprSquare: {fileID: 21300000, guid: 93ddad82a3807034fb9f39598280a9ce, type: 3}
+  _sprBlock: {fileID: 21300000, guid: cc08f701a51f0444ca45f7b917f7700a, type: 3}
+  _sprRuinedWall: {fileID: 21300000, guid: 975ac9a509f3c624f96ba436675e1528, type: 3}
+  _sprTower: {fileID: 21300000, guid: afba821ae2fe6724b8c2d7d0072fa447, type: 3}
+  _sprSkew: {fileID: 21300000, guid: 533fe326e4beb4a4595bf1ffc89b0e5b, type: 3}
+  _sprDiagonal: {fileID: 21300000, guid: 0b3cda2d328c6054994a63f1ec0c9e92, type: 3}
+  _sprFlat: {fileID: 0}
   _sprDamaged: {fileID: 0}
   _sprExplode: {fileID: 0}
   _explodeSizeMultiplier: 2.2
@@ -197,3 +211,4 @@ MonoBehaviour:
   _fragmentPrefabs: []
   _fragmentCount: 5
   _fragmentSpeed: 4
+  Indestructible: 0

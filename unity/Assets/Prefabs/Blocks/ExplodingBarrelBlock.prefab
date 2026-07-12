@@ -185,9 +185,23 @@ MonoBehaviour:
   minDamageImpulse: 1.5
   baseMass: 5
   bounciness: 0.2
-  _sprNormal: {fileID: 21300000, guid: fb9b923155f2a3f41a4d9d0dd58d0fe3, type: 3}
-  _sprHorizontal: {fileID: 21300000, guid: fb9b923155f2a3f41a4d9d0dd58d0fe3, type: 3}
-  _sprVertical: {fileID: 21300000, guid: fb9b923155f2a3f41a4d9d0dd58d0fe3, type: 3}
+  _sprNormal: {fileID: 21300000, guid: d28f129a280b0c845b9e8f8ef13bec9c, type: 3}
+  _sprHorizontal: {fileID: 21300000, guid: d28f129a280b0c845b9e8f8ef13bec9c, type: 3}
+  _sprVertical: {fileID: 21300000, guid: d28f129a280b0c845b9e8f8ef13bec9c, type: 3}
+  _sprShort: {fileID: 0}
+  _sprVerticalShort: {fileID: 0}
+  _sprHorizontal2D: {fileID: 0}
+  _sprShork2D: {fileID: 0}
+  _sprShork: {fileID: 0}
+  _sprCart: {fileID: 0}
+  _sprBarrelProp: {fileID: 0}
+  _sprSquare: {fileID: 0}
+  _sprBlock: {fileID: 0}
+  _sprRuinedWall: {fileID: 0}
+  _sprTower: {fileID: 0}
+  _sprSkew: {fileID: 0}
+  _sprDiagonal: {fileID: 0}
+  _sprFlat: {fileID: 0}
   _sprDamaged: {fileID: 0}
   _sprExplode: {fileID: 21300000, guid: 4f6ed50ed421ceb41b2606157c2ba1ea, type: 3}
   _explodeSizeMultiplier: 2.2
@@ -197,6 +211,7 @@ MonoBehaviour:
   _fragmentPrefabs: []
   _fragmentCount: 5
   _fragmentSpeed: 4
+  Indestructible: 0
   _passThrough: 0
   _explodesOnRobots: 0
   _areaDamage: 20

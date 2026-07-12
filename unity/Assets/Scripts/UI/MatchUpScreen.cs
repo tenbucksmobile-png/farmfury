@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -63,6 +64,8 @@ public class MatchUpScreen : MonoBehaviour
     private Sprite _cluckFlySprite;     // Cluck_InFlight.png — see the CluckFlyBy() timing comment
     private AudioClip _cluckFallingClip; // Cluck_falling.mp3 — looped under the CluckFlyBy() pass, see that method
     private AudioSource _cluckFallingAudioSrc;
+    private Sprite _eggSprite;          // Egg.png — cosmetic cluster-bomb teaser, see SpawnEggBurst()
+    private Sprite _skipButtonSprite;   // Btn_skip.png — see BuildUI's Skip button section
     private Sprite _bessieFlySprite;    // Bessie_InFlight.png — see the BessieFlyBy() timing comment
     private AudioClip _bessieFallingClip; // Bessie_falling.mp3 — looped under the BessieFlyBy() pass
     private AudioSource _bessieFallingAudioSrc;
@@ -75,6 +78,15 @@ public class MatchUpScreen : MonoBehaviour
     private Image             _headerImg;
     private RectTransform    _animalRT;
     private Image             _animalImg;
+    // Second animal card — mirrors the robot deck-of-cards system, added 2026-07-12 for L10's
+    // Cluck+Bessie pairing (user request: "bessie over cluck on level 10"). Only shown when a
+    // level's birds[] contains a SECOND distinct AnimalType beyond birds[0] — previously this
+    // screen just REPLACED the primary card with whichever animal differed (see the old comment
+    // this superseded, on the Show() animal-selection logic), so Bessie's debut level showed only
+    // her card, never Cluck's alongside it. Sits IN FRONT of the primary animal card (created
+    // after it in BuildUI).
+    private RectTransform    _animal2RT;
+    private Image             _animal2Img;
     private RectTransform    _robotRT;
     private Image             _robotImg;
     private TextMeshProUGUI  _robotFallbackLabel;
@@ -86,6 +98,17 @@ public class MatchUpScreen : MonoBehaviour
     // under") rather than a second full slide-in beat.
     private RectTransform    _robot2RT;
     private Image             _robot2Img;
+    // Third robot card — added 2026-07-12 for L11's "full roster" introduction (all 3 RobotType
+    // values together for the first time). Slides in from the right, same direction as the
+    // second card, and sits IN FRONT of both other cards (created last in BuildUI, so it's the
+    // frontmost sibling) — user request: "add in the third robot card... slides from right sits
+    // overlay on the other two."
+    private RectTransform    _robot3RT;
+    private Image             _robot3Img;
+    // Fixed display-priority order for however many distinct RobotTypes a level actually has —
+    // see the canonical-order comment in Show() for why this replaced per-pair array-order swaps.
+    private static readonly RobotType[] RobotCardOrder =
+        { RobotType.Commander, RobotType.SemiHarvester, RobotType.Harvester, RobotType.Basic };
     private RectTransform    _vsRT;
     private Image             _vsImg;
     private RectTransform    _countdownRT;
@@ -120,15 +143,35 @@ public class MatchUpScreen : MonoBehaviour
     private const float OffscreenOffset = 900f; // how far off-screen each card starts before sliding in
     private const float CardRotationDeg = 10f;  // outward tilt — animal +10 (leans left), robot -10 (leans right)
 
-    // Second robot card's rest position, relative to RobotRestPos — offset down-right and behind
-    // (lower sibling index, see BuildUI) the primary robot card so it peeks out from underneath,
-    // reading as a second card fanned in a deck rather than a separate full card. Raised from an
-    // original (55,-45) (2026-07-09, user-reported "the second card does not come out over the
-    // first") — against 560px/500px cards that only left a ~25px sliver visible past the primary
-    // card's edge, easy to miss entirely. This offset intentionally pushes a large enough portion
-    // of the card past the primary's bounds to read clearly as a second card, not just a shadow.
-    private static readonly Vector2 Robot2RestOffset = new(130f, -100f);
+    // Second animal card's rest position, relative to AnimalRestPos — mirrors Robot2RestOffset's
+    // tight "deck of cards" spacing (added 2026-07-12 alongside it). Offset left/up instead of
+    // right/up since the animal card sits on the opposite (left) side of the screen — this keeps
+    // the overlay peeking toward screen-centre (matching the robot deck's overlay peeking away
+    // from its own screen edge), rather than off toward the outer edge.
+    private static readonly Vector2 Animal2RestOffset = new(-70f, 50f);
+    private const float Animal2RotationDeg = 22f; // mirrors Robot2RotationDeg's sign (outward-steeper on this side)
+
+    // Second robot card's rest position, relative to RobotRestPos — offset up-right and in front
+    // (higher sibling index, see BuildUI) of the primary robot card, reading as a second card
+    // fanned in a deck rather than a separate full card. Went through several overcorrections:
+    // (55,-45) originally (2026-07-09, "the second card does not come out over the first") ->
+    // (300,-220) (2026-07-12, "semi harvester and then harvester slide over each other") -> (260,
+    // 240) same day ("lift the second card up to overlay the first"). That last value drifted too
+    // far — screenshot showed the second card floating mostly ABOVE the first with barely any
+    // overlap, not "sliding nicely over it like a deck of cards" (2026-07-12 follow-up report).
+    // Pulled back down to a tight fan offset — most of the card still overlaps the primary, only
+    // a corner peeks out up-right, matching how a real card-game fan reads.
+    private static readonly Vector2 Robot2RestOffset = new(70f, 50f);
     private const float Robot2RotationDeg = -22f; // steeper tilt than the primary robot card's -10
+
+    // Third robot card's rest position, relative to RobotRestPos — slides in from the right (same
+    // direction as the second card) and sits further right, overlaying both other cards
+    // (frontmost sibling — see BuildUI). Pulled in 2026-07-12 (user report: "level 11 renders the
+    // third robot over the other two" [too high, matching Robot2RestOffset's same overcorrection])
+    // to a tight fan progression — roughly double Robot2RestOffset, continuing the same "deck of
+    // cards" spacing rather than floating separately above the other two.
+    private static readonly Vector2 Robot3RestOffset = new(140f, 95f);
+    private const float Robot3RotationDeg = -34f; // steeper tilt again, continuing the fanned-deck progression
 
     // Countdown.mp3 timing (measured via waveform analysis, 2026-07-07): four beeps — three short
     // taps at 0.02s/1.02s/2.02s (1.0s apart) for 3/2/1, then one longer confirmation tone starting
@@ -152,12 +195,31 @@ public class MatchUpScreen : MonoBehaviour
     private const float CluckFlyEndX   = 1400f;
     private const float CluckFlyArcHeight = 260f; // vertical bump added at the midpoint of the flight — see CluckFlyBy; raised from 90f 2026-07-09, user-requested "even more" arc
 
+    // Cluck's egg-burst teaser — re-added 2026-07-12 (user request to bring back what was removed
+    // 2026-07-11 alongside the L07 Bessie-crossing rework) fanning 5 small Egg.png icons outward
+    // from Cluck's current position at the halfway point of his fly-by, mirroring
+    // CluckAnimal.SpawnEggs()'s real gameplay cone (-45° centre, 80° spread) as a pure visual
+    // preview — no physics/damage on this screen. Only fires from L05 onward — corrected
+    // 2026-07-12 (user report: "cluck drops his eggs in level 04, this is wrong it should only be
+    // in level 5 when the harvester robot is introduced"). Deliberately NOT tied to
+    // AnimalBase.AbilityIntroLevelIndex (L04, where the gameplay ability itself unlocks) — this
+    // screen's teaser is meant to line up with the Harvester's debut instead, one level later.
+    private const int AbilityIntroLevelIndex = 4; // 0-based, i.e. L05 — matches Harvester's debut level, NOT AnimalBase.AbilityIntroLevelIndex
+    private const float EggConeCenterDeg = -45f;
+    private const float EggConeSpreadDeg = 80f;
+    private const int EggBurstCount = 5;
+    private const float EggBurstDuration = 1.6f;
+    private const float EggBurstFadeStartFraction = 0.7f; // stay fully opaque until 70% of the flight, then fade
+    private const float EggBurstDistance = 260f;
+    private bool _eggBurstFiredThisPass;
+
     public void Init(Sprite squareSpr, Sprite backgroundSprite, Sprite vsSprite,
         Sprite[] levelHeaderSprites,
         Sprite countdown3Sprite, Sprite countdown2Sprite, Sprite countdown1Sprite, Sprite countdownReadySprite,
         AudioClip countdownClip, Sprite cluckFlySprite, AudioClip cluckFallingClip,
         Sprite bessieFlySprite, AudioClip bessieFallingClip,
-        Sprite[] animalCardSprites, Sprite[] robotCardSprites)
+        Sprite[] animalCardSprites, Sprite[] robotCardSprites, Sprite eggSprite = null,
+        Sprite skipButtonSprite = null)
     {
         _backgroundSprite      = backgroundSprite;
         _vsSprite               = vsSprite;
@@ -173,6 +235,8 @@ public class MatchUpScreen : MonoBehaviour
         _bessieFallingClip      = bessieFallingClip;
         _animalCardSprites      = animalCardSprites;
         _robotCardSprites       = robotCardSprites;
+        _eggSprite              = eggSprite;
+        _skipButtonSprite       = skipButtonSprite;
         BuildUI(squareSpr);
     }
 
@@ -191,49 +255,69 @@ public class MatchUpScreen : MonoBehaviour
 
         if (data != null)
         {
-            AnimalType animal = (data.birds != null && data.birds.Length > 0) ? data.birds[0] : AnimalType.Cluck;
-            // If a later bird slot introduces a DIFFERENT species than birds[0] (e.g. L07's
-            // "Cluck, Cluck, Bessie" — Bessie fires last, not first), showcase that one instead —
-            // 2026-07-10, user report: "level 7 — bessie_card does not swipe in from the left."
-            // Root cause: this screen always showed birds[0] regardless of what else was queued,
-            // so Bessie's actual debut level was previewing Cluck instead of her. Mirrors the
-            // existing "second distinct RobotType" convention just below rather than adding a
-            // separate mechanism. L01-L06 (all-Cluck) find no divergent type and are unaffected.
+            AnimalType  animal  = (data.birds != null && data.birds.Length > 0) ? data.birds[0] : AnimalType.Cluck;
+            // Second animal card — the first bird slot that introduces a DIFFERENT species than
+            // birds[0] (e.g. L10's "Cluck, Cluck, Bessie" — Bessie fires last, not first). Mirrors
+            // the robot deck-of-cards convention below. Originally (2026-07-10) this REPLACED
+            // `animal` entirely instead of adding a second card, so Bessie's debut level showed
+            // only her card and never Cluck's — fixed 2026-07-12 (user request: "bessie over
+            // cluck on level 10") to show both, primary (birds[0]) plus this overlay.
+            AnimalType? animal2 = null;
             if (data.birds != null)
             {
                 foreach (var b in data.birds)
                 {
-                    if (b != animal) { animal = b; break; }
+                    if (b != animal) { animal2 = b; break; }
                 }
             }
-            RobotType  robot  = (data.robots != null && data.robots.Length > 0) ? data.robots[0].robotType : RobotType.Basic;
+            // Up to 3 distinct robot cards (robot/robot2/robot3), assigned by a FIXED canonical
+            // priority order rather than raw robots[] array order — 2026-07-12, generalised from
+            // the earlier SemiHarvester/Harvester-only swap (added same day for "semi harvester
+            // and then harvester slide over each other") when L11 needed a third card for
+            // RobotType.Basic. Array order was already shown to be unstable (some levels list
+            // Harvester first, others SemiHarvester), so a fixed order avoids a new special case
+            // every time a level's authoring order differs. RobotCardOrder is deliberately a
+            // static field, not a local — no per-call allocation.
+            RobotType? robot = null, robot2 = null, robot3 = null;
+            if (data.robots != null)
+            {
+                var present = new HashSet<RobotType>();
+                foreach (var r in data.robots) present.Add(r.robotType);
+                foreach (var t in RobotCardOrder)
+                {
+                    if (!present.Contains(t)) continue;
+                    if (!robot.HasValue) robot = t;
+                    else if (!robot2.HasValue) robot2 = t;
+                    else if (!robot3.HasValue) robot3 = t;
+                }
+            }
+            RobotType robotFinal = robot ?? RobotType.Basic;
 
             Sprite animalSpr = _animalCardSprites != null && (int)animal < _animalCardSprites.Length
                 ? _animalCardSprites[(int)animal] : null;
             _animalImg.sprite  = animalSpr;
             _animalImg.enabled = animalSpr != null;
+            Sprite animal2Spr = animal2.HasValue && _animalCardSprites != null && (int)animal2.Value < _animalCardSprites.Length
+                ? _animalCardSprites[(int)animal2.Value] : null;
+            _animal2Img.sprite  = animal2Spr;
+            _animal2Img.enabled = animal2Spr != null;
 
-            Sprite robotSpr = _robotCardSprites != null && (int)robot < _robotCardSprites.Length
-                ? _robotCardSprites[(int)robot] : null;
+            Sprite robotSpr = _robotCardSprites != null && (int)robotFinal < _robotCardSprites.Length
+                ? _robotCardSprites[(int)robotFinal] : null;
             _robotImg.sprite            = robotSpr;
             _robotImg.enabled           = robotSpr != null;
             _robotFallbackLabel.enabled = robotSpr == null;
-            _robotFallbackLabel.text    = robot == RobotType.Harvester ? "HARVESTER\nROBOT" : "ROBOT";
-
-            // Second card — only shown if this level's robots[] contains a distinct RobotType
-            // beyond robots[0] (e.g. L02 "Harvest Yard": Harvester then SemiHarvester).
-            RobotType? robot2 = null;
-            if (data.robots != null)
-            {
-                foreach (var r in data.robots)
-                {
-                    if (r.robotType != robot) { robot2 = r.robotType; break; }
-                }
-            }
+            _robotFallbackLabel.text    = robotFinal == RobotType.Harvester ? "HARVESTER\nROBOT"
+                                         : robotFinal == RobotType.Commander ? "COMMANDER"
+                                         : "ROBOT";
             Sprite robot2Spr = robot2.HasValue && _robotCardSprites != null && (int)robot2.Value < _robotCardSprites.Length
                 ? _robotCardSprites[(int)robot2.Value] : null;
             _robot2Img.sprite  = robot2Spr;
             _robot2Img.enabled = robot2Spr != null;
+            Sprite robot3Spr = robot3.HasValue && _robotCardSprites != null && (int)robot3.Value < _robotCardSprites.Length
+                ? _robotCardSprites[(int)robot3.Value] : null;
+            _robot3Img.sprite  = robot3Spr;
+            _robot3Img.enabled = robot3Spr != null;
 
             // Bessie's own fly-by (crossing Cluck's, see BessieFlyBy) only plays on levels that
             // actually feature her — i.e. from L07 "Bessie's Debut" onward, not L01-L06.
@@ -254,8 +338,10 @@ public class MatchUpScreen : MonoBehaviour
             // NOTE at the top of this file) but skips the auto-launch at the end and just
             // returns to the map instead of crashing on a null level.
             _animalImg.enabled          = false;
+            _animal2Img.enabled         = false;
             _robotImg.enabled           = false;
             _robot2Img.enabled          = false;
+            _robot3Img.enabled          = false;
             _robotFallbackLabel.enabled = true;
             _robotFallbackLabel.text    = "COMING\nSOON";
         }
@@ -327,14 +413,17 @@ public class MatchUpScreen : MonoBehaviour
         // Reset every animated element to its pre-entrance state.
         _fadeOverlayImg.color    = new Color(0f, 0f, 0f, 0f);
         _headerRT.localScale     = Vector3.zero;
-        _animalRT.anchoredPosition = AnimalRestPos + new Vector2(-OffscreenOffset, 0f);
+        _animalRT.anchoredPosition  = AnimalRestPos + new Vector2(-OffscreenOffset, 0f);
+        _animal2RT.anchoredPosition = AnimalRestPos + Animal2RestOffset + new Vector2(-OffscreenOffset, 0f);
         _robotRT.anchoredPosition  = RobotRestPos + new Vector2(OffscreenOffset, 0f);
         _robot2RT.anchoredPosition = RobotRestPos + Robot2RestOffset + new Vector2(OffscreenOffset, 0f);
+        _robot3RT.anchoredPosition = RobotRestPos + Robot3RestOffset + new Vector2(OffscreenOffset, 0f);
         _vsRT.localScale         = Vector3.zero;
         _vsImg.enabled           = _vsSprite != null; // defensive re-assert, see class comment
         _countdownImg.enabled    = false;
         _cluckFlyRT.anchoredPosition  = new Vector2(CluckFlyStartX, CluckFlyY); // in case Show() re-fires mid-flight
         _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyEndX, CluckFlyY);   // mirrored start, opposite side
+        _eggBurstFiredThisPass        = false;
 
         // 1) Level header pops in. (Future hook: AudioManager whoosh/pop SFX.)
         yield return PopIn(_headerRT, 0.6f);
@@ -342,6 +431,15 @@ public class MatchUpScreen : MonoBehaviour
         // 2) Cards slide in from both sides and meet in the middle, VS slamming in between them
         // right as they land — one continuous beat, not three separate ones.
         yield return CardsAndVsClash(slideDuration: 0.9f, vsPopDuration: 0.4f, vsPeak: 1.4f);
+
+        // 2a) Second animal card ("deck of cards" overlay), same "arrives after a delay" beat as
+        // the second robot card below — added 2026-07-12 for L10's Cluck+Bessie pairing. Skipped
+        // entirely for single-animal levels — Show() already left _animal2Img disabled there.
+        if (_animal2Img.enabled)
+        {
+            yield return new WaitForSecondsRealtime(0.3f);
+            yield return SlideAnimal2CardIn(0.5f);
+        }
 
         // 2b) Second robot card ("deck of cards" overlay) slides in separately, after a short
         // delay following the primary clash above — user-requested 2026-07-09: "first the one -
@@ -352,6 +450,15 @@ public class MatchUpScreen : MonoBehaviour
         {
             yield return new WaitForSecondsRealtime(0.3f);
             yield return SlideRobot2CardIn(0.5f);
+        }
+
+        // 2c) Third robot card, same "arrives after a delay" beat as the second — 2026-07-12,
+        // added for L11's full-roster introduction. Skipped entirely for levels with fewer than 3
+        // distinct robot types — Show() already left _robot3Img disabled there.
+        if (_robot3Img.enabled)
+        {
+            yield return new WaitForSecondsRealtime(0.3f);
+            yield return SlideRobot3CardIn(0.5f);
         }
 
         // 3) Hold so the full matchup registers before the countdown starts — 2s per explicit
@@ -466,6 +573,23 @@ public class MatchUpScreen : MonoBehaviour
         _robotRT.anchoredPosition  = RobotRestPos;
     }
 
+    // Second animal card's own slide-in — mirrors SlideRobot2CardIn, see the "2a" step comment in
+    // PlaySequence.
+    IEnumerator SlideAnimal2CardIn(float duration)
+    {
+        Vector2 start = _animal2RT.anchoredPosition;
+        Vector2 rest  = AnimalRestPos + Animal2RestOffset;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+            _animal2RT.anchoredPosition = Vector2.Lerp(start, rest, t);
+            yield return null;
+        }
+        _animal2RT.anchoredPosition = rest;
+    }
+
     // Second robot card's own slide-in, run separately (after a delay) from the primary clash
     // above — see the "2b" step comment in PlaySequence for why this was split out.
     IEnumerator SlideRobot2CardIn(float duration)
@@ -481,6 +605,23 @@ public class MatchUpScreen : MonoBehaviour
             yield return null;
         }
         _robot2RT.anchoredPosition = rest;
+    }
+
+    // Third robot card's own slide-in, mirrors SlideRobot2CardIn — see the "2c" step comment in
+    // PlaySequence.
+    IEnumerator SlideRobot3CardIn(float duration)
+    {
+        Vector2 start = _robot3RT.anchoredPosition;
+        Vector2 rest  = RobotRestPos + Robot3RestOffset;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+            _robot3RT.anchoredPosition = Vector2.Lerp(start, rest, t);
+            yield return null;
+        }
+        _robot3RT.anchoredPosition = rest;
     }
 
     // Cluck flies across the bottom of the screen, behind the cards, over `duration` (matched to
@@ -518,6 +659,15 @@ public class MatchUpScreen : MonoBehaviour
             float y = CluckFlyY + Mathf.Sin(t * Mathf.PI) * CluckFlyArcHeight;
             _cluckFlyRT.anchoredPosition = new Vector2(x, y);
 
+            // Fire the egg-burst teaser exactly once, at the halfway point of the pass — lets the
+            // player know Cluck has a power before they ever see it in gameplay. Gated to L04+
+            // (AbilityIntroLevelIndex) since that's the level the ability actually unlocks at.
+            if (!_eggBurstFiredThisPass && t >= 0.5f && _levelIndex >= AbilityIntroLevelIndex)
+            {
+                _eggBurstFiredThisPass = true;
+                SpawnEggBurst(_cluckFlyRT.anchoredPosition);
+            }
+
             // Fade the falling loop out over the final CluckFallingFadeDuration seconds so it
             // ends smoothly right as the flight lands, rather than an abrupt cut.
             if (_cluckFallingAudioSrc.isPlaying)
@@ -533,9 +683,65 @@ public class MatchUpScreen : MonoBehaviour
         _cluckFallingAudioSrc.Stop();
     }
 
+    // Fans EggBurstCount small Egg.png icons outward from Cluck's current fly-by position, in the
+    // same forward-and-down cone CluckAnimal.SpawnEggs() uses for the real gameplay ability
+    // (EggConeCenterDeg centre, EggConeSpreadDeg spread) — purely cosmetic here, no physics or
+    // damage, just a teaser that Cluck has a power. No-op if the egg sprite was never wired.
+    void SpawnEggBurst(Vector2 originPos)
+    {
+        if (_eggSprite == null) return;
+
+        for (int i = 0; i < EggBurstCount; i++)
+        {
+            float frac  = EggBurstCount > 1 ? (float)i / (EggBurstCount - 1) : 0.5f;
+            float angle = (EggConeCenterDeg - EggConeSpreadDeg * 0.5f) + EggConeSpreadDeg * frac;
+            float rad   = angle * Mathf.Deg2Rad;
+            Vector2 dir = new(Mathf.Cos(rad), Mathf.Sin(rad));
+
+            var eggGO = new GameObject("MatchUpEgg");
+            eggGO.transform.SetParent(_cluckFlyRT.parent, false);
+            var rt = eggGO.AddComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = originPos;
+            rt.sizeDelta = new Vector2(40f, 40f);
+            var img = eggGO.AddComponent<Image>();
+            img.sprite = _eggSprite;
+            img.preserveAspect = true;
+            img.raycastTarget = false;
+
+            StartCoroutine(AnimateBurstEgg(rt, img, originPos, dir));
+        }
+    }
+
+    // One egg's flight: travels EggBurstDistance along `dir` over EggBurstDuration, staying fully
+    // opaque until EggBurstFadeStartFraction of the flight then fading out over the remainder —
+    // holding full opacity for most of the toss (rather than fading from frame one) is what makes
+    // the burst read as solid eggs, not a translucent smear. Destroys its own GameObject when done.
+    IEnumerator AnimateBurstEgg(RectTransform rt, Image img, Vector2 origin, Vector2 dir)
+    {
+        float elapsed = 0f;
+        while (elapsed < EggBurstDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / EggBurstDuration);
+            rt.anchoredPosition = origin + dir * (EggBurstDistance * t);
+
+            float alpha = t < EggBurstFadeStartFraction
+                ? 1f
+                : Mathf.Clamp01(1f - (t - EggBurstFadeStartFraction) / (1f - EggBurstFadeStartFraction));
+            var c = img.color; c.a = alpha; img.color = c;
+            yield return null;
+        }
+        Destroy(rt.gameObject);
+    }
+
     // Bessie's own pass, added 2026-07-11 (user request: "we now need to shoot Bessie across the
     // screen... make Bessie come in from the other side and cross over Cluck") once she has her
-    // own debut level (L07+, see _bessieFlyEnabledForLevel in Show()). Mirrors CluckFlyBy exactly
+    // own debut level — gated purely on whether THIS level's birds[] actually contains Bessie
+    // (see _bessieFlyEnabledForLevel in Show()), not a hardcoded level number, so it automatically
+    // tracked the plan moving her debut from L07 to L10 (2026-07-12) with no logic change needed
+    // here. Mirrors CluckFlyBy exactly
     // — same duration, same arc formula — but runs start/end reversed (right-to-left instead of
     // left-to-right) so at any instant Bessie's X is Cluck's X negated around the screen centre:
     // both hit X=0 at the same t=0.5, which is what makes them visibly cross paths at the arc's
@@ -759,6 +965,24 @@ public class MatchUpScreen : MonoBehaviour
         _animalImg.preserveAspect = true;
         _animalImg.raycastTarget  = false;
 
+        // Second animal card — "deck of cards" overlay IN FRONT of the primary animal card,
+        // mirrors RobotCard2 below. Added 2026-07-12 for L10's Cluck+Bessie pairing. Created AFTER
+        // "AnimalCard" so it sits later in sibling order and renders on top of it. Only shown by
+        // Show() when a level's birds[] actually has a second distinct AnimalType.
+        var anim2GO = new GameObject("AnimalCard2");
+        anim2GO.transform.SetParent(safe, false);
+        _animal2RT = anim2GO.AddComponent<RectTransform>();
+        _animal2RT.anchorMin        = new Vector2(0.5f, 0.5f);
+        _animal2RT.anchorMax        = new Vector2(0.5f, 0.5f);
+        _animal2RT.pivot            = new Vector2(0.5f, 0.5f);
+        _animal2RT.anchoredPosition = AnimalRestPos + Animal2RestOffset;
+        _animal2RT.sizeDelta        = new Vector2(500f, 500f);
+        _animal2RT.localEulerAngles = new Vector3(0f, 0f, Animal2RotationDeg);
+        _animal2Img = anim2GO.AddComponent<Image>();
+        _animal2Img.preserveAspect = true;
+        _animal2Img.raycastTarget  = false;
+        _animal2Img.enabled        = false; // only enabled by Show() when a second animal type exists
+
         // Right card — the robot(s) this level's player will face. Mirrors the animal card.
         var robotGO = new GameObject("RobotCard");
         robotGO.transform.SetParent(safe, false);
@@ -802,6 +1026,24 @@ public class MatchUpScreen : MonoBehaviour
         _robot2Img.raycastTarget  = false;
         _robot2Img.enabled        = false; // only enabled by Show() when a second robot type exists
 
+        // Third robot card — same "deck of cards" overlay principle, one step further: created
+        // AFTER "RobotCard2" so it's the frontmost sibling, sitting on top of BOTH other cards.
+        // Added 2026-07-12 for L11's full-roster introduction (all 3 RobotType values at once).
+        // Smaller again (450x450) to keep the size progression readable as three distinct cards.
+        var robot3GO = new GameObject("RobotCard3");
+        robot3GO.transform.SetParent(safe, false);
+        _robot3RT = robot3GO.AddComponent<RectTransform>();
+        _robot3RT.anchorMin        = new Vector2(0.5f, 0.5f);
+        _robot3RT.anchorMax        = new Vector2(0.5f, 0.5f);
+        _robot3RT.pivot            = new Vector2(0.5f, 0.5f);
+        _robot3RT.anchoredPosition = RobotRestPos + Robot3RestOffset;
+        _robot3RT.sizeDelta        = new Vector2(450f, 450f);
+        _robot3RT.localEulerAngles = new Vector3(0f, 0f, Robot3RotationDeg);
+        _robot3Img = robot3GO.AddComponent<Image>();
+        _robot3Img.preserveAspect = true;
+        _robot3Img.raycastTarget  = false;
+        _robot3Img.enabled        = false; // only enabled by Show() when a third robot type exists
+
         // VS graphic, centred between the two cards, touching both — enlarged (220x220, was 160)
         // to match the bigger cards.
         var vsGO = new GameObject("VS");
@@ -839,27 +1081,39 @@ public class MatchUpScreen : MonoBehaviour
         // Skip button — bottom-right corner of the safe area, always on top of the cards/
         // countdown (created after them, so later in sibling order) but still under the fade
         // overlay below (created outside "safe" entirely, so it renders on top of everything,
-        // including this). No dedicated art exists for this yet — plain dark rounded-ish box +
-        // TMP label, same "functional placeholder" approach as the robot fallback label above.
+        // including this). Uses real Btn_skip.png art (added 2026-07-12, replacing the old plain
+        // dark box + "SKIP" TMP label placeholder) — falls back to that old box+label look if
+        // unwired, so the button never renders blank.
         _skipGO = new GameObject("SkipButton");
         _skipGO.transform.SetParent(safe, false);
         var skipRT = _skipGO.AddComponent<RectTransform>();
         skipRT.anchorMin        = new Vector2(1f, 0f);
         skipRT.anchorMax        = new Vector2(1f, 0f);
         skipRT.pivot            = new Vector2(1f, 0f);
-        skipRT.anchoredPosition = new Vector2(-40f, 40f);
-        skipRT.sizeDelta        = new Vector2(220f, 90f);
         var skipImg = _skipGO.AddComponent<Image>();
-        skipImg.sprite = squareSpr;
-        skipImg.color  = new Color(0f, 0f, 0f, 0.55f);
         _skipButton = _skipGO.AddComponent<Button>();
         _skipButton.targetGraphic = skipImg;
         _skipButton.onClick.AddListener(OnSkipClicked);
 
-        var skipLabel = MakeLabel(skipRT, "SkipLabel", Vector2.zero, skipRT.sizeDelta, 40f, Color.white);
-        skipLabel.text          = "SKIP";
-        skipLabel.fontStyle     = FontStyles.Bold;
-        skipLabel.raycastTarget = false;
+        if (_skipButtonSprite != null)
+        {
+            skipRT.anchoredPosition = new Vector2(-40f, 40f);
+            skipRT.sizeDelta        = new Vector2(140f, 140f);
+            skipImg.sprite         = _skipButtonSprite;
+            skipImg.preserveAspect = true;
+        }
+        else
+        {
+            skipRT.anchoredPosition = new Vector2(-40f, 40f);
+            skipRT.sizeDelta        = new Vector2(220f, 90f);
+            skipImg.sprite = squareSpr;
+            skipImg.color  = new Color(0f, 0f, 0f, 0.55f);
+
+            var skipLabel = MakeLabel(skipRT, "SkipLabel", Vector2.zero, skipRT.sizeDelta, 40f, Color.white);
+            skipLabel.text          = "SKIP";
+            skipLabel.fontStyle     = FontStyles.Bold;
+            skipLabel.raycastTarget = false;
+        }
 
         // Fade-to-black overlay — full-bleed, added LAST (outside the safe area, like the
         // background) so it renders on top of literally everything else in this screen. See

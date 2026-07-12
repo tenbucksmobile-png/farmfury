@@ -447,9 +447,20 @@ public class CatapultLauncher : MonoBehaviour
     // Grows orthoSize to fit this level's actual block/robot bounding box (plus the cannon's own
     // position, so it's always still in frame) — see the field comment above for why this is
     // computed rather than hand-tuned per level. Block bounds use BlockSpawnData.size directly
-    // (BlockBase.Initialise() scales the sprite to exactly that world-space footprint); robot
-    // bounds use RobotSpawnData.scale when set (LevelLoader.SpawnRobot applies it as
-    // transform.localScale directly) or the prefab's default (0.6, 0.9) footprint otherwise.
+    // (BlockBase.Initialise() scales the sprite to exactly that world-space footprint).
+    //
+    // Robot bounds ALWAYS use the fixed (0.6, 0.9) footprint, never RobotSpawnData.scale — fixed
+    // 2026-07-12 (user report: L04/L05's auto-zoom was "so extreme" the sky backdrop fell short
+    // of the safe area). Root cause: RobotSpawnData.scale (as dumped by LevelLayoutDumper, values
+    // like 5.7/5.4) is a VISUAL transform.localScale multiplier that inflates this project's tiny
+    // native robot sprites up to roughly gameplay size — LevelLoader.SpawnRobot's own comment
+    // confirms the real world-space footprint is deliberately re-derived back to a pinned 0.6×0.9
+    // regardless of that scale (so the physics hitbox doesn't balloon to 4×5 units and clip
+    // through the ground). This method was using that same big raw scale number directly as a
+    // bounding-box SIZE, wildly overestimating every robot's footprint (by ~5-9x) — with 4-5
+    // robots spread across a level (L04/L05 onward), that overestimate compounded into a bounding
+    // box several times larger than the robots actually render, so the camera zoomed out far more
+    // than the content needed.
     float ComputeOrthoSizeForLevel(LevelData data)
     {
         if (data == null) return _minOrthoSize;
@@ -467,7 +478,7 @@ public class CatapultLauncher : MonoBehaviour
             foreach (var b in data.blocks) Expand(b.position, b.size);
         if (data.robots != null)
             foreach (var r in data.robots)
-                Expand(r.position, r.scale != Vector2.zero ? r.scale : new Vector2(0.6f, 0.9f));
+                Expand(r.position, new Vector2(0.6f, 0.9f));
 
         Vector2 contentSize = max - min + Vector2.one * (ZoomPadding * 2f);
         float   aspect      = _camera != null && _camera.aspect > 0f ? _camera.aspect : 16f / 9f;

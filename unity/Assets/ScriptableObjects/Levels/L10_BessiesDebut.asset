@@ -1,0 +1,174 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1966708deffe45949832dc573867a129, type: 3}
+  m_Name: L10_BessiesDebut
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelId: W1_L10
+  levelName: Bessie's Debut
+  parBirds: 3
+  birds: 000000000000000001000000
+  blocks:
+  - type: 0
+    position: {x: 2.17, y: -5.24}
+    size: {x: 1.636, y: 1.471}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 9
+  - type: 1
+    position: {x: 3.25, y: -5.44}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 11
+  - type: 1
+    position: {x: 3.27, y: -4.9}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 11
+  - type: 0
+    position: {x: 3.29, y: -4.3}
+    size: {x: 1, y: 0.81}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 4
+  - type: 0
+    position: {x: 3.28, y: -3.73}
+    size: {x: 1, y: 0.81}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 4
+  - type: 0
+    position: {x: 5.19, y: -5.35}
+    size: {x: 1, y: 0.81}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 4
+  - type: 3
+    position: {x: 5.195, y: -4.72}
+    size: {x: 1.167, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+  - type: 3
+    position: {x: 3.316, y: -2.78}
+    size: {x: 1.167, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+  - type: 0
+    position: {x: 3.4, y: -3.28}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 4.33, y: -3.28}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 5.27, y: -3.29}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 5.91, y: -4.5}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 5.69, y: -4.01}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 7
+  - type: 2
+    position: {x: 6.21, y: -4.02}
+    size: {x: 0.977, y: 0.964}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    indestructible: 0
+    artVariant: 0
+  - type: 0
+    position: {x: 5.9, y: -2.78}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 15
+  - type: 0
+    position: {x: 6.5, y: -2.13}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 15
+  - type: 1
+    position: {x: 7.45, y: -3.87}
+    size: {x: 4.034, y: 4.58}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 1
+    artVariant: 14
+  robots:
+  - robotType: 1
+    position: {x: 4.28, y: -5.14}
+    scale: {x: 4.048, y: 6.239}
+  - robotType: 1
+    position: {x: 6.14, y: -5.1}
+    scale: {x: 4.048, y: 6.239}
+  - robotType: 1
+    position: {x: 4.53, y: -2.57}
+    scale: {x: 4.048, y: 6.239}
+  - robotType: 2
+    position: {x: 3.24, y: -1.95}
+    scale: {x: 4.99, y: 6.481}
+  - robotType: 2
+    position: {x: 5.15, y: -3.97}
+    scale: {x: 4.248, y: 5.697}
+  - robotType: 2
+    position: {x: 7.4, y: -1.93}
+    scale: {x: 4.804, y: 6.297}

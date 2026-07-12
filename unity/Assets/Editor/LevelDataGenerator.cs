@@ -80,236 +80,154 @@ public static class LevelDataGenerator
         // "already-correct 0.7365u gap" note above refers to the *internal* single-bale-height
         // math, which was fine; the complaint this time was the cap bale balancing on a single
         // point above one base bale looking precarious/disconnected, not the gap size itself.
+        // Layout replaced 2026-07-12 with the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log, unity/Logs/level_layout_dump.txt) — part of the L01-L18
+        // overhaul (L01-L04 SemiHarvester-only, Harvester introduced L05-L09, Bessie L10, full
+        // roster L11-L17, Captain L18). Real per-sprite scale/hp values captured directly from
+        // the Scene view this time (not hand-derived), superseding every prior positioning note
+        // above this line. Not visually re-verified (no Play-mode access here).
         Make(folder, "L01_FirstContact",
             id: "W1_L01", name: "First Contact", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 3.6462f, -5.180f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.3098f, -5.235f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 3.85f,   -5.281f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
-                // Top ("cap") bale — lowered 0.35u and recentred over the base row's mean X
-                // (2026-07-06, user-reported "still too high and off the mark"). Was sitting a
-                // full bale-height above a single base bale (a valid but precarious "balanced on
-                // one point" stack); now nests down into the row for a squatter, more obviously-
-                // connected pile. Re-check against a fresh screenshot after this change.
-                B(BlockType.Haybale, 3.935f,  -4.85f, 1.0f, 0.9f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 4.54f, -5.12f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 5.38f, -5.17f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.73f, -5.28f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.92f, -4.63f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
             },
             robots: new[]
             {
-                R(5.7f, -5.36f, 5.7065f, 7.009f, RobotType.Harvester), // sheltering behind the hay
+                R(6.25f, -5.13f, 6.012f, 5.78f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
             });
 
         // ── W1_L02  Harvest Yard ──────────────────────────────────────────────
-        // Rebuilt 2026-07-09 by the user — designed by dragging raw sprites (Haybail,
-        // Plank_Horizontal, HarvesterRobot, Robot_SemiHarvest) into the Scene view under a
-        // LevelScratch container and running FarmFury -> Debug -> Dump Level Layout To Log (see
-        // LevelLayoutDumper.cs), which converted the placed transforms directly into the B()/R()
-        // calls below — replaces the old wooden-palisade "Stone Wall" design entirely. Introduces
-        // RobotType.SemiHarvester (Robot_SemiHarvest.png — see LevelData.cs/SceneSetup.cs's
-        // EnsureSemiHarvesterRobotPrefab()).
+        // Layout replaced 2026-07-12 with the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log, unity/Logs/level_layout_dump.txt) — part of the L01-L18
+        // overhaul (L01-L04 SemiHarvester-only, Harvester introduced L05-L09, Bessie L10, full
+        // roster L11-L17, Captain L18). Both robots are now SemiHarvester (Harvester removed from
+        // this level entirely). Real per-sprite scale/hp values captured directly from the Scene
+        // view. The original dump also included 3 Wood blocks sourced from the 'WoodenFence'
+        // sprite, sitting between the cannon and the haybale/robot cluster — removed 2026-07-12
+        // (user report, screenshot: "this wood should not be there") since they were just the
+        // decorative fence prop picked up as gameplay blocks by mistake, not intended structure.
+        // Not visually re-verified (no Play-mode access here).
         Make(folder, "L02_StoneWall",
             id: "W1_L02", name: "Harvest Yard", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 4.224f, -5.563f, 1f, 1f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.964f, -5.583f, 1f, 1f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 5.744f, -5.623f, 1f, 1f, passThrough: true, hp: 10f, mass: 3f),
-                // Reverted to plain 1x1 squares 2026-07-10 (user-reported the resized/retagged
-                // 1.3x0.64 version had "moved off original positioning" and still wasn't
-                // rendering as desired) — back to the original coordinates. Visibility is now
-                // fixed at the source instead: WoodBlock._sprNormal itself was re-pointed from
-                // the poorly-filling 2D_Block_Wood_Flat.png to Plank_Horizontal.png (see
-                // SceneSetup.WireBlockSprites), and a real collider-vs-visual mismatch bug
-                // (BlockBase.cs, same day) is fixed too — every wood block's hitbox now
-                // correctly matches its requested footprint regardless of the chosen sprite's
-                // native aspect, which likely explains the "not active when hit" symptom.
-                B(BlockType.Wood,    4.444f, -5.233f, 1f, 1f),
-                B(BlockType.Wood,    5.344f, -5.243f, 1f, 1f),
+                B(BlockType.Haybale, 5.377f, -5.163f, 1.205f, 1.151f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.46f,  -5.22f,  1.205f, 1.151f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 5.05f,  -5.37f,  1.205f, 1.151f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 7.6f,   -5.14f,  1.205f, 1.151f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
             },
             robots: new[]
             {
-                R(5.064f, -4.593f, 4.269f, 5.649f, RobotType.Harvester),
-                // Scale corrected 2026-07-09 (was 4.96,4.251, user-reported "renders noticeably
-                // smaller than the Harvester") — Robot_SemiHarvest.png's auto-trimmed sprite
-                // rect is only 215x273px out of its 500x500 canvas (lots of padding around the
-                // character), vs HarvesterRobot.png's 495x305px out of 612x408 (fills most of
-                // its canvas). At the same PPU (1746) and the dumped scale, SemiHarvester was
-                // rendering at roughly half the Harvester's world height. This scale is
-                // computed to match Harvester's ~0.987u world height exactly; not yet visually
-                // re-verified in the Editor (no Play-mode access here) — worth a live check.
-                R(6.724f, -5.583f, 7.37f, 6.31f, RobotType.SemiHarvester),
+                R(6.54f, -5.23f, 5.687f, 5.921f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(4.78f, -4.45f, 5.687f, 5.921f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
             });
 
         // ── W1_L03  ────────────────────────────────────────────────────────────
-        // Built 2026-07-10 via LevelLayoutDumper (same workflow as L02 "Harvest Yard" — drag
-        // real prefabs/sprites into the Scene view, run FarmFury -> Debug -> Dump Level Layout
-        // To Log, paste the result here). Still Cluck-only — Cluck's own ability unlocks at L04
-        // (AnimalBase.AbilityIntroLevelIndex) and Bessie isn't introduced until L07 (user decision
-        // 2026-07-10, moved from an earlier L05 plan — see L05's own comment below), so birds[]
-        // stays 3x Cluck like L01/L02. Robots are 1x Harvester + 2x SemiHarvester, so the match-up screen's existing
-        // "second distinct RobotType" logic (MatchUpScreen.cs ~line 189) automatically shows
-        // both the Harvester and SemiHarvester cards, same as L02 — no MatchUpScreen changes
-        // needed for this level.
-        //
-        // Wood block sizes corrected 2026-07-10 (user-reported "planks render smaller than my
-        // scene layout", also present in L02): the original dump recorded each raw design-time
-        // sprite's untouched transform.localScale (1,1) rather than its actual rendered
-        // world-space footprint, so non-square art (e.g. Plank_2DShork at 250x266px, i.e.
-        // visually taller than wide) got silently flattened to a 1x1 "size" value. Fixed at the
-        // root in LevelLayoutDumper.cs (now records SpriteRenderer.bounds.size) and
-        // BlockBase.Initialise() (now scales relative to the chosen sprite's real native bounds
-        // instead of assuming every wired sprite is exactly 1x1 at scale 1 — previously only
-        // true along the X axis per WireBlockPrefab's "PPU = texture width" convention). The 4
-        // blocks below sourced from 'Plank_2DShork' (see the original dump's inline comments)
-        // are updated to that sprite's true footprint (250x266px / 250 PPU = 1.0 x 1.064); the
-        // 2 sourced from '2D_Block_Wood_Flat' (500x500px, already square) needed no change.
-        //
-        // Wood ART (not just size) corrected 2026-07-10 (user-reported, second pass — "the wood
-        // is not correct"): Plank_2DShork.png is visually a VERTICAL plank bundle, but its
-        // measured w/h footprint (1.0 x 1.064) is nearly square, so BlockBase's old aspect-ratio
-        // guess put it in the "flat/normal" bucket — every wood block in this level rendered
-        // with the same flat 2D_Block_Wood_Flat.png art regardless of which sprite was actually
-        // placed. Fixed at the root via a new explicit WoodArtVariant field on BlockSpawnData
-        // (see LevelData.cs/BlockBase.Initialise) that LevelLayoutDumper now sets directly from
-        // the design-time sprite's filename instead of leaving it to aspect-guessing — the 4
-        // Plank_2DShork blocks below are tagged Vertical accordingly.
-        //
-        // The 'WoodenBarrel'-sourced block is now BlockType.Barrel (ExplodingBarrelBlock,
-        // WoodenBarrel.png art, area-damage-on-death) instead of a plain Wood plank — added
-        // 2026-07-10 per user request to "gradually introduce the exploding barrel" starting here.
-        //
-        // Layout compacted 2026-07-10 (user-reported: "move all sprites closer together, the
-        // barrel is rendering off the safe area"): the original dump spanned X 4.16-8.54 (4.38
-        // units), well past L01/L02's established safe X range (L02's widest content, the second
-        // SemiHarvester, only reaches X=6.72) — the barrel at X=8.54 was rendering past the
-        // camera's visible/safe-area edge. Every block/robot X below is uniformly compressed
-        // toward the leftmost haybale (pivot X=4.16, factor 0.648) so the whole structure now
-        // spans X 4.16-7.0, matching L02's known-good footprint; Y values are untouched. A pure
-        // linear compression only shrinks gaps between objects, never widens them, so whatever
-        // physical relationships existed in the original layout (robots resting near/on the wood
-        // stack) are preserved or made tighter, not broken. Not yet visually re-verified in the
-        // Editor (no Play-mode access here) — worth a live check, this was computed from the
-        // recorded coordinates, not eyeballed against the actual rendered scene.
-        //
-        // Barrel nudged further right 2026-07-10 (user-reported, same-day follow-up: "move the
-        // barrel slightly away from the Semi_harvester, they are now on top of each other" —
-        // the compression above brought them too close together). 6.998 -> 7.4 opens a bigger
-        // gap from the second SemiHarvester (X=6.507) without re-introducing the original
-        // off-safe-area problem this same compaction pass fixed.
+        // Layout re-simplified 2026-07-12 (user report: "level 3 is a bit difficult - let me
+        // redesign it") — the previous rebuild (also 2026-07-12, same day) mixed haybale + wood
+        // planks; this redesign drops the wood entirely and uses 6 haybale (all one-hit-kill,
+        // passThrough) + 3 SemiHarvester, an easier structural read for an early level. Real
+        // per-sprite scale/hp values captured directly from the Scene view. Not visually
+        // re-verified (no Play-mode access here).
         Make(folder, "L03_TheTower",
             id: "W1_L03", name: "The Tower", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 4.16f, -5.39f, 1f, 1f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.549f, -5.4f,  1f, 1f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.944f, -5.44f, 1f, 1f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Wood,    5.326f, -5.29f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood,    5.145f, -5.13f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood,    5.488f, -5.39f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood,    5.650f, -5.54f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                // Reverted to plain 1x1 squares at their original Y 2026-07-10 (user-reported
-                // the resized/retagged 1.3x0.64 version had "moved off original positioning" and
-                // still wasn't rendering as desired) — see L02's Make() call above for the fix
-                // that replaces it: WoodBlock._sprNormal re-pointed to Plank_Horizontal.png plus
-                // a real collider-vs-visual mismatch bug fixed in BlockBase.cs.
-                B(BlockType.Wood,    4.205f, -4.94f, 1f, 1f),
-                B(BlockType.Wood,    4.737f, -4.94f, 1f, 1f),
-                B(BlockType.Barrel,  7.4f,   -5.42f, 1f, 1f), // exploding barrel — see note above
+                B(BlockType.Haybale, 3.686f, -5.153f, 1.188f, 1.143f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.14f,  -5.26f,  1.188f, 1.143f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 3.94f,  -4.53f,  1.188f, 1.143f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 6.42f,  -5.14f,  1.188f, 1.143f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 6.89f,  -5.25f,  1.188f, 1.143f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 6.65f,  -4.57f,  1.188f, 1.143f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
             },
             robots: new[]
             {
-                R(4.503f, -4.08f,  5.367f, 7.738f, RobotType.Harvester),
-                R(6.022f, -5.334f, 5.887f, 5.53f,  RobotType.SemiHarvester),
-                R(6.507f, -5.34f,  5.836f, 5.683f, RobotType.SemiHarvester),
+                R(5.28f, -5.14f, 5.914f, 5.967f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(3.98f, -3.76f, 5.914f, 5.967f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(6.67f, -3.79f, 5.914f, 5.967f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
             });
 
         // ── W1_L04  ────────────────────────────────────────────────────────────
-        // Built 2026-07-10 via LevelLayoutDumper (same workflow as L02/L03). Introduces Cluck's
-        // Cluster Bomb ability (egg shower) as a GDD milestone. Originally usable on any Cluck
-        // from any level (tap mid-flight, see AnimalBase.Update()/CluckAnimal.TriggerAbility());
-        // later the same day a real code gate was added (AnimalBase.AbilityIntroLevelIndex = 3,
-        // 0-based, i.e. L04) so a tap does nothing before this level — L04 is the level that
-        // milestone is actually tied to now, not just "enough robots to matter". Same day, the
-        // ability itself was also reworked: eggs now use real Egg.png art at a visible scale
-        // (previously unwired/invisible) and fire in a fixed forward-and-down cone ("like being
-        // fired from a cannon") instead of a spread centred on Cluck's exact in-flight velocity
-        // angle — see CluckAnimal.cs/SceneSetup.EnsureEggPrefab() same-day comments. birds[]
-        // stays 3x Cluck (Bessie is introduced at L07 instead — see L05's own comment below for
-        // the plan revision).
+        // Layout replaced 2026-07-12 with the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log, unity/Logs/level_layout_dump.txt) — part of the L01-L18
+        // overhaul (L01-L04 SemiHarvester-only, Harvester introduced L05-L09, Bessie L10, full
+        // roster L11-L17, Captain L18). All 4 robots are SemiHarvester (Harvester removed from
+        // this level, matching the new L01-L04 SemiHarvester-only convention) — the densest
+        // layout of the four so far (2-tier wood stack + a dynamite barrel). Cluck's Cluster
+        // Bomb ability still unlocks here (AnimalBase.AbilityIntroLevelIndex = 3, 0-based, i.e.
+        // L04) — unaffected by this layout swap.
         //
-        // Layout compacted 2026-07-10 (same precaution as L03 — the raw dump spanned X 3.8-8.27,
-        // 4.47 units, wider than any previously-verified-safe level): uniformly compressed toward
-        // the leftmost wood plank (pivot X=3.8, factor 0.805), landing at X 3.8-7.4 to match L03's
-        // own established safe right edge. Not yet visually verified in the Editor (no Play-mode
-        // access here) — worth a live check, particularly since this is a denser 4-robot layout
-        // than any level built so far.
+        // Compacted 2026-07-12 (same-day user report: "exceeds the safe area - move the sprites
+        // closer together"): the raw dump's barrel reached X~9.2 (right edge), well past every
+        // other level's established ~7.4 right edge. Pivot-and-compress applied — pivot = leftmost
+        // haybale (X=4.632, held fixed), factor=0.7, landing the barrel/widest robot at X~7.4. Y
+        // values untouched; a pure linear X compression only shrinks gaps, never breaks existing
+        // physical relationships (wood stack, robots resting near it). Real per-sprite scale/hp
+        // values captured directly from the Scene view. Not visually re-verified (no Play-mode
+        // access here).
         Make(folder, "L04_EggPractice",
             id: "W1_L04", name: "Egg Practice", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 6.77f, -5.41f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 7.08f, -5.51f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 7.40f, -5.58f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 7.15f, -4.91f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Wood,    3.80f, -5.40f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood,    3.98f, -5.53f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood,    4.16f, -5.70f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Barrel,  5.88f, -5.49f, 1.017f, 1.083f),
-                B(BlockType.Wood,    4.35f, -4.82f, 1f, 1f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood,    4.44f, -4.97f, 1f, 1f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood,    5.05f, -4.77f, 1f, 1f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood,    5.76f, -4.78f, 1f, 1f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood,    5.77f, -4.98f, 1f, 1f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood,    5.10f, -4.97f, 1f, 1f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Haybale, 4.632f, -5.151f, 1.138f, 1.111f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 5.262f, -5.151f, 1.138f, 1.111f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 6.298f, -5.091f, 1.138f, 1.111f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood,    5.787f, -5.111f, 1f, 1.064f, artVariant: WoodArtVariant.Shork2D),   // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    6.158f, -3.981f, 1f, 1.064f, artVariant: WoodArtVariant.Shork2D),   // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    5.780f, -4.55f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    6.417f, -4.56f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    6.382f, -3.561f, 1f, 0.467f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    5.738f, -3.561f, 1f, 0.467f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Barrel,  7.408f, -4.953f, 1.256f, 1.216f), // sprite 'Barrel_Dynamite'
             },
             robots: new[]
             {
-                R(7.12f, -4.32f, 4.588f, 4.588f, RobotType.SemiHarvester),
-                R(6.44f, -5.46f, 4.821f, 4.867f, RobotType.SemiHarvester),
-                R(4.97f, -5.46f, 4.845f, 6.025f, RobotType.Harvester),
-                R(4.97f, -4.14f, 4.845f, 6.025f, RobotType.Harvester),
+                R(7.383f, -4.141f, 5.734f, 5.452f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(6.487f, -4.151f, 5.734f, 5.452f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.759f, -4.14f,  5.734f, 5.452f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(6.074f, -2.961f, 5.734f, 5.452f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
             });
 
         // ── W1_L05  The Gauntlet ──────────────────────────────────────────────
-        // Built 2026-07-10 via LevelLayoutDumper (same workflow as L02-L04 — dumped layout pasted
-        // from unity/Logs/level_layout_dump.txt). Densest level yet: 2 Harvester + 3 SemiHarvester
-        // (5 robots total, vs L04's 4). Originally built as "Bessie's Debut" (birds[] = 2x Cluck +
-        // 1x Bessie) the same day, but the user revised the plan later that session: Bessie is now
-        // introduced at L07 instead, not here — so this level reverted to Cluck-only (3x Cluck,
-        // matching L01-L04) and was renamed off its now-inaccurate old name. Layout/blocks/robots
-        // below are otherwise unchanged from the original build.
-        //
-        // Layout compacted using the same pivot-and-compress approach as L03/L04 (raw dump spanned
-        // X 3.72-8.05, 4.33 units — wider than the established safe range): pivot = leftmost
-        // element (the first barrel, X=3.72, held fixed), factor = 0.85, landing the widest
-        // element (the second Harvester) at X~7.4, matching L03/L04's own right edge. Not yet
-        // visually verified in the Editor (no Play-mode access here) — worth a live check,
-        // particularly given this is the first level with 5 robots.
+        // Layout shifted up 2026-07-12 (user report: the previous dump was rendering over the
+        // safe area) — re-dumped from the Scene view (FarmFury -> Debug -> Dump Level Layout To
+        // Log, unity/Logs/level_layout_dump.txt) with the whole structure raised and shifted
+        // left, still the L01-L18 overhaul's Harvester introduction: 4 SemiHarvester + 1
+        // Harvester. Real per-sprite scale/hp values captured directly from the Scene view. Not
+        // visually re-verified (no Play-mode access here).
         Make(folder, "L05_TheGauntlet",
             id: "W1_L05", name: "The Gauntlet", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 4.536f, -5.4f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.341f, -5.57f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 4.867f, -5.52f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Barrel,  3.72f,  -5.45f, 1.096f, 1.016f),
-                B(BlockType.Barrel,  6.587f, -5.34f, 1.043f, 0.977f),
-                B(BlockType.Wood,    5.301f, -4.38f, 1f, 0.618f, artVariant: WoodArtVariant.Auto),
-                B(BlockType.Wood,    5.318f, -5.18f, 0.668f, 1.505f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood,    4.494f, -5.05f, 1f, 1f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Haybale, 3.932f, -5.201f, 1.138f, 1.111f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 7.912f, -5.161f, 1.138f, 1.111f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.032f, -4.211f, 1.138f, 1.111f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood,    3.202f, -5.251f, 1f, 1.064f, artVariant: WoodArtVariant.Shork2D),   // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    4.612f, -5.191f, 1f, 1.064f, artVariant: WoodArtVariant.Shork2D),   // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    3.282f, -4.331f, 1f, 1.064f, artVariant: WoodArtVariant.Shork2D),   // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    2.622f, -4.681f, 1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    3.912f, -4.721f, 1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    3.812f, -3.721f, 1f, 0.467f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    2.892f, -3.701f, 1f, 0.467f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Barrel,  2.462f, -5.171f, 1.256f, 1.216f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  6.922f, -5.101f, 1.256f, 1.216f), // sprite 'Barrel_Dynamite'
             },
             robots: new[]
             {
-                R(5.885f, -5.22f, 4.487f, 5.89f,  RobotType.Harvester),
-                R(7.401f, -5.16f, 4.563f, 6.232f, RobotType.Harvester),
-                R(4.485f, -4.57f, 5.176f, 5.316f, RobotType.SemiHarvester),
-                R(6.568f, -4.59f, 5.176f, 5.316f, RobotType.SemiHarvester),
-                R(5.25f,  -3.83f, 5.408f, 5.501f, RobotType.SemiHarvester),
+                R(2.972f, -3.091f, 5.734f, 5.452f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(3.842f, -3.081f, 5.734f, 5.452f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(2.642f, -4.251f, 5.734f, 5.452f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(7.812f, -4.391f, 5.734f, 5.452f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.714f, -4.774f, 6.594f, 8.548f, RobotType.Harvester),     // sprite 'HarvesterRobot'
             });
 
         // Old L05 asset filename, orphaned by the rename above (L05_BessiesDebut -> L05_TheGauntlet
@@ -320,220 +238,708 @@ public static class LevelDataGenerator
         DeleteStaleAsset(folder, "L06_BessiesDebut"); // stale old-plan filename, orphaned since the L05/L07 rename
 
         // ── W1_L06  Double Barrel ─────────────────────────────────────────────
-        // Built 2026-07-10 via LevelLayoutDumper (dumped layout pasted from
-        // unity/Logs/level_layout_dump.txt) — user request: "build L06." Built out of order
-        // AFTER L07 (which already exists) — nothing requires levels to be built in strict
-        // numeric sequence, since GameManager auto-discovers every LevelData asset in this folder
-        // regardless of gaps. Still Cluck-only (3x Cluck) even though L07 already introduces
-        // Bessie — L06 sits BEFORE L07 in level order/progression, so keeping her out here
-        // preserves "Bessie debuts at L07" as the actual player-facing introduction rather than
-        // spoiling it a level early just because of build order.
-        //
-        // 5 robots (2 Harvester + 3 SemiHarvester — same composition as L05 "The Gauntlet", but a
-        // distinct layout) + 9 blocks (4 vertical wood, 2 horizontal wood, 2 barrels, 1 haybale) —
-        // introduces a SECOND exploding barrel in the same level for the first time (L03-L05/L07
-        // each had 1-3, but always clustered; here the two barrels sit apart, at opposite ends of
-        // the structure).
-        //
-        // Layout compacted using the same pivot-and-compress approach as every prior level (raw
-        // dump spanned X 3.81-7.94, 4.13 units — wider than the established safe range): pivot =
-        // leftmost element (the first Harvester, X=3.81, held fixed), factor = 0.869, landing the
-        // widest element (the third SemiHarvester) at X~7.4, matching every other level's
-        // established right edge. Y values untouched. Not yet visually verified in the Editor (no
-        // Play-mode access here) — worth a live check, particularly the two barrels' now-2x robot
-        // explosion strength (see WoodBlock/ExplodingBarrelBlock's _explosionStrengthMultiplier)
-        // against 2 Harvesters in the same level for the first time.
+        // Layout replaced 2026-07-12 with the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log, unity/Logs/level_layout_dump.txt) — part of the L01-L18
+        // overhaul (L01-L04 SemiHarvester-only, Harvester introduced L05-L09, Bessie L10, full
+        // roster L11-L17, Captain L18). Caught late (2026-07-12, user report: "from level 6 the
+        // scenes I designed have not rendered correctly") — this level had been skipped over
+        // entirely earlier in the same rebuild session, still running its original 2026-07-10
+        // pre-overhaul layout until now. 2 Harvester + 3 SemiHarvester, 2 dynamite barrels, 3
+        // haybale, a stone block, and a dense wood scaffold. birds[] stays 3x Cluck, matching
+        // L05. Real per-sprite scale/hp values captured directly from the Scene view. Not
+        // visually re-verified (no Play-mode access here).
         Make(folder, "L06_DoubleBarrel",
             id: "W1_L06", name: "Double Barrel", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood,    4.659f, -5.407f, 1.053f, 1.29f,  artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood,    4.983f, -5.42f,  1.053f, 1.29f,  artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood,    6.434f, -4.49f,  1.053f, 1.29f,  artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood,    6.825f, -4.48f,  1.053f, 1.29f,  artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Barrel,  6.591f, -5.36f,  1.349f, 1.402f),
-                B(BlockType.Barrel,  4.749f, -4.17f,  1.349f, 1.402f),
-                B(BlockType.Wood,    4.780f, -4.827f, 1.292f, 0.987f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood,    6.556f, -3.86f,  1.292f, 0.987f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Haybale, 5.678f, -5.43f,  1.176f, 1.176f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 2.34f, -5.51f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 3.07f, -5.53f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 2.72f, -4.96f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood,    3.88f, -5.57f, 1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    4.47f, -5.59f, 1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    5.08f, -5.61f, 1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    4.17f, -5f,    1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Stone,   4.15f, -4.43f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Barrel,  4.968f, -4.71f, 1.309f, 1.294f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  7.3f,   -5.31f, 1.309f, 1.294f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Wood,    6.65f, -5.47f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical), // sprite '2D_Block_Wood_Vertical'
+                B(BlockType.Wood,    6.68f, -4.7f,  1f, 1.064f, artVariant: WoodArtVariant.Vertical), // sprite '2D_Block_Wood_Vertical'
+                B(BlockType.Wood,    4.3f,  -3.97f, 1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    5.22f, -3.97f, 1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    6.16f, -3.99f, 1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
             },
             robots: new[]
             {
-                R(3.81f,  -5.38f, 5.663f, 7.369f, RobotType.Harvester),
-                R(6.469f, -3.05f, 5.663f, 7.369f, RobotType.Harvester),
-                R(5.670f, -4.6f,  6.197f, 6.29f,  RobotType.SemiHarvester),
-                R(4.714f, -3.28f, 6.197f, 6.29f,  RobotType.SemiHarvester),
-                R(7.399f, -5.34f, 6.197f, 6.29f,  RobotType.SemiHarvester),
+                R(4.58f, -3.13f, 5.101f, 7.281f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(5.96f, -3.13f, 5.101f, 7.281f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(5.94f, -5.32f, 6.019f, 6.178f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(7.24f, -4.37f, 6.019f, 6.178f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(2.82f, -4.14f, 6.125f, 6.283f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
             });
 
-        // ── W1_L07  Bessie's Debut ────────────────────────────────────────────
-        // Built 2026-07-10 via LevelLayoutDumper (dumped layout pasted from
-        // unity/Logs/level_layout_dump.txt) — user request: "I have built level 7... let's
-        // introduce Bessie." L06 is intentionally still skipped/removed (see above); nothing
-        // requires levels to be built in strict numeric order since GameManager auto-discovers
-        // every LevelData asset in this folder regardless of gaps. birds[] is 2x Cluck + 1x
-        // Bessie (still 3 total, par 2, matching every level so far) — this is the actual debut
-        // originally planned for L05 before the user moved it here.
-        //
-        // First level to use BlockType.Stone (StoneBlock, baseMaxHealth=220 — much tankier than
-        // Wood/Haybale/Barrel's ~10 effective HP) and 3 barrels instead of the usual 1-2 — a
-        // heavier, more defensive layout befitting the harder-hitting animal introduced here.
-        // 4 robots: 1 Harvester + 3 SemiHarvester.
-        //
-        // Layout compacted using the same pivot-and-compress approach as L03-L05 (raw dump
-        // spanned X 3.615-7.867, 4.252 units — wider than the established safe range): pivot =
-        // leftmost element (the first barrel, X=3.615, held fixed), factor = 0.89, landing the
-        // widest element (the Harvester) at X~7.4, matching every other level's established right
-        // edge. Y values untouched. Not yet visually verified in the Editor (no Play-mode access
-        // here) — worth a live check, particularly Bessie's Ground Slam shockwave (3.6u radius)
-        // against this level's tighter block spacing, and that her match-up card slides in from
-        // the left the same generic way every other animal's card does (MatchUpScreen.SlideCardsIn
-        // isn't species-specific — Bessie's card art was already wired via SceneSetup.
-        // WireMatchUpCards' keyword lookup, "Bessie" -> Bessie_Cow.png, well before this level
-        // existed, so no MatchUpScreen code changes were needed for this request).
-        Make(folder, "L07_BessiesDebut",
-            id: "W1_L07", name: "Bessie's Debut", par: 2,
-            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+        // ── W1_L07  Barrel Row ────────────────────────────────────────────────
+        // Layout replaced 2026-07-12 with the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log, unity/Logs/level_layout_dump.txt) — part of the L01-L18
+        // overhaul (L01-L04 SemiHarvester-only, Harvester introduced L05-L09, Bessie L10, full
+        // roster L11-L17, Captain L18). Renamed off its old "Bessie's Debut" name/birds[] — user
+        // confirmed 2026-07-12 the plan moved: "bessie debut is now only in level 10 when I
+        // introduce the third robot - for now only cluck and his power of shooting eggs". birds[]
+        // reverted to 3x Cluck, matching L05/L06/L08/L09. 2 Harvester + 4 SemiHarvester, a
+        // WoodenCart prop, 2 dynamite barrels, 2 haybale, and 9 wood planks — real per-sprite
+        // scale/hp values captured directly from the Scene view. Not visually re-verified (no
+        // Play-mode access here).
+        Make(folder, "L07_BarrelRow",
+            id: "W1_L07", name: "Barrel Row", par: 2,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Barrel, 3.615f, -5.512f, 1.109f, 1.07f),
-                B(BlockType.Barrel, 6.428f, -5.322f, 1.056f, 1.083f),
-                B(BlockType.Barrel, 6.437f, -4.622f, 1.056f, 1.083f),
-                B(BlockType.Wood,   5.743f, -5.246f, 0.827f, 1.744f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood,   4.194f, -5.246f, 0.827f, 1.744f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood,   4.149f, -4.462f, 1f, 1f, artVariant: WoodArtVariant.Flat),
-                B(BlockType.Wood,   5.680f, -4.48f,  1f, 1f, artVariant: WoodArtVariant.Flat),
-                B(BlockType.Stone,  7.373f, -5.517f, 1.452f, 1.066f),
+                B(BlockType.Wood,    2.48f, -5.29f,  1.722f, 1.421f, artVariant: WoodArtVariant.Cart), // sprite 'WoodenCart'
+                B(BlockType.Barrel,  3.83f, -5.29f,  1.326f, 1.294f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  7.51f, -4.29f,  1.326f, 1.294f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Haybale, 8.43f, -5.2f,   1.246f, 1.278f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.78f, -5.23f,  1.246f, 1.278f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood,    4.1f,  -4.54f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    7.43f, -5.33f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    7.81f, -5.35f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    7.35f, -3.56f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    7.81f, -3.53f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    3.73f, -4.53f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    3.82f, -4.02f,  1f, 1f,     artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    7.5f,  -3.1f,   1f, 1f,     artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    5.79f, -5.43f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    5.82f, -3.92f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    5.73f, -1.9f,   1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
             },
             robots: new[]
             {
-                R(7.401f, -4.34f,  5.398f, 7.824f, RobotType.Harvester),
-                R(4.123f, -3.987f, 5.687f, 5.919f, RobotType.SemiHarvester),
-                R(5.680f, -3.937f, 5.64f,  5.919f, RobotType.SemiHarvester),
-                R(4.915f, -5.412f, 5.779f, 6.243f, RobotType.SemiHarvester),
+                R(5.73f, -2.82f,  6.07f,  7.858f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(7.51f, -2.25f,  6.07f,  7.858f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(3.82f, -3.51f,  5.156f, 5.266f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.72f, -1.19f,  5.156f, 5.266f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(8.39f, -4.34f,  5.156f, 5.266f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.77f, -4.7f,   5.156f, 5.266f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
             });
+
+        // Old L07 asset filename, orphaned by the rename above (L07_BessiesDebut -> L07_BarrelRow
+        // — GameManager auto-loads every LevelData asset it finds in this folder, so the stale
+        // file would otherwise linger as a phantom extra level).
+        DeleteStaleAsset(folder, "L07_BessiesDebut");
 
         // ── W1_L08  Fortress Assault ──────────────────────────────────────────
-        // Built 2026-07-11 via LevelLayoutDumper — the densest level yet: 6 robots
-        // (2 Harvester + 4 SemiHarvester) + 23 blocks (4 haybale, 16 wood, 3 barrel),
-        // arranged as two mirrored towers (left/right) each topped by a barrel row,
-        // guarded by a SemiHarvester pair at ground level and another pair up top,
-        // with the two Harvesters anchoring the base.
-        //
-        // Layout compacted using the same pivot-and-compress approach as L03/L05/L07:
-        // raw dump spanned X 2.21-7.64 (5.43 units) — pivot = leftmost element (the
-        // first vertical wood plank, X=2.21, held fixed), factor = 0.9558, landing the
-        // widest element (the right Harvester) at X=7.40, matching every other level's
-        // established right edge. Y values untouched.
-        // birds[] stays Cluck/Cluck/Bessie, matching L07's introduction of Bessie.
-        // Not yet visually verified (no Play-mode access here) — worth a live check
-        // given this is the heaviest block/robot count shipped so far.
+        // Layout replaced 2026-07-12 with the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log, unity/Logs/level_layout_dump.txt) — part of the L01-L18
+        // overhaul (L01-L04 SemiHarvester-only, Harvester introduced L05-L09, Bessie L10, full
+        // roster L11-L17, Captain L18). birds[] switched from Cluck/Cluck/Bessie to 3x Cluck
+        // (matching L05-L07) — Bessie's debut moved to L10 (user confirmed 2026-07-12). 3
+        // Harvester + 4 SemiHarvester, a WoodenCart + 2 WoodenBarrel props (both classified as
+        // plain structural BlockType.Wood, not explosive — see LevelLayoutDumper.cs's "dynamite"
+        // keyword fix, same day), 1 dynamite barrel, 1 haybale, 2 vertical stone pillars, and a
+        // tall multi-tier wood tower. Real per-sprite scale/hp values captured directly from the
+        // Scene view. Not visually re-verified (no Play-mode access here) — worth a live check
+        // given this is the heaviest robot count shipped so far (7 robots).
         Make(folder, "L08_FortressAssault",
             id: "W1_L08", name: "Fortress Assault", par: 3,
-            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 6.177f, -5.22f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 3.185f, -5.2f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 6.292f, -5.45f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 3.147f, -5.42f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Wood, 2.21f,  -5.09f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 2.401f, -5.28f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 2.631f, -5.48f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 5.279f, -5.13f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 5.540f, -5.3f,  1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 5.757f, -5.48f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 3.089f, -4.74f, 1f, 0.618f, artVariant: WoodArtVariant.Auto),
-                B(BlockType.Wood, 6.120f, -4.72f, 1f, 0.618f, artVariant: WoodArtVariant.Auto),
-                B(BlockType.Wood, 5.853f, -4.37f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 2.755f, -4.37f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 3.003f, -3.56f, 1f, 1f, artVariant: WoodArtVariant.Auto),
-                B(BlockType.Wood, 6.024f, -3.61f, 1f, 1f, artVariant: WoodArtVariant.Auto),
-                B(BlockType.Wood, 3.070f, -3.08f, 1.146f, 0.96f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 4.064f, -3.08f, 1.146f, 0.96f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 5.106f, -3.09f, 1.146f, 0.96f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 6.216f, -3.1f,  1.16f,  0.96f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Barrel, 4.150f, -2.61f, 0.977f, 0.977f),
-                B(BlockType.Barrel, 4.838f, -2.61f, 0.977f, 0.977f),
-                B(BlockType.Barrel, 5.540f, -2.62f, 0.977f, 0.977f),
+                B(BlockType.Wood,    2.08f, -5.26f, 1.486f, 1.265f, artVariant: WoodArtVariant.Cart), // sprite 'WoodenCart'
+                B(BlockType.Wood,    3.15f, -5.27f, 0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
+                B(BlockType.Wood,    8.04f, -5.21f, 0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
+                B(BlockType.Barrel,  6.64f, -5.22f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Haybale, 4.24f, -4.68f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood,    3.79f, -5.38f, 1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    4.42f, -5.37f, 1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    8.08f, -4.54f, 1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    8.06f, -3.63f, 1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    8.05f, -2.85f, 1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    6.14f, -5.2f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    6.13f, -4.42f, 1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    6.15f, -3.62f, 1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    6.3f,  -2.81f, 1f, 1f,     artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    6.4f,  -2.3f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    6.71f, -4.03f, 1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    7.64f, -4.04f, 1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    7.31f, -2.3f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    8.17f, -2.3f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Stone,   3.63f, -4.76f, 0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   3.63f, -4.04f, 0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
             },
             robots: new[]
             {
-                R(6.326f, -4.23f, 5.826f, 5.594f, RobotType.SemiHarvester),
-                R(3.281f, -4.24f, 5.64f,  5.64f,  RobotType.SemiHarvester),
-                R(3.261f, -2.62f, 5.64f,  5.64f,  RobotType.SemiHarvester),
-                R(6.150f, -2.64f, 5.64f,  5.64f,  RobotType.SemiHarvester),
-                R(4.294f, -4.99f, 5.246f, 7.141f, RobotType.Harvester),
-                R(7.400f, -5.04f, 5.246f, 7.141f, RobotType.Harvester),
+                R(5.301f, -4.979f, 5.308f, 6.81f,  RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(7.599f, -1.559f, 4.909f, 6.81f,  RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(7.211f, -3.194f, 5.09f,  6.43f,  RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(3.11f,  -4.59f,  4.589f, 4.545f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(6.4f,   -1.83f,  4.766f, 5.076f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(7.27f,  -5.15f,  5.253f, 5.386f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(4.17f,  -3.94f,  4.943f, 5.032f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
             });
 
         // ── W1_L09  Stone Bastion ─────────────────────────────────────────────
-        // Built 2026-07-11 via LevelLayoutDumper — heaviest robot count yet: 8 robots
-        // (3 Harvester + 5 SemiHarvester), 5 of them lined up on a top platform row.
-        // Introduces BlockType.Stone as a genuine defensive obstacle (3-piece rubble
-        // wall on the far left, RuinedStoneWall art) rather than the single decorative
-        // piece used once in L07. Two wide horizontal wood beams (3.83/3.05 units)
-        // form the mid platform the top-row SemiHarvesters stand on, with a small
-        // vertical wood tower (4 planks) in the centre gap and short/skew planks
-        // bracing either side.
-        //
-        // Layout compacted using the same pivot-and-compress approach as L03/L05/L07/L08:
-        // raw dump spanned X 0.206-8.027 (7.821 units, by far the widest dump yet) —
-        // pivot = leftmost element (the outer stone rubble piece, X=0.206, held fixed),
-        // factor = 0.9198, landing the widest element (the far-right Haybale) at
-        // X=7.40, matching every other level's established right edge. Y values
-        // untouched.
-        // birds[] stays Cluck/Cluck/Bessie. Not yet visually verified (no Play-mode
-        // access here) — worth a live check, particularly whether 5 SemiHarvesters
-        // packed along the same top row (Y~-1.85 to -1.88) read as distinct targets
-        // or an indistinguishable blob at this density.
+        // Layout replaced 2026-07-12 with the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log, unity/Logs/level_layout_dump.txt) — part of the L01-L18
+        // overhaul (L01-L04 SemiHarvester-only, Harvester introduced L05-L09, Bessie L10, full
+        // roster L11-L17, Captain L18). This is the last level in that Harvester-introduction
+        // range: 4 Harvester + 2 SemiHarvester (heaviest Harvester count yet). birds[] switched
+        // from Cluck/Cluck/Bessie to 3x Cluck (matching L05-L08) — Bessie's debut moved to L10.
+        // 2 dynamite barrels, 4 haybale, a WoodenCart, 2 RuinedStoneWall pieces + 3 more Stone
+        // blocks (skew/vertical), and a dense wood scaffold. Real per-sprite scale/hp values
+        // captured directly from the Scene view. Not visually re-verified (no Play-mode access
+        // here).
         Make(folder, "L09_StoneBastion",
             id: "W1_L09", name: "Stone Bastion", par: 3,
-            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Barrel, 4.542f, -5.43f,  0.977f, 0.977f),
-                B(BlockType.Barrel, 5.103f, -5.43f,  0.977f, 0.977f),
-                B(BlockType.Barrel, 2.555f, -3.677f, 1.016f, 1.083f),
-                B(BlockType.Barrel, 7.127f, -3.57f,  1.016f, 1.083f),
-                B(BlockType.Barrel, 6.667f, -5.35f,  1.016f, 1.016f),
-                B(BlockType.Wood, 6.101f, -4.15f,  3.83f,  1.08f,  artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 3.468f, -4.197f, 3.047f, 1.093f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Haybale, 2.525f, -5.367f, 0.963f, 1.043f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 7.400f, -5.297f, 0.99f,  1.043f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Wood, 4.781f, -3.72f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 4.781f, -2.94f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 5.011f, -3.8f,  1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 5.011f, -3.04f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 2.583f, -4.667f, 1.12f, 0.956f, artVariant: WoodArtVariant.Auto),
-                B(BlockType.Wood, 4.818f, -4.63f,  1.12f, 0.956f, artVariant: WoodArtVariant.Auto),
-                B(BlockType.Wood, 7.007f, -4.58f,  1.12f, 0.956f, artVariant: WoodArtVariant.Auto),
-                B(BlockType.Wood, 2.748f, -2.8f,  1f,     1f,     artVariant: WoodArtVariant.Auto),
-                B(BlockType.Wood, 7.035f, -2.73f, 1.044f, 1.052f, artVariant: WoodArtVariant.Auto),
-                B(BlockType.Wood, 3.924f, -2.36f, 2.076f, 0.492f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 5.747f, -2.4f,  2.076f, 0.492f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Stone, 1.810f, -5.373f, 1.394f, 1.123f),
-                B(BlockType.Stone, 0.994f, -5.386f, 1.364f, 0.989f),
-                B(BlockType.Stone, 0.206f, -5.367f, 1.401f, 0.884f),
+                B(BlockType.Wood,    6.79f, -3.49f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D),   // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    5.46f, -2.67f,  1f, 1f,     artVariant: WoodArtVariant.Skew),       // sprite 'Plank_Skew'
+                B(BlockType.Wood,    7f,    -2.73f,  1f, 1f,     artVariant: WoodArtVariant.Skew),       // sprite 'Plank_Skew'
+                B(BlockType.Wood,    5.56f, -2.25f,  1f, 1f,     artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    7.38f, -2.23f,  1f, 1f,     artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    6.47f, -2.24f,  1f, 1f,     artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Barrel,  5.74f, -3.44f,  0.977f, 0.977f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  6.54f, -4.74f,  0.977f, 0.977f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Haybale, 3.59f, -5.4f,   0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.38f, -5.43f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 3.62f, -4.86f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood,    2.31f, -5.34f,  1.662f, 1.383f, artVariant: WoodArtVariant.Cart),   // sprite 'WoodenCart'
+                B(BlockType.Stone,   1.16f, -5.28f,  1.18f,  1.027f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
+                B(BlockType.Stone,   0.31f, -5.297f, 1.053f, 0.913f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
+                B(BlockType.Wood,    6.6f,  -5.46f,  1f, 1f, artVariant: WoodArtVariant.Diagonal), // sprite 'Plank_Diagonal'
+                B(BlockType.Wood,    5.9f,  -5.47f,  1f, 1f, artVariant: WoodArtVariant.Diagonal), // sprite 'Plank_Diagonal'
+                B(BlockType.Wood,    5.21f, -5.47f,  1f, 1f, artVariant: WoodArtVariant.Diagonal), // sprite 'Plank_Diagonal'
+                B(BlockType.Stone,   6f,    -4.761f, 0.48f, 1.178f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   5.49f, -4.01f,  1f, 1f, artVariant: WoodArtVariant.Diagonal), // sprite 'Stone_Diagonal'
+                B(BlockType.Stone,   6.38f, -4.01f,  1f, 1f, artVariant: WoodArtVariant.Diagonal), // sprite 'Stone_Diagonal'
+                B(BlockType.Haybale, 4.31f, -4.9f,   0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood,    5.27f, -3.46f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
             },
             robots: new[]
             {
-                R(3.613f, -5.06f, 5.701f, 7.653f, RobotType.Harvester),
-                R(3.815f, -3.27f, 5.701f, 7.653f, RobotType.Harvester),
-                R(5.922f, -3.18f, 5.701f, 7.653f, RobotType.Harvester),
-                R(5.867f, -5.38f, 6.012f, 5.547f, RobotType.SemiHarvester),
-                R(5.269f, -1.86f, 6.012f, 5.547f, RobotType.SemiHarvester),
-                R(6.014f, -1.87f, 6.058f, 5.873f, RobotType.SemiHarvester),
-                R(4.432f, -1.85f, 6.058f, 5.873f, RobotType.SemiHarvester),
-                R(3.641f, -1.88f, 6.058f, 5.873f, RobotType.SemiHarvester),
+                R(7.715f, -5.238f, 4.837f, 5.995f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(4.02f,  -4.05f,  4.692f, 5.724f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(5.87f,  -1.51f,  4.692f, 5.724f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(7.16f,  -1.52f,  4.692f, 5.724f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(5.36f,  -4.81f,  4.899f, 4.677f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(6.34f,  -3.45f,  4.899f, 4.677f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+            });
+
+        // ── W1_L10  ────────────────────────────────────────────────────────────
+        // New level 2026-07-12, built via the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log) — part of the L01-L18 overhaul. This is Bessie's actual
+        // debut (plan revised 2026-07-12: "bessie debut is now only in level 10 when I introduce
+        // the third robot - for now only cluck and his power of shooting eggs"), so birds[] is
+        // 2x Cluck + 1x Bessie. The dump itself only has Harvester + SemiHarvester (3 Harvester +
+        // 3 SemiHarvester) — no third robot type exists yet; user confirmed proceeding without it
+        // for now, to be added to a later level once that robot/prefab is ready. The 'StoneTower'
+        // block is a large (4.034x4.58) fixed structure the user confirmed is deliberately
+        // indestructible ("a structure that is in place - cannot be destroyed") — marked
+        // indestructible: true (new LevelData.BlockSpawnData/BlockBase field added same day) so
+        // TakeDamage() no-ops on it entirely, rather than being an ordinary (if very tanky) Stone
+        // block. Real per-sprite scale/hp values captured directly from the Scene view. Not
+        // visually re-verified (no Play-mode access here).
+        Make(folder, "L10_BessiesDebut",
+            id: "W1_L10", name: "Bessie's Debut", par: 3,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Wood,    2.17f, -5.24f,  1.636f, 1.471f, artVariant: WoodArtVariant.Cart), // sprite 'WoodenCart'
+                B(BlockType.Stone,   3.25f, -5.44f,  1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone,   3.27f, -4.9f,   1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Wood,    3.29f, -4.3f,   1f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    3.28f, -3.73f,  1f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    5.19f, -5.35f,  1f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Barrel,  5.195f, -4.72f, 1.167f, 0.977f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  3.316f, -2.78f, 1.167f, 0.977f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Wood,    3.4f,  -3.28f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    4.33f, -3.28f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    5.27f, -3.29f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    5.91f, -4.5f,   1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    5.69f, -4.01f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Haybale, 6.21f, -4.02f,  0.977f, 0.964f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood,    5.9f,  -2.78f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    6.5f,  -2.13f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Stone,   7.45f, -3.87f,  4.034f, 4.58f, artVariant: WoodArtVariant.Tower, indestructible: true), // sprite 'StoneTower' — fixed structure, cannot be destroyed
+            },
+            robots: new[]
+            {
+                R(4.28f, -5.14f, 4.048f, 6.239f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(6.14f, -5.1f,  4.048f, 6.239f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(4.53f, -2.57f, 4.048f, 6.239f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(3.24f, -1.95f, 4.99f,  6.481f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.15f, -3.97f, 4.248f, 5.697f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(7.4f,  -1.93f, 4.804f, 6.297f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+            });
+
+        // ── W1_L11  ────────────────────────────────────────────────────────────
+        // New level 2026-07-12, built via the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log) — introduces RobotType.Basic ("Robot_Pawn" art, its actual
+        // gameplay debut — SceneSetup.WireRobotSprite() switched from the old Robot_Idle.png
+        // placeholder to Robot_Pawn.png the same day) alongside Harvester + SemiHarvester, all 3
+        // robot types in one level for the first time — this is what the match-up screen's new
+        // third robot card (added same day) was built for. birds[] continues Cluck/Cluck/Bessie
+        // from L10. Another large 'StoneTower' structure, marked indestructible: true like L10's.
+        // The Robot_Pawn robot has no custom scale in the dump (LevelLayoutDumper's generic
+        // "robot" branch previously dropped scale entirely — fixed same day, but this particular
+        // dump predates that fix) so it spawns at the Robot prefab's own default visual scale.
+        // Real per-sprite scale/hp values captured directly from the Scene view. Not visually
+        // re-verified (no Play-mode access here).
+        Make(folder, "L11_FullRoster",
+            id: "W1_L11", name: "Full Roster", par: 3,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Stone,   7.27f, -3.328f, 4.487f, 5.909f, artVariant: WoodArtVariant.Tower, indestructible: true), // sprite 'StoneTower' — fixed structure, cannot be destroyed
+                B(BlockType.Wood,    1.473f, -5.378f, 1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    2.08f,  -5.39f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    2.69f,  -5.39f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    1.8f,   -4.8f,   1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    2.43f,  -4.81f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Stone,   3.36f,  -5.47f,  1.212f, 1.242f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Wood,    3.93f,  -4.91f,  1f, 2.037f, artVariant: WoodArtVariant.Shork), // sprite 'Plank_Shork'
+                B(BlockType.Wood,    5.59f,  -4.85f,  1f, 2.037f, artVariant: WoodArtVariant.Shork), // sprite 'Plank_Shork'
+                B(BlockType.Wood,    3.89f,  -3.94f,  1f, 0.618f, artVariant: WoodArtVariant.VerticalShort), // sprite 'Plank_VeriticalShort'
+                B(BlockType.Wood,    5.57f,  -3.91f,  1f, 0.618f, artVariant: WoodArtVariant.VerticalShort), // sprite 'Plank_VeriticalShort'
+                B(BlockType.Barrel,  3.175f, -4.652f, 1.234f, 1.188f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  4.668f, -5.207f, 1.279f, 1.173f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Wood,    3.17f,  -3.79f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    3.17f,  -2.91f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    4.68f,  -3.36f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    4.68f,  -2.57f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    4.69f,  -1.8f,   1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    3.395f, -2.17f,  1f, 1f,     artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    4.03f,  -1.55f,  1f, 1f,     artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    4.836f, -1.23f,  1.212f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    5.92f,  -1.22f,  1.106f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    5.615f, -2.533f, 1.817f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Haybale, 4.83f,  -0.72f,  1.067f, 1.098f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 5.82f,  -0.7f,   1.067f, 1.098f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+            },
+            robots: new[]
+            {
+                R(2.04f, -3.63f, 10.862f, 12.922f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(4.63f, -4.36f, 10.514f, 10.913f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(3.84f, -3.26f, 10.514f, 10.913f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.44f, -1.93f, 10.514f, 10.913f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.55f, -3.26f, 10.514f, 10.913f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(7.155f, -0.845f), // sprite 'Robot_Pawn' — RobotType.Basic, its actual gameplay debut
+            });
+
+        // ── W1_L12  ────────────────────────────────────────────────────────────
+        // New level 2026-07-12, built via the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log). Heaviest robot count yet: 3 Harvester + 3 SemiHarvester + 3
+        // Basic/Pawn (9 total). First dump captured AFTER two same-day LevelLayoutDumper fixes —
+        // Robot_Pawn's scale is correctly recorded here (previously silently dropped), and the
+        // 'WoodenBarrel' prop below is correctly BlockType.Wood (structural only), not the
+        // explosive Barrel_Dynamite. birds[] continues Cluck/Cluck/Bessie from L10/L11. Real
+        // per-sprite scale/hp values captured directly from the Scene view. Not visually
+        // re-verified (no Play-mode access here).
+        Make(folder, "L12_HeavyGuard",
+            id: "W1_L12", name: "Heavy Guard", par: 3,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Stone,   1.56f,  -5.5f,   1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Stone,   2.29f,  -5.5f,   1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Stone,   1.96f,  -5.05f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Stone,   1.23f,  -5.03f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Stone,   1.62f,  -4.55f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Wood,    2.96f,  -5.42f,  1f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    1.67f,  -3.88f,  1f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    5.31f,  -5.31f,  1f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    5.33f,  -4.53f,  1f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    5.34f,  -3.78f,  1f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    2.76f,  -4.93f,  1f, 0.618f, artVariant: WoodArtVariant.VerticalShort), // sprite 'Plank_VeriticalShort'
+                B(BlockType.Barrel,  3.7f,   -5.22f,  1.234f, 1.113f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  1.74f,  -2.75f,  1.113f, 1.098f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  5.34f,  -3.07f,  1.113f, 1.098f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Haybale, 7.99f,  -5.22f,  1.007f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 7.94f,  -4.57f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 7.08f,  -3.66f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood,    5.29f,  -4.95f,  1f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    5.31f,  -4.16f,  1f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    6.22f,  -4.16f,  1f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    7.14f,  -4.16f,  1f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    8.02f,  -4.14f,  1f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    3.91f,  -0.35f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    2.56f,  -1.82f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    3.24f,  -1.07f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    4.36f,  -3.37f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    3.29f,  -1.54f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    4.23f,  -1.54f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    5.15f,  -1.56f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    3.46f,  -3.38f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Stone,   2.12f,  -3.35f,  1.817f, 0.652f, artVariant: WoodArtVariant.Diagonal), // sprite 'Stone_Diagonal'
+                B(BlockType.Wood,    2.31f,  -2.71f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    5.353f, -2.24f,  1.113f, 1.037f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel' — structural only, not explosive
+                B(BlockType.Stone,   0.85f,  -5.5f,   1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+            },
+            robots: new[]
+            {
+                R(6.6f,  -4.87f, 5.748f, 7.346f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(3.57f, -2.49f, 5.748f, 7.346f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(4.84f, -0.7f,  5.748f, 7.346f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(2.59f, -4.18f, 4.751f, 5.174f), // sprite 'Robot_Pawn'
+                R(6.12f, -3.39f, 4.751f, 5.174f), // sprite 'Robot_Pawn'
+                R(8f,    -3.45f, 4.751f, 5.174f), // sprite 'Robot_Pawn'
+                R(4.48f, -5.17f, 6.178f, 6.019f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(3.69f, -4.34f, 6.178f, 6.019f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(7.08f, -2.87f, 6.178f, 6.019f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+            });
+
+        // ── W1_L13  ────────────────────────────────────────────────────────────
+        // New level 2026-07-12, built via the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log). Heaviest robot count yet: 3 Harvester + 4 SemiHarvester + 3
+        // Basic/Pawn (10 total). birds[] continues Cluck/Cluck/Bessie from L10-L12. WoodenBarrel
+        // prop (structural only, not explosive), 4 haybale, 3 dynamite barrels, 2 Stone_Vertical +
+        // 2 Stone_Square, and a tall multi-tier wood scaffold. Real per-sprite scale/hp values
+        // captured directly from the Scene view. Not visually re-verified (no Play-mode access
+        // here).
+        Make(folder, "L13_TenStrong",
+            id: "W1_L13", name: "Ten Strong", par: 3,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Wood,    1.08f,  -5.199f, 1.265f, 1.139f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
+                B(BlockType.Haybale, 1.895f, -5.181f, 1.085f, 1.139f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 2.74f,  -5.22f,  1.085f, 1.139f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 2.07f,  -5.35f,  1.085f, 1.139f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 1.94f,  -4.58f,  1.085f, 1.139f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood,    3.501f, -5.37f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    4.15f,  -5.37f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    4.14f,  -3.15f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    6.23f,  -5.33f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    6.21f,  -5.42f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    6.83f,  -5.38f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    7.34f,  -4.88f,  1f, 2.037f, artVariant: WoodArtVariant.Shork), // sprite 'Plank_Shork'
+                B(BlockType.Barrel,  6.67f,  -4.61f,  1.175f, 1.103f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  3.92f,  -2.36f,  1.175f, 1.103f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  5.59f,  -0.65f,  1.175f, 1.103f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Wood,    3.32f,  -3.92f,  1f, 1.105f, artVariant: WoodArtVariant.Vertical), // sprite '2D_Block_Wood_Vertical'
+                B(BlockType.Wood,    6.01f,  -2.61f,  1f, 1.064f, artVariant: WoodArtVariant.Vertical), // sprite '2D_Block_Wood_Vertical'
+                B(BlockType.Wood,    3.32f,  -2.43f,  1f, 1.064f, artVariant: WoodArtVariant.Vertical), // sprite '2D_Block_Wood_Vertical'
+                B(BlockType.Wood,    7.48f,  -3.71f,  1f, 1.064f, artVariant: WoodArtVariant.Vertical), // sprite '2D_Block_Wood_Vertical'
+                B(BlockType.Wood,    6.06f,  -3.865f, 1f, 1.173f, artVariant: WoodArtVariant.Vertical), // sprite '2D_Block_Wood_Vertical'
+                B(BlockType.Stone,   3.31f,  -4.78f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   6.03f,  -4.75f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Wood,    5.46f,  -4.096f, 1f, 1.845f, artVariant: WoodArtVariant.Shork), // sprite 'Plank_Shork'
+                B(BlockType.Wood,    4.2f,   -1.29f,  1.11f,  1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    5.13f,  -1.26f,  1.109f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    6.08f,  -1.24f,  1.109f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    5.68f,  -3.21f,  1.109f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    6.61f,  -3.1f,   1.109f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    7.57f,  -3.11f,  1.109f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    6.23f,  -1.81f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    3.47f,  -1.63f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    6.86f,  -1.13f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Stone,   3.45f,  -3.18f,  1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone,   4.83f,  -3.16f,  1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+            },
+            robots: new[]
+            {
+                R(4.38f, -4.21f, 6.194f, 7.561f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(7.1f,  -2.23f, 6.194f, 7.561f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(4.44f, -0.42f, 6.194f, 7.561f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(4.81f, -5.34f, 4.824f, 4.728f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(2.76f, -4.45f, 4.824f, 4.728f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.51f, -2.64f, 5.254f, 5.302f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.48f, -5.34f, 4.824f, 4.728f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(6.62f, -3.69f, 4.25f,  4.298f), // sprite 'Robot_Pawn'
+                R(4.77f, -2.23f, 4.442f, 4.92f),  // sprite 'Robot_Pawn'
+                R(6.35f, -0.5f,  4.585f, 4.92f),  // sprite 'Robot_Pawn'
+            });
+
+        // ── W1_L14  ────────────────────────────────────────────────────────────
+        // New level 2026-07-12, built via the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log). 3 Basic/Pawn + 3 SemiHarvester + 1 Harvester (7 total).
+        // birds[] continues Cluck/Cluck/Bessie from L10-L13. 4 Stone pieces (3 Square, 1 Skew, 1
+        // Diagonal), 3 haybale, wood scaffold with short/vertical/skew planks, 2 dynamite barrels.
+        // Real per-sprite scale/hp values captured directly from the Scene view. Not visually
+        // re-verified (no Play-mode access here).
+        Make(folder, "L14_StoneAndPawns",
+            id: "W1_L14", name: "Stone and Pawns", par: 3,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Stone,   3.83f, -5.19f,  1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone,   3.57f, -4.67f,  1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone,   3.26f, -4.1f,   1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Wood,    1.65f, -5.61f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    1.63f, -5f,     1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    2.32f, -5.64f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    4.16f, -4.23f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    3.72f, -2.72f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    6.04f, -2.69f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    6.95f, -2.68f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    4.6f,  -5.25f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Stone,   3.37f, -3.345f, 1f, 1.131f, artVariant: WoodArtVariant.Skew), // sprite 'Stone_Skew'
+                B(BlockType.Haybale, 5.5f,  -5.56f,  1.205f, 1.205f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 7.63f, -5.56f,  1.156f, 1.123f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 8.13f, -5.61f,  1.156f, 1.123f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood,    3.35f, -2.18f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    6.47f, -4.34f,  1f, 0.618f, artVariant: WoodArtVariant.VerticalShort), // sprite 'Plank_VeriticalShort'
+                B(BlockType.Wood,    6.52f, -5.23f,  0.772f, 1.71f, artVariant: WoodArtVariant.Shork), // sprite 'Plank_Shork'
+                B(BlockType.Barrel,  6.277f, -1.935f, 1.287f, 1.352f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  7.09f,  -1.95f,  1.287f, 1.352f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Stone,   4.89f,  -2.7f,   1.359f, 0.674f, artVariant: WoodArtVariant.Diagonal), // sprite 'Stone_Diagonal'
+                B(BlockType.Stone,   4.12f,  -5.7f,   1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+            },
+            robots: new[]
+            {
+                R(4.18f, -3.52f, 4.99f,  5.617f), // sprite 'Robot_Pawn'
+                R(6.48f, -3.5f,  5.389f, 5.845f), // sprite 'Robot_Pawn'
+                R(7.88f, -4.58f, 5.389f, 5.845f), // sprite 'Robot_Pawn'
+                R(3.09f, -5.46f, 6.358f, 6.985f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(2.34f, -4.79f, 6.358f, 6.985f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.26f, -4.6f,  6.358f, 6.985f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(4.65f, -1.51f, 7.846f, 10.5f,  RobotType.Harvester),     // sprite 'HarvesterRobot'
+            });
+
+        // ── W1_L15  ────────────────────────────────────────────────────────────
+        // New level 2026-07-12, built via the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log). 3 Basic/Pawn + 1 Harvester + 3 SemiHarvester (7 total).
+        // birds[] continues Cluck/Cluck/Bessie from L10-L14. 5 Stone_Vertical pillars along the
+        // base, 4 Stone_Block, dense wood scaffold (horizontal/2DShork/skew/shork planks), 3
+        // dynamite barrels, 3 haybale. Real per-sprite scale/hp values captured directly from the
+        // Scene view. Not visually re-verified (no Play-mode access here).
+        Make(folder, "L15_FiveStones",
+            id: "W1_L15", name: "Five Stones", par: 3,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Stone,   1.213f, -5.516f, 0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   2.6f,   -5.5f,   0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   3.86f,  -5.53f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   5.18f,  -5.53f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   6.53f,  -5.53f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Wood,    1.18f,  -4.95f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    2.53f,  -4.98f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    1.93f,  -1.63f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    2.89f,  -1.63f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    3.85f,  -1.63f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    4.81f,  -1.65f,  1f, 0.427f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    3.84f,  -5f,     1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    5.1f,   -5f,     1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    5.27f,  -4.15f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    6.45f,  -5f,     1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    1.8f,   -4.67f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    2.04f,  -4.69f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    3.1f,   -4.69f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    3.36f,  -4.72f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    4.36f,  -4.69f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    4.62f,  -4.72f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    5.66f,  -4.72f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    5.9f,   -4.72f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Stone,   1.82f,  -4.08f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Stone,   4.37f,  -4.11f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Stone,   4.37f,  -3.57f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Stone,   1.81f,  -3.59f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Barrel,  1.094f, -4.309f, 1.156f, 1.27f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  2.053f, -0.959f, 1.189f, 1.27f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  5.32f,  -3.47f,  1.189f, 1.287f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Wood,    5.73f,  -1.94f,  1.031f, 1.031f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    6.35f,  -2.58f,  1.031f, 1.031f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    6.97f,  -3.18f,  1.031f, 1.031f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    7.228f, -4.324f, 1.016f, 2.037f, artVariant: WoodArtVariant.Shork), // sprite 'Plank_Shork'
+                B(BlockType.Haybale, 1.931f, -5.434f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.43f,  -5.48f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 7.2f,   -5.48f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+            },
+            robots: new[]
+            {
+                R(1.82f, -2.58f, 5.56f,  6.073f), // sprite 'Robot_Pawn'
+                R(2.88f, -0.72f, 5.56f,  6.073f), // sprite 'Robot_Pawn'
+                R(4.4f,  -2.58f, 5.56f,  6.073f), // sprite 'Robot_Pawn'
+                R(4.43f, -0.43f, 7.613f, 10.431f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(2.55f, -4.46f, 6.472f, 6.073f,  RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(3.76f, -4.51f, 6.472f, 6.073f,  RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(6.41f, -4.48f, 6.472f, 6.073f,  RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+            });
+
+        // ── W1_L16  ────────────────────────────────────────────────────────────
+        // New level 2026-07-12, built via the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log). 3 SemiHarvester + 1 Harvester + 3 Basic/Pawn (7 total).
+        // birds[] continues Cluck/Cluck/Bessie from L10-L15. Twin towers (Stone_Block base +
+        // Stone_Vertical pillars), lots of Plank_Skew pieces bridging the upper gaps, 4 dynamite
+        // barrels, 2 haybale. Real per-sprite scale/hp values captured directly from the Scene
+        // view. Not visually re-verified (no Play-mode access here).
+        Make(folder, "L16_TwinTowers",
+            id: "W1_L16", name: "Twin Towers", par: 3,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Stone,   1.18f,  -5.56f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Stone,   1.18f,  -5.05f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Stone,   4.1f,   -5.57f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Stone,   4.1f,   -5.06f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
+                B(BlockType.Wood,    1.22f,  -4.44f,  1.114f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    1.22f,  -3.85f,  1.114f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    4.13f,  -4.44f,  1.114f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    4.11f,  -3.87f,  1.114f, 0.81f, artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    1.44f,  -3.12f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    1.45f,  -0.36f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    4.44f,  -3.07f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    2.09f,   0.29f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    2.98f,   0.702f, 1.593f, 1.594f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    3.985f,  0.68f,  1.545f, 1.545f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    4.92f,   0.19f,  1.069f, 1.064f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    5.61f,  -0.38f,  1.069f, 1.064f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    2.13f,  -2.74f,  1f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    3.04f,  -2.71f,  1f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    2.071f, -4.16f,  1.343f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    3.233f, -4.16f,  1.114f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    3.95f,  -2.69f,  1f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Wood,    4.88f,  -2.66f,  1f, 1f, artVariant: WoodArtVariant.Horizontal2D), // sprite 'Plank_2DHorizontal'
+                B(BlockType.Stone,   1.72f,  -2.4f,   0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   1.7f,   -1.65f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   1.71f,  -0.9f,   0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   5.38f,  -2.3f,   0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   5.36f,  -1.6f,   0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   5.35f,  -0.91f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Barrel,  2.241f, -3.44f,  1.434f, 1.336f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  2.37f,  -2.047f, 1.368f, 1.221f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  4.74f,  -2.09f,  1.336f, 1.205f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  5.06f,  -5.145f, 1.401f, 1.287f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Haybale, 3.18f,  -5.206f, 1.221f, 1.172f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.65f,  -1.24f,  1.221f, 1.172f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+            },
+            robots: new[]
+            {
+                R(2.31f, -1.09f, 6.13f,  6.016f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.06f, -4.12f, 6.13f,  6.016f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(3.18f, -3.47f, 6.13f,  6.016f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(6.55f, -4.78f, 7.194f, 9.662f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(0.25f, -5.05f, 5.56f,  5.731f), // sprite 'Robot_Pawn'
+                R(2.18f, -5.05f, 5.56f,  5.731f), // sprite 'Robot_Pawn'
+                R(3.57f, -1.85f, 5.56f,  5.731f), // sprite 'Robot_Pawn'
+            });
+
+        // ── W1_L17  ────────────────────────────────────────────────────────────
+        // New level 2026-07-12, built via the user's own hand-placed dump (FarmFury -> Debug ->
+        // Dump Level Layout To Log). 4 Basic/Pawn + 2 SemiHarvester + 2 Harvester (8 total) — the
+        // last "full roster" level before L18's Captain boss. birds[] continues Cluck/Cluck/Bessie
+        // from L10-L16. First level to use '2D_Block_Wood_Flat' art (WoodArtVariant.Flat) — added
+        // a dedicated _sprFlat field this same session (previously Flat aliased to _sprNormal/
+        // Plank_Horizontal.png, a real art mismatch bug fixed alongside this level). 3 Stone
+        // Diagonal, 5 Stone_Vertical, 9 flat wood blocks, 4 dynamite barrels, 3 haybale. Real
+        // per-sprite scale/hp values captured directly from the Scene view. Not visually
+        // re-verified (no Play-mode access here).
+        Make(folder, "L17_EightStrong",
+            id: "W1_L17", name: "Eight Strong", par: 3,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Stone,   0.87f,  -5.35f,  1f, 1f, artVariant: WoodArtVariant.Diagonal), // sprite 'Stone_Diagonal'
+                B(BlockType.Stone,   0.86f,  -4.45f,  1f, 1f, artVariant: WoodArtVariant.Diagonal), // sprite 'Stone_Diagonal'
+                B(BlockType.Stone,   0.87f,  -3.52f,  1f, 1f, artVariant: WoodArtVariant.Diagonal), // sprite 'Stone_Diagonal'
+                B(BlockType.Wood,    2.75f,  -5.27f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    4.82f,  -5.27f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    0.95f,  -4.94f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    0.93f,  -4.04f,  1f, 0.81f,  artVariant: WoodArtVariant.Short), // sprite 'Plank_Short'
+                B(BlockType.Wood,    4.65f,  -4.88f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    2.68f,  -4.84f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Barrel,  1.846f, -5.073f, 1.368f, 1.336f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  0.907f, -2.751f, 1.401f, 1.319f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  5.439f, -2.473f, 1.434f, 1.336f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  7.965f, -5.009f, 1.466f, 1.303f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Haybale, 3.723f, -5.109f, 1.336f, 1.172f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.2f,    0.247f, 1.336f, 1.238f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 6.38f,  -5.06f,  1.336f, 1.172f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Stone,   4.48f,  -4.48f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   4.48f,  -3.75f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   7.24f,  -3.76f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   7.26f,  -5.26f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   7.24f,  -4.48f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Wood,    5.04f,  -3.17f,  1.18f, 1f, artVariant: WoodArtVariant.Flat), // sprite '2D_Block_Wood_Flat'
+                B(BlockType.Wood,    4.24f,  -0.36f,  1.18f, 1f, artVariant: WoodArtVariant.Flat), // sprite '2D_Block_Wood_Flat'
+                B(BlockType.Wood,    5.28f,  -0.38f,  1.18f, 1f, artVariant: WoodArtVariant.Flat), // sprite '2D_Block_Wood_Flat'
+                B(BlockType.Wood,    6.31f,  -0.4f,   1.18f, 1f, artVariant: WoodArtVariant.Flat), // sprite '2D_Block_Wood_Flat'
+                B(BlockType.Wood,    1.861f, -3.32f,  1.082f, 1f, artVariant: WoodArtVariant.Flat), // sprite '2D_Block_Wood_Flat'
+                B(BlockType.Wood,    2.829f, -3.32f,  1.098f, 1f, artVariant: WoodArtVariant.Flat), // sprite '2D_Block_Wood_Flat'
+                B(BlockType.Wood,    3.836f, -3.32f,  1.212f, 1f, artVariant: WoodArtVariant.Flat), // sprite '2D_Block_Wood_Flat'
+                B(BlockType.Wood,    6f,     -3.17f,  1f, 1f, artVariant: WoodArtVariant.Flat), // sprite '2D_Block_Wood_Flat'
+                B(BlockType.Wood,    6.9f,   -3.14f,  1f, 1f, artVariant: WoodArtVariant.Flat), // sprite '2D_Block_Wood_Flat'
+                B(BlockType.Wood,    7.75f,  -3.16f,  1f, 1f, artVariant: WoodArtVariant.Flat), // sprite '2D_Block_Wood_Flat'
+                B(BlockType.Wood,    2.54f,  -2.86f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    2.56f,  -1.98f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    2.73f,  -1.223f, 1.012f, 1.012f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood,    3.33f,  -0.62f,  1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+            },
+            robots: new[]
+            {
+                R(1.86f, -2.49f, 5.503f, 5.617f), // sprite 'Robot_Pawn'
+                R(2.69f, -4.16f, 5.503f, 5.617f), // sprite 'Robot_Pawn'
+                R(6.38f, -4.03f, 5.503f, 5.617f), // sprite 'Robot_Pawn'
+                R(5.4f,  -1.23f, 5.503f, 5.617f), // sprite 'Robot_Pawn'
+                R(7.97f, -3.88f, 7.669f, 7.498f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(5.34f,  0.3f,  7.669f, 7.498f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(7.06f, -2.15f, 7.659f, 9.452f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+                R(3.85f, -2.2f,  7.659f, 9.452f, RobotType.Harvester),     // sprite 'HarvesterRobot'
+            });
+
+        // ── W1_L18  ────────────────────────────────────────────────────────────
+        // New level 2026-07-12, World 1's final level — the Captain/Commander boss fight. Built
+        // via the user's own hand-placed dump (FarmFury -> Debug -> Dump Level Layout To Log),
+        // which itself only contained 2 Basic/Pawn + 2 SemiHarvester (no Commander — the user
+        // hadn't placed it in the Scene view yet when dumping). Per user decision, the Commander
+        // robot is added here BY HAND instead of re-dumping: placed directly at the top of the
+        // level's large indestructible StoneTower (centre X=6.76, Y=-3.36, half-height 3.7495 ->
+        // top edge Y~=0.39; Commander centred at X=6.76, Y=0.85, just above that edge), reading as
+        // "the boss standing atop his fortress" rather than mixed in with the regular enemies at
+        // ground level (user request: "place the commander at the top of the tower"). Scale
+        // (8.5, 8.5) — comfortably the largest robot in the level, matching a boss's intended
+        // visual prominence. birds[] continues Cluck/Cluck/Bessie from
+        // L10-L17. Real per-sprite scale/hp values for the dumped blocks/robots captured directly
+        // from the Scene view. Not visually re-verified (no Play-mode access here) — worth a
+        // careful live check given the Commander's position/scale here are a judgment call, not
+        // dumped data.
+        Make(folder, "L18_CaptainsLastStand",
+            id: "W1_L18", name: "Captain's Last Stand", par: 3,
+            birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
+            blocks: new[]
+            {
+                B(BlockType.Stone,   6.76f,  -3.36f,  7.33f, 7.499f, artVariant: WoodArtVariant.Tower, indestructible: true), // sprite 'StoneTower' — fixed structure, cannot be destroyed
+                B(BlockType.Stone,   1.67f,  -5.924f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone,   2.32f,  -5.924f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone,   1.01f,  -5.924f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Barrel,  2.43f,  -2.6f,   1.483f, 1.401f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  4.37f,  -0.67f,  1.483f, 1.401f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel,  4.626f, -5.417f, 1.515f, 1.466f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Stone,   2.5f,   -5.37f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   2.45f,  -4.4f,   0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   2.45f,  -3.68f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   4.7f,   -4.55f,  0.464f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   4.71f,  -3.83f,  0.464f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   1.73f,  -5.35f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Stone,   0.82f,  -5.35f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Wood,    1.08f,  -4.8f,   1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    2.04f,  -4.8f,   1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    2.33f,  -3.3f,   1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    3.28f,  -3.3f,   1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    3.44f,  -1.31f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    4.35f,  -1.33f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    4.23f,  -3.3f,   1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Wood,    3.19f,  -2.7f,   1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    3.21f,  -1.85f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    4.56f,  -1.92f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Wood,    4.58f,  -2.7f,   1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
+                B(BlockType.Haybale, 3.49f,  -5.42f,  1.483f, 1.499f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+            },
+            robots: new[]
+            {
+                R(1.437f, -3.962f, 5.788f, 5.788f), // sprite 'Robot_Pawn'
+                R(3.84f,  -2.38f,  5.788f, 5.788f), // sprite 'Robot_Pawn'
+                R(3.45f,  -4.34f,  7.27f, 8.011f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(3.38f,  -0.66f,  7.27f, 7.555f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(6.76f,  0.85f,   8.5f, 8.5f, RobotType.Commander), // hand-placed boss, standing on top of the StoneTower — see class comment above
             });
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         if (!silent)
             EditorUtility.DisplayDialog("FarmFury",
-                "Generated 9 LevelData assets in\nAssets/ScriptableObjects/Levels\n(L01-L09)", "OK");
+                "Generated 18 LevelData assets in\nAssets/ScriptableObjects/Levels\n(L01-L18)", "OK");
         Debug.Log("[FarmFury] Level data generation complete.");
     }
 
@@ -586,10 +992,11 @@ public static class LevelDataGenerator
     // when it knows the real design-time sprite (see InferWoodArtVariant in that file).
     static LevelData.BlockSpawnData B(BlockType type, float x, float y, float w, float h,
                                       bool passThrough = false, float hp = 0f, float mass = 0f,
-                                      WoodArtVariant artVariant = WoodArtVariant.Auto) =>
+                                      WoodArtVariant artVariant = WoodArtVariant.Auto,
+                                      bool indestructible = false) =>
         new() { type = type, position = new Vector2(x, y), size = new Vector2(w, h),
                 passThrough = passThrough, healthOverride = hp, massOverride = mass,
-                artVariant = artVariant };
+                artVariant = artVariant, indestructible = indestructible };
 
     static LevelData.RobotSpawnData R(float x, float y, float scaleX = 0f, float scaleY = 0f,
                                       RobotType robotType = RobotType.Basic) =>

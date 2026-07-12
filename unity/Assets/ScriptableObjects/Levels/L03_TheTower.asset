@@ -18,82 +18,60 @@ MonoBehaviour:
   birds: 000000000000000000000000
   blocks:
   - type: 2
-    position: {x: 4.16, y: -5.39}
-    size: {x: 1, y: 1}
+    position: {x: 3.686, y: -5.153}
+    size: {x: 1.188, y: 1.143}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
+    indestructible: 0
     artVariant: 0
   - type: 2
-    position: {x: 4.549, y: -5.4}
-    size: {x: 1, y: 1}
+    position: {x: 4.14, y: -5.26}
+    size: {x: 1.188, y: 1.143}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
+    indestructible: 0
     artVariant: 0
   - type: 2
-    position: {x: 4.944, y: -5.44}
-    size: {x: 1, y: 1}
+    position: {x: 3.94, y: -4.53}
+    size: {x: 1.188, y: 1.143}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
+    indestructible: 0
     artVariant: 0
-  - type: 0
-    position: {x: 5.326, y: -5.29}
-    size: {x: 1, y: 1.064}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-    artVariant: 3
-  - type: 0
-    position: {x: 5.145, y: -5.13}
-    size: {x: 1, y: 1.064}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-    artVariant: 3
-  - type: 0
-    position: {x: 5.488, y: -5.39}
-    size: {x: 1, y: 1.064}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-    artVariant: 3
-  - type: 0
-    position: {x: 5.65, y: -5.54}
-    size: {x: 1, y: 1.064}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-    artVariant: 3
-  - type: 0
-    position: {x: 4.205, y: -4.94}
-    size: {x: 1, y: 1}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
+  - type: 2
+    position: {x: 6.42, y: -5.14}
+    size: {x: 1.188, y: 1.143}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    indestructible: 0
     artVariant: 0
-  - type: 0
-    position: {x: 4.737, y: -4.94}
-    size: {x: 1, y: 1}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
+  - type: 2
+    position: {x: 6.89, y: -5.25}
+    size: {x: 1.188, y: 1.143}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    indestructible: 0
     artVariant: 0
-  - type: 3
-    position: {x: 7.4, y: -5.42}
-    size: {x: 1, y: 1}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
+  - type: 2
+    position: {x: 6.65, y: -4.57}
+    size: {x: 1.188, y: 1.143}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    indestructible: 0
     artVariant: 0
   robots:
-  - robotType: 1
-    position: {x: 4.503, y: -4.08}
-    scale: {x: 5.367, y: 7.738}
   - robotType: 2
-    position: {x: 6.022, y: -5.334}
-    scale: {x: 5.887, y: 5.53}
+    position: {x: 5.28, y: -5.14}
+    scale: {x: 5.914, y: 5.967}
   - robotType: 2
-    position: {x: 6.507, y: -5.34}
-    scale: {x: 5.836, y: 5.683}
+    position: {x: 3.98, y: -3.76}
+    scale: {x: 5.914, y: 5.967}
+  - robotType: 2
+    position: {x: 6.67, y: -3.79}
+    scale: {x: 5.914, y: 5.967}

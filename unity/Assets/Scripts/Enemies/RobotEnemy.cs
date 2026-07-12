@@ -47,7 +47,10 @@ public class RobotEnemy : MonoBehaviour
     // impulse-plus-floor category, untouched by this pass.
     private const float DirectHitDamageFraction    = 0.55f;
     private const float ExplosionDamageFraction    = 0.55f;
-    private const float EggDamageFraction          = 0.12f;
+    // Raised 0.12 -> 0.16 (2026-07-12, user request: "give the eggs slightly stronger damage") —
+    // still deliberately the weakest per-hit category (a Cluster Bomb supplement, not a solo-kill
+    // weapon), just a bit more impactful now (~6-7 connecting eggs to kill instead of ~9).
+    private const float EggDamageFraction          = 0.16f;
     private const float FallDamageFraction         = 0.15f;
     [SerializeField] private float _robotContactDamage      = 18f;
 
@@ -76,6 +79,27 @@ public class RobotEnemy : MonoBehaviour
     [SerializeField] private Sprite _criticalSprite;
     private const float CriticalHealthFraction = 0.4f;
     private bool _isCritical;
+
+    // Second, EARLIER persistent pose tier — added 2026-07-12 for CommanderRobot's 3-pose
+    // progression (Commander.png -> Commander_Alert.png -> Commander_Hit.png, wired to
+    // _criticalSprite above). Null on every robot type except Commander, so this is a no-op
+    // everywhere else — same "wire only where dedicated art exists" convention as
+    // _criticalSprite/_robotDamagedSprite. Fires at a HIGHER health fraction than
+    // CriticalHealthFraction (0.66 vs 0.4), so as health drops: normal -> alert -> critical.
+    [SerializeField] private Sprite _alertSprite;
+    private const float AlertHealthFraction = 0.66f;
+    private bool _isAlert;
+
+    // Blocks to force-destroy the instant this robot dies (Die(), before the death VFX even
+    // starts) — added 2026-07-12, user request: "when commander explodes the whole tower should
+    // destruct." Wired at runtime by LevelLoader.SpawnRobot() for RobotType.Commander only (an
+    // Indestructible block can't be linked at prefab-authoring time since both the boss and its
+    // guarded structure are freshly spawned per level from LevelData, not static scene objects).
+    // Empty on every other robot type. ForceDestroy() bypasses the normal Indestructible guard
+    // (see BlockBase) — this is a deliberate scripted exception, not a change to how
+    // Indestructible behaves under ordinary damage/collapse-cascade.
+    private readonly System.Collections.Generic.List<BlockBase> _destroyOnDeath = new();
+    public void AddDestroyOnDeath(BlockBase block) { if (block != null) _destroyOnDeath.Add(block); }
 
     // Death VFX/SFX — wired on all 3 robot prefabs (Robot/HarvesterRobot/SemiHarvesterRobot)
     // from Explosion.png / Explosion_Robot.mp3 (see SceneSetup.WireRobotDeathFx). Both null =
@@ -297,6 +321,18 @@ public class RobotEnemy : MonoBehaviour
         // kill the robot; a lethal hit goes straight to the death sound instead.
         if (!killed)
         {
+            // Enter the persistent "alert" pose exactly once, before the critical check below —
+            // fires at a higher health fraction (0.66) so it's naturally superseded by critical
+            // (0.4) as health keeps dropping, giving CommanderRobot its 3-pose progression:
+            // normal -> alert -> critical. No-op (both conditions false) for every other robot
+            // type, which has no _alertSprite wired.
+            if (!_isAlert && _alertSprite != null && Health <= _maxHealth * AlertHealthFraction)
+            {
+                _isAlert   = true;
+                _sr.sprite = _alertSprite;
+                _restColor = Color.white;
+            }
+
             // Enter the persistent "critical" pose exactly once, before FlashDamage() runs —
             // that coroutine captures whatever _sr.sprite currently is as the pose to restore
             // to after its brief flash, so setting it here means the critical sprite naturally
@@ -382,6 +418,8 @@ public class RobotEnemy : MonoBehaviour
     {
         IsDestroyed = true;
         _loader?.NotifyRobotDestroyed(this);
+        foreach (var block in _destroyOnDeath)
+            if (block != null) block.ForceDestroy();
         StartCoroutine(DeathSequence());
     }
 

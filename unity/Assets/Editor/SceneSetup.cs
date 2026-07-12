@@ -40,8 +40,9 @@ public static class SceneSetup
         WireRobotSprite();                // Robot_Idle.png → Robot prefab SpriteRenderer
         EnsureHarvesterRobotPrefab();  // Create/update HarvesterRobot.prefab (separate from Robot)
         EnsureSemiHarvesterRobotPrefab();  // Create/update SemiHarvesterRobot.prefab (separate from Robot/HarvesterRobot)
+        EnsureCommanderRobotPrefab();  // Create/update CommanderRobot.prefab (L18 boss)
         EnsureHaybaleBlockPrefab();    // Create/update HaybaleBlock.prefab (WoodBlock + Haybail.png art)
-        EnsureExplodingBarrelPrefab(); // Create/update ExplodingBarrelBlock.prefab (WoodBlock + WoodenBarrel.png art, area damage on death)
+        EnsureExplodingBarrelPrefab(); // Create/update ExplodingBarrelBlock.prefab (WoodBlock + Barrel_Dynamite.png art, area damage on death)
         WireBlockSprites();     // Art sprites into WoodBlock + StoneBlock prefabs
         PositionCamera();       // Move camera to see the play area
         SpriteWiring.WireAll(); // Wire character pose sprites into all 8 animal prefabs
@@ -56,7 +57,7 @@ public static class SceneSetup
         // report, 2026-07-09, after L02's design sprites were left behind following a dump).
         // Always deleted here once its data has presumably already been dumped/pasted into
         // LevelDataGenerator.cs.
-        foreach (var placeholderName in new[] { "Cluck_Loaded_0", "Cluck_InFlight", "HarvesterRobot", "SemiHarvesterRobot", "LevelScratch" })
+        foreach (var placeholderName in new[] { "Cluck_Loaded_0", "Cluck_InFlight", "HarvesterRobot", "SemiHarvesterRobot", "CommanderRobot", "LevelScratch" })
         {
             var ph = GameObject.Find(placeholderName);
             if (ph != null)
@@ -337,11 +338,15 @@ public static class SceneSetup
         WireSprite(so, "_scoreboardSprite",    "Assets/Sprites/UI/MatchUp/Scoreboard.png");
         WireSprite(so, "_playButtonSprite",    "Assets/Sprites/UI/Icon/Btn_play.png");
         WireSprite(so, "_homeButtonSprite",    "Assets/Sprites/UI/Icon/Btn_home.png");
-        WireSprite(so, "_quitButtonSprite",    "Assets/Sprites/UI/Icon/Btn_quite.png");
+        // Btn_quite.png / NoSound.png renamed to Btn_quit.png / Btn_nosound.png outside this
+        // session (2026-07-12, fixing the "quite" typo) — re-pointed here since the old paths no
+        // longer exist and WireSprite silently leaves a stale sprite reference otherwise (same
+        // class of bug as the StoneBlock/Block_Stone_Normal.png fix earlier this session).
+        WireSprite(so, "_quitButtonSprite",    "Assets/Sprites/UI/Icon/Btn_quit.png");
         // Top-right Quit/Mute/Pause row (2026-07-26) — Quit reuses _quitButtonSprite above.
         WireSprite(so, "_pauseButtonSprite",   "Assets/Sprites/UI/Icon/Btn_pause.png");
         WireSprite(so, "_musicOnSprite",       "Assets/Sprites/UI/Icon/Btn_music.png");
-        WireSprite(so, "_musicOffSprite",      "Assets/Sprites/UI/Icon/NoSound.png");
+        WireSprite(so, "_musicOffSprite",      "Assets/Sprites/UI/Icon/Btn_nosound.png");
 
         so.ApplyModifiedProperties();
 
@@ -492,6 +497,13 @@ public static class SceneSetup
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level8.png");
         headerArr.GetArrayElementAtIndex(8).objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level9.png");
+        // level10.png/level11.png added 2026-07-12 alongside L10's build and the L11 match-up
+        // request ("place level11.png") — both files already existed on disk but were never
+        // wired, so both slots fell back to LevelHeader1.png until now.
+        headerArr.GetArrayElementAtIndex(9).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level10.png");
+        headerArr.GetArrayElementAtIndex(10).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level11.png");
 
         WireSprite(mapSo, "_countdown3Sprite",        $"{matchUpFolder}/countdown3.png");
         WireSprite(mapSo, "_countdown2Sprite",        $"{matchUpFolder}/countdown2.png");
@@ -502,6 +514,8 @@ public static class SceneSetup
         WireAudioClip(mapSo, "_cluckFallingClip",      "Assets/Audio/Cluck_falling.mp3");
         WireSprite(mapSo, "_bessieFlySprite",          "Assets/Sprites/Characters/Bessie/Bessie_InFlight.png");
         WireAudioClip(mapSo, "_bessieFallingClip",     "Assets/Audio/Bessie_falling.mp3");
+        WireSprite(mapSo, "_eggSprite",                "Assets/Sprites/Characters/Cluck/Egg.png");
+        WireSprite(mapSo, "_skipButtonSprite",         "Assets/Sprites/UI/Icon/Btn_skip.png");
 
         WireArrayByKeyword(mapSo, "_animalCardSprites", matchUpFolder, CardKeywords, "animal");
 
@@ -510,7 +524,7 @@ public static class SceneSetup
         // contain "robot" — a naive keyword search (like WireArrayByKeyword uses for animals)
         // would ambiguously match all three off either keyword.
         var robotArr = mapSo.FindProperty("_robotCardSprites");
-        robotArr.arraySize = 3;
+        robotArr.arraySize = 4;
         robotArr.GetArrayElementAtIndex(0).objectReferenceValue = // Basic
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Robot.png");
         // Prefer the newer Harvestor_Robot1.png (revised art, added a day after the original)
@@ -525,6 +539,12 @@ public static class SceneSetup
         // "that's not the right card").
         robotArr.GetArrayElementAtIndex(2).objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Semi_Harvestor.png");
+
+        // Commander (L18 boss) — no dedicated MatchUp card art yet; leaves this slot null so
+        // MatchUpScreen falls back to its existing text-label card, same as Basic did before
+        // Robot.png existed.
+        robotArr.GetArrayElementAtIndex(3).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Commander.png");
     }
 
     // Added 2026-07-24 — a Sunrise Meadows screenshot showed level markers rendering with
@@ -801,6 +821,7 @@ public static class SceneSetup
         SetPrefab(so, "_robotPrefab",      "Robot",           "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_harvesterPrefab",  "HarvesterRobot",  "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_semiHarvesterPrefab", "SemiHarvesterRobot", "Assets/Prefabs/Enemies", typeof(RobotEnemy));
+        SetPrefab(so, "_commanderPrefab",     "CommanderRobot",     "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_haybalePrefab",    "HaybaleBlock",    "Assets/Prefabs/Blocks",  typeof(WoodBlock));
         SetPrefab(so, "_barrelPrefab",     "ExplodingBarrelBlock", "Assets/Prefabs/Blocks", typeof(ExplodingBarrelBlock));
 
@@ -919,6 +940,21 @@ public static class SceneSetup
             ("_sprNormal",      "Plank_Horizontal.png"),
             ("_sprHorizontal",  "Plank_Horizontal.png"),
             ("_sprVertical",    "2D_Block_Wood_Vertical.png"),
+            // Named-shape slots — added 2026-07-12 (user report: "the sprites that I made the
+            // scene with are not the correct ones... too many gaps"). Every one of these shapes
+            // was previously collapsing into one of the 3 generic sprites above regardless of
+            // which was actually placed in the Scene view — see WoodArtVariant's expansion
+            // comment in LevelData.cs for the full root-cause explanation.
+            ("_sprShort",         "Plank_Short.png"),
+            ("_sprSkew",          "Plank_Skew.png"),
+            ("_sprDiagonal",      "Plank_Diagonal.png"),
+            ("_sprVerticalShort", "Plank_VeriticalShort.png"),
+            ("_sprHorizontal2D",  "Plank_2DHorizontal.png"),
+            ("_sprShork2D",       "Plank_2DShork.png"),
+            ("_sprShork",         "Plank_Shork.png"),
+            ("_sprCart",          "WoodenCart.png"),
+            ("_sprBarrelProp",    "WoodenBarrel.png"),
+            ("_sprFlat",          "2D_Block_Wood_Flat.png"),
             // WoodDebris.png (broken-splinter burst art) — added 2026-07-10, user-supplied —
             // wired to both the brief pre-death hit-reaction flash (_sprDamaged) and the actual
             // death-burst shown by DestroyBlock() (_sprExplode), same dual-use pattern
@@ -946,11 +982,30 @@ public static class SceneSetup
         // default changes can never silently drift out of sync with the live prefab again.
         SetFloatField("Assets/Prefabs/Blocks/WoodBlock.prefab", "_areaDamage", 25f);
 
+        // Switched from Block_Stone_Normal.png 2026-07-12 (user report: "the stone_block is
+        // rendering as the old 3d block... this seems to be for all levels"). Root cause:
+        // Block_Stone_Normal.png doesn't exist anywhere in the project any more (confirmed via a
+        // full search) — WireBlockPrefab's per-field lookup silently skips (warns, doesn't clear)
+        // any field whose target file can't be found, so every "Wire Scene References" pass left
+        // StoneBlock.prefab's stale, previously-serialized sprite untouched instead of failing
+        // loudly. Now wired to Stone_Block.png/Stone_Vertical.png, the actual flat 2D art the
+        // user has been placing in every level's Scene view dump since the L01-L18 overhaul
+        // (matches the WoodBlock convention: _sprVertical picked automatically for tall/thin
+        // aspect ratios via BlockBase.Initialise()'s Auto variant).
         WireBlockPrefab("Assets/Prefabs/Blocks/StoneBlock.prefab", folder, new[]
         {
-            ("_sprNormal",      "Block_Stone_Normal.png"),
-            ("_sprHorizontal",  "Block_Stone_Normal.png"),   // reuse until dedicated art exists
-            ("_sprVertical",    "Block_Stone_Normal.png"),
+            ("_sprNormal",      "Stone_Block.png"),
+            ("_sprHorizontal",  "Stone_Block.png"),   // reuse until a dedicated wide/flat stone asset exists
+            ("_sprVertical",    "Stone_Vertical.png"),
+            // Named-shape slots — same 2026-07-12 fix as WoodBlock above. Skew/Diagonal share an
+            // enum case with WoodBlock's own fields of the same name, but resolve to Stone's own
+            // sprites here since each class has its own separate serialized field.
+            ("_sprSkew",        "Stone_Skew.png"),
+            ("_sprDiagonal",    "Stone_Diagonal.png"),
+            ("_sprSquare",      "Stone_Square.png"),
+            ("_sprBlock",       "Stone_Block.png"),
+            ("_sprRuinedWall",  "RuinedStoneWall.png"),
+            ("_sprTower",       "StoneTower.png"),
         });
     }
 
@@ -1029,10 +1084,10 @@ public static class SceneSetup
     }
 
     // ── ExplodingBarrelBlock: a WoodBlock variant that deals area damage on death ────────
-    // WoodenBarrel.png existed in Assets/Sprites/Environment/World1Props/ but had no dedicated
-    // gameplay behaviour before — introduced 2026-07-10 at L03 "The Tower" to "gradually
-    // introduce the exploding barrel" per user request. LevelLoader picks this prefab when
-    // BlockSpawnData.type == BlockType.Barrel.
+    // Introduced 2026-07-10 at L03 "The Tower" to "gradually introduce the exploding barrel" per
+    // user request. LevelLoader picks this prefab when BlockSpawnData.type == BlockType.Barrel.
+    // Art is Barrel_Dynamite.png (Assets/Sprites/Environment/World1Props/), NOT WoodenBarrel.png —
+    // the latter is the plain decorative prop used elsewhere as scenery, not this explosive block.
     static void EnsureExplodingBarrelPrefab()
     {
         const string prefabPath = "Assets/Prefabs/Blocks/ExplodingBarrelBlock.prefab";
@@ -1051,11 +1106,19 @@ public static class SceneSetup
             Debug.Log("[FarmFury] Created ExplodingBarrelBlock.prefab.");
         }
 
+        // Wired to Barrel_Dynamite.png, not WoodenBarrel.png — fixed 2026-07-12 (user report:
+        // "the gameplay is showing the wrong barrel, the normal barrel doesn't explode"). Every
+        // level authored via LevelLayoutDumper since the L01-L18 overhaul actually placed the
+        // 'Barrel_Dynamite' sprite in the Scene view for BlockType.Barrel entries (see the dump
+        // comments in LevelDataGenerator.cs), but this prefab was still wired to the plain
+        // WoodenBarrel.png art from L03's original introduction — so every dynamite barrel in
+        // gameplay rendered as the inert decorative barrel prop instead of looking like something
+        // that explodes.
         WireBlockPrefab(prefabPath, "Assets/Sprites/Environment/World1Props", new[]
         {
-            ("_sprNormal",     "WoodenBarrel.png"),
-            ("_sprHorizontal", "WoodenBarrel.png"),
-            ("_sprVertical",   "WoodenBarrel.png"),
+            ("_sprNormal",     "Barrel_Dynamite.png"),
+            ("_sprHorizontal", "Barrel_Dynamite.png"),
+            ("_sprVertical",   "Barrel_Dynamite.png"),
         });
 
         // Reuses the same comic-burst art/sound RobotEnemy's death explosion uses (Explosion.png
@@ -1180,12 +1243,17 @@ public static class SceneSetup
         PrefabUtility.UnloadPrefabContents(contents);
     }
 
-    // ── Robot sprite: wire Robot_Idle into Robot prefab SpriteRenderer ──────────
+    // ── Robot sprite: wire Robot_Pawn into Robot (RobotType.Basic) prefab SpriteRenderer ──
 
     static void WireRobotSprite()
     {
         const string prefabPath = "Assets/Prefabs/Enemies/Robot.prefab";
-        const string spritePath = "Assets/Sprites/Enemies/Robot/Robot_Idle.png";
+        // Switched from Robot_Idle.png to Robot_Pawn.png 2026-07-12 — RobotType.Basic's actual
+        // debut is L11 (its "third robot card" alongside Harvester/SemiHarvester), and the level
+        // was hand-placed in the Scene view using the 'Robot_Pawn' sprite specifically, not the
+        // old placeholder. Robot_Idle.png was never actually used in any shipped level before this.
+        const string spritePath = "Assets/Sprites/Enemies/Robot/Robot_Pawn.png";
+        const string damagedSpritePath = "Assets/Sprites/Enemies/Robot/Robot_Pawn_Damage(1).png";
 
         if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
         {
@@ -1196,9 +1264,10 @@ public static class SceneSetup
         var spriteAsset = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
         if (spriteAsset == null)
         {
-            Debug.LogWarning("[FarmFury] Robot_Idle.png not found. Run tools/remove_backgrounds.py first.");
+            Debug.LogWarning("[FarmFury] Robot_Pawn.png not found. Run tools/remove_backgrounds.py first.");
             return;
         }
+        var damagedSprite = AssetDatabase.LoadAssetAtPath<Sprite>(damagedSpritePath);
 
         // Ensure PPU=1746 on the robot sprite
         var imp = AssetImporter.GetAtPath(spritePath) as TextureImporter;
@@ -1220,6 +1289,7 @@ public static class SceneSetup
             var so = new SerializedObject(robot);
             so.FindProperty("_robotSprite").objectReferenceValue = spriteAsset;
             WireRobotDeathFx(so);
+            WireRobotDamagedArt(so, damagedSprite);
             // Re-sync _robotContactDamage to RobotEnemy's current class default (18f) — 2026-07-10,
             // found during a "review all our damage changes" audit: every robot prefab was stuck
             // at a stale 15 (the value serialized before an earlier balance pass raised the class
@@ -1232,7 +1302,7 @@ public static class SceneSetup
         }
         PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
         PrefabUtility.UnloadPrefabContents(go);
-        Debug.Log("[FarmFury] Robot: wired Robot_Idle.png into _robotSprite (PPU=1746).");
+        Debug.Log("[FarmFury] Robot: wired Robot_Pawn.png into _robotSprite (PPU=1746).");
     }
 
     // Shared death VFX/SFX wiring for all 3 robot prefabs (Robot/HarvesterRobot/
@@ -1463,6 +1533,142 @@ public static class SceneSetup
         }
         AssetDatabase.Refresh();
         Debug.Log("[FarmFury] SemiHarvesterRobot.prefab created with Robot_SemiHarvest.png (PPU=1746).");
+    }
+
+    // ── CommanderRobot: create a SEPARATE prefab (distinct from all other robot types) ───
+    // LevelLoader picks this prefab when RobotSpawnData.robotType == RobotType.Commander.
+    // Added 2026-07-12 for L18's boss level — user dropped Commander.png/Commander_Hit.png/
+    // Commander_Explode.png into Assets/Sprites/Enemies/Robot/. HP set well above every other
+    // robot type (90, vs Harvester's 28/SemiHarvester's 26/Basic's 35 class default) since this
+    // is the single boss enemy of the level, not one of several. Uses its own dedicated
+    // Commander_Explode.png death-burst art instead of the generic Explosion.png every other
+    // robot type shares (WireRobotDeathFx sets that as a fallback default; overridden here).
+    static void EnsureCommanderRobotPrefab()
+    {
+        const string prefabPath         = "Assets/Prefabs/Enemies/CommanderRobot.prefab";
+        const string spritePath         = "Assets/Sprites/Enemies/Robot/Commander.png";
+        const string alertSpritePath    = "Assets/Sprites/Enemies/Robot/Commander_Alert.png";
+        const string damagedSpritePath  = "Assets/Sprites/Enemies/Robot/Commander_Hit.png";
+        const string explodeSpritePath  = "Assets/Sprites/Enemies/Robot/Commander_Explode.png";
+
+        var imp = AssetImporter.GetAtPath(spritePath) as TextureImporter;
+        if (imp == null)
+        {
+            Debug.LogWarning($"[FarmFury] Commander.png not found at {spritePath}.");
+            return;
+        }
+        bool dirty = false;
+        if (imp.textureType         != TextureImporterType.Sprite)         { imp.textureType         = TextureImporterType.Sprite;         dirty = true; }
+        if (imp.spritePixelsPerUnit != 1746)                                { imp.spritePixelsPerUnit = 1746;                               dirty = true; }
+        if (!imp.alphaIsTransparency)                                       { imp.alphaIsTransparency = true;                               dirty = true; }
+        if (imp.spriteImportMode    != SpriteImportMode.Single)            { imp.spriteImportMode    = SpriteImportMode.Single;            dirty = true; }
+        if (dirty) imp.SaveAndReimport();
+
+        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+        if (sprite == null) { Debug.LogWarning("[FarmFury] Commander.png failed to load as Sprite."); return; }
+
+        var aImp = AssetImporter.GetAtPath(alertSpritePath) as TextureImporter;
+        Sprite alertSprite = null;
+        if (aImp == null)
+        {
+            Debug.LogWarning($"[FarmFury] Commander_Alert.png not found at {alertSpritePath} — the mid-tier 'alert' pose will be skipped (straight to critical).");
+        }
+        else
+        {
+            bool aDirty = false;
+            if (aImp.textureType         != TextureImporterType.Sprite)  { aImp.textureType         = TextureImporterType.Sprite;  aDirty = true; }
+            if (aImp.spritePixelsPerUnit != 1746)                         { aImp.spritePixelsPerUnit = 1746;                        aDirty = true; }
+            if (!aImp.alphaIsTransparency)                                { aImp.alphaIsTransparency = true;                        aDirty = true; }
+            if (aImp.spriteImportMode    != SpriteImportMode.Single)     { aImp.spriteImportMode    = SpriteImportMode.Single;     aDirty = true; }
+            if (aDirty) aImp.SaveAndReimport();
+            alertSprite = AssetDatabase.LoadAssetAtPath<Sprite>(alertSpritePath);
+        }
+
+        var dImp = AssetImporter.GetAtPath(damagedSpritePath) as TextureImporter;
+        Sprite damagedSprite = null;
+        if (dImp == null)
+        {
+            Debug.LogWarning($"[FarmFury] Commander_Hit.png not found at {damagedSpritePath} — hit-flash will fall back to the plain white tint.");
+        }
+        else
+        {
+            bool dDirty = false;
+            if (dImp.textureType         != TextureImporterType.Sprite)  { dImp.textureType         = TextureImporterType.Sprite;  dDirty = true; }
+            if (dImp.spritePixelsPerUnit != 1746)                         { dImp.spritePixelsPerUnit = 1746;                        dDirty = true; }
+            if (!dImp.alphaIsTransparency)                                { dImp.alphaIsTransparency = true;                        dDirty = true; }
+            if (dImp.spriteImportMode    != SpriteImportMode.Single)     { dImp.spriteImportMode    = SpriteImportMode.Single;     dDirty = true; }
+            if (dDirty) dImp.SaveAndReimport();
+            damagedSprite = AssetDatabase.LoadAssetAtPath<Sprite>(damagedSpritePath);
+        }
+
+        var eImp = AssetImporter.GetAtPath(explodeSpritePath) as TextureImporter;
+        Sprite explodeSprite = null;
+        if (eImp == null)
+        {
+            Debug.LogWarning($"[FarmFury] Commander_Explode.png not found at {explodeSpritePath} — death burst will fall back to the generic Explosion.png.");
+        }
+        else
+        {
+            bool eDirty = false;
+            if (eImp.textureType         != TextureImporterType.Sprite)  { eImp.textureType         = TextureImporterType.Sprite;  eDirty = true; }
+            if (eImp.spritePixelsPerUnit != 1746)                         { eImp.spritePixelsPerUnit = 1746;                        eDirty = true; }
+            if (!eImp.alphaIsTransparency)                                { eImp.alphaIsTransparency = true;                        eDirty = true; }
+            if (eImp.spriteImportMode    != SpriteImportMode.Single)     { eImp.spriteImportMode    = SpriteImportMode.Single;     eDirty = true; }
+            if (eDirty) eImp.SaveAndReimport();
+            explodeSprite = AssetDatabase.LoadAssetAtPath<Sprite>(explodeSpritePath);
+        }
+
+        bool exists = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null;
+        GameObject go;
+        if (exists)
+        {
+            go = PrefabUtility.LoadPrefabContents(prefabPath);
+        }
+        else
+        {
+            go       = new GameObject("CommanderRobot");
+            go.layer = 9;
+            var rb   = go.AddComponent<Rigidbody2D>();
+            rb.mass  = 20f;
+            var bc   = go.AddComponent<BoxCollider2D>();
+            bc.size  = new Vector2(1f, 1f);
+            go.AddComponent<SpriteRenderer>();
+            go.AddComponent<RobotEnemy>();
+        }
+
+        var robot = go.GetComponent<RobotEnemy>();
+        if (robot != null)
+        {
+            var so = new SerializedObject(robot);
+            so.FindProperty("_robotSprite").objectReferenceValue = sprite;
+            // 3-pose progression: Commander.png (normal) -> Commander_Alert.png (_alertSprite,
+            // ~66% HP) -> Commander_Hit.png (_criticalSprite/_robotDamagedSprite via
+            // WireRobotDamagedArt, ~40% HP) — see RobotEnemy's AlertHealthFraction/
+            // CriticalHealthFraction comments. User request: "the commander has three poses.
+            // when first hit change to Commander_Alert; when hit again change to Commander_hit".
+            if (alertSprite != null)
+                so.FindProperty("_alertSprite").objectReferenceValue = alertSprite;
+            WireRobotDamagedArt(so, damagedSprite);
+            so.FindProperty("_maxHealth").floatValue = 90f;
+            so.FindProperty("_robotContactDamage").floatValue = 18f;
+            WireRobotDeathFx(so);
+            if (explodeSprite != null)
+                so.FindProperty("_deathExplosionSprite").objectReferenceValue = explodeSprite;
+            so.ApplyModifiedProperties();
+        }
+
+        if (exists)
+        {
+            PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+            PrefabUtility.UnloadPrefabContents(go);
+        }
+        else
+        {
+            PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+            Object.DestroyImmediate(go);
+        }
+        AssetDatabase.Refresh();
+        Debug.Log("[FarmFury] CommanderRobot.prefab created with Commander.png (PPU=1746).");
     }
 
     // ── Egg prefab: create if missing, wire into CluckAnimal prefab ─────────────
@@ -1735,13 +1941,31 @@ public static class SceneSetup
     static void SetPrefab(SerializedObject so, string fieldName, string prefabName,
                           string folder, System.Type componentType = null)
     {
+        // AssetDatabase.FindAssets does a FUZZY name search, not an exact match — searching
+        // "Robot" also matches "CommanderRobot.prefab"/"HarvesterRobot.prefab"/
+        // "SemiHarvesterRobot.prefab" (all contain "Robot"), and guids[0] is whichever sorts
+        // first alphabetically among the matches, NOT necessarily "Robot.prefab" itself. Real
+        // bug found 2026-07-12 while adding CommanderRobot: _robotPrefab (RobotType.Basic's
+        // prefab) had been silently wired to HarvesterRobot.prefab this entire session (Harvester
+        // < Robot alphabetically) — every RobotType.Basic/"Robot_Pawn" spawn since L11 has
+        // actually been a HarvesterRobot (wrong art, wrong HP), and after adding Commander it
+        // would have silently flipped to CommanderRobot instead (Commander < Robot too). Fixed by
+        // requiring an EXACT filename match among the fuzzy results, falling back to the first
+        // fuzzy hit only if no exact match exists (preserves old behaviour for any prefab name
+        // that never had this ambiguity).
         var guids = AssetDatabase.FindAssets(prefabName + " t:Prefab", new[] { folder });
         if (guids.Length == 0)
         {
             Debug.LogWarning($"[FarmFury] Prefab '{prefabName}' not found in {folder}");
             return;
         }
-        var path   = AssetDatabase.GUIDToAssetPath(guids[0]);
+        string path = null;
+        foreach (var guid in guids)
+        {
+            var p = AssetDatabase.GUIDToAssetPath(guid);
+            if (System.IO.Path.GetFileNameWithoutExtension(p) == prefabName) { path = p; break; }
+        }
+        path ??= AssetDatabase.GUIDToAssetPath(guids[0]);
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
 
         // Fields typed as a Component subclass must receive the component, not the GO.

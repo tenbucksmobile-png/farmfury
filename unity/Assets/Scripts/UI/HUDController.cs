@@ -516,19 +516,23 @@ public class HUDController : MonoBehaviour
         // 1600x1200=4:3≈1.33:1, noticeably taller per unit width) — height recomputed to
         // 680/1.333=510 so preserveAspect doesn't letterbox/waste box area; width kept at 680 to
         // preserve the same on-screen prominence as before.
+        // Y offset raised -25 -> 15 (2026-07-12, user report: "level failed and level complete
+        // are touching the scoreboard backdrop - lift it up slightly") — the board was sitting
+        // low enough that its own bottom edge crowded the panel's other elements (buttons/labels
+        // below it). Applies globally since this panel is shared, not per-level.
         Image box;
         if (_scoreboardSprite != null)
         {
             box = MakeImage(rootRT, "LCBox", _scoreboardSprite, Color.white,
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(680f, 510f));
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, 15f), new Vector2(680f, 510f));
             box.preserveAspect = true;
         }
         else
         {
             box = MakeImage(rootRT, "LCBox", _squareSpr, new Color(0.97f, 0.95f, 0.90f),
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(640f, 460f));
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, 15f), new Vector2(640f, 460f));
         }
 
         // Title — LevelComplete.png sign-topper, overlapping the board's top edge.
@@ -704,19 +708,22 @@ public class HUDController : MonoBehaviour
         // falls back to the old plain cream box if unwired so the panel never renders blank.
         // Height recomputed to 620/1.333=465 to match the re-supplied art's new 4:3 aspect
         // (2026-07-10, see the matching comment on BuildLevelCompletePanel's box above).
+        // Y offset raised -25 -> 15 (2026-07-12, user report: "level failed and level complete
+        // are touching the scoreboard backdrop - lift it up slightly") — same fix as
+        // BuildLevelCompletePanel's box above, applies globally since this panel is shared.
         Image box;
         if (_scoreboardSprite != null)
         {
             box = MakeImage(rootRT, "LFBox", _scoreboardSprite, Color.white,
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(620f, 465f));
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, 15f), new Vector2(620f, 465f));
             box.preserveAspect = true;
         }
         else
         {
             box = MakeImage(rootRT, "LFBox", _squareSpr, new Color(0.96f, 0.93f, 0.90f),
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(480f, 300f));
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, 15f), new Vector2(480f, 300f));
         }
 
         // Title — LevelFailed.png sign-topper, overlapping the board's top edge.

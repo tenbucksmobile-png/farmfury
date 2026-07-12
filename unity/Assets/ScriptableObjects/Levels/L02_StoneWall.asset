@@ -18,44 +18,41 @@ MonoBehaviour:
   birds: 000000000000000000000000
   blocks:
   - type: 2
-    position: {x: 4.224, y: -5.563}
-    size: {x: 1, y: 1}
+    position: {x: 5.377, y: -5.163}
+    size: {x: 1.205, y: 1.151}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
+    indestructible: 0
     artVariant: 0
   - type: 2
-    position: {x: 4.964, y: -5.583}
-    size: {x: 1, y: 1}
+    position: {x: 4.46, y: -5.22}
+    size: {x: 1.205, y: 1.151}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
+    indestructible: 0
     artVariant: 0
   - type: 2
-    position: {x: 5.744, y: -5.623}
-    size: {x: 1, y: 1}
+    position: {x: 5.05, y: -5.37}
+    size: {x: 1.205, y: 1.151}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
+    indestructible: 0
     artVariant: 0
-  - type: 0
-    position: {x: 4.444, y: -5.233}
-    size: {x: 1, y: 1}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-    artVariant: 0
-  - type: 0
-    position: {x: 5.344, y: -5.243}
-    size: {x: 1, y: 1}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
+  - type: 2
+    position: {x: 7.6, y: -5.14}
+    size: {x: 1.205, y: 1.151}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    indestructible: 0
     artVariant: 0
   robots:
-  - robotType: 1
-    position: {x: 5.064, y: -4.593}
-    scale: {x: 4.269, y: 5.649}
   - robotType: 2
-    position: {x: 6.724, y: -5.583}
-    scale: {x: 7.37, y: 6.31}
+    position: {x: 6.54, y: -5.23}
+    scale: {x: 5.687, y: 5.921}
+  - robotType: 2
+    position: {x: 4.78, y: -4.45}
+    scale: {x: 5.687, y: 5.921}

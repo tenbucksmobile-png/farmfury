@@ -20,6 +20,33 @@ public abstract class BlockBase : MonoBehaviour
     [SerializeField] protected Sprite _sprHorizontal;  // wide flat blocks (w/h > 1.5)
     [SerializeField] protected Sprite _sprVertical;    // tall thin blocks  (h/w > 1.4)
 
+    // Named-shape art slots — added 2026-07-12 alongside WoodArtVariant's expansion (see that
+    // enum's comment) so each distinct prop shape placed in the Scene view gets its own real
+    // sprite instead of being squeezed into the 3 generic slots above. Wood-relevant fields are
+    // wired on WoodBlock.prefab, Stone-relevant ones on StoneBlock.prefab (SceneSetup.
+    // WireBlockSprites) — an unwired field on a class that doesn't use it just stays null and
+    // falls back to _sprNormal via Initialise()'s switch below, so this is safe to share on the
+    // base class rather than duplicating per subclass.
+    [SerializeField] protected Sprite _sprShort;         // Plank_Short.png
+    [SerializeField] protected Sprite _sprVerticalShort;  // Plank_VeriticalShort.png
+    [SerializeField] protected Sprite _sprHorizontal2D;   // Plank_2DHorizontal.png
+    [SerializeField] protected Sprite _sprShork2D;        // Plank_2DShork.png
+    [SerializeField] protected Sprite _sprShork;          // Plank_Shork.png
+    [SerializeField] protected Sprite _sprCart;           // WoodenCart.png
+    [SerializeField] protected Sprite _sprBarrelProp;     // WoodenBarrel.png (non-explosive prop, not ExplodingBarrelBlock)
+    [SerializeField] protected Sprite _sprSquare;         // Stone_Square.png
+    [SerializeField] protected Sprite _sprBlock;          // Stone_Block.png
+    [SerializeField] protected Sprite _sprRuinedWall;     // RuinedStoneWall.png
+    [SerializeField] protected Sprite _sprTower;          // StoneTower.png
+    [SerializeField] protected Sprite _sprSkew;           // Plank_Skew.png (Wood) / Stone_Skew.png (Stone)
+    [SerializeField] protected Sprite _sprDiagonal;       // Plank_Diagonal.png (Wood) / Stone_Diagonal.png (Stone)
+    // Distinct from _sprNormal — added 2026-07-12 (L17 dump uses '2D_Block_Wood_Flat', a real
+    // sprite separate from Plank_Horizontal.png). WoodArtVariant.Flat previously aliased straight
+    // to _sprNormal (same field the Auto/default fallback uses), so a block explicitly placed
+    // with the flat art rendered as Plank_Horizontal.png instead — same class of art-mismatch bug
+    // as the other named-shape fixes this session.
+    [SerializeField] protected Sprite _sprFlat;           // 2D_Block_Wood_Flat.png
+
     // Optional hit-reaction art (e.g. Haybail_Damaged.png) — null on block types that don't
     // have one wired, in which case TakeDamage() only does the existing colour-tint/crack
     // feedback below, unchanged.
@@ -73,6 +100,12 @@ public abstract class BlockBase : MonoBehaviour
     public float Health      { get; private set; }
     public bool  IsDestroyed { get; private set; }
 
+    // Fixed scenery/structure that never takes damage — set by LevelLoader.SpawnBlock from
+    // LevelData.BlockSpawnData.indestructible (2026-07-12, L10's StoneTower: "a structure that
+    // is in place - cannot be destroyed"). TakeDamage() no-ops entirely when true; the block
+    // stays Static forever, same as HaybaleBlock's _stayKinematic but for damage rather than physics.
+    public bool Indestructible;
+
     public event Action<BlockBase> OnBlockDestroyed;
 
     protected Rigidbody2D    _rb;
@@ -122,9 +155,22 @@ public abstract class BlockBase : MonoBehaviour
         float aspect = width / height;
         Sprite chosen = artVariant switch
         {
-            WoodArtVariant.Vertical   => _sprVertical   ?? _sprNormal,
-            WoodArtVariant.Horizontal => _sprHorizontal ?? _sprNormal,
-            WoodArtVariant.Flat       => _sprNormal,
+            WoodArtVariant.Vertical      => _sprVertical      ?? _sprNormal,
+            WoodArtVariant.Horizontal    => _sprHorizontal    ?? _sprNormal,
+            WoodArtVariant.Flat          => _sprFlat ?? _sprNormal,
+            WoodArtVariant.Short         => _sprShort         ?? _sprNormal,
+            WoodArtVariant.VerticalShort => _sprVerticalShort ?? _sprVertical ?? _sprNormal,
+            WoodArtVariant.Horizontal2D  => _sprHorizontal2D  ?? _sprHorizontal ?? _sprNormal,
+            WoodArtVariant.Shork2D       => _sprShork2D       ?? _sprVertical ?? _sprNormal,
+            WoodArtVariant.Shork         => _sprShork         ?? _sprNormal,
+            WoodArtVariant.Cart          => _sprCart          ?? _sprNormal,
+            WoodArtVariant.Barrel        => _sprBarrelProp    ?? _sprNormal,
+            WoodArtVariant.Square        => _sprSquare        ?? _sprNormal,
+            WoodArtVariant.Block         => _sprBlock         ?? _sprNormal,
+            WoodArtVariant.RuinedWall    => _sprRuinedWall    ?? _sprNormal,
+            WoodArtVariant.Tower         => _sprTower         ?? _sprNormal,
+            WoodArtVariant.Skew          => _sprSkew          ?? _sprNormal,
+            WoodArtVariant.Diagonal      => _sprDiagonal      ?? _sprNormal,
             _ => aspect < 0.72f ? (_sprVertical   ?? _sprNormal)
                : aspect > 1.5f  ? (_sprHorizontal ?? _sprNormal)
                : _sprNormal,
@@ -190,9 +236,18 @@ public abstract class BlockBase : MonoBehaviour
             _rb.mass = massOverride;
     }
 
+    // Scripted override that bypasses BOTH the IsDestroyed guard AND the Indestructible flag —
+    // added 2026-07-12 for boss fights where a guarded structure (e.g. L18's StoneTower) should
+    // crumble the moment its defending robot falls, even though it's otherwise permanently
+    // immune to normal damage/collapse-cascade (see RobotEnemy's _destroyOnDeath and
+    // CommanderRobot usage). DestroyBlock() itself only checks IsDestroyed, not Indestructible,
+    // so this is just a public entry point into the same real destruction path — not a separate
+    // code path that could desync from normal block death (VFX/SFX/scoring all still fire).
+    public void ForceDestroy() => DestroyBlock();
+
     public void TakeDamage(float amount)
     {
-        if (IsDestroyed) return;
+        if (IsDestroyed || Indestructible) return;
         // Only THIS block wakes on its own hit — see the removed WakeAllStaticBlocks() note
         // below for why a level-wide wake was wrong. _stayKinematic blocks (e.g. HaybaleBlock)
         // never wake at all, same as before.
@@ -367,9 +422,32 @@ public abstract class BlockBase : MonoBehaviour
         foreach (var hit in hits)
         {
             var block = hit.GetComponentInParent<BlockBase>();
-            if (block == null || block == this || block.IsDestroyed || block._stayKinematic) continue;
+            // Indestructible blocks (e.g. StoneTower — "a structure that is in place, cannot be
+            // destroyed") never fall via this cascade either, same exemption as _stayKinematic —
+            // 2026-07-12, alongside the user's "stone also falls if wood under it gives way"
+            // request: ordinary Stone SHOULD fall when its own support breaks (no exemption
+            // needed there, it has no _stayKinematic/Indestructible flag), but a fixed structure
+            // marked Indestructible must stay physically in place regardless of what breaks
+            // beneath or beside it.
+            if (block == null || block == this || block.IsDestroyed || block._stayKinematic || block.Indestructible) continue;
             if (block._rb.bodyType == RigidbodyType2D.Static)
+            {
                 block._rb.bodyType = RigidbodyType2D.Dynamic;
+                // Cascade the wake-up immediately, same frame, instead of waiting for this
+                // block's own eventual landing collision to generate enough impulse to trigger
+                // TakeDamage() (which is what this cascade used to rely on to reach further up a
+                // stack — see the class-comment above this method). A gentle settling fall often
+                // lands under minDamageImpulse and never calls TakeDamage() at all, so whatever
+                // was silently found here in every fully-cascading case, that reliance would
+                // otherwise leave everything further up the tower permanently frozen as Static
+                // rigidbodies, floating with no real support beneath them — 2026-07-12, user
+                // report: "structure fall and break all the way to the ground, blocks can't just
+                // fall over and hang in the middle of the air." Recursion terminates naturally —
+                // it only ever climbs upward through however many blocks are actually stacked,
+                // and stops the moment it finds no more Static blocks directly above.
+                block.CheckForRobotsOnTop();
+                block.CheckForBlocksOnTop();
+            }
         }
     }
 

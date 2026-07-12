@@ -1,0 +1,337 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1966708deffe45949832dc573867a129, type: 3}
+  m_Name: L15_FiveStones
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelId: W1_L15
+  levelName: Five Stones
+  parBirds: 3
+  birds: 000000000000000001000000
+  blocks:
+  - type: 1
+    position: {x: 1.213, y: -5.516}
+    size: {x: 0.48, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+  - type: 1
+    position: {x: 2.6, y: -5.5}
+    size: {x: 0.48, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+  - type: 1
+    position: {x: 3.86, y: -5.53}
+    size: {x: 0.48, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+  - type: 1
+    position: {x: 5.18, y: -5.53}
+    size: {x: 0.48, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+  - type: 1
+    position: {x: 6.53, y: -5.53}
+    size: {x: 0.48, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+  - type: 0
+    position: {x: 1.18, y: -4.95}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 2.53, y: -4.98}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 1.93, y: -1.63}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 2.89, y: -1.63}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 3.85, y: -1.63}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 4.81, y: -1.65}
+    size: {x: 1, y: 0.427}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 3.84, y: -5}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 5.1, y: -5}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 5.27, y: -4.15}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 6.45, y: -5}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+  - type: 0
+    position: {x: 1.8, y: -4.67}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 7
+  - type: 0
+    position: {x: 2.04, y: -4.69}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 7
+  - type: 0
+    position: {x: 3.1, y: -4.69}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 7
+  - type: 0
+    position: {x: 3.36, y: -4.72}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 7
+  - type: 0
+    position: {x: 4.36, y: -4.69}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 7
+  - type: 0
+    position: {x: 4.62, y: -4.72}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 7
+  - type: 0
+    position: {x: 5.66, y: -4.72}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 7
+  - type: 0
+    position: {x: 5.9, y: -4.72}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 7
+  - type: 1
+    position: {x: 1.82, y: -4.08}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 12
+  - type: 1
+    position: {x: 4.37, y: -4.11}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 12
+  - type: 1
+    position: {x: 4.37, y: -3.57}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 12
+  - type: 1
+    position: {x: 1.81, y: -3.59}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 12
+  - type: 3
+    position: {x: 1.094, y: -4.309}
+    size: {x: 1.156, y: 1.27}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+  - type: 3
+    position: {x: 2.053, y: -0.959}
+    size: {x: 1.189, y: 1.27}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+  - type: 3
+    position: {x: 5.32, y: -3.47}
+    size: {x: 1.189, y: 1.287}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+  - type: 0
+    position: {x: 5.73, y: -1.94}
+    size: {x: 1.031, y: 1.031}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 15
+  - type: 0
+    position: {x: 6.35, y: -2.58}
+    size: {x: 1.031, y: 1.031}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 15
+  - type: 0
+    position: {x: 6.97, y: -3.18}
+    size: {x: 1.031, y: 1.031}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 15
+  - type: 0
+    position: {x: 7.228, y: -4.324}
+    size: {x: 1.016, y: 2.037}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 8
+  - type: 2
+    position: {x: 1.931, y: -5.434}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    indestructible: 0
+    artVariant: 0
+  - type: 2
+    position: {x: 4.43, y: -5.48}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    indestructible: 0
+    artVariant: 0
+  - type: 2
+    position: {x: 7.2, y: -5.48}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    indestructible: 0
+    artVariant: 0
+  robots:
+  - robotType: 0
+    position: {x: 1.82, y: -2.58}
+    scale: {x: 5.56, y: 6.073}
+  - robotType: 0
+    position: {x: 2.88, y: -0.72}
+    scale: {x: 5.56, y: 6.073}
+  - robotType: 0
+    position: {x: 4.4, y: -2.58}
+    scale: {x: 5.56, y: 6.073}
+  - robotType: 1
+    position: {x: 4.43, y: -0.43}
+    scale: {x: 7.613, y: 10.431}
+  - robotType: 2
+    position: {x: 2.55, y: -4.46}
+    scale: {x: 6.472, y: 6.073}
+  - robotType: 2
+    position: {x: 3.76, y: -4.51}
+    scale: {x: 6.472, y: 6.073}
+  - robotType: 2
+    position: {x: 6.41, y: -4.48}
+    scale: {x: 6.472, y: 6.073}

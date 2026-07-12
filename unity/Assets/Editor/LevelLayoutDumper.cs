@@ -160,14 +160,16 @@ public static class LevelLayoutDumper
                     blockLines.Add($"B(BlockType.Haybale, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f, passThrough: true, hp: 10f, mass: 3f), // sprite '{sr.sprite.name}'");
                 else if (spriteName.Contains("stone"))
                     blockLines.Add($"B(BlockType.Stone, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f), // sprite '{sr.sprite.name}'");
-                // "barrel" must be checked before "wood" — "WoodenBarrel" contains "wood" as a
-                // substring, so the generic wood/plank check below would misclassify every
-                // barrel as a plain plank (this was a real bug — L03's WoodenBarrel-sourced
-                // block rendered as a wood plank instead of the dedicated exploding-barrel art,
-                // found 2026-07-10).
-                else if (spriteName.Contains("barrel"))
+                // Only the DYNAMITE barrel explodes (BlockType.Barrel / ExplodingBarrelBlock) —
+                // checked before "wood" since "Barrel_Dynamite" contains neither "wood" nor
+                // "plank" anyway, but kept explicit for clarity. A plain "WoodenBarrel" prop is
+                // NOT explosive — 2026-07-12, user request: "the normal wood barrel must be
+                // treated like wood - just a structural breakage, not an explosion like haybale"
+                // — so it falls through to the generic wood/plank branch below instead (matches
+                // "wood" as a substring, no special-case needed there).
+                else if (spriteName.Contains("dynamite"))
                     blockLines.Add($"B(BlockType.Barrel, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f), // sprite '{sr.sprite.name}'");
-                else if (spriteName.Contains("wood") || spriteName.Contains("plank"))
+                else if (spriteName.Contains("wood") || spriteName.Contains("plank") || spriteName.Contains("barrel"))
                     blockLines.Add($"B(BlockType.Wood, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f, artVariant: WoodArtVariant.{InferWoodArtVariant(spriteName)}), // sprite '{sr.sprite.name}'");
                 // "semiharvest" must be checked before "harvester"/"robot" — "Robot_SemiHarvest"
                 // contains both "robot" and (once the underscore is stripped by ToLowerInvariant
@@ -178,8 +180,13 @@ public static class LevelLayoutDumper
                     robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.SemiHarvester), // sprite '{sr.sprite.name}'");
                 else if (spriteName.Contains("harvester"))
                     robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.Harvester), // sprite '{sr.sprite.name}'");
+                // Covers RobotType.Basic — including 'Robot_Pawn', its actual debut art (L11,
+                // 2026-07-12). Previously dropped scale entirely (unlike the Harvester/
+                // SemiHarvester branches above), silently falling back to the Robot prefab's own
+                // default scale regardless of how it was actually sized in the Scene view — fixed
+                // to capture it the same way, now that a real level uses this branch.
                 else if (spriteName.Contains("robot"))
-                    robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f), // sprite '{sr.sprite.name}'");
+                    robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f), // sprite '{sr.sprite.name}'");
                 else
                 {
                     Debug.LogWarning($"[LevelLayoutDumper] Skipping '{sr.gameObject.name}' under LevelScratch — sprite name '{sr.sprite.name}' doesn't match a known keyword (hay/stone/wood/plank/robot/harvester/semiharvest).");

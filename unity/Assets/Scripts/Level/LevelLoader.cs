@@ -26,6 +26,7 @@ public class LevelLoader : MonoBehaviour
     [SerializeField] private RobotEnemy _robotPrefab;
     [SerializeField] private RobotEnemy _harvesterPrefab;
     [SerializeField] private RobotEnemy _semiHarvesterPrefab;
+    [SerializeField] private RobotEnemy _commanderPrefab; // L18 boss
 
     [Header("Parents")]
     [SerializeField] private Transform _blockParent;
@@ -71,6 +72,8 @@ public class LevelLoader : MonoBehaviour
         if (_barrelPrefab     == null) _barrelPrefab     = LoadPrefabComponent<ExplodingBarrelBlock>("ExplodingBarrelBlock");
         if (_robotPrefab      == null) _robotPrefab      = LoadPrefabComponent<RobotEnemy>("Robot");
         if (_harvesterPrefab  == null) _harvesterPrefab  = LoadPrefabComponent<RobotEnemy>("HarvesterRobot");
+        if (_semiHarvesterPrefab == null) _semiHarvesterPrefab = LoadPrefabComponent<RobotEnemy>("SemiHarvesterRobot");
+        if (_commanderPrefab  == null) _commanderPrefab  = LoadPrefabComponent<RobotEnemy>("CommanderRobot");
         if (_cluckPrefab  == null) _cluckPrefab  = LoadPrefabComponent<CluckAnimal>("CluckAnimal");
         if (_bessiePrefab == null) _bessiePrefab = LoadPrefabComponent<BessieAnimal>("BessieAnimal");
         if (_percyPrefab  == null) _percyPrefab  = LoadPrefabComponent<PercyAnimal>("PercyAnimal");
@@ -196,6 +199,7 @@ public class LevelLoader : MonoBehaviour
             _blockParent);
         block.Initialise(data.size.x, data.size.y, data.artVariant);
         block.ApplyOverrides(data.healthOverride, data.massOverride);
+        block.Indestructible = data.indestructible;
         if (data.passThrough && block is WoodBlock wood) wood._passThrough = true;
         _spawnedBlocks.Add(block);
     }
@@ -206,6 +210,7 @@ public class LevelLoader : MonoBehaviour
         {
             RobotType.Harvester     when _harvesterPrefab     != null => _harvesterPrefab,
             RobotType.SemiHarvester when _semiHarvesterPrefab != null => _semiHarvesterPrefab,
+            RobotType.Commander     when _commanderPrefab     != null => _commanderPrefab,
             _                                                          => _robotPrefab,
         };
         if (prefab == null) { Debug.LogWarning("[LevelLoader] Robot prefab null — run Wire Scene References."); return; }
@@ -229,6 +234,18 @@ public class LevelLoader : MonoBehaviour
         }
         robot.Initialise(this);
         _spawnedRobots.Add(robot);
+
+        // Boss fights: a Commander's death brings down any Indestructible "guarded structure" in
+        // the level (e.g. L18's StoneTower) — 2026-07-12, user request: "when commander explodes
+        // the whole tower should destruct." Linked here at runtime rather than on the prefab
+        // since both the boss and its guarded structure are freshly spawned per level from
+        // LevelData, not static scene objects that could hold a fixed reference. Blocks are
+        // always spawned before robots in LoadLevel(), so every Indestructible block for this
+        // level is already in _spawnedBlocks by the time any robot spawns.
+        if (data.robotType == RobotType.Commander)
+            foreach (var block in _spawnedBlocks)
+                if (block != null && block.Indestructible)
+                    robot.AddDestroyOnDeath(block);
     }
 
     void ClearLevel()
