@@ -108,6 +108,53 @@ public abstract class BlockBase : MonoBehaviour
 
     public event Action<BlockBase> OnBlockDestroyed;
 
+    // True for blocks that must stay physically fixed regardless of support — HaybaleBlock's
+    // _stayKinematic (piles that stay visually fixed even with their base gone) or a scripted
+    // Indestructible structure (StoneTower). SettleIfUnsupported() below must never touch either.
+    public bool NeverFalls => _stayKinematic || Indestructible;
+
+    // Called once by LevelLoader right after a level's blocks finish spawning (see
+    // LevelLoader.SettleUnsupportedBlocks) — wakes this block immediately (Static -> Dynamic) if
+    // nothing is actually touching its underside, instead of leaving it permanently Static and
+    // visibly floating for the rest of the level. Added 2026-07-13, user report + screenshot on
+    // L10: "structure still remains randomly in the air." Root cause: some hand-placed blocks
+    // (captured via LevelLayoutDumper from the Scene view) end up with a small unintentional gap
+    // between them and whatever was meant to support them — Static rigidbodies never respond to
+    // gravity regardless of whether real support exists, so a level-authoring gap like that leaves
+    // the block hanging for the entire level since nothing else ever disturbs it. This check only
+    // ever wakes a block that has ZERO support directly beneath it (ground or another block) — a
+    // properly-supported block (the overwhelming majority in every level) is untouched.
+    //
+    // FOLLOW-UP FIX (2026-07-13, same user report persisting after the first pass): this method
+    // originally only flipped THIS block to Dynamic and stopped — verified against L10's actual
+    // recorded coordinates (not a guess): Stone_Square block #2 at (3.25, -5.44) sits 0.66 units
+    // above the ground (top=-6.60) with nothing else beneath it, and it in turn supports
+    // Stone_Square #3, which supports two Plank_Short pieces, which support a Barrel_Dynamite —
+    // a 5-block column. Waking only the bottom Stone left the other 4 blocks permanently Static
+    // (nothing ever told them their support just fell away), so they stayed exactly where they
+    // were — floating — even after the bottom block dropped out from under them. Now calls the
+    // same CheckForRobotsOnTop()/CheckForBlocksOnTop() cascade TakeDamage() already uses on a real
+    // hit, so the entire above-stack wakes and falls together, same as when a player destroys the
+    // base of a tower mid-game.
+    public void SettleIfUnsupported()
+    {
+        if (IsDestroyed || NeverFalls || _rb.bodyType != RigidbodyType2D.Static) return;
+        const int groundAndBlockMask = (1 << 6) | (1 << 8); // Ground=6, Block=8 — see CLAUDE.md's layer table
+        const float checkHeight = 0.08f;
+        Bounds b = _col.bounds;
+        Vector2 checkCenter = new Vector2(b.center.x, b.min.y - checkHeight * 0.5f);
+        Vector2 checkSize   = new Vector2(b.size.x * 0.9f, checkHeight);
+        if (Physics2D.OverlapBox(checkCenter, checkSize, 0f, groundAndBlockMask) == null)
+        {
+            _rb.bodyType = RigidbodyType2D.Dynamic;
+            // Cascade to whatever was resting on THIS block — without this, everything above an
+            // unsupported block stays frozen Static even once the block it depended on starts
+            // falling. Same cascade TakeDamage() already runs on a real hit.
+            CheckForRobotsOnTop();
+            CheckForBlocksOnTop();
+        }
+    }
+
     protected Rigidbody2D    _rb;
     protected BoxCollider2D  _col;
     protected SpriteRenderer _sr;
@@ -333,6 +380,16 @@ public abstract class BlockBase : MonoBehaviour
             _crackSR2.color = t < 0.25f ? new Color(0f, 0f, 0f, 0.9f) : Color.clear;
     }
 
+    // Brief hang-time between the death VFX/SFX firing and the GameObject actually disappearing —
+    // 2026-07-13, user request: "throughout gameplay, once the explosion event happens slightly
+    // delay the disappearance for effect - not too long so it looks unnatural, but slightly
+    // longer for effect." Previously Destroy(gameObject) ran the same frame the explosion/
+    // fragments spawned, so the block's own sprite vanished at the exact instant its death burst
+    // appeared rather than lingering through it even briefly. Lives here (not per-level data), so
+    // it applies to every block type/level automatically — WoodBlock/ExplodingBarrelBlock both
+    // route through this same base call (see their own DestroyBlock() overrides).
+    private const float DestroyDelay = 0.12f;
+
     protected virtual void DestroyBlock()
     {
         if (IsDestroyed) return;
@@ -351,7 +408,11 @@ public abstract class BlockBase : MonoBehaviour
             AudioManager.Play(AudioManager.Sound.BlockDestroy, 0.05f);
         OnBlockDestroyed?.Invoke(this);
         ScoreManager.Instance?.AddBlockScore(this);
-        Destroy(gameObject);
+        // Destroy(obj, delay) only marks the object for deferred destruction after `delay`
+        // seconds — transform/_col stay fully valid in the meantime, so WoodBlock.DestroyBlock()'s
+        // subsequent DamageNearby() call (which runs a Physics2D query off this same transform) is
+        // unaffected by the added delay.
+        Destroy(gameObject, DestroyDelay);
     }
 
     // Checks for a robot resting directly on top of this block and, if found, makes it fall
@@ -411,6 +472,24 @@ public abstract class BlockBase : MonoBehaviour
     // method's comment), block colliders are already correctly re-fitted to their visuals in
     // Initialise(), so a much shorter check reliably catches a directly-stacked neighbour without
     // reaching into an unrelated structure elsewhere in the level.
+    //
+    // Briefly widened to a box padded on every side (2026-07-13, "certain levels the wood hangs in
+    // the air") and then REVERTED back to this directly-above-only column the same day — the
+    // all-directions version was a real regression (user report: "level 11... takes only one
+    // chicken and everything explodes... damage too easy"). Root cause verified directly from the
+    // code, not guessed: TakeDamage() calls this on EVERY hit (lethal or not), and the padded
+    // check woke every block within 0.35 units in ANY direction — including sideways and
+    // downward — not just things resting on top. In a densely packed level (blocks placed nearly
+    // edge-to-edge, e.g. L11), one hit could wake a block, which woke its immediate neighbours in
+    // every direction, which each recursively woke THEIR neighbours the same way — a single
+    // impact could cascade through nearly the entire structure in one frame, turning it all
+    // Dynamic and colliding/toppling at once. The original floating-wood bug this padding was
+    // meant to fix is now handled correctly and specifically by
+    // SettleIfUnsupported()'s own cascade (added the same session) at level LOAD time, which
+    // reuses this exact above-only method — so the ongoing in-game damage cascade no longer needs
+    // to reach sideways/downward at all. Block colliders are already correctly re-fitted to their
+    // visuals in Initialise(), so this narrow column reliably catches a directly-stacked neighbour
+    // without reaching into an unrelated structure elsewhere in the level.
     void CheckForBlocksOnTop()
     {
         const int blockLayerMask = 1 << 8;
@@ -443,8 +522,8 @@ public abstract class BlockBase : MonoBehaviour
                 // rigidbodies, floating with no real support beneath them — 2026-07-12, user
                 // report: "structure fall and break all the way to the ground, blocks can't just
                 // fall over and hang in the middle of the air." Recursion terminates naturally —
-                // it only ever climbs upward through however many blocks are actually stacked,
-                // and stops the moment it finds no more Static blocks directly above.
+                // it only ever climbs through however many blocks are actually touching this one,
+                // and stops the moment it finds no more Static blocks in range.
                 block.CheckForRobotsOnTop();
                 block.CheckForBlocksOnTop();
             }

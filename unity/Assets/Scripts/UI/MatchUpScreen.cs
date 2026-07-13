@@ -131,6 +131,20 @@ public class MatchUpScreen : MonoBehaviour
     private bool      _hasData;
     private Coroutine _sequenceRoutine;
 
+    // Track the two fly-by coroutines separately from _sequenceRoutine (2026-07-13, user report:
+    // "do not play the sound effect twice") — CluckFlyBy()/BessieFlyBy() are started via a bare
+    // StartCoroutine() inside PlaySequence, not nested under it (deliberately, so they run
+    // concurrently with the countdown beats — see the call site's comment), so stopping
+    // _sequenceRoutine alone never actually stopped them. If Show() re-fired while a previous
+    // pass's fly-by was still mid-flight (e.g. re-entering the match-up screen quickly), the old
+    // coroutine kept running untouched alongside the new one, and CluckFlyBy()'s one-shot
+    // AudioManager.Play(Sound.Launch) call fired again from the new pass on top of the old one's
+    // — genuinely two overlapping cannon-fire sounds, not just a perceived doubling. Same class of
+    // leaked-coroutine bug as the egg-burst fix above; stopped alongside _sequenceRoutine on every
+    // path that can interrupt a pass (Show()/Hide()/Skip()).
+    private Coroutine _cluckFlyRoutine;
+    private Coroutine _bessieFlyRoutine;
+
     // Rest positions for the two cards / VS graphic (2026-07-23 pass — "fuller" layout per user
     // feedback: bigger cards, closer together, touching VS). Cards are 560x560 (half-width 280),
     // VS is 220x220 (half-width 110); animal/robot X = ∓(110+280) = ∓390 so each card's inner
@@ -143,25 +157,25 @@ public class MatchUpScreen : MonoBehaviour
     private const float OffscreenOffset = 900f; // how far off-screen each card starts before sliding in
     private const float CardRotationDeg = 10f;  // outward tilt — animal +10 (leans left), robot -10 (leans right)
 
-    // Second animal card's rest position, relative to AnimalRestPos — mirrors Robot2RestOffset's
-    // tight "deck of cards" spacing (added 2026-07-12 alongside it). Offset left/up instead of
-    // right/up since the animal card sits on the opposite (left) side of the screen — this keeps
-    // the overlay peeking toward screen-centre (matching the robot deck's overlay peeking away
-    // from its own screen edge), rather than off toward the outer edge.
-    private static readonly Vector2 Animal2RestOffset = new(-70f, 50f);
+    // Second animal card's rest position, relative to AnimalRestPos. Originally offset up (matching
+    // Robot2RestOffset's "stacks upward" convention, added 2026-07-12), but changed to stack
+    // DOWNWARD instead 2026-07-13 (user report: "drop the card slightly lower so the deck stacks
+    // downwards") — the animal deck's downward stack is now deliberately distinct from the robot
+    // deck's upward one, not a mirrored pair.
+    private static readonly Vector2 Animal2RestOffset = new(-70f, -40f);
     private const float Animal2RotationDeg = 22f; // mirrors Robot2RotationDeg's sign (outward-steeper on this side)
 
-    // Second robot card's rest position, relative to RobotRestPos — offset up-right and in front
+    // Second robot card's rest position, relative to RobotRestPos — offset right and in front
     // (higher sibling index, see BuildUI) of the primary robot card, reading as a second card
     // fanned in a deck rather than a separate full card. Went through several overcorrections:
     // (55,-45) originally (2026-07-09, "the second card does not come out over the first") ->
     // (300,-220) (2026-07-12, "semi harvester and then harvester slide over each other") -> (260,
-    // 240) same day ("lift the second card up to overlay the first"). That last value drifted too
-    // far — screenshot showed the second card floating mostly ABOVE the first with barely any
-    // overlap, not "sliding nicely over it like a deck of cards" (2026-07-12 follow-up report).
-    // Pulled back down to a tight fan offset — most of the card still overlaps the primary, only
-    // a corner peeks out up-right, matching how a real card-game fan reads.
-    private static readonly Vector2 Robot2RestOffset = new(70f, 50f);
+    // 240) same day ("lift the second card up to overlay the first") -> (70,50) ("pulled back down
+    // to a tight fan offset"). Switched from stacking UPWARD to DOWNWARD 2026-07-13 (user request:
+    // "on matchup scene the cluck and bessie cards are right - do the same now for the robots") —
+    // mirrors Animal2RestOffset's own upward-to-downward switch the same session, so both decks
+    // now stack the same direction, consistently.
+    private static readonly Vector2 Robot2RestOffset = new(70f, -40f);
     private const float Robot2RotationDeg = -22f; // steeper tilt than the primary robot card's -10
 
     // Third robot card's rest position, relative to RobotRestPos — slides in from the right (same
@@ -169,8 +183,9 @@ public class MatchUpScreen : MonoBehaviour
     // (frontmost sibling — see BuildUI). Pulled in 2026-07-12 (user report: "level 11 renders the
     // third robot over the other two" [too high, matching Robot2RestOffset's same overcorrection])
     // to a tight fan progression — roughly double Robot2RestOffset, continuing the same "deck of
-    // cards" spacing rather than floating separately above the other two.
-    private static readonly Vector2 Robot3RestOffset = new(140f, 95f);
+    // cards" spacing rather than floating separately above the other two. Y flipped to match
+    // Robot2RestOffset's downward switch 2026-07-13 (see that field's comment).
+    private static readonly Vector2 Robot3RestOffset = new(140f, -80f);
     private const float Robot3RotationDeg = -34f; // steeper tilt again, continuing the fanned-deck progression
 
     // Countdown.mp3 timing (measured via waveform analysis, 2026-07-07): four beeps — three short
@@ -195,6 +210,13 @@ public class MatchUpScreen : MonoBehaviour
     private const float CluckFlyEndX   = 1400f;
     private const float CluckFlyArcHeight = 260f; // vertical bump added at the midpoint of the flight — see CluckFlyBy; raised from 90f 2026-07-09, user-requested "even more" arc
 
+    // Bessie's fly-by arc — taller than Cluck's own (2026-07-13, user request: "same time as
+    // cluck only at a higher arch") now that she flies the SAME direction as Cluck rather than
+    // crossing him (see BessieFlyBy) — the extra height is what keeps the two passes visually
+    // distinct now that they share a direction and start together, instead of relying on
+    // opposite travel directions to tell them apart.
+    private const float BessieFlyArcHeight = 360f;
+
     // Cluck's egg-burst teaser — re-added 2026-07-12 (user request to bring back what was removed
     // 2026-07-11 alongside the L07 Bessie-crossing rework) fanning 5 small Egg.png icons outward
     // from Cluck's current position at the halfway point of his fly-by, mirroring
@@ -212,6 +234,32 @@ public class MatchUpScreen : MonoBehaviour
     private const float EggBurstFadeStartFraction = 0.7f; // stay fully opaque until 70% of the flight, then fade
     private const float EggBurstDistance = 260f;
     private bool _eggBurstFiredThisPass;
+
+    // Tracks every in-flight egg-burst icon + its animation coroutine so they can be force-
+    // cleared on Hide()/Skip()/a fresh Show() — added 2026-07-13 (user report: "level 7 and 8
+    // onwards there are cluck eggs frozen on screen on the matchup scene"). Root cause: neither
+    // Hide() nor OnSkipClicked() ever stopped the AnimateBurstEgg coroutines SpawnEggBurst()
+    // starts (they're independent StartCoroutine calls, not nested under _sequenceRoutine, so
+    // stopping that alone never touched them) — they only ever stopped naturally by running their
+    // own full EggBurstDuration. If the match-up panel got hidden (Hide()/Skip()) mid-burst, the
+    // owning MonoBehaviour's coroutines are cut off by Unity the instant the GameObject
+    // deactivates, but the already-spawned "MatchUpEgg" Image objects were never destroyed —
+    // they just sat there, frozen at their last position/alpha, invisible only until the panel
+    // reactivated for the NEXT level's Show(), at which point they reappeared exactly as
+    // reported. ClearEggBurst() below is now called on every path that can interrupt a burst.
+    private readonly System.Collections.Generic.List<GameObject> _activeEggBurstGOs = new();
+    private readonly System.Collections.Generic.List<Coroutine>  _activeEggBurstCoroutines = new();
+
+    void ClearEggBurst()
+    {
+        foreach (var co in _activeEggBurstCoroutines)
+            if (co != null) StopCoroutine(co);
+        _activeEggBurstCoroutines.Clear();
+
+        foreach (var go in _activeEggBurstGOs)
+            if (go != null) Destroy(go);
+        _activeEggBurstGOs.Clear();
+    }
 
     public void Init(Sprite squareSpr, Sprite backgroundSprite, Sprite vsSprite,
         Sprite[] levelHeaderSprites,
@@ -319,16 +367,13 @@ public class MatchUpScreen : MonoBehaviour
             _robot3Img.sprite  = robot3Spr;
             _robot3Img.enabled = robot3Spr != null;
 
-            // Bessie's own fly-by (crossing Cluck's, see BessieFlyBy) only plays on levels that
-            // actually feature her — i.e. from L07 "Bessie's Debut" onward, not L01-L06.
+            // Bessie's own fly-by pass removed from the match-up screen entirely 2026-07-13
+            // (user request: "let's remove Bessie from the matchup scenes - simply keep cluck").
+            // Previously enabled per-level (true from her debut level onward) — now unconditionally
+            // false, so BessieFlyBy() never starts (see the `if (_bessieFlyImg.enabled)` call site
+            // in PlaySequence) and her falling-loop SFX never plays either, without needing to
+            // touch BessieFlyBy()/BessieFlyArcHeight/etc. themselves — only Cluck's own pass shows.
             _bessieFlyEnabledForLevel = false;
-            if (data.birds != null)
-            {
-                foreach (var b in data.birds)
-                {
-                    if (b == AnimalType.Bessie) { _bessieFlyEnabledForLevel = true; break; }
-                }
-            }
         }
         else
         {
@@ -356,6 +401,8 @@ public class MatchUpScreen : MonoBehaviour
         // on that path.
         AudioManager.PauseMenuMusic();
 
+        ClearEggBurst(); // no leftover eggs from a previous, interrupted pass (see field comment)
+        ClearFlyByRoutines(); // no leaked Cluck/Bessie fly-by from a previous, interrupted pass
         _panel.SetActive(true);
         _skipGO.SetActive(_hasData);
         if (_skipButton != null) _skipButton.interactable = _hasData;
@@ -363,10 +410,23 @@ public class MatchUpScreen : MonoBehaviour
         _sequenceRoutine = StartCoroutine(PlaySequence());
     }
 
+    // Stops CluckFlyBy()/BessieFlyBy() if either is still mid-flight and silences their audio —
+    // see the _cluckFlyRoutine/_bessieFlyRoutine field comment for the double-cannon-fire-sound
+    // bug this prevents. Called from every path that can interrupt a pass.
+    void ClearFlyByRoutines()
+    {
+        if (_cluckFlyRoutine != null) { StopCoroutine(_cluckFlyRoutine); _cluckFlyRoutine = null; }
+        if (_bessieFlyRoutine != null) { StopCoroutine(_bessieFlyRoutine); _bessieFlyRoutine = null; }
+        if (_cluckFallingAudioSrc != null && _cluckFallingAudioSrc.isPlaying) _cluckFallingAudioSrc.Stop();
+        if (_bessieFallingAudioSrc != null && _bessieFallingAudioSrc.isPlaying) _bessieFallingAudioSrc.Stop();
+    }
+
     public void Hide()
     {
         if (_sequenceRoutine != null) { StopCoroutine(_sequenceRoutine); _sequenceRoutine = null; }
         if (_countdownAudioSrc != null && _countdownAudioSrc.isPlaying) _countdownAudioSrc.Stop();
+        ClearEggBurst();
+        ClearFlyByRoutines();
         _panel.SetActive(false);
     }
 
@@ -381,7 +441,8 @@ public class MatchUpScreen : MonoBehaviour
 
         if (_sequenceRoutine != null) { StopCoroutine(_sequenceRoutine); _sequenceRoutine = null; }
         if (_countdownAudioSrc != null && _countdownAudioSrc.isPlaying) _countdownAudioSrc.Stop();
-        if (_cluckFallingAudioSrc != null && _cluckFallingAudioSrc.isPlaying) _cluckFallingAudioSrc.Stop();
+        ClearEggBurst();
+        ClearFlyByRoutines();
 
         StartCoroutine(SkipSequence());
     }
@@ -422,7 +483,7 @@ public class MatchUpScreen : MonoBehaviour
         _vsImg.enabled           = _vsSprite != null; // defensive re-assert, see class comment
         _countdownImg.enabled    = false;
         _cluckFlyRT.anchoredPosition  = new Vector2(CluckFlyStartX, CluckFlyY); // in case Show() re-fires mid-flight
-        _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyEndX, CluckFlyY);   // mirrored start, opposite side
+        _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY); // same start as Cluck now — see BessieFlyBy
         _eggBurstFiredThisPass        = false;
 
         // 1) Level header pops in. (Future hook: AudioManager whoosh/pop SFX.)
@@ -478,8 +539,8 @@ public class MatchUpScreen : MonoBehaviour
         // Cluck flies across the bottom of the screen, behind the cards, over the exact same
         // duration as the countdown — started here (not yielded) so it runs concurrently with
         // the countdown beats below rather than blocking them.
-        if (_cluckFlyImg.enabled) StartCoroutine(CluckFlyBy(CountdownClipLength));
-        if (_bessieFlyImg.enabled) StartCoroutine(BessieFlyBy(CountdownClipLength));
+        if (_cluckFlyImg.enabled) _cluckFlyRoutine = StartCoroutine(CluckFlyBy(CountdownClipLength));
+        if (_bessieFlyImg.enabled) _bessieFlyRoutine = StartCoroutine(BessieFlyBy(CountdownClipLength));
         yield return CountdownBeat(_countdown3Sprite, CountdownBeepInterval);
         yield return CountdownBeat(_countdown2Sprite, CountdownBeepInterval);
         yield return CountdownBeat(_countdown1Sprite, CountdownBeepInterval);
@@ -710,7 +771,8 @@ public class MatchUpScreen : MonoBehaviour
             img.preserveAspect = true;
             img.raycastTarget = false;
 
-            StartCoroutine(AnimateBurstEgg(rt, img, originPos, dir));
+            _activeEggBurstGOs.Add(eggGO);
+            _activeEggBurstCoroutines.Add(StartCoroutine(AnimateBurstEgg(rt, img, originPos, dir)));
         }
     }
 
@@ -733,6 +795,7 @@ public class MatchUpScreen : MonoBehaviour
             var c = img.color; c.a = alpha; img.color = c;
             yield return null;
         }
+        _activeEggBurstGOs.Remove(rt.gameObject);
         Destroy(rt.gameObject);
     }
 
@@ -741,12 +804,16 @@ public class MatchUpScreen : MonoBehaviour
     // own debut level — gated purely on whether THIS level's birds[] actually contains Bessie
     // (see _bessieFlyEnabledForLevel in Show()), not a hardcoded level number, so it automatically
     // tracked the plan moving her debut from L07 to L10 (2026-07-12) with no logic change needed
-    // here. Mirrors CluckFlyBy exactly
-    // — same duration, same arc formula — but runs start/end reversed (right-to-left instead of
-    // left-to-right) so at any instant Bessie's X is Cluck's X negated around the screen centre:
-    // both hit X=0 at the same t=0.5, which is what makes them visibly cross paths at the arc's
-    // peak rather than just two unrelated flights sharing a screen. No cannon-shot SFX here (Cluck's
-    // launch already plays one for the pass) — just her own falling loop, faded the same way.
+    // here.
+    //
+    // Direction reworked 2026-07-13 (user request: "turn it around and make her fly in the other
+    // direction — same time as cluck only at a higher arch"): previously ran start/end reversed
+    // from CluckFlyBy (right-to-left vs. Cluck's left-to-right) so the two crossed paths at the
+    // arc's midpoint. Now flies the SAME direction as Cluck — same start/end X, same duration,
+    // started together (see the PlaySequence call site) — distinguished from his pass purely by a
+    // taller arc (BessieFlyArcHeight vs. CluckFlyArcHeight) instead of by travel direction. No
+    // cannon-shot SFX here (Cluck's launch already plays one for the pass, see CluckFlyBy) — just
+    // her own falling loop, faded the same way.
     IEnumerator BessieFlyBy(float duration)
     {
         if (_bessieFallingClip != null)
@@ -757,14 +824,14 @@ public class MatchUpScreen : MonoBehaviour
             _bessieFallingAudioSrc.Play();
         }
 
-        _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyEndX, CluckFlyY);
+        _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY);
         float elapsed = 0f;
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-            float x = Mathf.Lerp(CluckFlyEndX, CluckFlyStartX, t);
-            float y = CluckFlyY + Mathf.Sin(t * Mathf.PI) * CluckFlyArcHeight;
+            float x = Mathf.Lerp(CluckFlyStartX, CluckFlyEndX, t);
+            float y = CluckFlyY + Mathf.Sin(t * Mathf.PI) * BessieFlyArcHeight;
             _bessieFlyRT.anchoredPosition = new Vector2(x, y);
 
             if (_bessieFallingAudioSrc.isPlaying)
@@ -776,7 +843,7 @@ public class MatchUpScreen : MonoBehaviour
             }
             yield return null;
         }
-        _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY);
+        _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyEndX, CluckFlyY);
         _bessieFallingAudioSrc.Stop();
     }
 

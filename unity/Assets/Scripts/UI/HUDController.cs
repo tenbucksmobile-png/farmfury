@@ -314,16 +314,12 @@ public class HUDController : MonoBehaviour
         StyleTopButtonColors(muteBtn);
         muteBtn.onClick.AddListener(OnTopMuteToggleClicked);
 
-        // Quit — leftmost. Sized up from btnSize (2026-07-06, user-reported the three icons
-        // "don't look like they're the same size") — Btn_quite.png's actual button art only
-        // fills ~87%x80% of its own 256x256 canvas (pixel-measured: content bbox 222x205 vs.
-        // Btn_pause.png's content filling its canvas edge-to-edge, 256x256), so rendering both
-        // sprites into an identical square box left QUIT visibly smaller. quitBtnSize
-        // compensates using the tighter (height) fill ratio so QUIT's drawn button reads at the
-        // same size as Pause/Mute; pos below still uses the shared btnSize+gap grid for
-        // spacing — QUIT only grows further left from its own right-edge anchor, away from
-        // Mute, so this can't overlap it.
-        const float quitBtnSize = btnSize / 0.80f;
+        // Quit — leftmost. Previously sized up from btnSize (2026-07-06) to compensate for
+        // Btn_quite.png's art not filling its own canvas edge-to-edge like Pause/Mute — the
+        // user has since re-supplied the art as Btn_quit.png at matching fill, so QUIT is back
+        // to the same shared btnSize as Pause/Mute (2026-07-13, user report: "resize Btn_quit to
+        // the size of the other button icons").
+        const float quitBtnSize = btnSize;
         var quitImg = MakeImage(_topRightRoot, "TopQuitBtn",
                           _quitButtonSprite != null ? _quitButtonSprite : _squareSpr,
                           _quitButtonSprite != null ? Color.white : new Color(0.75f, 0.20f, 0.12f),
@@ -541,7 +537,7 @@ public class HUDController : MonoBehaviour
         {
             var titleImg = MakeImage(box.transform, "LCTitle", _lcTitleSprite, Color.white,
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0f, 255f), new Vector2(340f, 183f));
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, 280f), new Vector2(340f, 183f));
             titleImg.preserveAspect = true;
         }
         else
@@ -732,7 +728,7 @@ public class HUDController : MonoBehaviour
         {
             var titleImg = MakeImage(box.transform, "LFTitle", _lfTitleSprite, Color.white,
                       new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                      new Vector2(0.5f, 0.5f), new Vector2(0f, 255f), new Vector2(340f, 183f));
+                      new Vector2(0.5f, 0.5f), new Vector2(0f, 280f), new Vector2(340f, 183f));
             titleImg.preserveAspect = true;
         }
         else

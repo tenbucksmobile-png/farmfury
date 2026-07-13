@@ -504,6 +504,29 @@ public static class SceneSetup
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level10.png");
         headerArr.GetArrayElementAtIndex(10).objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level11.png");
+        // Indices 11-17 (L12-L18) added 2026-07-13, user report: "from level 12 upwards the
+        // matchup scene shows level1, not the correct scene level artwork" — confirmed root cause:
+        // this array was never extended past index 10, so every slot past L11 was still null and
+        // MatchUpScreen.Show() falls back to LevelHeader1.png (index 0) whenever a slot is empty,
+        // exactly matching "shows level1." level12.png/level14.png/level15.png/level16.png/
+        // level18.png already existed on disk under this exact lowercase filename; L13's file is
+        // capitalised on disk as "Level13.png" (inconsistent with the rest, kept as-is rather than
+        // renaming the source asset) — matched exactly since AssetDatabase paths are effectively
+        // case-sensitive on iOS/Android builds even though Windows' filesystem tolerates the
+        // mismatch. L17 has no header art on disk yet (checked directly, not guessed) — its slot
+        // stays unassigned and correctly falls back to LevelHeader1.png until that art exists.
+        headerArr.GetArrayElementAtIndex(11).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level12.png");
+        headerArr.GetArrayElementAtIndex(12).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Level13.png");
+        headerArr.GetArrayElementAtIndex(13).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level14.png");
+        headerArr.GetArrayElementAtIndex(14).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level15.png");
+        headerArr.GetArrayElementAtIndex(15).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level16.png");
+        headerArr.GetArrayElementAtIndex(17).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level18.png");
 
         WireSprite(mapSo, "_countdown3Sprite",        $"{matchUpFolder}/countdown3.png");
         WireSprite(mapSo, "_countdown2Sprite",        $"{matchUpFolder}/countdown2.png");
@@ -858,12 +881,15 @@ public static class SceneSetup
         so.FindProperty("_returnDelay").floatValue        = 2.5f;
 
         // [SerializeField] stale-value trap (see CLAUDE.md) — the Game.unity scene GO already had
-        // its own serialized 3.0/6.0 launch-speed values baked in from before, which changing the
-        // C# class defaults alone would never retroactively update. Re-synced explicitly here so
-        // the "allow for high and strong firing" launch-dynamics change (2026-07-11) actually
-        // takes effect in the live scene, not just for freshly-created GameObjects.
-        so.FindProperty("_minLaunchSpeed").floatValue = 3.5f;
-        so.FindProperty("_maxLaunchSpeed").floatValue = 8.5f;
+        // its own serialized launch-speed values baked in from before, which changing the C# class
+        // defaults alone would never retroactively update. Re-synced explicitly here so each
+        // launch-dynamics change actually takes effect in the live scene, not just for freshly-
+        // created GameObjects. Raised 3.5/8.5 -> 3.8/9.3 (2026-07-13, alongside the FarmCannon
+        // reposition — see the field comment in CatapultLauncher.cs) to keep max-power shots able
+        // to reach and clear the tallest/farthest structures (including L18's boss) from the
+        // cannon's new, further-back position.
+        so.FindProperty("_minLaunchSpeed").floatValue = 3.8f;
+        so.FindProperty("_maxLaunchSpeed").floatValue = 9.3f;
 
         // ── Farm Cannon (2026-07-02, replaces the trebuchet visual system) ──────
         // Delete the old trebuchet scene GOs — CatapultLauncher no longer references them
@@ -880,8 +906,16 @@ public static class SceneSetup
             cannonGO = new GameObject("FarmCannon");
             Debug.Log("[FarmFury] Created 'FarmCannon' GameObject.");
         }
-        // User-verified 2026-07-03 (was -4.5,-2.5,2 / 2.2,1.8,1 — see CatapultLauncher.BuildCannon()).
-        cannonGO.transform.position   = new Vector3(-3.0012f, -5.1223f, 0f);
+        // User-verified 2026-07-03 ground truth (was -4.5,-2.5,2 / 2.2,1.8,1 — see
+        // CatapultLauncher.BuildCannon()), moved 2026-07-13 (user report: "cannon too close" —
+        // repositioned further back/left by hand in the Editor so animals have real room to arc
+        // over tall structures; see the CatapultLauncher._maxLaunchSpeed comment for the matching
+        // power re-tune this required). This line runs UNCONDITIONALLY on every Wire Scene
+        // References pass, even when the GO already exists — a real bug hit live 2026-07-13, where
+        // running `setup` after the manual reposition silently stomped it straight back to the old
+        // 2026-07-03 value. If the cannon needs to move again, change it here (not just in the
+        // Editor) or a future setup run will revert it again.
+        cannonGO.transform.position   = new Vector3(-7.54f, -5.03f, 0f);
         cannonGO.transform.localScale = new Vector3(1.4711188f, 1.3868444f, 1f);
 
         var cannonSR = cannonGO.GetComponent<SpriteRenderer>();
@@ -1771,14 +1805,22 @@ public static class SceneSetup
         }
 
         // Physics collider only — invisible, no SpriteRenderer.
-        // Surface Y = -6.60; centre at (0, -6.85); scale (60,0.5,1) → collider top edge at -6.60.
-        const float GroundSurface = -6.60f;
+        // Surface Y = -6.60; scale (60, GroundThickness, 1), centred so the TOP edge stays pinned
+        // at -6.60 regardless of thickness. Thickness raised 0.5 -> 4 (2026-07-13, defense-in-
+        // depth alongside BessieAnimal's new downward-speed clamp — user report: "when bessie is
+        // triggered she falls through the floor"): a thin 0.5u collider left very little margin
+        // for a fast-moving body's single-fixed-timestep travel distance to still land a real
+        // collision before passing clean through, especially for Bessie's slam-triggered velocity
+        // spike. Everything below the visible play area anyway, so thickening it downward (not
+        // upward, which would move the surface) has no visual or gameplay side effects.
+        const float GroundSurface   = -6.60f;
+        const float GroundThickness = 4f;
         var go = GameObject.Find("Ground");
         if (go == null) { go = new GameObject("Ground"); Debug.Log("[FarmFury] Created 'Ground' physics collider."); }
         go.tag   = "Ground";
         go.layer = 6;
-        go.transform.position   = new Vector3(0f, GroundSurface - 0.25f, 0f);
-        go.transform.localScale = new Vector3(60f, 0.5f, 1f);
+        go.transform.position   = new Vector3(0f, GroundSurface - GroundThickness * 0.5f, 0f);
+        go.transform.localScale = new Vector3(60f, GroundThickness, 1f);
 
         // Remove any old SpriteRenderer — ground is physics-only from now on
         var oldSr = go.GetComponent<SpriteRenderer>();

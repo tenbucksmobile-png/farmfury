@@ -36,6 +36,10 @@ public class LevelLoader : MonoBehaviour
     private readonly List<RobotEnemy>  _spawnedRobots = new();
     private readonly Queue<AnimalType> _birdQueue     = new();
 
+    // Tracks the pending "level failed" coroutine so a robot dying after it's already started can
+    // cancel it — see NotifyRobotDestroyed()/NotifyBirdsExhausted() below.
+    private Coroutine _failedRoutine;
+
     public int        RemainingRobots    => _spawnedRobots.Count;
     public bool       HasBirdsRemaining  => _birdQueue.Count > 0;
     public int        BirdsRemaining     => _birdQueue.Count;
@@ -126,6 +130,20 @@ public class LevelLoader : MonoBehaviour
             GameManager.Instance.CurrentLevelIndex,
             data.birds.Length,
             _spawnedRobots.Count);
+
+        StartCoroutine(SettleUnsupportedBlocksNextFrame());
+    }
+
+    // Wakes any spawned block that has zero real support beneath it (see
+    // BlockBase.SettleIfUnsupported) right at level start, before the player can act — fixes
+    // orphaned floating debris left by a level-authoring gap rather than leaving it hanging for
+    // the whole level. Waits one frame first so every block's BoxCollider2D has actually
+    // registered with Physics2D (colliders added this same frame aren't guaranteed queryable yet).
+    IEnumerator SettleUnsupportedBlocksNextFrame()
+    {
+        yield return null;
+        foreach (var block in _spawnedBlocks)
+            if (block != null) block.SettleIfUnsupported();
     }
 
     public Sprite GetAnimalIdleSprite(AnimalType type)
@@ -167,6 +185,16 @@ public class LevelLoader : MonoBehaviour
 
         if (_spawnedRobots.Count == 0)
         {
+            // Cancel any already-pending "level failed" sequence — 2026-07-13 fix for a real
+            // race: the player's last bird can land and trigger NotifyBirdsExhausted() (below)
+            // BEFORE a structural collapse that same bird set off finishes killing the last
+            // robot(s) a few tenths of a second later (e.g. a toppling wood tower crushing a
+            // robot underneath, or a delayed Fall-damage death). GameManager.CompleteLevel()/
+            // FailLevel() both only transition from GameState.Playing, so whichever coroutine's
+            // wait elapses first wins and the other silently no-ops — without cancelling the
+            // fail path here, a level the player actually cleared could still force the fail
+            // screen and make them replay it. Robot destruction always wins outright now.
+            if (_failedRoutine != null) { StopCoroutine(_failedRoutine); _failedRoutine = null; }
             OnAllRobotsDestroyed?.Invoke();
             StartCoroutine(DelayedLevelComplete());
         }
@@ -177,7 +205,7 @@ public class LevelLoader : MonoBehaviour
         if (_spawnedRobots.Count > 0)
         {
             OnBirdsExhausted?.Invoke();
-            StartCoroutine(DelayedLevelFailed());
+            _failedRoutine = StartCoroutine(DelayedLevelFailed());
         }
     }
 
@@ -266,6 +294,11 @@ public class LevelLoader : MonoBehaviour
     IEnumerator DelayedLevelFailed()
     {
         yield return new WaitForSeconds(1.5f);
+        _failedRoutine = null;
+        // Defensive re-check alongside the cancel-on-clear in NotifyRobotDestroyed() above — if
+        // the last robot somehow died in the same frame this coroutine's wait elapsed (before its
+        // own cancellation could run), don't fail a level that's actually already cleared.
+        if (_spawnedRobots.Count == 0) yield break;
         GameManager.Instance.FailLevel();
     }
 }

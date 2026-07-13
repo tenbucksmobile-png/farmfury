@@ -417,6 +417,7 @@ public class RobotEnemy : MonoBehaviour
     void Die()
     {
         IsDestroyed = true;
+        PlayerStatsTracker.RecordRobotDestroyed();
         _loader?.NotifyRobotDestroyed(this);
         foreach (var block in _destroyOnDeath)
             if (block != null) block.ForceDestroy();
@@ -446,7 +447,13 @@ public class RobotEnemy : MonoBehaviour
             yield return null;
         }
 
-        yield return new WaitForSeconds(0.06f);
+        // Held a little longer post-squish (0.06s -> 0.16s) so the death explosion/particles
+        // (both spawned at the top of this coroutine, same frame as the squish starting) have a
+        // bit more time on screen before the robot itself is gone — 2026-07-13, user request:
+        // "once the explosion event happens slightly delay the disappearance for effect... apply
+        // across the levels." Lives on the shared RobotEnemy class, so every robot type/level
+        // gets this automatically.
+        yield return new WaitForSeconds(0.16f);
         Destroy(gameObject);
     }
 

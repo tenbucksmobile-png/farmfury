@@ -31,12 +31,24 @@ public class CatapultLauncher : MonoBehaviour
     // barrel, i.e. it could barely REACH that far, let alone clear a robot/block stack sitting
     // several units above ground there. Re-solved for v at the same angle/distance targeting a
     // generous ~4.5-unit clearance above launch height gives v≈7.5 — 8.5 keeps a real margin on
-    // top of that (verified: at 55 deg it clears ~6.7 units at that same distance). Min speed
-    // raised proportionally (3.0/6.0 -> 3.5/8.5, keeping the same ~0.5 ratio) so the softest pull
-    // still meaningfully reaches nearby targets rather than reading as unchanged while every
-    // other shot got stronger.
-    [SerializeField] private float _minLaunchSpeed  = 3.5f;
-    [SerializeField] private float _maxLaunchSpeed  = 8.5f;
+    // top of that (verified: at 55 deg it clears ~6.7 units at that same distance).
+    //
+    // Raised again 8.5 -> 9.3 (2026-07-13, same day as the FarmCannon reposition — user report:
+    // "did we also adjust the trajectory and power of the cannon to adjust for the distance").
+    // Moving the visual FarmCannon ~4.5 units further left (X-3.0 -> X-7.54, see the Coordinate
+    // System docs in CLAUDE.md) increased every level's actual launch-to-target distance by the
+    // same amount, since block/robot X coordinates in LevelData are untouched absolute positions.
+    // Re-checked the same projectile-height formula against every block/robot in every one of the
+    // 18 built levels (script, not eyeballed) — the worst case was L18's own Commander boss, whose
+    // required clearance at the new distance (dist=13.2, reqH=6.70 above launch height) exceeded
+    // what 8.5 m/s could reach at ANY angle by a full unit (margin -1.00, down from +1.38 under
+    // the old cannon position) — the World 1 boss fight was no longer winnable at max power.
+    // Several other levels (L17, L13, L16, L08/L09, L07, L11) had their margins roughly halved
+    // too. 9.3 restores a same-or-better margin than the original 2026-07-11 tuning at every one
+    // of them (L18's boss: +1.69). Min speed raised proportionally alongside it (3.5 -> 3.8, same
+    // ratio as before) so the softest pull still meaningfully reaches nearby targets.
+    [SerializeField] private float _minLaunchSpeed  = 3.8f;
+    [SerializeField] private float _maxLaunchSpeed  = 9.3f;
 
     [Header("Aim Geometry")]
     // Abstract aiming-math anchor. NOT tied to any visual GameObject — drag angle is measured
@@ -172,6 +184,8 @@ public class CatapultLauncher : MonoBehaviour
             new GameObject("LevelCompleteManager").AddComponent<LevelCompleteManager>();
         if (FindAnyObjectByType<LevelFailedManager>() == null)
             new GameObject("LevelFailedManager").AddComponent<LevelFailedManager>();
+        if (PlayerStatsTracker.Instance == null)
+            new GameObject("PlayerStatsTracker").AddComponent<PlayerStatsTracker>();
 
         // Ensure 2D orthographic view regardless of scene camera settings — orthoSize starts at
         // the floor value here; OnLevelStarted() recomputes it per-level once a level actually
@@ -376,6 +390,7 @@ public class CatapultLauncher : MonoBehaviour
         if (velocity.magnitude < 0.1f) return; // not enough pull — nothing fires
         if (!_levelLoader.TryConsumeBird(out AnimalType birdType)) return;
         LastAnimalUsed = birdType;
+        PlayerStatsTracker.RecordCannonballFired(birdType);
 
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
 
@@ -449,24 +464,54 @@ public class CatapultLauncher : MonoBehaviour
     // computed rather than hand-tuned per level. Block bounds use BlockSpawnData.size directly
     // (BlockBase.Initialise() scales the sprite to exactly that world-space footprint).
     //
-    // Robot bounds ALWAYS use the fixed (0.6, 0.9) footprint, never RobotSpawnData.scale — fixed
+    // Robot bounds used the fixed (0.6, 0.9) footprint, never RobotSpawnData.scale — fixed
     // 2026-07-12 (user report: L04/L05's auto-zoom was "so extreme" the sky backdrop fell short
-    // of the safe area). Root cause: RobotSpawnData.scale (as dumped by LevelLayoutDumper, values
-    // like 5.7/5.4) is a VISUAL transform.localScale multiplier that inflates this project's tiny
-    // native robot sprites up to roughly gameplay size — LevelLoader.SpawnRobot's own comment
-    // confirms the real world-space footprint is deliberately re-derived back to a pinned 0.6×0.9
-    // regardless of that scale (so the physics hitbox doesn't balloon to 4×5 units and clip
-    // through the ground). This method was using that same big raw scale number directly as a
-    // bounding-box SIZE, wildly overestimating every robot's footprint (by ~5-9x) — with 4-5
-    // robots spread across a level (L04/L05 onward), that overestimate compounded into a bounding
-    // box several times larger than the robots actually render, so the camera zoomed out far more
-    // than the content needed.
+    // of the safe area). Root cause at the time: RobotSpawnData.scale (as dumped by
+    // LevelLayoutDumper, values like 5.7/5.4) is a VISUAL transform.localScale multiplier that
+    // inflates this project's tiny native robot sprites up to roughly gameplay size —
+    // LevelLoader.SpawnRobot's own comment confirms the real world-space PHYSICS footprint is
+    // deliberately re-derived back to a pinned 0.6×0.9 (so the collider doesn't balloon and clip
+    // through the ground) — but this method was using that raw scale number directly as a
+    // bounding-box SIZE with no regard for how small the underlying sprite actually is, wildly
+    // overestimating every robot's VISUAL footprint by ~5-9x.
+    //
+    // REPLACED 2026-07-13 (user report: "levels 12 upward... structure and robots too close") —
+    // the flat (0.6, 0.9) fallback swung too far the other way: verified directly against the
+    // actual imported art (not guessed) — HarvesterRobot.png is 612x408px, Robot_SemiHarvest.png/
+    // Robot_Pawn.png/Commander.png are all 500x500px, and every robot sprite in this project
+    // imports at PPU=1746 (confirmed via the Wire Scene References log) — so a robot's TRUE
+    // rendered world-space footprint is (pixelSize / 1746) * RobotSpawnData.scale, not either
+    // extreme. For a typical L10+ robot (scale ~6-8), that comes out to roughly 1.7-2.2 world
+    // units per side — 2-3x bigger than the old flat 0.6x0.9 assumption — which is exactly why the
+    // auto-zoom was computing a bounding box, and therefore a camera framing, tighter than what
+    // actually renders on screen for every level using large-scale robots (L10 onward).
+    static readonly System.Collections.Generic.Dictionary<RobotType, Vector2> RobotNativePixelSize = new()
+    {
+        { RobotType.Basic,          new Vector2(500f, 500f) }, // Robot_Pawn.png
+        { RobotType.Harvester,      new Vector2(612f, 408f) }, // HarvesterRobot.png
+        { RobotType.SemiHarvester,  new Vector2(500f, 500f) }, // Robot_SemiHarvest.png
+        { RobotType.Commander,      new Vector2(500f, 500f) }, // Commander.png
+    };
+    const float RobotSpritePPU = 1746f;
+
     float ComputeOrthoSizeForLevel(LevelData data)
     {
         if (data == null) return _minOrthoSize;
 
-        Vector2 min = transform.position;
-        Vector2 max = min;
+        // Seed the bounding box from the CANNON'S REAL visual footprint, not this script's own
+        // transform (the abstract "Launcher" aim-math anchor — see the Coordinate System docs in
+        // CLAUDE.md — which sits wherever it was originally placed and is independent of the
+        // visual FarmCannon GO). Fixed 2026-07-13, same day as the cannon's own reposition further
+        // left ("cannon too close") pushed FarmCannon from ~X-3.0 to X-7.54 — ~5 units further
+        // from the Launcher anchor than before, big enough that the old anchor-based seed no
+        // longer has any relationship to where the cannon actually renders, risking it clipping
+        // off the left edge of frame (worst case on a narrower-than-16:9 aspect) with the auto-zoom
+        // never compensating because it didn't know the cannon reached that far.
+        Vector2 cannonCenter = _cannonGO != null ? (Vector2)_cannonGO.transform.position : (Vector2)transform.position;
+        Vector2 cannonSize   = _cannonSR != null ? (Vector2)_cannonSR.bounds.size : Vector2.one;
+
+        Vector2 min = cannonCenter - cannonSize * 0.5f;
+        Vector2 max = cannonCenter + cannonSize * 0.5f;
         void Expand(Vector2 center, Vector2 size)
         {
             Vector2 half = size * 0.5f;
@@ -478,15 +523,33 @@ public class CatapultLauncher : MonoBehaviour
             foreach (var b in data.blocks) Expand(b.position, b.size);
         if (data.robots != null)
             foreach (var r in data.robots)
-                Expand(r.position, new Vector2(0.6f, 0.9f));
+            {
+                Vector2 footprint;
+                if (r.scale != Vector2.zero && RobotNativePixelSize.TryGetValue(r.robotType, out var px))
+                    footprint = new Vector2(px.x / RobotSpritePPU, px.y / RobotSpritePPU) * r.scale;
+                else
+                    footprint = new Vector2(0.6f, 0.9f); // no scale override — prefab default footprint
+                Expand(r.position, footprint);
+            }
 
-        Vector2 contentSize = max - min + Vector2.one * (ZoomPadding * 2f);
-        float   aspect      = _camera != null && _camera.aspect > 0f ? _camera.aspect : 16f / 9f;
+        // The camera's rest position is FIXED (SnapCameraToRest never re-centers on content — see
+        // _cameraRestOffset), so the required zoom isn't "half the total content span," it's
+        // whichever side of the fixed camera center needs to reach furthest — an asymmetric
+        // bounding box (like this one, cannon far left / structures far right) needs the bigger of
+        // the two one-sided distances doubled, not the two-sided span halved.
+        Vector2 camCenter = new Vector2(
+            transform.position.x + _cameraRestOffset.x,
+            transform.position.y + _cameraRestOffset.y);
+
+        float halfWidthNeeded  = Mathf.Max(camCenter.x - min.x, max.x - camCenter.x) + ZoomPadding;
+        float halfHeightNeeded = Mathf.Max(camCenter.y - min.y, max.y - camCenter.y) + ZoomPadding;
+
+        float aspect = _camera != null && _camera.aspect > 0f ? _camera.aspect : 16f / 9f;
 
         // orthoSize is HALF the visible height; visible width = orthoSize * 2 * aspect — solve
         // both ways and take whichever axis needs the bigger zoom-out to fit.
-        float sizeForHeight = contentSize.y * 0.5f;
-        float sizeForWidth  = contentSize.x * 0.5f / aspect;
+        float sizeForHeight = halfHeightNeeded;
+        float sizeForWidth  = halfWidthNeeded / aspect;
 
         return Mathf.Clamp(Mathf.Max(sizeForHeight, sizeForWidth), _minOrthoSize, _maxOrthoSize);
     }

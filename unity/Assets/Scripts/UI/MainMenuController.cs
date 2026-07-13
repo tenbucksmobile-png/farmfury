@@ -18,10 +18,50 @@ public class MainMenuController : MonoBehaviour
     private GameObject _panel;
     private Sprite     _squareSpr;
     private GameObject _settingsPopup;
-    private Image      _musicToggleImg;
+
+    // Audio tab refresh state (2026-07-13) — set once when the tab is built, re-applied every
+    // time the popup opens (OnSettingsClicked) so it reflects any change made elsewhere (e.g. the
+    // HUD's own combined top-right Mute button) rather than going stale between opens.
+    private System.Action<bool>  _setMusicToggleVisual;
+    private System.Action<bool>  _setSfxToggleVisual;
+    private Slider                _musicVolumeSlider;
+    private Slider                _sfxVolumeSlider;
+    private TextMeshProUGUI       _musicVolumeLabel;
+    private TextMeshProUGUI       _sfxVolumeLabel;
+    private System.Action<string> _setLanguageVisual;
+    private System.Action<bool>   _setHandedVisual;
+
+    // Stats tab (2026-07-13) — each row is a value label + a getter, refreshed fresh every time
+    // the popup opens (RefreshStatsTab, called from OnSettingsClicked) rather than computed once
+    // at build time, since ScoreManager/PlayerStatsTracker data changes between menu visits.
+    private readonly System.Collections.Generic.List<(TextMeshProUGUI label, System.Func<string> getText)> _statRows = new();
+
+    // Story tab reader (2026-07-13) — one reusable popup for all 4 story categories, rather than
+    // 4 separate panels, since they all share the same "title + paginated body text" shape.
+    private GameObject        _storyReaderPopup;
+    private TextMeshProUGUI   _storyReaderHeader;   // "CHARACTER PROFILES · 3 / 8"
+    private TextMeshProUGUI   _storyReaderTitle;    // entry's own title, e.g. "Cluck the Chicken — Cluster Bomb"
+    private TextMeshProUGUI   _storyReaderBody;
+    private Button            _storyReaderPrevBtn;
+    private Button            _storyReaderNextBtn;
+    private string            _storyReaderCategoryName;
+    private StoryContent.Entry[] _storyReaderEntries;
+    private int                  _storyReaderPageIndex;
 
     private static readonly Color ToggleOnColor  = new(0.20f, 0.65f, 0.30f);
     private static readonly Color ToggleOffColor = new(0.45f, 0.45f, 0.45f);
+
+    // ── Settings popup tabs (2026-07-13 redesign — see BuildSettingsPopup) ──────
+    // Only Audio has real content today (the pre-existing Music Toggle, migrated in from the old
+    // flat heading-list layout). The other 6 are empty containers, built one at a time in future
+    // passes — each just needs its content built inside the matching entry of _tabPanels.
+    enum SettingsTab { Audio, Gameplay, Stats, Scores, Story, Account, About }
+    private readonly System.Collections.Generic.Dictionary<SettingsTab, GameObject> _tabPanels = new();
+    private readonly System.Collections.Generic.Dictionary<SettingsTab, Image>      _tabButtonImages = new();
+    private SettingsTab _activeTab = SettingsTab.Audio;
+
+    private static readonly Color TabOnColor  = new(0.95f, 0.55f, 0.05f);
+    private static readonly Color TabOffColor = new(0.45f, 0.45f, 0.45f);
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -66,22 +106,58 @@ public class MainMenuController : MonoBehaviour
     // can't disagree about whether audio is on.
     void OnSettingsClicked()
     {
-        _musicToggleImg.color = AudioManager.MusicEnabled ? ToggleOnColor : ToggleOffColor;
+        _setMusicToggleVisual(AudioManager.MusicEnabled);
+        _setSfxToggleVisual(AudioManager.SfxEnabled);
+        _musicVolumeSlider.SetValueWithoutNotify(AudioManager.MusicVolume);
+        _musicVolumeLabel.text = Mathf.RoundToInt(AudioManager.MusicVolume * 100f) + "%";
+        _sfxVolumeSlider.SetValueWithoutNotify(AudioManager.SfxVolume);
+        _sfxVolumeLabel.text = Mathf.RoundToInt(AudioManager.SfxVolume * 100f) + "%";
+        _setLanguageVisual(GameplaySettings.Language);
+        _setHandedVisual(GameplaySettings.LeftHanded);
+        RefreshStatsTab();
+        SelectTab(SettingsTab.Audio); // always open on the one tab with real content today
         _settingsPopup.SetActive(true);
     }
 
-    void OnSettingsCloseClicked() => _settingsPopup.SetActive(false);
-
-    // Single "Music Toggle" heading controls both music and SFX together (consolidated from the
-    // old separate MUSIC/SFX buttons 2026-07-10 to match the one-heading list the user asked
-    // for) — same combined on/off semantics as HUDController's top-right mute button.
-    void OnMusicToggleClicked()
+    void RefreshStatsTab()
     {
-        bool on = !AudioManager.MusicEnabled;
-        AudioManager.SetMusicEnabled(on);
-        AudioManager.SetSfxEnabled(on);
-        _musicToggleImg.color = on ? ToggleOnColor : ToggleOffColor;
+        foreach (var (label, getText) in _statRows)
+            label.text = getText();
     }
+
+    // Description label (left-aligned) + value label (right-aligned, gold, filled by
+    // RefreshStatsTab on every popup open) — one row of the Stats tab's two columns.
+    void AddStatRow(Transform parent, string description, Vector2 pos, System.Func<string> valueGetter)
+    {
+        MakeToggleLabel(parent, "StatDesc_" + description, description,
+            new Vector2(pos.x - 130f, pos.y), new Vector2(260f, 40f), 22f, Color.white)
+            .alignment = TMPro.TextAlignmentOptions.Left;
+        var valueLabel = MakeToggleLabel(parent, "StatVal_" + description, "",
+            new Vector2(pos.x + 130f, pos.y), new Vector2(220f, 40f), 22f, new Color(1f, 0.87f, 0.4f));
+        valueLabel.alignment = TMPro.TextAlignmentOptions.Right;
+        _statRows.Add((valueLabel, valueGetter));
+    }
+
+    // No dedicated tutorial overlay exists — L01 itself is the de facto tutorial (see
+    // LevelDataGenerator.cs's "Tutorial level" comment on L01), so this just jumps straight into
+    // it, closing both the settings popup and the main menu panel first (same as OnPlayClicked).
+    void OnTutorialReplayClicked()
+    {
+        _settingsPopup.SetActive(false);
+        _panel.SetActive(false);
+        GameManager.Instance?.ForceStartLevel(0);
+    }
+
+    void SelectTab(SettingsTab tab)
+    {
+        _activeTab = tab;
+        foreach (var kv in _tabPanels)
+            kv.Value.SetActive(kv.Key == tab);
+        foreach (var kv in _tabButtonImages)
+            kv.Value.color = kv.Key == tab ? TabOnColor : TabOffColor;
+    }
+
+    void OnSettingsCloseClicked() => _settingsPopup.SetActive(false);
 
     // ── UI construction ───────────────────────────────────────────────────────
 
@@ -174,16 +250,18 @@ public class MainMenuController : MonoBehaviour
         _panel.SetActive(false);
     }
 
-    // Settings popup opened by the gear icon — rebuilt 2026-07-10 into a fuller menu screen
-    // (was a small plain-colour MUSIC/SFX toggle box) per user request: Scoreboard.png as the
-    // backdrop, stretched large ("across the screen"), with 5 headings listed down it —
-    // 'Player', 'High Scores', 'Worlds', 'Saved Game', 'Music Toggle'. Only Music Toggle is
-    // wired to real behaviour (see OnMusicToggleClicked) — Player/High Scores/Worlds/Saved Game
-    // have no backing systems anywhere else in this project yet (no player profile, no
-    // leaderboard, no World 2+ map, no save-slot concept beyond the existing PlayerPrefs
-    // autosave), so they render as plain heading labels for now rather than invented features;
-    // wire real navigation/behaviour to each once those systems exist. Same self-contained
-    // dismiss-catcher-behind-a-box pattern used elsewhere (MatchUpScreen/LevelPreviewCard).
+    // Settings popup opened by the gear icon — redesigned 2026-07-13 into a tabbed layout (was
+    // a flat list of 5 headings down the Scoreboard.png backdrop: 'Player', 'High Scores',
+    // 'Worlds', 'Saved Game', 'Music Toggle', added 2026-07-10). User supplied a 7-tab mockup —
+    // AUDIO/GAMEPLAY/STATS/SCORES/STORY/ACCOUNT/ABOUT in a 2-column grid, title bar with a
+    // top-right [X] close, divider, then a content area below that swaps per selected tab.
+    // Building tab-by-tab per explicit user direction ("will build each one separately") — this
+    // pass is the shell + tab-switching only. Audio is the one tab with real content, migrated
+    // in from the old flat layout's Music Toggle button (see OnMusicToggleClicked) so that
+    // existing functionality isn't orphaned by the redesign. The other 6 are empty containers in
+    // _tabPanels, ready for content in later passes — just build inside the matching container,
+    // no structural changes needed here. Same self-contained dismiss-catcher-behind-a-box pattern
+    // used elsewhere (MatchUpScreen/LevelPreviewCard).
     void BuildSettingsPopup(Transform root)
     {
         var popGO = new GameObject("SettingsPopup");
@@ -201,13 +279,8 @@ public class MainMenuController : MonoBehaviour
         dismissBtn.targetGraphic = dismissImg;
         dismissBtn.onClick.AddListener(OnSettingsCloseClicked);
 
-        // Scoreboard.png re-supplied by the user 2026-07-10 at a new native aspect — was
-        // ~653:382 (1.71:1), now 1600x1200 (4:3, 1.333:1) — noticeably taller per unit width, so
-        // the old 1600x938 box (sized for the previous aspect) no longer matches and everything
-        // positioned on it needed re-fitting. 1000 tall x 1333 wide keeps the new 4:3 ratio
-        // undistorted while comfortably fitting the 1920x1080 reference canvas with margin on
-        // every side (the board is taller-per-width now, so it can't stretch as wide as the old
-        // art without overflowing top/bottom).
+        // Scoreboard.png (4:3, 1600x1200) — 1000 tall x 1333 wide keeps that ratio undistorted
+        // while comfortably fitting the 1920x1080 reference canvas with margin on every side.
         var box = new GameObject("Box");
         box.transform.SetParent(popGO.transform, false);
         var boxRT = box.AddComponent<RectTransform>();
@@ -221,32 +294,555 @@ public class MainMenuController : MonoBehaviour
         var boxBtn = box.AddComponent<Button>(); // swallows clicks so the box itself never dismisses
         boxBtn.transition = Selectable.Transition.None;
 
+        // ── Title bar: "SETTINGS" + top-right [X] close ─────────────────────────
         var titleTMP = MakeToggleLabel(box.transform, "Title", "SETTINGS",
-            new Vector2(0f, 380f), new Vector2(600f, 80f), 46f, Color.white);
-        titleTMP.fontStyle = TMPro.FontStyles.Bold;
+            new Vector2(-40f, 400f), new Vector2(600f, 80f), 46f, Color.white);
+        titleTMP.fontStyle   = TMPro.FontStyles.Bold;
+        titleTMP.alignment   = TMPro.TextAlignmentOptions.Left;
 
-        // Heading list, evenly spaced down the parchment area (re-fitted to the new taller 4:3
-        // board — was 4 rows from y=190 down; now 5 rows from y=220 down, with more vertical
-        // room to work with). Player/High Scores/Worlds/Saved Game are static labels (no
-        // feature to wire yet — see class comment above); Music Toggle is a real button.
-        string[] staticHeadings = { "Player", "High Scores", "Worlds", "Saved Game" };
-        float    y              = 220f;
-        const float rowSpacing  = 120f;
-        foreach (var heading in staticHeadings)
-        {
-            MakeToggleLabel(box.transform, heading.Replace(" ", "") + "Heading", heading,
-                new Vector2(0f, y), new Vector2(700f, 70f), 36f, Color.white);
-            y -= rowSpacing;
-        }
-
-        var musicBtn = MakeToggleButton(box.transform, "MusicToggle", "Music Toggle", new Vector2(0f, y));
-        _musicToggleImg = musicBtn.targetGraphic as Image;
-        musicBtn.onClick.AddListener(OnMusicToggleClicked);
-
-        var closeBtn = MakeToggleButton(box.transform, "CloseBtn", "CLOSE", new Vector2(0f, -440f));
+        var closeBtn = MakeToggleButton(box.transform, "CloseBtn", "X", new Vector2(600f, 400f), 70f);
         closeBtn.onClick.AddListener(OnSettingsCloseClicked);
 
+        // ── Tab grid: 2 columns, mockup order (AUDIO/GAMEPLAY, STATS/SCORES, STORY/ACCOUNT,
+        // ABOUT alone on the last row, centered) ────────────────────────────────
+        (SettingsTab tab, string label)[] tabDefs =
+        {
+            (SettingsTab.Audio,    "AUDIO"),
+            (SettingsTab.Gameplay, "GAMEPLAY"),
+            (SettingsTab.Stats,    "STATS"),
+            (SettingsTab.Scores,   "SCORES"),
+            (SettingsTab.Story,    "STORY"),
+            (SettingsTab.Account,  "ACCOUNT"),
+            (SettingsTab.About,    "ABOUT"),
+        };
+        const float colX        = 300f;
+        const float tabRowY0    = 280f;
+        const float tabRowSpace = 90f;
+        for (int i = 0; i < tabDefs.Length; i++)
+        {
+            var (tab, label) = tabDefs[i];
+            int row = i / 2;
+            bool lastOdd = i == tabDefs.Length - 1 && tabDefs.Length % 2 == 1;
+            float x = lastOdd ? 0f : (i % 2 == 0 ? -colX : colX);
+            float y = tabRowY0 - row * tabRowSpace;
+            var tabBtn = MakeToggleButton(box.transform, tab + "Tab", label, new Vector2(x, y), 540f);
+            _tabButtonImages[tab] = tabBtn.targetGraphic as Image;
+            tabBtn.onClick.AddListener(() => SelectTab(tab));
+        }
+
+        // ── Divider ───────────────────────────────────────────────────────────
+        var divider = new GameObject("Divider");
+        divider.transform.SetParent(box.transform, false);
+        var divRT = divider.AddComponent<RectTransform>();
+        divRT.anchorMin        = new Vector2(0.5f, 0.5f);
+        divRT.anchorMax        = new Vector2(0.5f, 0.5f);
+        divRT.pivot            = new Vector2(0.5f, 0.5f);
+        divRT.anchoredPosition = new Vector2(0f, -70f);
+        divRT.sizeDelta        = new Vector2(1150f, 4f);
+        var divImg = divider.AddComponent<Image>();
+        divImg.sprite = _squareSpr;
+        divImg.color  = new Color(1f, 1f, 1f, 0.4f);
+
+        // ── Content area — one container per tab, only the active one enabled ──
+        var contentRoot = new GameObject("Content");
+        contentRoot.transform.SetParent(box.transform, false);
+        var contentRT = contentRoot.AddComponent<RectTransform>();
+        contentRT.anchorMin        = new Vector2(0.5f, 0.5f);
+        contentRT.anchorMax        = new Vector2(0.5f, 0.5f);
+        contentRT.pivot            = new Vector2(0.5f, 0.5f);
+        contentRT.anchoredPosition = new Vector2(0f, -300f);
+        contentRT.sizeDelta        = new Vector2(1150f, 340f);
+
+        foreach (var (tab, _) in tabDefs)
+        {
+            var panel = new GameObject(tab + "Panel");
+            panel.transform.SetParent(contentRoot.transform, false);
+            var panelRT = panel.AddComponent<RectTransform>();
+            panelRT.anchorMin = Vector2.zero;
+            panelRT.anchorMax = Vector2.one;
+            panelRT.offsetMin = panelRT.offsetMax = Vector2.zero;
+            _tabPanels[tab] = panel;
+        }
+
+        // ── Audio tab content (2026-07-13) — Music/SFX are now independent toggles (were a
+        // single combined "Music Toggle" in the old flat layout) plus a 0-100 volume slider for
+        // each. Row layout: label on the left, control on the right, per the user's mockup.
+        // Voice/Dialogue was in the original mockup but dropped per explicit user decision — no
+        // voice-line audio content exists anywhere in this project to back it.
+        var audioTab = _tabPanels[SettingsTab.Audio].transform;
+        const float audioLabelX = -330f;
+        const float audioCtrlX  = 340f;
+
+        MakeToggleLabel(audioTab, "MusicLabel", "Music",
+            new Vector2(audioLabelX, 130f), new Vector2(480f, 60f), 30f, Color.white)
+            .alignment = TMPro.TextAlignmentOptions.Left;
+        var (musicToggleBtn, setMusicVisual) = MakeStateToggle(audioTab, "MusicToggle",
+            new Vector2(audioCtrlX, 130f), AudioManager.MusicEnabled, AudioManager.SetMusicEnabled);
+        _setMusicToggleVisual = setMusicVisual;
+
+        MakeToggleLabel(audioTab, "SfxLabel", "Sound Effects",
+            new Vector2(audioLabelX, 60f), new Vector2(480f, 60f), 30f, Color.white)
+            .alignment = TMPro.TextAlignmentOptions.Left;
+        var (sfxToggleBtn, setSfxVisual) = MakeStateToggle(audioTab, "SfxToggle",
+            new Vector2(audioCtrlX, 60f), AudioManager.SfxEnabled, AudioManager.SetSfxEnabled);
+        _setSfxToggleVisual = setSfxVisual;
+
+        (_musicVolumeSlider, _musicVolumeLabel) = MakeVolumeSlider(audioTab, "MusicVolume",
+            "Music Volume", new Vector2(0f, -20f), AudioManager.MusicVolume, AudioManager.SetMusicVolume);
+
+        (_sfxVolumeSlider, _sfxVolumeLabel) = MakeVolumeSlider(audioTab, "SfxVolume",
+            "SFX Volume", new Vector2(0f, -100f), AudioManager.SfxVolume, AudioManager.SetSfxVolume);
+
+        // ── Gameplay tab content (2026-07-13) ────────────────────────────────────
+        // Language: real control, persisted, but no localization framework exists anywhere in
+        // this project — only English has any actual translated text behind it (see
+        // GameplaySettings.cs). Left/Right Handed: persists the preference only, per explicit
+        // user decision — no camera/aim-math/physics mirroring is implemented yet; that's a
+        // separate, bigger pass. Tutorial Replay: there's no dedicated tutorial overlay/hint
+        // system in this project — L01 itself is the de facto tutorial (see LevelDataGenerator.cs
+        // comment), so this just jumps straight into L01 gameplay via the same
+        // GameManager.ForceStartLevel() path MatchUpScreen's own Skip button uses.
+        var gameplayTab = _tabPanels[SettingsTab.Gameplay].transform;
+
+        MakeToggleLabel(gameplayTab, "LanguageLabel", "Language",
+            new Vector2(audioLabelX, 130f), new Vector2(480f, 60f), 30f, Color.white)
+            .alignment = TMPro.TextAlignmentOptions.Left;
+        var (_, setLanguageVisual) = MakeCycleButton(gameplayTab, "LanguageCycle",
+            new Vector2(audioCtrlX, 130f), GameplaySettings.SupportedLanguages, GameplaySettings.Language,
+            GameplaySettings.SetLanguage);
+        _setLanguageVisual = setLanguageVisual;
+
+        MakeToggleLabel(gameplayTab, "HandedLabel", "Left/Right Handed",
+            new Vector2(audioLabelX, 40f), new Vector2(480f, 80f), 30f, Color.white)
+            .alignment = TMPro.TextAlignmentOptions.Left;
+        var (_, setHandedVisual) = MakeStateToggle(gameplayTab, "HandedToggle",
+            new Vector2(audioCtrlX, 40f), GameplaySettings.LeftHanded, GameplaySettings.SetLeftHanded,
+            onLabel: "Left-Handed", offLabel: "Right-Handed", width: 220f);
+        _setHandedVisual = setHandedVisual;
+        MakeToggleLabel(gameplayTab, "HandedNote", "(mirrors the layout — cannon on right instead of left)",
+            new Vector2(0f, -10f), new Vector2(1100f, 40f), 20f, new Color(1f, 1f, 1f, 0.7f));
+
+        var tutorialBtn = MakeToggleButton(gameplayTab, "TutorialReplayBtn",
+            "Replay Tutorial (Level 1)", new Vector2(0f, -110f), 500f);
+        tutorialBtn.onClick.AddListener(OnTutorialReplayClicked);
+
+        // ── Stats tab content (2026-07-13) ───────────────────────────────────────
+        // Two columns: Statistics (7 rows, real per-level data aggregated from ScoreManager plus
+        // new PlayerStatsTracker counters) and Personal Records (2 rows). Denominators use
+        // GameManager.Instance.TotalLevels (currently 18, auto-discovered — not hardcoded) rather
+        // than the full 6-world design target (108 levels/324 stars), per explicit user decision
+        // — showing progress against content that doesn't exist yet would be permanently
+        // unreachable. "Longest Combo Chain" and "Most Stars in One Attempt" were both dropped
+        // per user decision — no combo mechanic exists, and the latter was redundant with
+        // Perfect Levels below it.
+        var statsTab = _tabPanels[SettingsTab.Stats].transform;
+
+        MakeToggleLabel(statsTab, "StatsHeader", "STATISTICS",
+            new Vector2(-280f, 170f), new Vector2(500f, 50f), 28f, Color.white).fontStyle = TMPro.FontStyles.Bold;
+
+        AddStatRow(statsTab, "Total Stars Earned", new Vector2(-280f, 130f), () =>
+        {
+            int total = GameManager.Instance != null ? GameManager.Instance.TotalLevels : 0;
+            int stars = 0;
+            for (int i = 0; i < total; i++) stars += ScoreManager.GetBestStars(i);
+            return $"{stars} / {total * 3}";
+        });
+        AddStatRow(statsTab, "Levels Completed", new Vector2(-280f, 90f), () =>
+        {
+            int total = GameManager.Instance != null ? GameManager.Instance.TotalLevels : 0;
+            int done = 0;
+            for (int i = 0; i < total; i++) if (ScoreManager.GetBestStars(i) >= 1) done++;
+            return $"{done} / {total}";
+        });
+        AddStatRow(statsTab, "Total Score", new Vector2(-280f, 50f), () =>
+        {
+            int total = GameManager.Instance != null ? GameManager.Instance.TotalLevels : 0;
+            int score = 0;
+            for (int i = 0; i < total; i++) score += ScoreManager.GetBestScore(i);
+            return score.ToString("N0");
+        });
+        AddStatRow(statsTab, "Cannonballs Fired", new Vector2(-280f, 10f), () =>
+            PlayerStatsTracker.TotalCannonballsFired.ToString("N0"));
+        AddStatRow(statsTab, "Robots Destroyed", new Vector2(-280f, -30f), () =>
+            PlayerStatsTracker.TotalRobotsDestroyed.ToString("N0"));
+        AddStatRow(statsTab, "Favourite Animal", new Vector2(-280f, -70f), () =>
+        {
+            var animal = PlayerStatsTracker.GetFavouriteAnimal(out int uses);
+            return uses > 0 ? $"{animal} ({uses})" : "—";
+        });
+        AddStatRow(statsTab, "Time Played", new Vector2(-280f, -110f), () =>
+        {
+            int totalMinutes = Mathf.FloorToInt(PlayerStatsTracker.TimePlayedSeconds / 60f);
+            return $"{totalMinutes / 60}h {totalMinutes % 60}m";
+        });
+
+        MakeToggleLabel(statsTab, "RecordsHeader", "PERSONAL RECORDS",
+            new Vector2(280f, 170f), new Vector2(500f, 50f), 28f, Color.white).fontStyle = TMPro.FontStyles.Bold;
+
+        AddStatRow(statsTab, "Highest Score", new Vector2(280f, 130f), () =>
+        {
+            int total = GameManager.Instance != null ? GameManager.Instance.TotalLevels : 0;
+            int bestLevel = -1, bestScore = 0;
+            for (int i = 0; i < total; i++)
+            {
+                int s = ScoreManager.GetBestScore(i);
+                if (s > bestScore) { bestScore = s; bestLevel = i; }
+            }
+            return bestLevel >= 0 ? $"L{bestLevel + 1} — {bestScore:N0}" : "—";
+        });
+        AddStatRow(statsTab, "Perfect Levels", new Vector2(280f, 90f), () =>
+        {
+            int total = GameManager.Instance != null ? GameManager.Instance.TotalLevels : 0;
+            int perfect = 0;
+            for (int i = 0; i < total; i++) if (ScoreManager.GetBestStars(i) == 3) perfect++;
+            return $"{perfect} / {total} 3-starred";
+        });
+
+        // ── Story tab content (2026-07-13) ───────────────────────────────────────
+        // 4 rows, each opening the shared reader popup (BuildStoryReaderPopup below) at page 0
+        // for that category. "Robot Enemy Files" covers the 4 real robot TYPES, not "18 pages,
+        // one per robot" as originally specced — see StoryContent.cs's class comment for why.
+        var storyTab = _tabPanels[SettingsTab.Story].transform;
+        AddStoryRow(storyTab, "The Farm Fury Story", "Read the origin story",
+            new Vector2(0f, 120f), "The Farm Fury Story", StoryContent.Story);
+        AddStoryRow(storyTab, "Character Profiles", "8 pages, one per animal",
+            new Vector2(0f, 50f), "Character Profiles", StoryContent.Characters);
+        AddStoryRow(storyTab, "Robot Enemy Files", "4 pages, one per robot type",
+            new Vector2(0f, -20f), "Robot Enemy Files", StoryContent.Robots);
+        AddStoryRow(storyTab, "World Journal", "6 pages, one per world",
+            new Vector2(0f, -90f), "World Journal", StoryContent.Worlds);
+
+        BuildStoryReaderPopup(root);
+
+        // ── About tab content (2026-07-13) ───────────────────────────────────────
+        // Privacy Policy / Terms of Service / Support-Contact / Rate The App / Restore Purchases
+        // are all inert placeholders per explicit user decision — none have real backing (no
+        // hosted legal pages, no support email, no live store listing, no IAP system at all).
+        // Restore Purchases in particular is flagged clearly: per Apple's own App Store review
+        // guidelines this is a hard submission requirement, not just a nice-to-have — it MUST be
+        // wired to a real IAP system (Unity IAP/RevenueCat, per the GDD's Phase 6 monetisation
+        // plan) before this app can ship to iOS. Credits opens the shared story reader with real
+        // verifiable facts (Unity, Kling AI) plus placeholder Team/Special Thanks sections. App
+        // Version is the one fully real row — reads Application.version live, no placeholder.
+        var aboutTab = _tabPanels[SettingsTab.About].transform;
+
+        AddInertRow(aboutTab, "Privacy Policy", "No hosted policy yet", new Vector2(0f, 140f));
+        AddInertRow(aboutTab, "Terms of Service", "No hosted terms yet", new Vector2(0f, 95f));
+        AddStoryRow(aboutTab, "Credits", "Team, tools, and attributions",
+            new Vector2(0f, 50f), "Credits", StoryContent.Credits);
+        AddInertRow(aboutTab, "Support / Contact", "No support email set yet", new Vector2(0f, 5f));
+
+        MakeToggleLabel(aboutTab, "VersionLabel", "App Version",
+            new Vector2(-260f, -40f), new Vector2(400f, 40f), 26f, Color.white)
+            .alignment = TMPro.TextAlignmentOptions.Left;
+        MakeToggleLabel(aboutTab, "VersionValue", Application.version,
+            new Vector2(260f, -40f), new Vector2(300f, 40f), 26f, new Color(1f, 0.87f, 0.4f))
+            .alignment = TMPro.TextAlignmentOptions.Right;
+
+        AddInertRow(aboutTab, "Rate The App", "No store listing yet (app not published)", new Vector2(0f, -85f));
+        AddInertRow(aboutTab, "Restore Purchases", "NOT FUNCTIONAL — no IAP system exists yet (App Store submission blocker)", new Vector2(0f, -130f));
+
+        // Remaining 1 tab — empty placeholder text, built out in a future pass.
+        MakeToggleLabel(_tabPanels[SettingsTab.Account].transform, "ComingSoon", "Coming Soon",
+            Vector2.zero, new Vector2(900f, 80f), 32f, Color.white);
+
+        SelectTab(SettingsTab.Audio);
         _settingsPopup.SetActive(false);
+    }
+
+    // Row for a not-yet-backed feature — title + explanatory subtitle on the left, a dimmed
+    // non-interactable button on the right so it visually reads as "present but inert" rather
+    // than a broken/missing control.
+    void AddInertRow(Transform parent, string title, string subtitle, Vector2 pos)
+    {
+        MakeToggleLabel(parent, title.Replace(" ", "").Replace("/", "") + "Title", title,
+            new Vector2(-260f, pos.y + 8f), new Vector2(560f, 36f), 24f, Color.white)
+            .alignment = TMPro.TextAlignmentOptions.Left;
+        var sub = MakeToggleLabel(parent, title.Replace(" ", "").Replace("/", "") + "Sub", subtitle,
+            new Vector2(-260f, pos.y - 14f), new Vector2(560f, 28f), 15f, new Color(1f, 1f, 1f, 0.55f));
+        sub.alignment = TMPro.TextAlignmentOptions.Left;
+        sub.fontStyle = TMPro.FontStyles.Italic;
+
+        var btn = MakeToggleButton(parent, title.Replace(" ", "").Replace("/", "") + "Btn",
+            "N/A", new Vector2(400f, pos.y), 180f);
+        btn.interactable = false;
+        var img = btn.targetGraphic as Image;
+        if (img != null) img.color = new Color(0.3f, 0.3f, 0.3f, 0.6f);
+    }
+
+    // One row: title + subtitle stacked on the left, a "Read"/"View" button on the right that
+    // opens the shared story reader popup for that category.
+    void AddStoryRow(Transform parent, string title, string subtitle, Vector2 pos, string categoryName, StoryContent.Entry[] entries)
+    {
+        MakeToggleLabel(parent, title.Replace(" ", "") + "Title", title,
+            new Vector2(-260f, pos.y + 12f), new Vector2(540f, 40f), 28f, Color.white)
+            .alignment = TMPro.TextAlignmentOptions.Left;
+        var sub = MakeToggleLabel(parent, title.Replace(" ", "") + "Sub", subtitle,
+            new Vector2(-260f, pos.y - 16f), new Vector2(540f, 32f), 18f, new Color(1f, 1f, 1f, 0.65f));
+        sub.alignment = TMPro.TextAlignmentOptions.Left;
+        sub.fontStyle = TMPro.FontStyles.Italic;
+
+        var btn = MakeToggleButton(parent, title.Replace(" ", "") + "Btn",
+            entries.Length > 1 ? "VIEW" : "READ", new Vector2(400f, pos.y), 220f);
+        btn.onClick.AddListener(() => OpenStoryReader(categoryName, entries));
+    }
+
+    // Shared full-panel reader for all 4 Story categories — built once, sits on top of
+    // SettingsPopup (same root canvas, later in sibling order). "Back" returns to Settings, which
+    // is still active underneath.
+    void BuildStoryReaderPopup(Transform root)
+    {
+        var popGO = new GameObject("StoryReaderPopup");
+        popGO.transform.SetParent(root, false);
+        var popRT = popGO.AddComponent<RectTransform>();
+        popRT.anchorMin = Vector2.zero;
+        popRT.anchorMax = Vector2.one;
+        popRT.offsetMin = popRT.offsetMax = Vector2.zero;
+        _storyReaderPopup = popGO;
+
+        var dismissImg = popGO.AddComponent<Image>();
+        dismissImg.sprite = _squareSpr;
+        dismissImg.color  = new Color(0f, 0f, 0f, 0.7f);
+        var dismissBtn = popGO.AddComponent<Button>();
+        dismissBtn.targetGraphic = dismissImg;
+        dismissBtn.onClick.AddListener(() => _storyReaderPopup.SetActive(false));
+
+        var box = new GameObject("Box");
+        box.transform.SetParent(popGO.transform, false);
+        var boxRT = box.AddComponent<RectTransform>();
+        boxRT.anchorMin        = new Vector2(0.5f, 0.5f);
+        boxRT.anchorMax        = new Vector2(0.5f, 0.5f);
+        boxRT.pivot            = new Vector2(0.5f, 0.5f);
+        boxRT.sizeDelta        = new Vector2(1600f, 900f);
+        var boxImg = box.AddComponent<Image>();
+        boxImg.sprite = _scoreboardSprite != null ? _scoreboardSprite : _squareSpr;
+        boxImg.color  = _scoreboardSprite != null ? Color.white : new Color(0.97f, 0.94f, 0.88f);
+        var boxBtn = box.AddComponent<Button>(); // swallows clicks so the box itself never dismisses
+        boxBtn.transition = Selectable.Transition.None;
+
+        _storyReaderHeader = MakeToggleLabel(box.transform, "Header", "",
+            new Vector2(0f, 380f), new Vector2(1400f, 50f), 24f, new Color(1f, 1f, 1f, 0.75f));
+        _storyReaderTitle = MakeToggleLabel(box.transform, "Title", "",
+            new Vector2(0f, 320f), new Vector2(1400f, 60f), 34f, Color.white);
+        _storyReaderTitle.fontStyle = TMPro.FontStyles.Bold;
+
+        // Body text — NOT built via MakeToggleLabel (that helper hardcodes centered, no-wrap,
+        // gold-gradient styling meant for short UI labels, wrong for a multi-paragraph body).
+        // Auto-sizing so any entry length (the Origin Story is ~280 words, character/robot/world
+        // entries are ~80-100) always fits the box without needing a real scroll view.
+        var bodyGO = new GameObject("Body");
+        bodyGO.transform.SetParent(box.transform, false);
+        var bodyRT = bodyGO.AddComponent<RectTransform>();
+        bodyRT.anchorMin        = new Vector2(0.5f, 0.5f);
+        bodyRT.anchorMax        = new Vector2(0.5f, 0.5f);
+        bodyRT.pivot            = new Vector2(0.5f, 1f);
+        bodyRT.anchoredPosition = new Vector2(0f, 270f);
+        bodyRT.sizeDelta        = new Vector2(1400f, 560f);
+        _storyReaderBody = bodyGO.AddComponent<TextMeshProUGUI>();
+        _storyReaderBody.alignment          = TMPro.TextAlignmentOptions.TopLeft;
+        _storyReaderBody.enableWordWrapping = true;
+        _storyReaderBody.enableAutoSizing   = true;
+        _storyReaderBody.fontSizeMin        = 16f;
+        _storyReaderBody.fontSizeMax        = 30f;
+        _storyReaderBody.color              = new Color(0.15f, 0.10f, 0.05f); // dark ink on the parchment backdrop
+        _storyReaderBody.raycastTarget      = false;
+
+        _storyReaderPrevBtn = MakeToggleButton(box.transform, "PrevBtn", "< PREV", new Vector2(-500f, -380f), 220f);
+        _storyReaderPrevBtn.onClick.AddListener(() => { _storyReaderPageIndex--; RefreshStoryReaderPage(); });
+
+        _storyReaderNextBtn = MakeToggleButton(box.transform, "NextBtn", "NEXT >", new Vector2(500f, -380f), 220f);
+        _storyReaderNextBtn.onClick.AddListener(() => { _storyReaderPageIndex++; RefreshStoryReaderPage(); });
+
+        var backBtn = MakeToggleButton(box.transform, "BackBtn", "BACK", new Vector2(0f, -380f), 220f);
+        backBtn.onClick.AddListener(() => _storyReaderPopup.SetActive(false));
+
+        _storyReaderPopup.SetActive(false);
+    }
+
+    void OpenStoryReader(string categoryName, StoryContent.Entry[] entries)
+    {
+        _storyReaderCategoryName = categoryName;
+        _storyReaderEntries      = entries;
+        _storyReaderPageIndex    = 0;
+        RefreshStoryReaderPage();
+        _storyReaderPopup.SetActive(true);
+    }
+
+    void RefreshStoryReaderPage()
+    {
+        int count = _storyReaderEntries.Length;
+        _storyReaderPageIndex = Mathf.Clamp(_storyReaderPageIndex, 0, count - 1);
+        var entry = _storyReaderEntries[_storyReaderPageIndex];
+
+        _storyReaderHeader.text = count > 1
+            ? $"{_storyReaderCategoryName.ToUpper()} · {_storyReaderPageIndex + 1} / {count}"
+            : _storyReaderCategoryName.ToUpper();
+        _storyReaderTitle.text = entry.Title;
+        _storyReaderBody.text  = entry.Body;
+
+        bool multiPage = count > 1;
+        _storyReaderPrevBtn.gameObject.SetActive(multiPage);
+        _storyReaderNextBtn.gameObject.SetActive(multiPage);
+        _storyReaderPrevBtn.interactable = _storyReaderPageIndex > 0;
+        _storyReaderNextBtn.interactable = _storyReaderPageIndex < count - 1;
+    }
+
+    // Small ON/OFF pill toggle, distinct from MakeToggleButton (whose own label text IS the
+    // description) — used for the Settings > Audio rows, where the description sits in a
+    // separate label to the left and this control just shows the current state. Returns both the
+    // Button and a setVisual delegate so the caller can re-sync colour+text on popup open without
+    // needing its own field bookkeeping per toggle.
+    (Button, System.Action<bool>) MakeStateToggle(Transform parent, string name, Vector2 pos, bool initialOn, System.Action<bool> onToggle, string onLabel = "ON", string offLabel = "OFF", float width = 160f)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin        = new Vector2(0.5f, 0.5f);
+        rt.anchorMax        = new Vector2(0.5f, 0.5f);
+        rt.pivot            = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta        = new Vector2(width, 56f);
+        var img = go.AddComponent<Image>();
+        img.sprite = _squareSpr;
+        var label = MakeToggleLabel(go.transform, "Label", onLabel, Vector2.zero, new Vector2(width, 56f), 26f, Color.white);
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = img;
+
+        void SetVisual(bool on)
+        {
+            img.color  = on ? ToggleOnColor : ToggleOffColor;
+            label.text = on ? onLabel : offLabel;
+        }
+        SetVisual(initialOn);
+
+        bool state = initialOn;
+        btn.onClick.AddListener(() =>
+        {
+            state = !state;
+            SetVisual(state);
+            onToggle(state);
+        });
+        return (btn, (System.Action<bool>)SetVisual);
+    }
+
+    // 0-100 volume slider with a left-aligned description label and a right-side "NN%" readout.
+    // Returns the Slider (so callers can SetValueWithoutNotify on popup open) and the percent
+    // label (so that readout can be refreshed alongside it without re-triggering onChanged).
+    (Slider, TextMeshProUGUI) MakeVolumeSlider(Transform parent, string name, string label, Vector2 pos, float initialValue01, System.Action<float> onChanged)
+    {
+        MakeToggleLabel(parent, name + "Label", label,
+            new Vector2(pos.x - 330f, pos.y), new Vector2(480f, 60f), 30f, Color.white)
+            .alignment = TMPro.TextAlignmentOptions.Left;
+
+        var go = new GameObject(name + "Slider");
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin        = new Vector2(0.5f, 0.5f);
+        rt.anchorMax        = new Vector2(0.5f, 0.5f);
+        rt.pivot            = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(pos.x + 220f, pos.y);
+        rt.sizeDelta        = new Vector2(280f, 40f);
+
+        var bgGO = new GameObject("Background");
+        bgGO.transform.SetParent(go.transform, false);
+        var bgRT = bgGO.AddComponent<RectTransform>();
+        bgRT.anchorMin = new Vector2(0f, 0.35f);
+        bgRT.anchorMax = new Vector2(1f, 0.65f);
+        bgRT.offsetMin = bgRT.offsetMax = Vector2.zero;
+        var bgImg = bgGO.AddComponent<Image>();
+        bgImg.sprite = _squareSpr;
+        bgImg.color  = ToggleOffColor;
+
+        var fillAreaGO = new GameObject("Fill Area");
+        fillAreaGO.transform.SetParent(go.transform, false);
+        var fillAreaRT = fillAreaGO.AddComponent<RectTransform>();
+        fillAreaRT.anchorMin = new Vector2(0f, 0.35f);
+        fillAreaRT.anchorMax = new Vector2(1f, 0.65f);
+        fillAreaRT.offsetMin = new Vector2(4f, 0f);
+        fillAreaRT.offsetMax = new Vector2(-4f, 0f);
+
+        var fillGO = new GameObject("Fill");
+        fillGO.transform.SetParent(fillAreaGO.transform, false);
+        var fillRT = fillGO.AddComponent<RectTransform>();
+        fillRT.anchorMin = Vector2.zero;
+        fillRT.anchorMax = new Vector2(0f, 1f); // width driven by Slider itself via fillRect
+        fillRT.offsetMin = fillRT.offsetMax = Vector2.zero;
+        var fillImg = fillGO.AddComponent<Image>();
+        fillImg.sprite = _squareSpr;
+        fillImg.color  = TabOnColor;
+
+        var handleAreaGO = new GameObject("Handle Slide Area");
+        handleAreaGO.transform.SetParent(go.transform, false);
+        var handleAreaRT = handleAreaGO.AddComponent<RectTransform>();
+        handleAreaRT.anchorMin = Vector2.zero;
+        handleAreaRT.anchorMax = Vector2.one;
+        handleAreaRT.offsetMin = handleAreaRT.offsetMax = Vector2.zero;
+
+        var handleGO = new GameObject("Handle");
+        handleGO.transform.SetParent(handleAreaGO.transform, false);
+        var handleRT = handleGO.AddComponent<RectTransform>();
+        handleRT.sizeDelta = new Vector2(26f, 40f);
+        var handleImg = handleGO.AddComponent<Image>();
+        handleImg.sprite = _squareSpr;
+        handleImg.color  = Color.white;
+
+        var slider = go.AddComponent<Slider>();
+        slider.fillRect      = fillRT;
+        slider.handleRect    = handleRT;
+        slider.targetGraphic = handleImg;
+        slider.direction     = Slider.Direction.LeftToRight;
+        slider.minValue      = 0f;
+        slider.maxValue      = 1f;
+
+        var percentLabel = MakeToggleLabel(parent, name + "Percent", "",
+            new Vector2(pos.x + 400f, pos.y), new Vector2(100f, 60f), 26f, Color.white);
+
+        slider.onValueChanged.AddListener(v =>
+        {
+            percentLabel.text = Mathf.RoundToInt(v * 100f) + "%";
+            onChanged(v);
+        });
+        slider.value = initialValue01; // fires the listener once, setting the initial readout text
+
+        return (slider, percentLabel);
+    }
+
+    // Tap-to-cycle selector — used for Language (2026-07-13) in place of a real TMP_Dropdown.
+    // A true dropdown needs a manually-built template/viewport/item hierarchy (this project has
+    // no prefabs and builds all UI procedurally, same as every other control in this file) —
+    // picked the simpler, more robust option per explicit user decision rather than risk a broken
+    // dropdown list with no Play mode access to verify it. Tapping advances to the next option in
+    // `options`, wrapping around at the end. Returns a setVisual delegate so the caller can
+    // re-sync the displayed text on popup open.
+    (Button, System.Action<string>) MakeCycleButton(Transform parent, string name, Vector2 pos, string[] options, string initialValue, System.Action<string> onChanged, float width = 320f)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin        = new Vector2(0.5f, 0.5f);
+        rt.anchorMax        = new Vector2(0.5f, 0.5f);
+        rt.pivot            = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta        = new Vector2(width, 56f);
+        var img = go.AddComponent<Image>();
+        img.sprite = _squareSpr;
+        img.color  = ToggleOffColor;
+        var label = MakeToggleLabel(go.transform, "Label", initialValue, Vector2.zero, new Vector2(width, 56f), 26f, Color.white);
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = img;
+
+        void SetVisual(string value) => label.text = value;
+
+        int index = System.Array.IndexOf(options, initialValue);
+        if (index < 0) index = 0;
+        btn.onClick.AddListener(() =>
+        {
+            index = (index + 1) % options.Length;
+            string value = options[index];
+            SetVisual(value);
+            onChanged(value);
+        });
+        return (btn, (System.Action<string>)SetVisual);
     }
 
     Button MakeToggleButton(Transform parent, string name, string label, Vector2 pos, float width = 260f)

@@ -18,7 +18,7 @@ MonoBehaviour:
   birds: 000000000000000000000000
   blocks:
   - type: 2
-    position: {x: 4.632, y: -5.151}
+    position: {x: 4.354, y: -5.151}
     size: {x: 1.138, y: 1.111}
     passThrough: 1
     healthOverride: 10
@@ -26,7 +26,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 0
   - type: 2
-    position: {x: 5.262, y: -5.151}
+    position: {x: 5.11, y: -5.151}
     size: {x: 1.138, y: 1.111}
     passThrough: 1
     healthOverride: 10
@@ -34,7 +34,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 0
   - type: 2
-    position: {x: 6.298, y: -5.091}
+    position: {x: 6.354, y: -5.091}
     size: {x: 1.138, y: 1.111}
     passThrough: 1
     healthOverride: 10
@@ -42,7 +42,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 0
   - type: 0
-    position: {x: 5.787, y: -5.111}
+    position: {x: 5.74, y: -5.111}
     size: {x: 1, y: 1.064}
     passThrough: 0
     healthOverride: 0
@@ -50,7 +50,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 7
   - type: 0
-    position: {x: 6.158, y: -3.981}
+    position: {x: 6.186, y: -3.981}
     size: {x: 1, y: 1.064}
     passThrough: 0
     healthOverride: 0
@@ -58,7 +58,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 7
   - type: 0
-    position: {x: 5.78, y: -4.55}
+    position: {x: 5.732, y: -4.55}
     size: {x: 1, y: 0.492}
     passThrough: 0
     healthOverride: 0
@@ -66,7 +66,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 2
   - type: 0
-    position: {x: 6.417, y: -4.56}
+    position: {x: 6.496, y: -4.56}
     size: {x: 1, y: 0.492}
     passThrough: 0
     healthOverride: 0
@@ -74,7 +74,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 2
   - type: 0
-    position: {x: 6.382, y: -3.561}
+    position: {x: 6.454, y: -3.561}
     size: {x: 1, y: 0.467}
     passThrough: 0
     healthOverride: 0
@@ -82,7 +82,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 2
   - type: 0
-    position: {x: 5.738, y: -3.561}
+    position: {x: 5.682, y: -3.561}
     size: {x: 1, y: 0.467}
     passThrough: 0
     healthOverride: 0
@@ -90,7 +90,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 2
   - type: 3
-    position: {x: 7.408, y: -4.953}
+    position: {x: 7.686, y: -4.953}
     size: {x: 1.256, y: 1.216}
     passThrough: 0
     healthOverride: 0
@@ -99,14 +99,14 @@ MonoBehaviour:
     artVariant: 0
   robots:
   - robotType: 2
-    position: {x: 7.383, y: -4.141}
+    position: {x: 7.656, y: -4.141}
     scale: {x: 5.734, y: 5.452}
   - robotType: 2
-    position: {x: 6.487, y: -4.151}
+    position: {x: 6.58, y: -4.151}
     scale: {x: 5.734, y: 5.452}
   - robotType: 2
-    position: {x: 5.759, y: -4.14}
+    position: {x: 5.707, y: -4.14}
     scale: {x: 5.734, y: 5.452}
   - robotType: 2
-    position: {x: 6.074, y: -2.961}
+    position: {x: 6.085, y: -2.961}
     scale: {x: 5.734, y: 5.452}

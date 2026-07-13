@@ -108,10 +108,37 @@ public class CluckAnimal : AnimalBase
             float rad    = angle * Mathf.Deg2Rad;
             var   dir    = new Vector2(Mathf.Cos(rad) * forwardSign, Mathf.Sin(rad));
 
-            var egg = Instantiate(_eggPrefab, transform.position, Quaternion.identity);
+            // Spawn slightly forward along the egg's own direction rather than exactly at
+            // Cluck's position (2026-07-13 user report: "eggs disappear before striking
+            // anything" / "only 3 or less eggs drop"). Cluck's own collider is very often still
+            // overlapping a block at the moment the ability fires — the passThrough hay-punch
+            // cone above literally requires it — so an egg instantiated at that exact point
+            // spawns already embedded in that same block and gets destroyed by
+            // EggProjectile.OnCollisionEnter2D on the very next physics step, before it's ever
+            // visibly airborne. 0.5 clears both Cluck's own 0.36 collider radius and the egg's
+            // own 0.18, with margin.
+            Vector3 spawnPos = transform.position + (Vector3)(dir.normalized * 0.5f);
+            var egg = Instantiate(_eggPrefab, spawnPos, Quaternion.identity);
 
             if (egg.TryGetComponent<Rigidbody2D>(out var rb))
                 rb.linearVelocity = dir * speed;
+
+            // Belt-and-suspenders on top of the 0.5 spawn offset above (2026-07-13, user report:
+            // "eggs are still random — there must be five and they all must inflict damage"): in a
+            // dense enough structure the 0.5 offset can still land an egg inside a DIFFERENT
+            // nearby block than the one Cluck is punching through, especially near the tightly
+            // packed towers introduced from L10 onward. Explicitly ignore collision with anything
+            // still overlapping the egg's own collider at the exact moment it spawns — permanently
+            // for THIS egg only, so it's guaranteed to clear whatever it was born inside of and
+            // fly its full course, while still colliding normally with everything else (including
+            // that same block later, if it happens to fly back into it).
+            if (egg.TryGetComponent<Collider2D>(out var eggCol))
+            {
+                var overlaps = Physics2D.OverlapCircleAll(spawnPos, eggCol.bounds.extents.x);
+                foreach (var other in overlaps)
+                    if (other != null && other != eggCol)
+                        Physics2D.IgnoreCollision(eggCol, other, true);
+            }
         }
     }
 

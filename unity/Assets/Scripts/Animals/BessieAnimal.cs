@@ -33,11 +33,24 @@ public class BessieAnimal : AnimalBase
         if (_col) _col.radius = 0.52f; // 26px / 50
     }
 
+    // Ceiling on total downward speed after the slam impulse is added — 2026-07-13, user report:
+    // "when bessie is triggered she falls through the floor (so no tremor/earthquake happens)".
+    // TriggerAbility() used to add _slamImpulse on top of whatever fall speed Bessie already had
+    // with no upper bound; stacked on an already-fast fall, the resulting velocity could out-run
+    // how far Physics2D's continuous collision detection reliably sweeps in one fixed timestep
+    // against the Ground collider's thin profile, letting her tunnel straight through before
+    // OnCollisionEnter2D ever fires — so the tremor/shockwave (which only fires FROM that
+    // collision) silently never happens. Capping the resulting speed keeps the dramatic slam feel
+    // while staying inside a range physics can reliably catch.
+    private const float MaxSlammedDownwardSpeed = 22f;
+
     protected override void TriggerAbility()
     {
         if (_slammed) return;
         _slammed = true;
         _rb.linearVelocity += Vector2.down * _slamImpulse;
+        if (_rb.linearVelocity.y < -MaxSlammedDownwardSpeed)
+            _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, -MaxSlammedDownwardSpeed);
     }
 
     // Ground Slam ability rework (2026-07-10, user request): "bessie_trigger... causes a tremor
@@ -69,8 +82,22 @@ public class BessieAnimal : AnimalBase
             robot.TakeDamage(InstantKillDamage);
     }
 
+    // Small beat between the landing impact and the tremor's ring/SFX/damage actually firing —
+    // 2026-07-13, user report: "review Bessie trigger and earthquake — the sprite disappears
+    // before anything is hit — delay the disappearance so the impact and damage is seen, slightly
+    // delay the explosions if any." Previously this all fired the same frame as the collision
+    // (OnCollisionEnter2D starts this coroutine, and everything below ran before its single
+    // `yield return null`), landing on top of AnimalBase's own impact-freeze in the same instant —
+    // paired with AnimalBase._contactTimeout's own increase (0.25 -> 0.45s), Bessie now visibly
+    // lands, THEN the ground shakes, giving the impact and the shockwave two distinct beats
+    // instead of one simultaneous blur.
+    const float ShockwaveDelay = 0.12f;
+
     IEnumerator Shockwave()
     {
+        yield return new WaitForSeconds(ShockwaveDelay);
+        if (IsDestroyed) yield break; // safety net — shouldn't happen given the contact timeout above, but don't act on a bird that's already gone
+
         if (_shockwaveRingPrefab)
             Instantiate(_shockwaveRingPrefab, transform.position, Quaternion.identity);
 

@@ -30,7 +30,8 @@ public class AudioManager : MonoBehaviour
     private float[]     _lastPlayTime;
     private Coroutine   _fallingFadeRoutine;
 
-    private const float MusicVolume         = 0.5f;
+    private const float DefaultMusicVolume  = 0.5f; // prior fixed mix level, now the Settings slider's default
+    private const float DefaultSfxVolume    = 1f;   // 1.0x multiplier on top of each sound's own tuned VolumeScale below — unchanged mix by default
     // Raised 0.6 -> 0.9 (2026-07-26): the falling/scream loop starts at the exact same instant
     // as the cannon-shot one-shot (see CatapultLauncher.Fire()) and was getting buried under it —
     // user-reported "cannot hear the chicken scream, it is deafened by the cannon fire". Paired
@@ -57,6 +58,13 @@ public class AudioManager : MonoBehaviour
     public static bool SfxEnabled   { get; private set; } = true;
     public static bool MusicEnabled { get; private set; } = true;
 
+    // Music/SFX Volume sliders — added 2026-07-13 for the redesigned Settings > Audio tab (see
+    // MainMenuController.BuildSettingsPopup). No Voice/Dialogue toggle — dropped per user
+    // decision, since there's no voice-line audio content (character reactions, robot lines)
+    // anywhere in this codebase to back it yet.
+    public static float MusicVolume  { get; private set; } = DefaultMusicVolume;
+    public static float SfxVolume    { get; private set; } = DefaultSfxVolume;
+
     public static void SetSfxEnabled(bool value)
     {
         SfxEnabled = value;
@@ -76,6 +84,25 @@ public class AudioManager : MonoBehaviour
         }
     }
 
+    public static void SetMusicVolume(float value)
+    {
+        MusicVolume = Mathf.Clamp01(value);
+        PlayerPrefs.SetFloat("ff_music_volume", MusicVolume);
+        PlayerPrefs.Save();
+        if (Instance != null)
+        {
+            if (Instance._musicSrc     != null) Instance._musicSrc.volume     = MusicVolume;
+            if (Instance._menuMusicSrc != null) Instance._menuMusicSrc.volume = MusicVolume;
+        }
+    }
+
+    public static void SetSfxVolume(float value)
+    {
+        SfxVolume = Mathf.Clamp01(value);
+        PlayerPrefs.SetFloat("ff_sfx_volume", SfxVolume);
+        PlayerPrefs.Save();
+    }
+
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(this); return; }
@@ -83,6 +110,8 @@ public class AudioManager : MonoBehaviour
 
         SfxEnabled   = PlayerPrefs.GetInt("ff_sfx_enabled",   1) == 1;
         MusicEnabled = PlayerPrefs.GetInt("ff_music_enabled", 1) == 1;
+        MusicVolume  = PlayerPrefs.GetFloat("ff_music_volume", DefaultMusicVolume);
+        SfxVolume    = PlayerPrefs.GetFloat("ff_sfx_volume",   DefaultSfxVolume);
 
         _src             = gameObject.AddComponent<AudioSource>();
         _src.playOnAwake = false;
@@ -216,7 +245,7 @@ public class AudioManager : MonoBehaviour
         int idx = (int)sound;
         if (cooldown > 0f && Time.time - Instance._lastPlayTime[idx] < cooldown) return;
         Instance._lastPlayTime[idx] = Time.time;
-        Instance._src.PlayOneShot(Instance._clips[idx], VolumeScale[idx]);
+        Instance._src.PlayOneShot(Instance._clips[idx], VolumeScale[idx] * SfxVolume);
     }
 
     // Plays an arbitrary external AudioClip (e.g. a block's own dedicated destroy sound) through
@@ -226,7 +255,7 @@ public class AudioManager : MonoBehaviour
     public static void PlayClip(AudioClip clip, float volume = 0.8f)
     {
         if (Instance == null || clip == null || !SfxEnabled) return;
-        Instance._src.PlayOneShot(clip, volume);
+        Instance._src.PlayOneShot(clip, volume * SfxVolume);
     }
 
     // ── Falling sound (animal airborne) ──────────────────────────────────────
@@ -244,7 +273,7 @@ public class AudioManager : MonoBehaviour
         if (_fallingSrc == null || clip == null || !SfxEnabled) return;
         if (_fallingFadeRoutine != null) { StopCoroutine(_fallingFadeRoutine); _fallingFadeRoutine = null; }
         _fallingSrc.clip   = clip;
-        _fallingSrc.volume = FallingVolume;
+        _fallingSrc.volume = FallingVolume * SfxVolume;
         _fallingSrc.Play();
     }
 

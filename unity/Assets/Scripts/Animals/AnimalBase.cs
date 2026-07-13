@@ -30,10 +30,16 @@ public abstract class AnimalBase : MonoBehaviour
     // Lowered from 1f (2026-07-09, user-reported "should disappear immediately" — 1s read as
     // far too long once the animal is frozen in place on impact rather than rolling, see
     // OnCollisionEnter2D). Still non-zero so the impact pose/stars get one visible beat instead
-    // of the pre-2026-07-26 instant-hide bug. NOTE the [SerializeField] stale-value trap applies
-    // here — SpriteWiring.WireAll() re-syncs this on all 8 prefabs since they already had 1f
-    // serialized from before this change.
-    [SerializeField] private float _contactTimeout = 0.25f;
+    // of the pre-2026-07-26 instant-hide bug. Raised 0.25 -> 0.45 (2026-07-13, user report: "the
+    // sprite disappears before anything is hit... delay the disappearance so the impact and
+    // damage is seen") — 0.25s wasn't enough time to actually register an impact pose plus, for
+    // Bessie specifically, the Ground Slam shockwave/earthquake landing before she vanished; 0.45s
+    // gives a clearly longer hold without reintroducing the original "rolls off screen" complaint
+    // this value was first tuned against. Applies to every animal on every level automatically —
+    // this is the shared base class field, not per-level data. NOTE the [SerializeField]
+    // stale-value trap applies here — SpriteWiring.WireAll() re-syncs this on all 8 prefabs since
+    // they already had an older value serialized from before this change.
+    [SerializeField] private float _contactTimeout = 0.45f;
 
     public bool IsInFlight  { get; protected set; }
     public bool IsLaunched  { get; private set; }
