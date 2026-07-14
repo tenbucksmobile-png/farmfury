@@ -29,6 +29,13 @@ MemoryCaptures/
 .DS_Store
 Thumbs.db
 
+# Editor-local settings, not meaningful to share across machines
+.vscode/
+
+# Unity's own crash-recovery scene snapshots (auto-regenerated after a crash, safe to discard)
+Assets/_Recovery/
+Assets/_Recovery.meta
+
 # Crashlytics
 crashlytics-build.properties
 
