@@ -184,6 +184,8 @@ MonoBehaviour:
   _impulseDamageMultiplier: 1
   _minDamageImpulse: 1.5
   _robotContactDamage: 18
+  _damageResistance: 1
+  _structuralDamageResistance: 1
   _robotSprite: {fileID: 21300000, guid: 9dbb3e4297a7c2a4e8c23f09ad28d4c3, type: 3}
   _robotDamagedSprite: {fileID: 21300000, guid: 3c992ffbde3087c42b914fee3fde1082, type: 3}
   _criticalSprite: {fileID: 21300000, guid: 3c992ffbde3087c42b914fee3fde1082, type: 3}

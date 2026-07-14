@@ -563,11 +563,13 @@ public static class SceneSetup
         robotArr.GetArrayElementAtIndex(2).objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Semi_Harvestor.png");
 
-        // Commander (L18 boss) — no dedicated MatchUp card art yet; leaves this slot null so
-        // MatchUpScreen falls back to its existing text-label card, same as Basic did before
-        // Robot.png existed.
+        // Commander (L18 boss) — dedicated framed MatchUp card art added 2026-07-14
+        // (Commander_robot.png, user-supplied). Previously pointed at a nonexistent
+        // "Commander.png" (no such file in this folder — only Assets/Sprites/Enemies/Robot/
+        // Commander.png, the plain in-game sprite, exists elsewhere), so this slot silently
+        // stayed null and MatchUpScreen fell back to its plain "COMMANDER" text-label card.
         robotArr.GetArrayElementAtIndex(3).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Commander.png");
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Commander_robot.png");
     }
 
     // Added 2026-07-24 — a Sunrise Meadows screenshot showed level markers rendering with
@@ -1685,6 +1687,23 @@ public static class SceneSetup
             WireRobotDamagedArt(so, damagedSprite);
             so.FindProperty("_maxHealth").floatValue = 90f;
             so.FindProperty("_robotContactDamage").floatValue = 18f;
+            // 2026-07-14, user report: "the commander must be stronger than it is" — RobotEnemy's
+            // damage model computes every hit as `_maxHealth * fraction`, so _maxHealth=90 alone
+            // never actually made Commander take more HITS to kill than a 26-35 HP grunt (the
+            // ratio cancels out — see _damageResistance's field comment in RobotEnemy.cs for the
+            // full explanation). 0.61 makes a direct hit land at 90*0.55*0.61=30.2 — exactly 3
+            // solid direct hits (90.6 total) to kill, matching this level's 3-bird budget.
+            so.FindProperty("_damageResistance").floatValue = 0.61f;
+            // Same-session follow-up, user: "it should take all three sprites to destroy - even
+            // with falling structure." L18's staircase is built from destructible blocks plus 2
+            // dynamite barrels around the Commander — without a separate multiplier here,
+            // Explosion/Fall damage share the SAME fraction/resistance as a direct hit (see
+            // _structuralDamageResistance's field comment), so a barrel catching him in its blast
+            // could finish him early, undermining "all three." 0.1 means structural collapse and
+            // nearby explosions chip only token damage (~4.95 per explosion, ~1.35 per fall) —
+            // negligible against his 90 HP, so only genuine thrown-animal hits can meaningfully
+            // kill him. Both values are tunable — revisit once actually played.
+            so.FindProperty("_structuralDamageResistance").floatValue = 0.1f;
             WireRobotDeathFx(so);
             if (explodeSprite != null)
                 so.FindProperty("_deathExplosionSprite").objectReferenceValue = explodeSprite;

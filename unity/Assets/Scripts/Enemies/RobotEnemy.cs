@@ -54,6 +54,37 @@ public class RobotEnemy : MonoBehaviour
     private const float FallDamageFraction         = 0.15f;
     [SerializeField] private float _robotContactDamage      = 18f;
 
+    // Every Take*Damage() wrapper below computes its hit as `_maxHealth * fraction` — a
+    // deliberate design choice so damage is impulse/speed-independent, but it has a side effect
+    // that bit L18's Commander boss: since the SAME fraction applies regardless of how high
+    // _maxHealth is set, raising a robot's _maxHealth alone changes NOTHING about how many hits
+    // it takes to kill (a direct hit is always ~2 hits to kill any robot, whether _maxHealth is
+    // 26 or 900 — the ratio cancels out). Found 2026-07-14, user report: "the commander must be
+    // stronger than it is" — Commander's _maxHealth=90 (vs 26-35 for regular grunts) looked
+    // tougher on paper but died in the exact same ~2 direct hits as any basic robot. This
+    // multiplier (default 1f — no behaviour change for every existing robot type) scales
+    // TakeDirectHitDamage/TakeEggDamage — the two categories a player directly causes by landing
+    // a real hit — independent of _maxHealth, so a real "boss" can be given genuine extra
+    // toughness. Wired to 0.61 on CommanderRobot.prefab (SceneSetup.EnsureCommanderRobotPrefab) —
+    // 3 solid direct hits to kill instead of 2, sized to exactly this level's 3-bird budget.
+    [SerializeField] private float _damageResistance = 1f;
+
+    // Separate multiplier for the two PASSIVE/environmental damage categories — TakeExplosionDamage
+    // (a nearby explosive prop dying) and TakeFallDamage (this robot's own support collapsing).
+    // Added 2026-07-14, same session as _damageResistance above, same user request extended:
+    // "make the commander stronger - it should take all three sprites to destroy - even with
+    // falling structure." L18's redesigned staircase is built from destructible Stone/Wood
+    // pieces plus 2 dynamite barrels around the Commander — without a SEPARATE multiplier here,
+    // Explosion/Fall damage would apply the SAME _damageResistance as a direct hit (both
+    // ExplosionDamageFraction and DirectHitDamageFraction are 0.55, identical), so one barrel
+    // catching him in its blast plus 2 direct hits could finish him in "2.5 birds," undermining
+    // the "must take all three" requirement — the collapsing structure would let the player
+    // shortcut the fight instead of needing 3 genuine thrown-animal hits. Defaults to 1f (no
+    // behaviour change for every other robot type, which has no boss-tier toughness to protect);
+    // wired to a much lower 0.1 on Commander specifically, so structural collapse/explosions
+    // chip only token damage and can't meaningfully shortcut the 3-hit requirement above.
+    [SerializeField] private float _structuralDamageResistance = 1f;
+
     public float Health      { get; private set; }
     public bool  IsDestroyed { get; private set; }
 
@@ -287,7 +318,7 @@ public class RobotEnemy : MonoBehaviour
 
     // Direct hit from a launched animal (Cluck etc.) — always exactly this fraction of max HP,
     // regardless of impact speed/angle. See the damage-model comment at the top of this class.
-    public void TakeDirectHitDamage() => TakeDamage(_maxHealth * DirectHitDamageFraction);
+    public void TakeDirectHitDamage() => TakeDamage(_maxHealth * DirectHitDamageFraction * _damageResistance);
 
     // A genuine explosive prop (Haybale or ExplodingBarrelBlock — see
     // WoodBlock._explodesOnRobots) dying within blast range. See the damage-model comment at the
@@ -297,17 +328,17 @@ public class RobotEnemy : MonoBehaviour
     // (WoodBlock._explosionStrengthMultiplier's own default), ExplodingBarrelBlock overrides
     // theirs higher.
     public void TakeExplosionDamage(float strengthMultiplier = 1f) =>
-        TakeDamage(_maxHealth * ExplosionDamageFraction * strengthMultiplier);
+        TakeDamage(_maxHealth * ExplosionDamageFraction * strengthMultiplier * _structuralDamageResistance);
 
     // One connecting egg from Cluck's Cluster Bomb ability. Deliberately the weakest category —
     // see the damage-model comment at the top of this class.
-    public void TakeEggDamage() => TakeDamage(_maxHealth * EggDamageFraction);
+    public void TakeEggDamage() => TakeDamage(_maxHealth * EggDamageFraction * _damageResistance);
 
     // A structural collapse dropping this robot (MakeDynamicFromSupportLoss above) — "wood
     // breaking is structural only, falling presents fractional damage", per the 2026-07-10 fifth
     // balance pass. Weaker than a real explosion. See the damage-model comment at the top of
     // this class.
-    public void TakeFallDamage() => TakeDamage(_maxHealth * FallDamageFraction);
+    public void TakeFallDamage() => TakeDamage(_maxHealth * FallDamageFraction * _structuralDamageResistance);
 
     public void TakeDamage(float amount)
     {

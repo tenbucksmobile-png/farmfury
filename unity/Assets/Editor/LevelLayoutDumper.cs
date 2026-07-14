@@ -102,13 +102,18 @@ public static class LevelLayoutDumper
         foreach (var robot in Object.FindObjectsByType<RobotEnemy>(FindObjectsInactive.Exclude))
         {
             string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(robot.gameObject);
-            // "SemiHarvesterRobot" must be checked before "HarvesterRobot" — it contains
-            // "HarvesterRobot" as a substring, so the reverse order would misclassify it (same
-            // class of bug as the sprite-name check above).
+            // "SemiHarvesterRobot"/"CommanderRobot" must be checked before "HarvesterRobot"/
+            // "Robot" — both contain those shorter names as substrings, so the reverse order
+            // would misclassify them (same class of bug as the sprite-name check above). Found
+            // 2026-07-14: CommanderRobot.prefab was missing here entirely, so it fell through to
+            // the generic "Robot" catch-all and silently dumped as RobotType.Basic — no warning,
+            // no skip, just a wrong type in the output (user report: "why is it not picking up
+            // the commander from the sprite folder in project").
             RobotType? type = prefabPath switch
             {
                 string p when p.Contains("SemiHarvesterRobot") => RobotType.SemiHarvester,
                 string p when p.Contains("HarvesterRobot")     => RobotType.Harvester,
+                string p when p.Contains("CommanderRobot")     => RobotType.Commander,
                 string p when p.Contains("Robot")              => RobotType.Basic,
                 _                                              => null,
             };
@@ -126,6 +131,7 @@ public static class LevelLayoutDumper
             {
                 RobotType.Harvester     => $"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.Harvester),",
                 RobotType.SemiHarvester => $"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.SemiHarvester),",
+                RobotType.Commander     => $"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.Commander),",
                 _                       => $"R({F(pos.x)}f, {F(pos.y)}f),",
             });
         }
@@ -158,8 +164,18 @@ public static class LevelLayoutDumper
 
                 if (spriteName.Contains("hay"))
                     blockLines.Add($"B(BlockType.Haybale, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f, passThrough: true, hp: 10f, mass: 3f), // sprite '{sr.sprite.name}'");
+                // Stone previously never passed artVariant at all — every Stone block silently
+                // defaulted to Auto regardless of which named-shape sprite (Stone_Square,
+                // Stone_Skew, Stone_Diagonal, etc.) was actually placed in the Scene view. Found
+                // 2026-07-14 (user report: "level 18 sprites have not rendered properly") — L18's
+                // redesign placed 9 Stone_Square + 6 Stone_Skew pieces, all near-1:1 footprint, so
+                // BlockBase.Initialise()'s Auto aspect guess fell back to _sprNormal (Stone_Block.png)
+                // for every one of them instead of the correct dedicated sprite. Now routes through
+                // the same InferWoodArtVariant() keyword lookup the Wood branch below already used
+                // (renamed in spirit, not just for Wood — Stone shares the same WoodArtVariant enum
+                // and several of the same named-shape fields, see BlockBase.cs).
                 else if (spriteName.Contains("stone"))
-                    blockLines.Add($"B(BlockType.Stone, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f), // sprite '{sr.sprite.name}'");
+                    blockLines.Add($"B(BlockType.Stone, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f, artVariant: WoodArtVariant.{InferWoodArtVariant(spriteName)}), // sprite '{sr.sprite.name}'");
                 // Only the DYNAMITE barrel explodes (BlockType.Barrel / ExplodingBarrelBlock) —
                 // checked before "wood" since "Barrel_Dynamite" contains neither "wood" nor
                 // "plank" anyway, but kept explicit for clarity. A plain "WoodenBarrel" prop is
@@ -180,6 +196,16 @@ public static class LevelLayoutDumper
                     robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.SemiHarvester), // sprite '{sr.sprite.name}'");
                 else if (spriteName.Contains("harvester"))
                     robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.Harvester), // sprite '{sr.sprite.name}'");
+                // Commander (L18 boss) — found missing entirely 2026-07-14 (user report: "why is
+                // it not picking up the commander from the sprite folder in project"). A raw
+                // Commander.png/Commander_robot.png sprite's name doesn't contain "robot" at all,
+                // so it fell all the way through to the unrecognised-keyword warning below and
+                // was silently dropped from every dump rather than showing up as a Basic robot —
+                // this branch's ordering relative to the others below doesn't matter (no overlap
+                // with any other keyword) but is placed here to read alongside the other robot
+                // types.
+                else if (spriteName.Contains("commander"))
+                    robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.Commander), // sprite '{sr.sprite.name}'");
                 // Covers RobotType.Basic — including 'Robot_Pawn', its actual debut art (L11,
                 // 2026-07-12). Previously dropped scale entirely (unlike the Harvester/
                 // SemiHarvester branches above), silently falling back to the Robot prefab's own
@@ -189,7 +215,7 @@ public static class LevelLayoutDumper
                     robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f), // sprite '{sr.sprite.name}'");
                 else
                 {
-                    Debug.LogWarning($"[LevelLayoutDumper] Skipping '{sr.gameObject.name}' under LevelScratch — sprite name '{sr.sprite.name}' doesn't match a known keyword (hay/stone/wood/plank/robot/harvester/semiharvest).");
+                    Debug.LogWarning($"[LevelLayoutDumper] Skipping '{sr.gameObject.name}' under LevelScratch — sprite name '{sr.sprite.name}' doesn't match a known keyword (hay/stone/wood/plank/robot/harvester/semiharvest/commander).");
                     skipped++;
                 }
             }
@@ -229,11 +255,26 @@ public static class LevelLayoutDumper
     // Only the specific files actually seen in a real level dump so far are confidently mapped;
     // anything else falls back to Auto (the original aspect-based guess) rather than guessing
     // wrong from a keyword alone.
+    // Extended 2026-07-14 (user report: "level 18 sprites have not rendered properly") — this
+    // function only ever recognised 3 keywords, silently returning Auto (the aspect-ratio guess)
+    // for anything else, INCLUDING "skew" — a keyword this project's own sprite set has used
+    // since L10/L17 (Plank_Skew.png/Stone_Skew.png, both wired to a dedicated _sprSkew field on
+    // BlockBase — see SceneSetup.WireBlockSprites). A skewed/diagonal block's footprint is
+    // usually close to 1:1 (square-ish), which the Auto aspect guess can't tell apart from a
+    // genuinely flat/square block — so every Plank_Skew/Stone_Skew/Stone_Square piece in L18's
+    // redesigned dump silently rendered as the wrong (flat/normal) sprite. Added "skew"/"square"/
+    // "diagonal"/"block" to match every other named-shape keyword this project's sprite filenames
+    // actually use (see BlockBase.cs's _spr* field list) — still falls back to Auto for anything
+    // genuinely unrecognised, same as before.
     static string InferWoodArtVariant(string spriteNameLower)
     {
         if (spriteNameLower.Contains("vertical") || spriteNameLower.Contains("shork")) return "Vertical";
         if (spriteNameLower.Contains("horizontal"))                                     return "Horizontal";
         if (spriteNameLower.Contains("flat"))                                           return "Flat";
+        if (spriteNameLower.Contains("skew"))                                           return "Skew";
+        if (spriteNameLower.Contains("diagonal"))                                       return "Diagonal";
+        if (spriteNameLower.Contains("square"))                                         return "Square";
+        if (spriteNameLower.Contains("block"))                                          return "Block";
         return "Auto";
     }
 }

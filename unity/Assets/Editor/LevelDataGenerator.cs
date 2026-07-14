@@ -911,60 +911,62 @@ public static class LevelDataGenerator
             });
 
         // ── W1_L18  ────────────────────────────────────────────────────────────
-        // New level 2026-07-12, World 1's final level — the Captain/Commander boss fight. Built
-        // via the user's own hand-placed dump (FarmFury -> Debug -> Dump Level Layout To Log),
-        // which itself only contained 2 Basic/Pawn + 2 SemiHarvester (no Commander — the user
-        // hadn't placed it in the Scene view yet when dumping). Per user decision, the Commander
-        // robot is added here BY HAND instead of re-dumping: placed directly at the top of the
-        // level's large indestructible StoneTower (centre X=6.76, Y=-3.36, half-height 3.7495 ->
-        // top edge Y~=0.39; Commander centred at X=6.76, Y=0.85, just above that edge), reading as
-        // "the boss standing atop his fortress" rather than mixed in with the regular enemies at
-        // ground level (user request: "place the commander at the top of the tower"). Scale
-        // (8.5, 8.5) — comfortably the largest robot in the level, matching a boss's intended
-        // visual prominence. birds[] continues Cluck/Cluck/Bessie from
-        // L10-L17. Real per-sprite scale/hp values for the dumped blocks/robots captured directly
-        // from the Scene view. Not visually re-verified (no Play-mode access here) — worth a
-        // careful live check given the Commander's position/scale here are a judgment call, not
-        // dumped data.
+        // Redesigned from scratch 2026-07-14 (user: "I have re-designed level 18 - see dump;
+        // override current and replace with new"), fully replacing the earlier version (giant
+        // indestructible StoneTower + 2 Basic + 2 SemiHarvester + hand-placed Commander — see git
+        // history for that layout). New design is a Commander-solo boss fight: a fully
+        // destructible ascending staircase of Stone_Square/Barrel_Dynamite/Wood_Skew/Stone_Skew
+        // pieces (no indestructible structure at all this time), with the Commander as the ONLY
+        // robot in the level. This lines up with the same-day match-up screen change (only the
+        // Commander's card slides in, no deck-of-cards for guard robots) — this redesign removes
+        // the guard robots from the level itself too, not just their match-up cards.
+        // Dumped via FarmFury -> Debug -> Dump Level Layout To Log (unity/Logs/level_layout_dump.txt)
+        // in two passes: blocks first, then a follow-up dump once the Commander was placed (the
+        // first pass had an empty robots[] — see the LevelLayoutDumper Commander-detection bug
+        // fixed the same session, which is WHY the first pass's robots[] came back empty at all:
+        // the dumper had no "commander" keyword/prefab-name branch in either of its two scan paths,
+        // so a placed CommanderRobot instance would have silently dumped as RobotType.Basic and a
+        // raw Commander sprite would have been skipped with a warning — fixed before this second,
+        // now-correct dump was taken). id/name/par/birds[] unchanged from the previous version.
+        // Real per-sprite scale/hp values captured directly from the Scene view. Not visually
+        // verified (no Play-mode access here) — worth a live check that a single Commander (HP=90,
+        // well above every other robot type) reads as a satisfying solo boss fight without the
+        // other robots' HP padding out the encounter, and that the staircase structure collapses
+        // sensibly under the existing block-cascade rules (see BlockBase.CheckForBlocksOnTop).
         Make(folder, "L18_CaptainsLastStand",
             id: "W1_L18", name: "Captain's Last Stand", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
             blocks: new[]
             {
-                B(BlockType.Stone,   6.76f,  -3.36f,  7.33f, 7.499f, artVariant: WoodArtVariant.Tower, indestructible: true), // sprite 'StoneTower' — fixed structure, cannot be destroyed
-                B(BlockType.Stone,   1.67f,  -5.924f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
-                B(BlockType.Stone,   2.32f,  -5.924f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
-                B(BlockType.Stone,   1.01f,  -5.924f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
-                B(BlockType.Barrel,  2.43f,  -2.6f,   1.483f, 1.401f), // sprite 'Barrel_Dynamite'
-                B(BlockType.Barrel,  4.37f,  -0.67f,  1.483f, 1.401f), // sprite 'Barrel_Dynamite'
-                B(BlockType.Barrel,  4.626f, -5.417f, 1.515f, 1.466f), // sprite 'Barrel_Dynamite'
-                B(BlockType.Stone,   2.5f,   -5.37f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
-                B(BlockType.Stone,   2.45f,  -4.4f,   0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
-                B(BlockType.Stone,   2.45f,  -3.68f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
-                B(BlockType.Stone,   4.7f,   -4.55f,  0.464f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
-                B(BlockType.Stone,   4.71f,  -3.83f,  0.464f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
-                B(BlockType.Stone,   1.73f,  -5.35f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
-                B(BlockType.Stone,   0.82f,  -5.35f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
-                B(BlockType.Wood,    1.08f,  -4.8f,   1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
-                B(BlockType.Wood,    2.04f,  -4.8f,   1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
-                B(BlockType.Wood,    2.33f,  -3.3f,   1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
-                B(BlockType.Wood,    3.28f,  -3.3f,   1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
-                B(BlockType.Wood,    3.44f,  -1.31f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
-                B(BlockType.Wood,    4.35f,  -1.33f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
-                B(BlockType.Wood,    4.23f,  -3.3f,   1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
-                B(BlockType.Wood,    3.19f,  -2.7f,   1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
-                B(BlockType.Wood,    3.21f,  -1.85f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
-                B(BlockType.Wood,    4.56f,  -1.92f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
-                B(BlockType.Wood,    4.58f,  -2.7f,   1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
-                B(BlockType.Haybale, 3.49f,  -5.42f,  1.483f, 1.499f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Stone, 4.04f, -5.28f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone, 4.71f, -5.3f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone, 5.36f, -5.32f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone, 7.15f, -4.55f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone, 7.14f, -3.97f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone, 7.16f, -5.14f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone, 3.37f, -4.68f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone, 3.37f, -4.09f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Stone, 3.37f, -5.28f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
+                B(BlockType.Barrel, 2.5f, -4.98f, 1.45f, 1.466f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel, 6.234f, -4.953f, 1.581f, 1.45f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Wood, 3.06f, -3.59f, 1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood, 3.71f, -2.95f, 1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood, 4.35f, -2.31f, 1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood, 4.97f, -1.71f, 1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood, 5.8f, -1.87f, 1.055f, 1.055f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood, 6.49f, -2.47f, 1.055f, 1.055f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood, 7.13f, -3.01f, 1.055f, 1.055f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Wood, 7.77f, -3.63f, 1.055f, 1.055f, artVariant: WoodArtVariant.Skew), // sprite 'Plank_Skew'
+                B(BlockType.Stone, 4.82f, -1.19f, 1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Stone_Skew'
+                B(BlockType.Stone, 4.25f, -1.76f, 1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Stone_Skew'
+                B(BlockType.Stone, 3.68f, -2.33f, 1f, 1f, artVariant: WoodArtVariant.Skew), // sprite 'Stone_Skew'
+                B(BlockType.Stone, 5.72f, -1.24f, 1.1f, 1.1f, artVariant: WoodArtVariant.Skew), // sprite 'Stone_Skew'
+                B(BlockType.Stone, 6.32f, -1.75f, 1.1f, 1.1f, artVariant: WoodArtVariant.Skew), // sprite 'Stone_Skew'
+                B(BlockType.Stone, 6.91f, -2.29f, 1.1f, 1.1f, artVariant: WoodArtVariant.Skew), // sprite 'Stone_Skew'
             },
             robots: new[]
             {
-                R(1.437f, -3.962f, 5.788f, 5.788f), // sprite 'Robot_Pawn'
-                R(3.84f,  -2.38f,  5.788f, 5.788f), // sprite 'Robot_Pawn'
-                R(3.45f,  -4.34f,  7.27f, 8.011f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
-                R(3.38f,  -0.66f,  7.27f, 7.555f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
-                R(6.76f,  0.85f,   8.5f, 8.5f, RobotType.Commander), // hand-placed boss, standing on top of the StoneTower — see class comment above
+                R(4.67f, -4.05f, 6.985f, 7.555f, RobotType.Commander), // sprite 'Commander'
             });
 
         AssetDatabase.SaveAssets();

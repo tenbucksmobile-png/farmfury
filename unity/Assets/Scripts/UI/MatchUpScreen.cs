@@ -334,7 +334,19 @@ public class MatchUpScreen : MonoBehaviour
                 foreach (var t in RobotCardOrder)
                 {
                     if (!present.Contains(t)) continue;
-                    if (!robot.HasValue) robot = t;
+                    if (!robot.HasValue)
+                    {
+                        robot = t;
+                        // Boss reveal — 2026-07-14, user request: "remove the other cards and only
+                        // slide the commander into place." A Commander level (currently only L18)
+                        // also always has regular mook robots in its robots[] (guarding the boss),
+                        // which the deck-of-cards system below would otherwise stack a 2nd/3rd card
+                        // for — undercutting the "this is THE boss" reveal. RobotCardOrder already
+                        // puts Commander first-priority, so stopping here whenever it's the primary
+                        // card leaves robot2/robot3 unassigned (null), and their sprite lookups
+                        // below correctly disable those cards entirely.
+                        if (t == RobotType.Commander) break;
+                    }
                     else if (!robot2.HasValue) robot2 = t;
                     else if (!robot3.HasValue) robot3 = t;
                 }

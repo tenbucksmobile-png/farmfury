@@ -51,10 +51,6 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private float _maxLaunchSpeed  = 9.3f;
 
     [Header("Aim Geometry")]
-    // Abstract aiming-math anchor. NOT tied to any visual GameObject — drag angle is measured
-    // relative to this point.
-    private const float _pivotHeight  = 1.914f;
-
     // Pull-angle cone (world-space, standard atan2 convention: 0°=+X, 90°=+Y). The player drags
     // the loaded bird backward/away from the target, mirroring it through the pivot (-180°) to
     // get the actual launch angle — same convention the old trebuchet-arm code used, just no
@@ -809,8 +805,21 @@ public class CatapultLauncher : MonoBehaviour
         _launchPoint = _cannonRestPos + (Vector3)CannonBarrelOffset;
     }
 
+    // Pivot for the drag-angle/power math must track the REAL, currently-visible FarmCannon (the
+    // loaded bird's actual on-screen position), not this script's own transform (the abstract
+    // "Launcher" aim-math anchor — see the Coordinate System docs in CLAUDE.md). Bug found
+    // 2026-07-14: this used to return transform.position + pivotHeight, which was a fine
+    // approximation of the loaded bird's position back when FarmCannon sat only ~0.7 units from
+    // the Launcher anchor (pre-2026-07-13), but the cannon reposition ("cannon too close" fix)
+    // pushed FarmCannon ~5.2 units further left with nothing here re-anchoring the pivot to match
+    // — exactly the same class of bug already caught and fixed the same day for
+    // ComputeOrthoSizeForLevel's camera framing, just missed here. With the pivot left ~5 units
+    // away from where the player actually drags (near the visually loaded bird), a drag near the
+    // cannon read as an already-near-max pull DISTANCE from the very first frame (power pinned
+    // near max) and swept only a tiny ANGLE when measured from that distant point (direction
+    // barely changed) — i.e. "almost no directional trajectory, nor strength" (user report).
     Vector3 PivotPos() =>
-        transform.position + new Vector3(0f, _pivotHeight, 0f);
+        _cannonRestPos + (Vector3)CannonLoadedBirdOffset;
 
     Vector2 LaunchVelocity()
     {

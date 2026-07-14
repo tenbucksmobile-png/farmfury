@@ -2351,7 +2351,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: baaecddae24a9ed46a23ab282c5db333, type: 3}
   - {fileID: 21300000, guid: c15e1961fbce02146bc26ac23b612313, type: 3}
   - {fileID: 21300000, guid: f644409a4a1b63246bf8b01ab33ad7cb, type: 3}
-  - {fileID: 0}
+  - {fileID: 21300000, guid: 27037f9a218d1ea48a2679e059fdd144, type: 3}
   _eggSprite: {fileID: 21300000, guid: 9e8a89ef2655a1142a454169440affb7, type: 3}
   _skipButtonSprite: {fileID: 21300000, guid: 5b15c703f286e454286860cf90288a46, type: 3}
 --- !u!4 &1901905601
