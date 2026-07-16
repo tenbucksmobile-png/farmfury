@@ -25,6 +25,7 @@ MonoBehaviour:
     massOverride: 3
     indestructible: 0
     artVariant: 0
+    forceStayKinematic: 0
   - type: 2
     position: {x: 4.46, y: -5.22}
     size: {x: 1.205, y: 1.151}
@@ -33,6 +34,7 @@ MonoBehaviour:
     massOverride: 3
     indestructible: 0
     artVariant: 0
+    forceStayKinematic: 0
   - type: 2
     position: {x: 5.05, y: -5.37}
     size: {x: 1.205, y: 1.151}
@@ -41,6 +43,7 @@ MonoBehaviour:
     massOverride: 3
     indestructible: 0
     artVariant: 0
+    forceStayKinematic: 0
   - type: 2
     position: {x: 7.6, y: -5.14}
     size: {x: 1.205, y: 1.151}
@@ -49,6 +52,7 @@ MonoBehaviour:
     massOverride: 3
     indestructible: 0
     artVariant: 0
+    forceStayKinematic: 0
   robots:
   - robotType: 2
     position: {x: 6.54, y: -5.23}

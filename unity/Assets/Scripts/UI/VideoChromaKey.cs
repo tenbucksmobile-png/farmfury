@@ -44,6 +44,16 @@ public class VideoChromaKey : MonoBehaviour
     private bool _gotFirstFrame;
     private bool _plainRender;
 
+    // Incremented on every Play() call. HandlePrepared/HandleFrameReady are subscribed fresh per
+    // call (see Play()) and each closure captures the token it was created with — if a slow-to-
+    // arrive event from a superseded Play() call still fires after a newer one has already
+    // started, its captured token no longer matches _playToken and it's ignored instead of
+    // revealing/re-preparing on top of the current clip. VideoPlayer is shared between
+    // LevelCompleteManager and LevelFailedManager, so without this a late event from one clip
+    // (e.g. the robot's still-chroma-keyed taunt) could otherwise briefly reveal stale content —
+    // or the wrong material/background state — under whichever clip is currently playing.
+    private int _playToken;
+
     // Finds the scene's existing overlay (there should only ever be one — Level Complete and
     // Level Failed celebrations never play simultaneously, so both LevelCompleteManager and
     // LevelFailedManager share this single instance) or builds the Canvas + RawImage + VideoPlayer
@@ -119,7 +129,6 @@ public class VideoChromaKey : MonoBehaviour
         _videoPlayer.renderMode = VideoRenderMode.RenderTexture;
         _videoPlayer.playOnAwake = false;
         _videoPlayer.isLooping = false;
-        _videoPlayer.prepareCompleted += HandlePrepared;
         _videoPlayer.errorReceived += HandleError;
         // Reusing one shared VideoPlayer for both the Level Complete (Cluck) and Level Failed
         // (robot) clips means the RenderTexture from whichever clip played last is still sitting
@@ -128,8 +137,9 @@ public class VideoChromaKey : MonoBehaviour
         // hidden until then — without this, Play() used to activate the RawImage immediately,
         // which showed the *previous* clip's leftover frame (e.g. the robot) for however long the
         // new clip took to prepare, and forever if it silently never got that far.
+        // prepareCompleted/frameReady are subscribed per-Play() (see Play()), not persistently
+        // here, so a late event from a superseded clip can be told apart from the current one.
         _videoPlayer.sendFrameReadyEvents = true;
-        _videoPlayer.frameReady += HandleFrameReady;
 
         // Accompanying one-shot audio (e.g. Cluck_CelebratingLaugh.mp3 / Robot_CelebrateSound.mp3)
         // — separate from the VideoPlayer's own audio track since the source clips have none/
@@ -163,6 +173,27 @@ public class VideoChromaKey : MonoBehaviour
 
         if (_background != null)
             _background.gameObject.SetActive(!plainRender && _backgroundSprite != null);
+
+        // Fresh single-shot subscriptions per Play() call, each capturing this call's token — see
+        // the _playToken field comment for why a persistent subscription isn't safe here.
+        int token = ++_playToken;
+        VideoPlayer.EventHandler onPrepared = null;
+        onPrepared = source =>
+        {
+            _videoPlayer.prepareCompleted -= onPrepared;
+            if (token != _playToken) return; // superseded by a newer Play() call
+            HandlePrepared(source);
+        };
+        _videoPlayer.prepareCompleted += onPrepared;
+
+        VideoPlayer.FrameReadyEventHandler onFrameReady = null;
+        onFrameReady = (source, frameIdx) =>
+        {
+            if (token != _playToken) return; // superseded by a newer Play() call
+            _videoPlayer.frameReady -= onFrameReady;
+            HandleFrameReady(source, frameIdx);
+        };
+        _videoPlayer.frameReady += onFrameReady;
 
         _videoPlayer.clip = clip;
         _videoPlayer.Prepare();
@@ -227,6 +258,7 @@ public class VideoChromaKey : MonoBehaviour
 
     public void Stop()
     {
+        _playToken++; // invalidate any still-pending Play() handler so it can't fire after this
         _videoPlayer.Stop();
         _audioSrc.Stop();
         _gotFirstFrame = false;
@@ -338,9 +370,10 @@ public class VideoChromaKey : MonoBehaviour
 
     private void OnDestroy()
     {
-        _videoPlayer.prepareCompleted -= HandlePrepared;
         _videoPlayer.errorReceived -= HandleError;
-        _videoPlayer.frameReady -= HandleFrameReady;
+        // No persistent prepareCompleted/frameReady subscription to remove — each Play() call's
+        // handler unsubscribes itself once fired (see Play()); bumping the token here would be
+        // redundant since the VideoPlayer itself is being destroyed.
 
         if (_renderTexture != null)
         {

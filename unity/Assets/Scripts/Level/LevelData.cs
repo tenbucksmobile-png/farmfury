@@ -37,6 +37,17 @@ public class LevelData : ScriptableObject
         // L03 "wood renders wrong" report). LevelLayoutDumper now sets this directly from the
         // actual design-time sprite's filename instead of leaving it to aspect-guessing.
         public WoodArtVariant artVariant;
+        // Forces this specific instance to stay physically fixed regardless of what happens to
+        // its support (BlockBase.NeverFalls) — false (default) means "use the prefab's own
+        // default," which is what every block type except Haybale needs. Added 2026-07-16
+        // alongside flipping HaybaleBlock.prefab's own default from stayKinematic=true back to
+        // false: that prefab-wide flag (added 2026-07-26 for L01's ground pile — "hitting one
+        // haybale woke all four") had been silently applying to EVERY Haybale placement in every
+        // level since, including ones stacked on top of tall structures (e.g. L12/L14) — user
+        // report 2026-07-16: "structure sprites remain mid-air" — those haybales' own support
+        // could be destroyed out from under them and they'd just stay Static, floating, forever.
+        // Only L01's specific decorative ground pile actually needs this set true now.
+        public bool forceStayKinematic;
     }
 
     [Serializable]

@@ -88,7 +88,13 @@ public class HUDController : MonoBehaviour
     // box/text if any of these are unwired, so neither panel ever renders blank.
     [SerializeField] private Sprite _scoreboardSprite; // Scoreboard.png (backdrop)
     [SerializeField] private Sprite _playButtonSprite; // Btn_play.png
-    [SerializeField] private Sprite _homeButtonSprite;  // Btn_home.png
+    // Btn_back.png (2026-07-16, user-supplied) — was Btn_home.png/_homeButtonSprite. Renamed
+    // alongside the behaviour change on OnLevelCompleteHomeClicked/OnMenuClicked below: this
+    // button no longer skips straight to the main menu, it now returns to the World 1 map
+    // (Sunrise Meadows), so "back" reads correctly where "home" no longer does. Distinct from
+    // WorldMapController's own separate _homeButtonSprite field (that one's button lives ON the
+    // world map itself and still goes to the main menu — unrelated, not renamed here).
+    [SerializeField] private Sprite _backButtonSprite;
 
     [SerializeField] private Sprite _quitButtonSprite; // Btn_quite.png ("QUIT" baked into the art)
 
@@ -590,7 +596,7 @@ public class HUDController : MonoBehaviour
         levelUpBtn.onClick.AddListener(OnLevelCompletePlayClicked);
         _lcLevelUpStarRT = levelUpBtn.GetComponent<RectTransform>();
 
-        var homeBtn = MakeIconButton(box.transform, "HomeBtn", _homeButtonSprite,
+        var homeBtn = MakeIconButton(box.transform, "BackBtn", _backButtonSprite,
                           new Color(1.00f, 0.55f, 0.05f),
                           pos: new Vector2(+170f, -260f), size: new Vector2(130f, 130f));
         homeBtn.onClick.AddListener(OnLevelCompleteHomeClicked);
@@ -678,16 +684,40 @@ public class HUDController : MonoBehaviour
     void OnLevelCompletePlayClicked()
     {
         HideLevelCompletePanel();
+
+        // World-ending levels (currently only L18 -> "Frozen Tundra") play a transition video
+        // before landing on the main menu, instead of the normal immediate LoadMenu() below —
+        // see WorldTransitionManager. TryPlayTransition returns false (and starts nothing) for
+        // every other level, so this is a no-op fallback everywhere except L18.
+        int levelIndex = GameManager.Instance != null ? GameManager.Instance.CurrentLevelIndex : -1;
+        if (WorldTransitionManager.Instance != null &&
+            WorldTransitionManager.Instance.TryPlayTransition(levelIndex, GoToMenuSkippingWorldMap))
+        {
+            return;
+        }
+
         GameManager.Instance?.LoadMenu();
     }
 
-    // Btn_home — same "skip the world map, land on the main menu" pattern as Level Failed's
-    // Home button (see OnMenuClicked and WorldMapController.SkipToMainMenu).
+    // Shared by the transition-video path above — lands on the main menu directly rather than
+    // flashing the World 1 map first, same "skip the map" pattern as Home/Quit
+    // (WorldMapController.SkipToMainMenu) — there's no real World 2 map to show yet anyway.
+    void GoToMenuSkippingWorldMap()
+    {
+        GameManager.Instance?.LoadMenu();
+        WorldMapController.Instance?.SkipToMainMenu();
+    }
+
+    // Btn_back (was Btn_home) — 2026-07-16, user request: this button should land on the World 1
+    // map (Sunrise Meadows), not skip past it to the main menu. LoadMenu() alone is enough:
+    // GameManager transitions to GameState.Idle, which WorldMapController already reacts to on
+    // its own by showing itself (see WorldMapController.OnStateChanged) — no SkipToMainMenu()
+    // call here any more (that's still used by Quit/WorldMapController's own Home button, which
+    // intentionally go straight to the main menu instead).
     void OnLevelCompleteHomeClicked()
     {
         HideLevelCompletePanel();
         GameManager.Instance?.LoadMenu();
-        WorldMapController.Instance?.SkipToMainMenu();
     }
 
     // ── Level Failed panel ────────────────────────────────────────────────────
@@ -772,7 +802,7 @@ public class HUDController : MonoBehaviour
             color: new Color(0.20f, 0.10f, 0.03f));
         StyleAsGameNumber(_lfScoreText);
 
-        // Buttons — Btn_play (try again) on the left, Btn_home (landing page) on the right.
+        // Buttons — Btn_play (try again) on the left, Btn_back (world map) on the right.
         // Dropped clear below the board's bottom edge (board half-height 181.5 + button half-
         // height 65 = 246.5 is the minimum non-overlapping offset) so the icons sit on the dark
         // overlay instead of covering the sign art.
@@ -782,7 +812,7 @@ public class HUDController : MonoBehaviour
         tryAgainBtn.onClick.AddListener(OnTryAgainClicked);
         _lfTryAgainRT = tryAgainBtn.GetComponent<RectTransform>();
 
-        var menuBtn = MakeIconButton(box.transform, "MenuBtn", _homeButtonSprite,
+        var menuBtn = MakeIconButton(box.transform, "BackBtn", _backButtonSprite,
                           new Color(1.00f, 0.55f, 0.05f),
                           pos: new Vector2(+170f, -260f), size: new Vector2(130f, 130f));
         menuBtn.onClick.AddListener(OnMenuClicked);
@@ -850,22 +880,21 @@ public class HUDController : MonoBehaviour
         GameManager.Instance?.RestartLevel();
     }
 
+    // Btn_back (was Btn_home) — same 2026-07-16 change as OnLevelCompleteHomeClicked above: lands
+    // on the World 1 map instead of skipping to the main menu, so no SkipToMainMenu() call here
+    // any more. LoadMenu() alone is enough — WorldMapController shows itself on GameState.Idle.
     void OnMenuClicked()
     {
         HideLevelFailedPanel();
         GameManager.Instance?.LoadMenu();
-        // LoadMenu() transitions GameState to Idle, which WorldMapController reacts to by
-        // showing itself (it's the PLAY destination) — SkipToMainMenu() immediately hides it
-        // again in the same call so the world map never actually flashes on screen, landing
-        // cleanly on the main menu instead. Same pattern used by the Level Complete Home button.
-        WorldMapController.Instance?.SkipToMainMenu();
     }
 
     // Quit now returns to the landing page instead of closing the app (2026-07-06, user
-    // request) — same "skip the world map, land directly on the main menu" pattern as the
-    // Level Complete/Failed Home buttons (see OnLevelCompleteHomeClicked and
-    // WorldMapController.SkipToMainMenu). Un-pauses first so Time.timeScale doesn't stay at 0
-    // if Quit is tapped while paused.
+    // request) — "skip the world map, land directly on the main menu" (see
+    // WorldMapController.SkipToMainMenu). Unlike Level Complete/Failed's Back buttons (which now
+    // land on the World 1 map instead, see OnLevelCompleteHomeClicked/OnMenuClicked), Quit is
+    // still meant to go all the way out to the main menu. Un-pauses first so Time.timeScale
+    // doesn't stay at 0 if Quit is tapped while paused.
     void OnQuitClicked()
     {
         if (_isPaused) SetPaused(false);

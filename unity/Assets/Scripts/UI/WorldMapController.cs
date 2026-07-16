@@ -151,8 +151,10 @@ public class WorldMapController : MonoBehaviour
 
     public void Show() => ShowPanel();
 
-    // Called by other panels (e.g. HUDController's Level Complete/Failed "Home" button) that
-    // need to land on the main menu specifically, not the world map. GameManager.LoadMenu()
+    // Called by other panels (e.g. HUDController's Quit button, and this class's own Home button)
+    // that need to land on the main menu specifically, not the world map — Level Complete/Failed's
+    // Back buttons stopped calling this 2026-07-16 (they now land on the world map instead, which
+    // is just LoadMenu() on its own, no skip needed). GameManager.LoadMenu()
     // transitions GameState to Idle, which this class's own OnStateChanged reacts to by calling
     // ShowPanel() — this method runs immediately after that in the same call stack, so the map
     // gets hidden again before a frame ever renders it (same "atomic same-frame" reasoning as

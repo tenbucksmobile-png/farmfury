@@ -262,6 +262,10 @@ MonoBehaviour:
   _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
   _settingsButtonSprite: {fileID: 21300000, guid: 70471a128358f6a4ca9554a97b76abfa, type: 3}
   _scoreboardSprite: {fileID: 21300000, guid: 4b9c61b5ffabce84fa6732409a7d4554, type: 3}
+  _plaqueSprite: {fileID: 21300000, guid: a0a502ca1b9fa5640b3fccb58b1fb743, type: 3}
+  _quitCloseButtonSprite: {fileID: 21300000, guid: b20bea32146aa834f9d2c59640d68c08, type: 3}
+  _toggleOffSprite: {fileID: 21300000, guid: c15efc3f7a1095049ad2faa7eaf93ceb, type: 3}
+  _toggleOnSprite: {fileID: 21300000, guid: f97660301e1fef6408bd4a982df8ddaf, type: 3}
 --- !u!4 &80042615
 Transform:
   m_ObjectHideFlags: 0
@@ -1667,7 +1671,7 @@ MonoBehaviour:
   _lfTitleSprite: {fileID: 21300000, guid: e4eb9af51ce59bd4191a4805b798c680, type: 3}
   _scoreboardSprite: {fileID: 21300000, guid: 4b9c61b5ffabce84fa6732409a7d4554, type: 3}
   _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
-  _homeButtonSprite: {fileID: 21300000, guid: d4ca48065cb59984b89e8382405d5040, type: 3}
+  _backButtonSprite: {fileID: 21300000, guid: 073762aa1112557439afd5f686dd3c3b, type: 3}
   _quitButtonSprite: {fileID: 21300000, guid: b20bea32146aa834f9d2c59640d68c08, type: 3}
   _pauseButtonSprite: {fileID: 21300000, guid: 31a8c674f4922e443a427e353a35d515, type: 3}
   _musicOnSprite: {fileID: 21300000, guid: 9c446ccc315a94348b8ff51d3976471c, type: 3}
@@ -2000,6 +2004,55 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1301547463
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1301547465}
+  - component: {fileID: 1301547464}
+  m_Layer: 0
+  m_Name: WorldTransitionManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1301547464
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1301547463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c42334d8fdf9f5d4aad4a3a943e47c2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldTransitionManager
+  _videoChromaKey: {fileID: 0}
+  _triggerLevelIndices: 11000000
+  _transitionClips:
+  - {fileID: 32900000, guid: 3ec4319bc1abb4645a8c6e75c00917b6, type: 3}
+  _fadeOutDuration: 0.3
+--- !u!4 &1301547465
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1301547463}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1511578341
 GameObject:
   m_ObjectHideFlags: 0
@@ -2327,7 +2380,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 11730987b4699db4aa4ec6469d973cf1, type: 3}
   - {fileID: 21300000, guid: e12669d195b85664c913a82ee7cd4f88, type: 3}
   - {fileID: 21300000, guid: a258fd5d37be01e439de3ca913596505, type: 3}
-  - {fileID: 0}
+  - {fileID: 21300000, guid: 3d0459a8d06c82d4d802854d7b288200, type: 3}
   - {fileID: 21300000, guid: 2b4ae327545b8de4ba05472466cc52f4, type: 3}
   _countdown3Sprite: {fileID: 21300000, guid: 81663a4a1c4c6ba47883a8fe7742f152, type: 3}
   _countdown2Sprite: {fileID: 21300000, guid: d08fa34e6909cc542bf331ee837b665a, type: 3}
@@ -2625,3 +2678,4 @@ SceneRoots:
   - {fileID: 908990636}
   - {fileID: 1238060524}
   - {fileID: 645401473}
+  - {fileID: 1301547465}

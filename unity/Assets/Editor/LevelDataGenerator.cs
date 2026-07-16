@@ -91,10 +91,10 @@ public static class LevelDataGenerator
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 4.54f, -5.12f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 5.38f, -5.17f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 4.73f, -5.28f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 4.92f, -4.63f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.54f, -5.12f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f, forceStayKinematic: true), // sprite 'Haybail'
+                B(BlockType.Haybale, 5.38f, -5.17f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f, forceStayKinematic: true), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.73f, -5.28f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f, forceStayKinematic: true), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.92f, -4.63f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f, forceStayKinematic: true), // sprite 'Haybail'
             },
             robots: new[]
             {
@@ -555,7 +555,14 @@ public static class LevelDataGenerator
                 R(3.84f, -3.26f, 5.993f, 6.220f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
                 R(5.44f, -1.93f, 5.993f, 6.220f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
                 R(5.55f, -3.26f, 5.993f, 6.220f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
-                R(7.155f, -0.845f), // sprite 'Robot_Pawn' — RobotType.Basic, its actual gameplay debut
+                // RobotType.Basic/'Robot_Pawn' removed 2026-07-16 (user report: "small robot
+                // rendering in the middle of the air"). It spawned at the Robot prefab's default
+                // visual scale (see the level comment above — its custom scale was never captured
+                // in the original dump) at X=7.155, well past the rest of this level's structure
+                // (which tops out around X=5.92) — robots are spawned Static/no-gravity, so with
+                // nothing built underneath it, it just sat there floating rather than falling or
+                // resting on anything. Deleting it rather than repositioning it onto the existing
+                // structure, since there's no record of where it was actually meant to stand.
             });
 
         // ── W1_L12  ────────────────────────────────────────────────────────────
@@ -755,14 +762,22 @@ public static class LevelDataGenerator
                 B(BlockType.Wood,    5.1f,   -5f,     1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
                 B(BlockType.Wood,    5.27f,  -4.15f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
                 B(BlockType.Wood,    6.45f,  -5f,     1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                // 4 of the original 8 Plank_2DShork entries removed here 2026-07-16 (user report:
+                // "the sprites are not rendering positioning correctly"). Root cause: each pair
+                // below sat only ~0.24-0.26 units apart on a 1-unit-wide sprite — ~75% overlap,
+                // nowhere close to any other Shork2D usage in this file (e.g. L11's two instances
+                // are a full 0.88 apart, a normal vertical stack) or any other block pairing in
+                // this same level (every other neighbour here is spaced roughly its own footprint
+                // apart). This reads as an accidental double-drag from the original Scene-view
+                // dump, not a deliberate "layered debris" look — two near-identical sprites
+                // rendering almost on top of each other at the same sortingOrder is exactly what
+                // "not rendering positioning correctly" would look like. Kept the first (lower-X)
+                // of each pair, removed the second: 2.04,-4.69 / 3.36,-4.72 / 4.62,-4.72 /
+                // 5.9,-4.72. Not visually re-verified (no Play-mode access here).
                 B(BlockType.Wood,    1.8f,   -4.67f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
-                B(BlockType.Wood,    2.04f,  -4.69f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
                 B(BlockType.Wood,    3.1f,   -4.69f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
-                B(BlockType.Wood,    3.36f,  -4.72f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
                 B(BlockType.Wood,    4.36f,  -4.69f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
-                B(BlockType.Wood,    4.62f,  -4.72f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
                 B(BlockType.Wood,    5.66f,  -4.72f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
-                B(BlockType.Wood,    5.9f,   -4.72f,  1f, 1.064f, artVariant: WoodArtVariant.Shork2D), // sprite 'Plank_2DShork'
                 B(BlockType.Stone,   1.82f,  -4.08f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
                 B(BlockType.Stone,   4.37f,  -4.11f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
                 B(BlockType.Stone,   4.37f,  -3.57f,  1f, 1f, artVariant: WoodArtVariant.Block), // sprite 'Stone_Block'
@@ -1027,10 +1042,12 @@ public static class LevelDataGenerator
     static LevelData.BlockSpawnData B(BlockType type, float x, float y, float w, float h,
                                       bool passThrough = false, float hp = 0f, float mass = 0f,
                                       WoodArtVariant artVariant = WoodArtVariant.Auto,
-                                      bool indestructible = false) =>
+                                      bool indestructible = false,
+                                      bool forceStayKinematic = false) =>
         new() { type = type, position = new Vector2(x, y), size = new Vector2(w, h),
                 passThrough = passThrough, healthOverride = hp, massOverride = mass,
-                artVariant = artVariant, indestructible = indestructible };
+                artVariant = artVariant, indestructible = indestructible,
+                forceStayKinematic = forceStayKinematic };
 
     static LevelData.RobotSpawnData R(float x, float y, float scaleX = 0f, float scaleY = 0f,
                                       RobotType robotType = RobotType.Basic) =>

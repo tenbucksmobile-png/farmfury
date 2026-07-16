@@ -32,6 +32,7 @@ public static class SceneSetup
         EnsureAudioManager();   // AudioManager GO wired with music/cannon/falling clips
         EnsureLevelCompleteManager();  // Cluck celebration video + laugh audio
         EnsureLevelFailedManager();    // Robot taunt video + taunt audio
+        EnsureWorldTransitionManager(); // L18 -> Frozen Tundra transition video
         EnsureCelebrationVideoBackground(); // Sky backdrop behind both of the above (shared overlay)
         WireGameManager();      // _levels array
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
@@ -337,7 +338,10 @@ public static class SceneSetup
         WireSprite(so, "_lfTitleSprite",       "Assets/Sprites/UI/MatchUp/LevelFailed.png");
         WireSprite(so, "_scoreboardSprite",    "Assets/Sprites/UI/MatchUp/Scoreboard.png");
         WireSprite(so, "_playButtonSprite",    "Assets/Sprites/UI/Icon/Btn_play.png");
-        WireSprite(so, "_homeButtonSprite",    "Assets/Sprites/UI/Icon/Btn_home.png");
+        // Btn_back.png (2026-07-16, user-supplied) — was Btn_home.png/_homeButtonSprite, renamed
+        // alongside the Level Complete/Failed Back-to-world-map behaviour change (see
+        // HUDController.OnLevelCompleteHomeClicked/OnMenuClicked).
+        WireSprite(so, "_backButtonSprite",    "Assets/Sprites/UI/Icon/Btn_back.png");
         // Btn_quite.png / NoSound.png renamed to Btn_quit.png / Btn_nosound.png outside this
         // session (2026-07-12, fixing the "quite" typo) — re-pointed here since the old paths no
         // longer exist and WireSprite silently leaves a stale sprite reference otherwise (same
@@ -411,6 +415,15 @@ public static class SceneSetup
         // Settings popup backdrop (2026-07-10) — same Scoreboard.png HUDController's Level
         // Complete/Failed panels already use.
         WireSprite(mmSo, "_scoreboardSprite", "Assets/Sprites/UI/MatchUp/Scoreboard.png");
+        // Settings tab "heading" plaque (2026-07-16, user-supplied) — replaces the flat colour
+        // box behind the 7 tab buttons (AUDIO/GAMEPLAY/STATS/SCORES/STORY/ACCOUNT/ABOUT).
+        WireSprite(mmSo, "_plaqueSprite", "Assets/Sprites/UI/Icon/Btn_plaque.png");
+        // Music/SFX enabled toggle icons (2026-07-16, user-supplied) — see MakeStateToggle's
+        // offSprite/onSprite params. Only these two genuine on/off switches use icon mode.
+        WireSprite(mmSo, "_toggleOffSprite", "Assets/Sprites/UI/Icon/Btn_off.png");
+        WireSprite(mmSo, "_toggleOnSprite",  "Assets/Sprites/UI/Icon/Btn_on.png");
+        // Settings popup close icon (2026-07-16) — replaces the old text "SETTINGS"/"X" header.
+        WireSprite(mmSo, "_quitCloseButtonSprite", "Assets/Sprites/UI/Icon/Btn_quit.png");
         mmSo.ApplyModifiedProperties();
     }
 
@@ -513,8 +526,8 @@ public static class SceneSetup
         // capitalised on disk as "Level13.png" (inconsistent with the rest, kept as-is rather than
         // renaming the source asset) — matched exactly since AssetDatabase paths are effectively
         // case-sensitive on iOS/Android builds even though Windows' filesystem tolerates the
-        // mismatch. L17 has no header art on disk yet (checked directly, not guessed) — its slot
-        // stays unassigned and correctly falls back to LevelHeader1.png until that art exists.
+        // mismatch. level17.png added 2026-07-16 (user-supplied) — previously the only gap in
+        // this range, its slot fell back to LevelHeader1.png until now.
         headerArr.GetArrayElementAtIndex(11).objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level12.png");
         headerArr.GetArrayElementAtIndex(12).objectReferenceValue =
@@ -525,6 +538,8 @@ public static class SceneSetup
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level15.png");
         headerArr.GetArrayElementAtIndex(15).objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level16.png");
+        headerArr.GetArrayElementAtIndex(16).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level17.png");
         headerArr.GetArrayElementAtIndex(17).objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level18.png");
 
@@ -739,6 +754,26 @@ public static class SceneSetup
         so.ApplyModifiedProperties();
     }
 
+    // World-ending transition video (currently only L18 -> "Frozen Tundra", see
+    // WorldTransitionManager) — level index 17 (0-based, L18) -> TransitionVideo_Draft.mp4.
+    static void EnsureWorldTransitionManager()
+    {
+        var go = GameObject.Find("WorldTransitionManager");
+        if (go == null)
+        {
+            go = new GameObject("WorldTransitionManager");
+            Debug.Log("[FarmFury] Created 'WorldTransitionManager' GameObject.");
+        }
+        if (go.GetComponent<WorldTransitionManager>() == null)
+            go.AddComponent<WorldTransitionManager>();
+
+        var so = new SerializedObject(go.GetComponent<WorldTransitionManager>());
+        WireIntArrayElement(so, "_triggerLevelIndices", 0, 1, 17);
+        WireArrayElement<VideoClip>(so, "_transitionClips", 0, 1,
+            "Assets/Video/TransitionVideo_Draft.mp4");
+        so.ApplyModifiedProperties();
+    }
+
     // The chroma-keyed video's transparent areas used to show whatever the frozen gameplay
     // camera happened to be rendering behind it (busy level art) — user-reported as making the
     // character itself look like a translucent "ghost" hidden in the background. A plain sky
@@ -796,6 +831,14 @@ public static class SceneSetup
         var arr = so.FindProperty(arrayField);
         if (arr.arraySize < minSize) arr.arraySize = minSize;
         arr.GetArrayElementAtIndex(index).boolValue = value;
+        Debug.Log($"[FarmFury] {so.targetObject.GetType().Name}: wired {arrayField}[{index}] <- {value}");
+    }
+
+    static void WireIntArrayElement(SerializedObject so, string arrayField, int index, int minSize, int value)
+    {
+        var arr = so.FindProperty(arrayField);
+        if (arr.arraySize < minSize) arr.arraySize = minSize;
+        arr.GetArrayElementAtIndex(index).intValue = value;
         Debug.Log($"[FarmFury] {so.targetObject.GetType().Name}: wired {arrayField}[{index}] <- {value}");
     }
 
@@ -1082,11 +1125,19 @@ public static class SceneSetup
             ("_sprExplode",    "Haybail_Damaged.png"),
         });
 
-        // _stayKinematic (2026-07-26): user-reported bug — hitting one haybale in the L01 pile
-        // woke ALL FOUR via BlockBase.WakeAllStaticBlocks() (global, not per-instance), so the
-        // three untouched bales visibly shifted/tumbled even though nothing hit them directly.
-        // Setting this true on the prefab keeps every haybale Static until it's the one actually
-        // destroyed — no physical shift, ever.
+        // _stayKinematic — FLIPPED to false 2026-07-16 (was true since 2026-07-26). It was
+        // originally set true prefab-wide to fix "hitting one haybale in the L01 pile woke all
+        // four" (back when BlockBase used a level-wide WakeAllStaticBlocks() sweep). That sweep
+        // was removed entirely on 2026-07-10 — TakeDamage() has wakened only the specific block
+        // actually hit ever since, so the ORIGINAL bug no longer needs this flag at all. Left
+        // true anyway, it became a NEW bug: every Haybale placement in every level (not just
+        // L01's ground pile) was permanently exempt from BlockBase's collapse cascade
+        // (CheckForBlocksOnTop/SettleIfUnsupported), so a haybale stacked on top of a taller
+        // structure (e.g. L12/L14) just stayed Static and floating in mid-air even after
+        // whatever supported it was destroyed — user report 2026-07-16: "structure sprites
+        // remain mid-air." Haybale now falls like any other block by default; only L01's
+        // specific decorative ground pile opts back into staying fixed, via the new per-instance
+        // LevelData.BlockSpawnData.forceStayKinematic override (see LevelDataGenerator.cs).
         //
         // _silentHit + _destroyClipOverride (2026-07-07): every haybail hit is a guaranteed
         // same-frame one-shot kill, so the generic WoodHit + BlockDestroy sounds plus the
@@ -1097,7 +1148,7 @@ public static class SceneSetup
         if (block != null)
         {
             var so = new SerializedObject(block);
-            so.FindProperty("_stayKinematic").boolValue = true;
+            so.FindProperty("_stayKinematic").boolValue = false;
             so.FindProperty("_silentHit").boolValue      = true;
             // Haybale is a genuine explosive prop (unlike plain Wood, which uses the same
             // WoodBlock component but stays false here) — 2026-07-10 fifth balance pass, see

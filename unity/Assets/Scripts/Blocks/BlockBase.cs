@@ -80,6 +80,12 @@ public abstract class BlockBase : MonoBehaviour
     // that must never move even when directly hit themselves (HaybaleBlock still sets this true).
     [SerializeField] protected bool _stayKinematic;
 
+    // Per-instance override, set by LevelLoader.SpawnBlock from BlockSpawnData.forceStayKinematic
+    // — lets a specific placement (e.g. L01's decorative ground haybale pile) opt into staying
+    // fixed even on a prefab whose own default is now false (see the field comment on
+    // forceStayKinematic in LevelData.cs for why this exists).
+    public void SetStayKinematic(bool value) => _stayKinematic = value;
+
     // Per-prefab audio overrides — both null/false by default, so WoodBlock/StoneBlock keep the
     // existing generic WoodHit/StoneHit + BlockDestroy behaviour unchanged. Added 2026-07-07 for
     // HaybaleBlock: at hp=10 every haybail hit is a guaranteed same-frame one-shot kill (see
@@ -175,6 +181,15 @@ public abstract class BlockBase : MonoBehaviour
     protected virtual void Awake()
     {
         _rb  = GetComponent<Rigidbody2D>();
+        // Continuous detection (2026-07-16) — with more blocks now genuinely falling under
+        // gravity (see the _stayKinematic flip above and the collapse cascade this class already
+        // runs), a dense stack toppling all at once can build real velocity before it reaches the
+        // Ground collider, which is only 0.5 units thick (see CLAUDE.md Coordinate System). The
+        // default Discrete mode only checks for overlap at each fixed-update's START/END position,
+        // so a fast-enough-falling block can tunnel straight through a collider that thin in one
+        // step and land through the floor instead of on it. AnimalBase/EggProjectile already use
+        // Continuous for the same reason (fast-moving small colliders vs. thin geometry).
+        _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         _col = GetComponent<BoxCollider2D>();
         _sr  = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();

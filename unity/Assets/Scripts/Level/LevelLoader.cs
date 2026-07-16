@@ -228,6 +228,7 @@ public class LevelLoader : MonoBehaviour
         block.Initialise(data.size.x, data.size.y, data.artVariant);
         block.ApplyOverrides(data.healthOverride, data.massOverride);
         block.Indestructible = data.indestructible;
+        if (data.forceStayKinematic) block.SetStayKinematic(true);
         if (data.passThrough && block is WoodBlock wood) wood._passThrough = true;
         _spawnedBlocks.Add(block);
     }
