@@ -18,42 +18,42 @@ MonoBehaviour:
   birds: 000000000000000000000000
   blocks:
   - type: 2
-    position: {x: 4.54, y: -5.12}
+    position: {x: 5.48, y: -5.39}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
     indestructible: 0
     artVariant: 0
-    forceStayKinematic: 1
+    forceStayKinematic: 0
   - type: 2
-    position: {x: 5.38, y: -5.17}
+    position: {x: 5.44, y: -5.58}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
     indestructible: 0
     artVariant: 0
-    forceStayKinematic: 1
+    forceStayKinematic: 0
   - type: 2
-    position: {x: 4.73, y: -5.28}
+    position: {x: 4.82, y: -5.45}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
     indestructible: 0
     artVariant: 0
-    forceStayKinematic: 1
+    forceStayKinematic: 0
   - type: 2
-    position: {x: 4.92, y: -4.63}
+    position: {x: 5.21, y: -4.85}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
     massOverride: 3
     indestructible: 0
     artVariant: 0
-    forceStayKinematic: 1
+    forceStayKinematic: 0
   robots:
   - robotType: 2
-    position: {x: 6.25, y: -5.13}
-    scale: {x: 6.012, y: 5.78}
+    position: {x: 6.309, y: -5.36}
+    scale: {x: 3.564, y: 3.975}

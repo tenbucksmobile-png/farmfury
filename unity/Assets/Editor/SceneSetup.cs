@@ -21,7 +21,6 @@ public static class SceneSetup
 
         EnsureParents();        // BlockParent, RobotParent GameObjects
         EnsureGround();         // Static ground plane with collider + renderer
-        EnsureGroundVisual();   // Placeholder tinted ground/grass strip (see method comment)
         EnsureBackground();     // Sky painting backdrop behind all game objects
         EnsureScenery();        // SceneryBuilder GO + World1Props sprite refs
         EnsureEggPrefab();      // Create Egg prefab + wire into CluckAnimal prefab
@@ -46,6 +45,9 @@ public static class SceneSetup
         EnsureExplodingBarrelPrefab(); // Create/update ExplodingBarrelBlock.prefab (WoodBlock + Barrel_Dynamite.png art, area damage on death)
         WireBlockSprites();     // Art sprites into WoodBlock + StoneBlock prefabs
         PositionCamera();       // Move camera to see the play area
+        // Runs AFTER PositionCamera() — needs the camera already at its known rest framing
+        // (0,-2,-10 / orthoSize 4.5) to size the Edit-mode preview of the parallax layers.
+        EnsureEnvironmentDepthSystem(); // Parallax far hills/midground/foreground paintings, fills the cannon-to-structure gap
         SpriteWiring.WireAll(); // Wire character pose sprites into all 8 animal prefabs
 
         // Delete visual-only placeholder GOs that duplicate code-spawned gameplay objects.
@@ -58,7 +60,14 @@ public static class SceneSetup
         // report, 2026-07-09, after L02's design sprites were left behind following a dump).
         // Always deleted here once its data has presumably already been dumped/pasted into
         // LevelDataGenerator.cs.
-        foreach (var placeholderName in new[] { "Cluck_Loaded_0", "Cluck_InFlight", "HarvesterRobot", "SemiHarvesterRobot", "CommanderRobot", "LevelScratch" })
+        // "GroundVisual_Placeholder" was a procedurally-generated flat grass-strip stand-in
+        // (EnsureGroundVisual(), removed 2026-07-17) — the user deleted it by hand once the real
+        // ParallaxMidground/Foreground art took over showing ground-level detail, but the old
+        // Ensure* method unconditionally recreated it on every Wire Scene References pass since it
+        // had no way to know the deletion was deliberate. The method itself is gone now; this just
+        // mops up one already-existing leftover instance so it doesn't linger from a scene saved
+        // before this fix.
+        foreach (var placeholderName in new[] { "Cluck_Loaded_0", "Cluck_InFlight", "HarvesterRobot", "SemiHarvesterRobot", "CommanderRobot", "LevelScratch", "GroundVisual_Placeholder" })
         {
             var ph = GameObject.Find(placeholderName);
             if (ph != null)
@@ -154,6 +163,176 @@ public static class SceneSetup
         Debug.Log($"[FarmFury] Scenery: {field} → {filename}");
     }
 
+    // ── Environment depth system: parallax midground painting ────────────────────────
+    // Fills the horizontal gap between the cannon (X=-7.54) and each level's structures, which
+    // otherwise reads as blank sky while a bird is in flight. Lives once in the scene (not per
+    // level) and rescales itself off the camera's actual current orthoSize/position — see
+    // EnvironmentDepthSystem.UpdateParallaxScale(), hooked from CatapultLauncher.OnLevelStarted().
+    // Does NOT touch camera-size logic, cannon position, or launch-speed tuning.
+    //
+    // 2026-07-17: simplified to a single painting (ParallaxMidground.png) per user decision —
+    // originally stacked 3 full-scene paintings (far hills/midground/foreground) via a band-clip
+    // shader, but the user deleted the other two directly in the Editor and asked to keep only
+    // Midground. This method now also actively removes any leftover Layer_FarHills/
+    // Layer_Foreground GameObjects so a future Wire Scene References run can't resurrect what was
+    // deliberately deleted.
+
+    static void EnsureEnvironmentDepthSystem()
+    {
+        var go = GameObject.Find("EnvironmentDepthSystem");
+        if (go == null)
+        {
+            go = new GameObject("EnvironmentDepthSystem");
+            Debug.Log("[FarmFury] Created 'EnvironmentDepthSystem' GameObject.");
+        }
+        var eds = go.GetComponent<EnvironmentDepthSystem>();
+        if (eds == null) eds = go.AddComponent<EnvironmentDepthSystem>();
+
+        const string skiesFolder = "Assets/Sprites/Environment/Skies";
+        var so = new SerializedObject(eds);
+
+        WireParallaxPainting(so, "_sprMidground", "ParallaxMidground.png", skiesFolder);
+        // Midground is now the only backdrop layer — fully uncropped (1.0), since there's nothing
+        // left behind it that needs revealing at the top of the frame.
+        so.FindProperty("_midgroundClipAbove").floatValue = 1.0f;
+
+        foreach (var staleName in new[] { "Layer_FarHills", "Layer_Foreground" })
+        {
+            var stale = go.transform.Find(staleName);
+            if (stale != null)
+            {
+                Object.DestroyImmediate(stale.gameObject);
+                Debug.Log($"[FarmFury] EnvironmentDepthSystem: removed leftover '{staleName}' (simplified to Midground-only).");
+            }
+        }
+
+        // Build/refresh the persistent Layer_Midground GameObject here (Editor time), not only in
+        // EnvironmentDepthSystem.Awake() — Awake() only ever runs during Play mode, and Unity
+        // discards anything runtime-created the instant Play mode stops, reverting to whatever
+        // was actually saved in Game.unity. Without a persistent Edit-mode copy, the backdrop
+        // appeared to "revert to the old sky" every time Play was stopped (real user report) —
+        // it wasn't reverting, the layer simply never existed outside Play mode at all. Sized
+        // against the camera's CURRENT rest framing (PositionCamera() must run before this — see
+        // WireAll()'s call order) as a reasonable Edit-mode preview; EnvironmentDepthSystem still
+        // re-scales live per-level during actual Play. EnvironmentDepthSystem.Awake() finds and
+        // reuses this same GameObject instead of creating a duplicate.
+        var mat = EnsureParallaxBandClipMaterial();
+        var cam = Object.FindAnyObjectByType<Camera>();
+        float orthoSize = cam != null ? cam.orthographicSize : 4.5f;
+        float aspect    = cam != null && cam.aspect > 0f ? cam.aspect : 16f / 9f;
+        Vector3 camPos  = cam != null ? cam.transform.position : new Vector3(0f, -2f, -10f);
+
+        WireParallaxLayer(go.transform, "Layer_Midground", (Sprite)so.FindProperty("_sprMidground").objectReferenceValue,
+            -35, so.FindProperty("_midgroundClipAbove").floatValue, mat, orthoSize, aspect, camPos);
+
+        so.ApplyModifiedProperties();
+        Debug.Log("[FarmFury] EnvironmentDepthSystem wired (Midground-only backdrop, persistent in Edit mode).");
+    }
+
+    // Single shared Material asset (not an ephemeral runtime-only instance) so the layers render
+    // correctly while just editing the scene, not only during Play. Created once at
+    // Assets/Materials/ParallaxBandClip.mat; the per-layer band cutoff is NOT baked into this
+    // shared asset (that would make every layer clip identically) — it's applied per-renderer via
+    // a MaterialPropertyBlock in WireParallaxLayer()/EnvironmentDepthSystem.SetClip(), which is
+    // safe to set at Editor time (persists with the scene) and safe to overwrite every frame at
+    // runtime (never dirties the shared asset itself, unlike mutating sharedMaterial directly).
+    static Material EnsureParallaxBandClipMaterial()
+    {
+        const string matFolder = "Assets/Materials";
+        const string matPath   = matFolder + "/ParallaxBandClip.mat";
+        if (!AssetDatabase.IsValidFolder(matFolder))
+            AssetDatabase.CreateFolder("Assets", "Materials");
+
+        var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+        if (mat == null)
+        {
+            var shader = Shader.Find("FarmFury/ParallaxBandClip");
+            if (shader == null)
+            {
+                Debug.LogWarning("[FarmFury] Shader 'FarmFury/ParallaxBandClip' not found — EnvironmentDepthSystem layers will render untextured in Edit mode.");
+                return null;
+            }
+            mat = new Material(shader);
+            AssetDatabase.CreateAsset(mat, matPath);
+            Debug.Log("[FarmFury] Created shared material 'ParallaxBandClip.mat'.");
+        }
+        return mat;
+    }
+
+    // Finds-or-creates one parallax layer child. Position/scale are ONLY set on first creation
+    // (same cover-scale formula EnvironmentDepthSystem used to use for its now-removed runtime
+    // rescale) — fixed 2026-07-17, same bug class as the FarmCannon stamp above: this used to
+    // reposition/rescale the layer UNCONDITIONALLY on every Wire Scene References pass, silently
+    // overwriting the user's own hand-placed composition (they position Layer_Midground directly
+    // in the Editor to match a specific fixed scene). An already-existing layer's transform is
+    // never touched here again. Sprite/sortingOrder/material/clip are still refreshed every pass
+    // (those are meant to follow code/Inspector changes, not user drag-repositioning).
+    static void WireParallaxLayer(Transform parent, string name, Sprite sprite, int sortingOrder,
+        float clipAbove, Material mat, float orthoSize, float aspect, Vector3 camPos)
+    {
+        var existing = parent.Find(name);
+        bool isNew = existing == null;
+        GameObject layerGO = isNew ? new GameObject(name) : existing.gameObject;
+        if (isNew) layerGO.transform.SetParent(parent, false);
+
+        var sr = layerGO.GetComponent<SpriteRenderer>();
+        if (sr == null) sr = layerGO.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.sortingOrder = sortingOrder;
+        if (mat != null) sr.sharedMaterial = mat;
+
+        if (isNew && sprite != null)
+        {
+            Vector2 nativeSize = sprite.bounds.size; // world-space size at localScale = 1
+            if (nativeSize.x > 0f && nativeSize.y > 0f)
+            {
+                float camWidth  = orthoSize * aspect * 2f;
+                float camHeight = orthoSize * 2f;
+                float scale = Mathf.Max(camWidth / nativeSize.x, camHeight / nativeSize.y);
+                layerGO.transform.position   = new Vector3(camPos.x, camPos.y, layerGO.transform.position.z);
+                layerGO.transform.localScale = new Vector3(scale, scale, 1f);
+            }
+        }
+
+        var mpb = new MaterialPropertyBlock();
+        sr.GetPropertyBlock(mpb);
+        mpb.SetFloat("_ClipAbove", clipAbove);
+        sr.SetPropertyBlock(mpb);
+    }
+
+    // Same PPU=100 convention as Background_SkyV1 (both are full-camera-cover backdrops, not
+    // PPU=512 world props) — but with quality import settings tuned for these specifically:
+    // painted sky gradients band visibly under default/crunched compression, so this forces
+    // CompressedHQ with crunch off and a max size comfortably above the source art's native
+    // 2720x1536 (so Unity never downsamples before the shader gets to scale it up per-level).
+    static void WireParallaxPainting(SerializedObject so, string field, string filename, string folder)
+    {
+        string path = $"{folder}/{filename}";
+        var imp = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (imp != null)
+        {
+            bool dirty = false;
+            if (imp.textureType         != TextureImporterType.Sprite)          { imp.textureType         = TextureImporterType.Sprite;          dirty = true; }
+            if (imp.spritePixelsPerUnit != 100)                                  { imp.spritePixelsPerUnit = 100;                                 dirty = true; }
+            if (imp.spriteImportMode    != SpriteImportMode.Single)              { imp.spriteImportMode    = SpriteImportMode.Single;             dirty = true; }
+            if (imp.alphaIsTransparency)                                         { imp.alphaIsTransparency = false;                               dirty = true; } // opaque paintings, no alpha channel to preserve
+            if (imp.textureCompression  != TextureImporterCompression.CompressedHQ) { imp.textureCompression = TextureImporterCompression.CompressedHQ; dirty = true; }
+            if (imp.crunchedCompression)                                         { imp.crunchedCompression = false;                               dirty = true; } // crunch reintroduces banding on gradient skies
+            if (imp.maxTextureSize      < 4096)                                  { imp.maxTextureSize      = 4096;                                dirty = true; } // native is 2720x1536 — never downsample before the shader scales it up per-level
+            if (imp.mipmapEnabled)                                               { imp.mipmapEnabled       = false;                               dirty = true; } // full-screen cover backdrop, never viewed minified
+            if (dirty) imp.SaveAndReimport();
+        }
+
+        var sp = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (sp == null)
+        {
+            Debug.LogWarning($"[FarmFury] EnvironmentDepthSystem: painting not found at {path}");
+            return;
+        }
+        so.FindProperty(field).objectReferenceValue = sp;
+        Debug.Log($"[FarmFury] EnvironmentDepthSystem: {field} → {filename}");
+    }
+
     // ── Sky backdrop ─────────────────────────────────────────────────────────────
 
     static void EnsureBackground()
@@ -161,7 +340,26 @@ public static class SceneSetup
         // Prefer the user's authored sky GO; delete any stale code-created duplicate.
         var skyVariant = GameObject.Find("Background_SkyV1")
                       ?? GameObject.Find("Background_Sky");
-        var codeBg     = GameObject.Find("Background");
+        // NOT GameObject.Find("Background") — VideoChromaKey.FindOrCreate() builds its own child
+        // GameObject also literally named "Background" (its celebration-overlay backdrop Image),
+        // and once this method's own rename below ("Background_SkyV1" -> "Background") has run
+        // once, Find("Background") becomes genuinely ambiguous between the two on every
+        // subsequent Wire Scene References pass — whichever Unity's internal traversal order
+        // happens to return could silently attach BackgroundController (a SpriteRenderer-cover-
+        // scale script) to VideoChromaKey's UI Image instead of the real world sky. Root cause
+        // of a real bug found 2026-07-17: that UI child ended up with a stray BackgroundController
+        // and its Image.sprite never got wired (VideoChromaKey wires that separately, at runtime),
+        // so it rendered as a plain white box until Play-mode script explicitly hid it. Scoped
+        // instead to a root-level (no parent) Transform with no RectTransform — the real world
+        // sky is always a scene-root SpriteRenderer object, never a UI child.
+        GameObject codeBg = null;
+        foreach (var t in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include))
+        {
+            if (t.name != "Background" || t.parent != null) continue;
+            if (t.GetComponent<RectTransform>() != null) continue; // UI object — not the real sky
+            codeBg = t.gameObject;
+            break;
+        }
 
         GameObject go;
         if (skyVariant != null)
@@ -804,6 +1002,41 @@ public static class SceneSetup
         // trap). See the comment on VideoChromaKey.tolerance for why 0.20 was chosen.
         so.FindProperty("tolerance").floatValue = 0.20f;
         so.ApplyModifiedProperties();
+
+        // VideoChromaKey.Play()/Stop() explicitly SetActive(false) on both the "Background" and
+        // "RawImage" children at runtime — but that only ever runs once a script actually
+        // executes (Play mode). The Editor-saved scene had both left active-by-default with a
+        // blank Image.sprite, which rendered as a plain white box any time the scene was viewed
+        // without pressing Play (real user report, 2026-07-17 — see EnsureBackground()'s comment
+        // for the related root-cause bug that let BackgroundController attach to this same
+        // object). Force both inactive here too so the saved state already matches what Play mode
+        // would immediately do anyway.
+        foreach (var childName in new[] { "Background", "RawImage" })
+        {
+            var child = vck.transform.Find(childName);
+            if (child != null && child.gameObject.activeSelf)
+            {
+                child.gameObject.SetActive(false);
+                Debug.Log($"[FarmFury] CelebrationVideo: '{childName}' set inactive (idle state, shown only during Play()).");
+            }
+        }
+
+        // One-time cleanup: before EnsureBackground()'s GameObject.Find("Background") ambiguity
+        // fix (2026-07-17), this exact "Background" child could get mistaken for the real world
+        // sky and have a BackgroundController (a SpriteRenderer-cover-scale script — meaningless
+        // on a UI Image) erroneously attached to it. Removes any leftover instance of that mistake
+        // from a scene saved before the fix; harmless no-op once already clean.
+        var celebrationBg = vck.transform.Find("Background");
+        if (celebrationBg != null)
+        {
+            var strayBc = celebrationBg.GetComponent<BackgroundController>();
+            if (strayBc != null)
+            {
+                Object.DestroyImmediate(strayBc);
+                Debug.Log("[FarmFury] CelebrationVideo: removed stray BackgroundController from 'Background' child (leftover from the Find(\"Background\") ambiguity bug).");
+            }
+        }
+
         Debug.Log("[FarmFury] CelebrationVideo: wired sky backdrop, tolerance=0.20.");
     }
 
@@ -950,18 +1183,17 @@ public static class SceneSetup
         {
             cannonGO = new GameObject("FarmCannon");
             Debug.Log("[FarmFury] Created 'FarmCannon' GameObject.");
+            // Only stamped on first creation — a real bug hit live 2026-07-13 (and again
+            // 2026-07-17, while hand-composing the scene against the new backdrop) where this ran
+            // UNCONDITIONALLY on every Wire Scene References pass, silently reverting any manual
+            // reposition back to this fallback the instant setup ran again. Matches
+            // CatapultLauncher.BuildCannon()'s own runtime creation logic, which was already
+            // correctly conditional — SceneSetup just hadn't matched it. If the cannon needs a new
+            // DEFAULT (for a brand-new scene with no FarmCannon yet), change the values below; an
+            // already-existing, hand-placed FarmCannon is never touched here again.
+            cannonGO.transform.position   = new Vector3(-7.54f, -5.03f, 0f);
+            cannonGO.transform.localScale = new Vector3(1.4711188f, 1.3868444f, 1f);
         }
-        // User-verified 2026-07-03 ground truth (was -4.5,-2.5,2 / 2.2,1.8,1 — see
-        // CatapultLauncher.BuildCannon()), moved 2026-07-13 (user report: "cannon too close" —
-        // repositioned further back/left by hand in the Editor so animals have real room to arc
-        // over tall structures; see the CatapultLauncher._maxLaunchSpeed comment for the matching
-        // power re-tune this required). This line runs UNCONDITIONALLY on every Wire Scene
-        // References pass, even when the GO already exists — a real bug hit live 2026-07-13, where
-        // running `setup` after the manual reposition silently stomped it straight back to the old
-        // 2026-07-03 value. If the cannon needs to move again, change it here (not just in the
-        // Editor) or a future setup run will revert it again.
-        cannonGO.transform.position   = new Vector3(-7.54f, -5.03f, 0f);
-        cannonGO.transform.localScale = new Vector3(1.4711188f, 1.3868444f, 1f);
 
         var cannonSR = cannonGO.GetComponent<SpriteRenderer>();
         if (cannonSR == null) cannonSR = cannonGO.AddComponent<SpriteRenderer>();
@@ -1909,113 +2141,11 @@ public static class SceneSetup
         Debug.Log("[FarmFury] Ground physics collider at surface Y=-6.60 (ground/grass visuals are scene-authored, not code-generated).");
     }
 
-    // Placeholder ground/grass visual (2026-07-26) — L01 shipped with NO ground art at all:
-    // EnsureGround()'s collider is deliberately invisible (see above), and no one ever
-    // hand-authored a replacement, so the sky backdrop ran straight to the bottom of the
-    // screen with nothing showing where solid ground is. User-reported symptom: haybails/
-    // HarvesterRobot/a landing Cluck all looked like they were "sinking" or "falling through
-    // the floor" near the bottom of the screen. Root cause confirmed NOT a physics bug —
-    // Ground's collider/Rigidbody2D/layer setup are all correct — it's that the camera's
-    // visible range at rest (Y -6.5 to +2.5, see PositionCamera()) already clips 0.1 units
-    // above the true ground surface (-6.60), so anything settling near true ground level
-    // visually vanishes off the bottom edge with no ground graphic to anchor it.
-    // This is a stand-in tinted strip, not final art: its rendered TOP edge sits at Y=-5.3
-    // (matching where hand-placed props like OldBarn_Right/GnarledTree/WoodenFence/the
-    // robot already visually rest, per their scene transforms) and extends down to Y=-12,
-    // well past the visible frame in any orientation. sortingOrder=-1 keeps it behind every
-    // gameplay object (decorative props use <=1, blocks=2, robots=3, cannon=4, animals=6 —
-    // see the sortingOrder rule in CLAUDE.md) while still in front of the sky (-100).
-    // DELETE this GameObject once real ground/grass art is authored — this method only
-    // creates it if missing, so removing "GroundVisual_Placeholder" from the scene once
-    // real art exists is enough to stop it coming back.
-    static void EnsureGroundVisual()
-    {
-        const float VisualTop    = -5.3f;
-        const float VisualBottom = -12f;
-        const float width        = 40f;
-        float height  = VisualTop - VisualBottom;
-        float centerY = (VisualTop + VisualBottom) / 2f;
-
-        var go = GameObject.Find("GroundVisual_Placeholder");
-        if (go == null)
-        {
-            go = new GameObject("GroundVisual_Placeholder");
-            Debug.Log("[FarmFury] Created 'GroundVisual_Placeholder' ground/grass stand-in — replace with real art, then delete this GameObject.");
-        }
-        go.transform.position   = new Vector3(0f, centerY, 0f);
-        // Tiled draw mode (below) handles sizing via SpriteRenderer.size, not transform scale —
-        // a stretched localScale would just re-blur the tile back into a flat gradient.
-        go.transform.localScale = Vector3.one;
-
-        var sr = go.GetComponent<SpriteRenderer>();
-        if (sr == null) sr = go.AddComponent<SpriteRenderer>();
-        // Re-generate if this is still the old flat 1x1-pixel placeholder (or missing) — named
-        // check so re-running Wire Scene References doesn't regenerate the texture every time.
-        if (sr.sprite == null || sr.sprite.name != "MeadowGrassTile")
-            sr.sprite = MakeMeadowGrassSprite();
-        sr.drawMode     = SpriteDrawMode.Tiled;
-        sr.size         = new Vector2(width, height);
-        sr.color        = Color.white; // colour now lives in the tile's own pixels, not a flat tint
-        sr.sortingOrder = -1;
-    }
-
-    // Procedural tileable grass-meadow texture — replaces the earlier flat solid-colour
-    // placeholder (2026-07-11, user report: "the grass we inserted appears as a green bar... is
-    // there a way to give it texture like a meadow feel"). No dedicated ground/grass art has been
-    // supplied yet (see EnsureGroundVisual's own comment above — this is explicitly a stand-in
-    // until real art exists), so this generates a small seamless tile with per-pixel colour noise
-    // across 3 green shades plus scattered short darker "blade" streaks, rendered via
-    // SpriteRenderer.Tiled so it repeats across the strip instead of being stretched into a
-    // single blurred gradient — same procedural-placeholder spirit as this project's other
-    // generated textures (BlockBase's crack overlays, CatapultLauncher's trajectory dot/smoke
-    // sprites). Deterministic seed so the tile doesn't change on every reimport. Replace with real
-    // Kling-generated meadow art via the normal art pipeline when available.
-    static Sprite MakeMeadowGrassSprite()
-    {
-        const int size = 64;
-        var rng = new System.Random(1337);
-        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-        tex.wrapMode   = TextureWrapMode.Repeat;
-        tex.filterMode = FilterMode.Bilinear;
-
-        var baseA = new Color(0.30f, 0.52f, 0.20f);
-        var baseB = new Color(0.38f, 0.60f, 0.26f);
-        var baseC = new Color(0.24f, 0.44f, 0.16f);
-
-        var px = new Color[size * size];
-        for (int y = 0; y < size; y++)
-        for (int x = 0; x < size; x++)
-        {
-            float n = (float)rng.NextDouble();
-            Color c = n < 0.55f ? baseA : n < 0.85f ? baseB : baseC;
-            float jitter = 0.94f + (float)rng.NextDouble() * 0.12f; // subtle per-pixel brightness variation
-            px[y * size + x] = new Color(c.r * jitter, c.g * jitter, c.b * jitter, 1f);
-        }
-
-        // Short vertical darker "blade" streaks scattered across the tile, Y-wrapped so the
-        // tile still repeats seamlessly top-to-bottom.
-        const int bladeCount = 40;
-        for (int i = 0; i < bladeCount; i++)
-        {
-            int bx = rng.Next(0, size);
-            int by = rng.Next(0, size);
-            int bh = rng.Next(2, 5);
-            Color blade = baseC * 0.85f;
-            for (int dy = 0; dy < bh; dy++)
-            {
-                int yy = (by + dy) % size;
-                px[yy * size + bx] = new Color(blade.r, blade.g, blade.b, 1f);
-            }
-        }
-
-        tex.SetPixels(px);
-        tex.Apply();
-
-        var spr = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size,
-            0, SpriteMeshType.FullRect, Vector4.zero);
-        spr.name = "MeadowGrassTile";
-        return spr;
-    }
+    // GroundVisual_Placeholder (procedural flat grass strip) REMOVED 2026-07-17 — user deleted it
+    // by hand once ParallaxForeground/Midground took over showing ground-level detail, but this
+    // method unconditionally recreated it on every Wire Scene References pass since it had no way
+    // to know the deletion was deliberate (same class of bug as the FarmCannon stamp above). See
+    // the placeholder-cleanup loop in WireAll() for the one-time removal of any leftover instance.
 
     // ── Camera: position to see launcher + structures ─────────────────────────
 

@@ -80,25 +80,32 @@ public static class LevelDataGenerator
         // "already-correct 0.7365u gap" note above refers to the *internal* single-bale-height
         // math, which was fine; the complaint this time was the cap bale balancing on a single
         // point above one base bale looking precarious/disconnected, not the gap size itself.
-        // Layout replaced 2026-07-12 with the user's own hand-placed dump (FarmFury -> Debug ->
-        // Dump Level Layout To Log, unity/Logs/level_layout_dump.txt) — part of the L01-L18
-        // overhaul (L01-L04 SemiHarvester-only, Harvester introduced L05-L09, Bessie L10, full
-        // roster L11-L17, Captain L18). Real per-sprite scale/hp values captured directly from
-        // the Scene view this time (not hand-derived), superseding every prior positioning note
-        // above this line. Not visually re-verified (no Play-mode access here).
+        // Layout replaced 2026-07-17 with a fresh hand-placed dump against the new
+        // ParallaxMidground.png-only backdrop (FarmFury -> Debug -> Dump Level Layout To Log,
+        // unity/Logs/level_layout_dump.txt) — user confirmed "the haybale and robot is the new
+        // level 1". The raw dump also contained 2 Wood blocks sourced from 'WoodenFence' art at
+        // (3.34,-5.368) and (1.55,-5.34) — deliberately EXCLUDED here, not just overlooked: those
+        // coordinates sit almost exactly on top of the permanent decorative WoodenFence/
+        // WoodenFence(1) scene objects (at 3.4887,-5.2833 and 2,-5.28), the same "decorative fence
+        // prop picked up as gameplay blocks by mistake" bug already hit and fixed once before
+        // (2026-07-12, L02) — and the user's own description of this dump ("the haybale and robot
+        // is the new level 1") already scopes the real content to just those two. SemiHarvester
+        // scale (3.564, 3.975) recorded here as the new standard size going forward — see chat
+        // for the full callout, this replaces every earlier per-level custom SemiHarvester scale.
+        // Not visually re-verified (no Play-mode access here).
         Make(folder, "L01_FirstContact",
             id: "W1_L01", name: "First Contact", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 4.54f, -5.12f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f, forceStayKinematic: true), // sprite 'Haybail'
-                B(BlockType.Haybale, 5.38f, -5.17f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f, forceStayKinematic: true), // sprite 'Haybail'
-                B(BlockType.Haybale, 4.73f, -5.28f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f, forceStayKinematic: true), // sprite 'Haybail'
-                B(BlockType.Haybale, 4.92f, -4.63f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f, forceStayKinematic: true), // sprite 'Haybail'
+                B(BlockType.Haybale, 5.48f, -5.39f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 5.44f, -5.58f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 4.82f, -5.45f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 5.21f, -4.85f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
             },
             robots: new[]
             {
-                R(6.25f, -5.13f, 6.012f, 5.78f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(6.309f, -5.36f, 3.564f, 3.975f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest' — new standard SemiHarvester size
             });
 
         // ── W1_L02  Harvest Yard ──────────────────────────────────────────────
