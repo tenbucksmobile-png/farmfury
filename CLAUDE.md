@@ -35,6 +35,13 @@ repo again, something has regressed — this should be a normal, self-contained 
 
 ## Current Status & Known Issues
 
+- **New hand-composed parallax backdrop (`EnvironmentDepthSystem`) + 3 real "Wire Scene References stomps hand-placed Editor state" bugs found and fixed — 2026-07-17, long session.** Started as a 3-painting parallax stack (`ParallaxFarHills`/`Midground`/`Foreground.png`, each a full opaque scene incl. its own sky) revealed via a new `FarmFury/ParallaxBandClip` shader (`_ClipAbove` cutoff, reveals only the bottom band of a sprite's own local UV space so a nearer opaque layer doesn't fully hide the ones behind it) — see `docs/HISTORY.md`-style reasoning below and the shader/class comments for the full "theatre flats" design. **Simplified to a single frozen `ParallaxMidground.png` layer per user decision** partway through: the user is now hand-composing the whole scene (barn/tree/cannon/backdrop as one fixed arrangement, redesigning levels from scratch via fresh `LevelLayoutDumper` dumps against it) rather than wanting per-level auto-zoom to drive the backdrop. `EnvironmentDepthSystem.cs` no longer has any runtime rescale logic at all — `Layer_Midground`'s transform is whatever is saved in `Game.unity`, permanently; `CatapultLauncher.OnLevelStarted()` no longer calls into it.
+  - **Real bug #1 — `FarmCannon` position/scale stamp regressed.** `SceneSetup.cs`'s `WireLauncher()` had a documented (from 2026-07-13) "only stamp on creation" fix that had regressed back to running unconditionally — every Wire Scene References pass silently reverted the user's own hand-repositioned cannon (they were aligning it to the barn door) back to the old `(-7.54, -5.03)` literal. Fixed by moving the position/scale assignment inside the `if (cannonGO == null)` branch, matching `CatapultLauncher.BuildCannon()`'s own already-correct runtime creation logic.
+  - **Real bug #2 — `GroundVisual_Placeholder` kept reappearing after deletion.** `EnsureGroundVisual()` (procedural flat grass-strip stand-in, added 2026-07-26) unconditionally recreated the GameObject if missing, with no way to know a deletion was deliberate — the user kept deleting it (superseded by the new backdrop's own ground-level art) and it kept coming back on the next `setup` run. Method removed entirely; one-time cleanup added to `WireAll()`'s existing placeholder-deletion loop.
+  - **Real bug #3 — `Layer_Midground`'s own transform got stomped too**, caught mid-session: the Editor-time preview sizing in `SceneSetup.EnsureEnvironmentDepthSystem()`/`WireParallaxLayer()` duplicated the same cover-scale formula the (by-then-removed) runtime rescale used, and still ran unconditionally — so freezing the runtime side alone wasn't enough, one `setup` run still silently overwrote the user's hand-placed position/scale back to an auto-computed value. Fixed the same way as the cannon (`isNew` guard); the one already-clobbered instance was restored by hand from a position/scale recorded earlier in the same conversation (`0.1986, -1.22` / `0.7371198, 0.7160633`).
+  - **Real bug #4 — a `GameObject.Find("Background")` name collision** between the real world sky (renamed `Background_SkyV1` → `Background` by `EnsureBackground()` itself) and `VideoChromaKey`'s own celebration-overlay child (also literally named `"Background"`, built by `VideoChromaKey.FindOrCreate()`). Once ambiguous, this could attach a stray `BackgroundController` (a SpriteRenderer-cover-scale script, meaningless on a UI `Image`) to the wrong object, whose `Image.sprite` was never set at Editor time (`VideoChromaKey` only assigns it at Play-mode runtime) and whose Canvas (`sortingOrder=150`) was left active by default — rendering as a plain white box on top of everything any time the scene was viewed outside Play mode (user-reported "white square anomaly," confirmed via direct scene-file inspection, not guessed). Fixed by scoping `EnsureBackground()`'s fallback lookup to root-level, non-`RectTransform` objects only; `EnsureCelebrationVideoBackground()` now also force-deactivates the overlay's `Background`/`RawImage` children in the *saved* scene (not just at runtime) and removes any already-existing stray `BackgroundController`.
+  - **L01 "First Contact" redesigned** from a fresh `LevelLayoutDumper` dump against the new backdrop: 4 haybale + 1 SemiHarvester only (2 `WoodenFence`-sourced Wood blocks in the raw dump were deliberately excluded — they sit almost exactly on top of the permanent decorative `WoodenFence` scene props, the same "decorative prop accidentally swept into a dump" bug already hit once on L02). **SemiHarvester scale `(3.564, 3.975)` recorded as the new standard size** — every other level's SemiHarvester is currently a much larger, inconsistent per-level value; flagged as needing a consistency pass once more dumps arrive.
+  - Compile-checked clean and `Wire Scene References` re-run after every fix, each one verified directly against the saved `Game.unity` (grep/PowerShell YAML inspection), not just assumed. **Not visually verified in Play mode** (no Play-mode access here) — worth a live check that the frozen backdrop composition actually reads correctly at runtime, not just in the Editor.
 - **Monetisation (Phase 6) planning session — 2026-07-16, no code written, advisory only.** Reviewed the GDD's §05 (7 revenue streams: Rewarded Ads/Starter Pack/Season Pass/Coin Shop/Power-Ups/Cosmetic Shop/Ad Removal) and §06 (Firebase-based infra: AdMob+AppLovin MAX, Unity IAP+RevenueCat, Firestore/Cloud Functions/Storage/Remote Config, UGS leaderboards) against the current 0%-built state, and worked out an adjusted plan with the user: **Supabase (Postgres/Auth/Edge Functions/Storage) replaces Firebase for the economy/data-layer foundation** (AdMob stays AdMob either way — independent choice), and **Firebase Crashlytics used standalone** (free, uncapped, doesn't require adopting the rest of Firebase) instead of Sentry (capped free tier, becomes a real recurring cost at volume — the original suggestion was wrong to present as a given). Recommended sequencing: front-load the Supabase auth/data-sync foundation soon (cheap while save data is still just World 1's 18 levels; expensive to migrate later across 6 worlds), defer ads/IAP/season-pass/cosmetics until closer to actual release readiness, with server-side coin/receipt/score validation (Edge Functions) required alongside IAP, not after. Full plan with reasoning saved to this session's memory (`monetisation_plan.md`) for continuity — read that before starting the Supabase setup.
 - **Level Complete/Failed "Home" button replaced with "Back" (`Btn_back.png`), now returns to the World 1 map instead of skipping to the main menu — 2026-07-16, user request.** `HUDController._homeButtonSprite` renamed `_backButtonSprite`; `OnLevelCompleteHomeClicked()`/`OnMenuClicked()` no longer call `WorldMapController.SkipToMainMenu()` — `GameManager.LoadMenu()` alone is enough since `WorldMapController` already shows itself on `GameState.Idle`. `WorldMapController`'s own separate Home button (on the map screen itself) and Quit still go straight to the main menu, unchanged. **Not visually verified** (no Play-mode access here).
 - **Settings page rebuilt again — 2026-07-16, several rounds of user screenshots/feedback in one session, `MainMenuController.BuildSettingsPopup()`.** Cumulative changes, in order:
@@ -788,22 +795,33 @@ unity/Assets/Scripts/
 
 unity/Assets/Editor/
   SceneSetup.cs           — FarmFury > Wire Scene References; wires all Inspector refs; sets camera
-                              (0,0,-10) orthoSize=4.5; launcher at (-2.327,-6.60,0); creates/wires FarmCannon
-                              at (-7.54,-5.03,0) scale (1.4711188,1.3868444,1) (repositioned 2026-07-13,
-                              was (-3.0012,-5.1223,0) — this line runs UNCONDITIONALLY on every Wire Scene
-                              References pass, so it must be updated here, not just in the Editor, or a
-                              future setup run silently reverts any further reposition); ground center
-                              (0,-6.85,0) scale (60,0.5,1) -> top at Y=-6.60 (physics-collider-only — no
-                              longer generates visual ground layers; deletes leftover code-generated
-                              GroundFill/GrassBase/etc. from older runs; ground/grass visuals are meant to be
-                              user-authored scene GameObjects, but none ever were for L01 — see
-                              EnsureGroundVisual() below and the Known Issues entry on this). Also creates
-                              **GroundVisual_Placeholder** (2026-07-26) — a tinted stand-in strip, top edge
-                              Y=-5.3 (matching where hand-placed props already visually rest) down to Y=-12,
-                              sortingOrder=-1, filling the gap left by the invisible physics-only ground so
-                              nothing near ground level reads as "sinking into nothing." Delete this
-                              GameObject once real ground/grass art replaces it — EnsureGroundVisual() only
-                              (re)creates it if missing.
+                              (0,0,-10) orthoSize=4.5; launcher at (-2.327,-6.60,0); creates FarmCannon
+                              at (-7.54,-5.03,0) scale (1.4711188,1.3868444,1) **only when the GameObject
+                              doesn't already exist** (fixed 2026-07-17 — this used to run UNCONDITIONALLY
+                              on every Wire Scene References pass, silently reverting any hand-placed
+                              reposition; regressed at least twice, see the 2026-07-17 Current Status entry.
+                              An existing FarmCannon's transform is never touched here again — move/scale it
+                              directly in the Editor and it stays put); ground center (0,-6.85,0) scale
+                              (60,0.5,1) -> top at Y=-6.60 (physics-collider-only, no visual — ground/grass
+                              visuals are user-authored scene GameObjects or the EnvironmentDepthSystem
+                              backdrop, not code-generated). **GroundVisual_Placeholder / EnsureGroundVisual()
+                              removed entirely 2026-07-17** (it used to recreate a tinted stand-in strip
+                              every time it was missing, fighting the user's own deletion of it once real
+                              backdrop art existed) — WireAll()'s placeholder-cleanup loop now removes any
+                              leftover instance from an older scene save.
+                              **EnsureEnvironmentDepthSystem()** (2026-07-17, runs after PositionCamera())
+                              creates/wires the persistent `EnvironmentDepthSystem` GO and its one
+                              `Layer_Midground` child (ParallaxMidground.png via the shared
+                              Assets/Materials/ParallaxBandClip.mat, FarmFury/ParallaxBandClip shader,
+                              sortingOrder=-35) — position/scale set ONLY on first creation (`WireParallaxLayer`),
+                              never on an already-existing layer, so the user's hand-placed composition is
+                              never overwritten by a later `setup` run.
+                              **EnsureBackground()**'s `GameObject.Find("Background")` fallback (2026-07-17)
+                              no longer matches ANY object named "Background" — scoped to root-level,
+                              non-RectTransform objects only, since `VideoChromaKey`'s own celebration-overlay
+                              child is also literally named "Background" and the ambiguity could attach a
+                              stray `BackgroundController` to that UI Image instead of the real world sky
+                              (see Current Status for the "white square" bug this caused).
                               **EnsureLevelCompleteManager()/EnsureLevelFailedManager()/
                               EnsureCelebrationVideoBackground()** (2026-07-07) — create/find each manager's
                               scene GO and wire its video clip from `Assets/Video/` and audio clip from
@@ -927,14 +945,25 @@ GameManager           (DontDestroyOnLoad)
 LevelLoader
 ScoreManager
 HUD
-Background_SkyV1      (SpriteRenderer — sky painting)
+Background_SkyV1      (SpriteRenderer, sortingOrder=−100 — sky painting; kept behind the new
+                       parallax layer below, not replaced by it)
+EnvironmentDepthSystem  (EnvironmentDepthSystem.cs; one child, Layer_Midground — SpriteRenderer +
+                        ParallaxMidground.png via the shared Assets/Materials/ParallaxBandClip.mat,
+                        sortingOrder=−35. Position/scale are HAND-PLACED in the Editor and frozen —
+                        neither SceneSetup.cs nor any runtime code touches them once the GameObject
+                        exists; see the 2026-07-17 Current Status entry for why. GroundVisual_Placeholder,
+                        which used to sit at sortingOrder=−1, is gone permanently.)
 Launcher               (CatapultLauncher.cs; abstract aim-math anchor, no visual meaning)
 FarmCannon              (visual launcher; single static SpriteRenderer, Cannon.png, recoils on fire
-                        via CannonFireSequence()/RecoilTo(), otherwise stays put — no rotation)
+                        via CannonFireSequence()/RecoilTo(), otherwise stays put — no rotation.
+                        Position/scale are likewise hand-placed and frozen — SceneSetup.cs only
+                        sets them when first creating this GameObject, never on an existing one.)
 Scenery                 (SceneryBuilder.cs; _useExactPlacement=true skips L1)
-[L1 scenery GOs]         OldBarn_Right, OakTree, GnarledTree, Windmill, WoodenFence×4, Rock×2,
-                        GrassTuft×5, WildFlowers — decorative Haybail×4 were deleted (superseded by
-                        gameplay HaybaleBlock instances at the same spots)
+[L1 scenery GOs]         OldBarn_Right, OakTree, WoodenFence×3, Rock×2, GrassTuft (variable count,
+                        user has been adding more by hand), WildFlowers×2 — GnarledTree/Windmill
+                        were removed by the user 2026-07-17 (the windmill now comes from
+                        ParallaxMidground.png itself); decorative Haybail×4 were deleted earlier
+                        (superseded by gameplay HaybaleBlock instances at the same spots)
 BlockParent              (empty holder for code-spawned blocks)
 RobotParent              (empty holder for code-spawned robots)
 Ground                  (tag="Ground", layer=6; top edge at Y=−6.60; physics collider only)
