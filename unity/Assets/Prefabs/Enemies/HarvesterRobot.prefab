@@ -187,6 +187,7 @@ MonoBehaviour:
   _damageResistance: 1
   _structuralDamageResistance: 1
   _robotSprite: {fileID: 21300000, guid: 07886339befb9504eb55ae959d3e12c4, type: 3}
+  _sprFacingRight: {fileID: 21300000, guid: 3dee81aab9ed2314ba3aaa700a9780b4, type: 3}
   _robotDamagedSprite: {fileID: 21300000, guid: 70fbb0378feeac744ae06b6ae49a4cfe, type: 3}
   _criticalSprite: {fileID: 21300000, guid: 70fbb0378feeac744ae06b6ae49a4cfe, type: 3}
   _alertSprite: {fileID: 0}

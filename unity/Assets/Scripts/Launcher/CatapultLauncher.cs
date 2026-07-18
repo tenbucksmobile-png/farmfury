@@ -456,9 +456,6 @@ public class CatapultLauncher : MonoBehaviour
         // camera position from the previous attempt must be snapped back here explicitly;
         // previously this only ever ran once at Start(), which a same-scene restart skips.
         SnapCameraToRest();
-        // EnvironmentDepthSystem no longer auto-rescales per level (removed 2026-07-17, user
-        // decision) — Layer_Midground's transform is now hand-placed in the Editor and frozen;
-        // it deliberately does not react to per-level camera changes any more.
         PrepareNextBird();
     }
 

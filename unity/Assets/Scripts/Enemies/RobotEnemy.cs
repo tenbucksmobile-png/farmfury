@@ -91,6 +91,15 @@ public class RobotEnemy : MonoBehaviour
     // Wired by SceneSetup from Assets/Sprites/Enemies/Robot/Robot_Idle.png
     [SerializeField] private Sprite _robotSprite;
 
+    // Right-facing counterpart of _robotSprite (2026-07-18, user-supplied Robot_Pawn_right.png /
+    // Robot_Harvestor_right.png / Robot_SemiHarvestor_right.png — hand-mirrored art, not a
+    // runtime SpriteRenderer.flipX, since the user drew genuinely separate art rather than
+    // wanting an automatic mirror). _robotSprite is the left-facing/rest pose by convention (the
+    // "_right" suffix on the new files implies the existing base art already reads as facing
+    // left). Drives IdlePatrolRoutine() below — null on CommanderRobot (no right-facing art
+    // exists for it), which keeps the older in-place IdleLookAroundRoutine unchanged.
+    [SerializeField] private Sprite _sprFacingRight;
+
     // Hit-reaction art — wired only on HarvesterRobot.prefab from HarvesterRobot_Damaged.png
     // (no dedicated damaged art exists for the plain Robot.prefab yet, so this stays null there
     // and FlashDamage() falls back to its old plain white tint below). BRIEF (0.15s) flash on
@@ -111,15 +120,13 @@ public class RobotEnemy : MonoBehaviour
     private const float CriticalHealthFraction = 0.4f;
     private bool _isCritical;
 
-    // Second, EARLIER persistent pose tier — added 2026-07-12 for CommanderRobot's 3-pose
-    // progression (Commander.png -> Commander_Alert.png -> Commander_Hit.png, wired to
-    // _criticalSprite above). Null on every robot type except Commander, so this is a no-op
-    // everywhere else — same "wire only where dedicated art exists" convention as
-    // _criticalSprite/_robotDamagedSprite. Fires at a HIGHER health fraction than
-    // CriticalHealthFraction (0.66 vs 0.4), so as health drops: normal -> alert -> critical.
+    // Second sprite in CommanderRobot's continuous taunt loop (Commander.png -> Commander_Alert.png
+    // -> Commander_Hit.png, wired to _criticalSprite above — see TauntLoopRoutine()/_isTauntLoop
+    // further down). Null on every other robot type, which never enters taunt-loop mode. Used to
+    // drive a discrete health-threshold pose swap instead (normal -> alert -> critical as HP
+    // dropped) until 2026-07-18, when the user asked for a continuous taunting animation instead —
+    // see TauntLoopRoutine()'s comment for the full replacement.
     [SerializeField] private Sprite _alertSprite;
-    private const float AlertHealthFraction = 0.66f;
-    private bool _isAlert;
 
     // Blocks to force-destroy the instant this robot dies (Die(), before the death VFX even
     // starts) — added 2026-07-12, user request: "when commander explodes the whole tower should
@@ -173,6 +180,38 @@ public class RobotEnemy : MonoBehaviour
     private const float IdlePauseMin      = 1.2f;  // rest at centre between look-around bursts
     private const float IdlePauseMax      = 3.0f;
 
+    // Left/right patrol shuffle (2026-07-18, user request: "apply to every robot sprite in all
+    // levels as animation movement. So it appears as if the robots are alive and moving from one
+    // direction to another. left and right") — only runs when _sprFacingRight is wired (see
+    // Awake()); otherwise falls back to the pre-existing IdleLookAroundRoutine above unchanged.
+    // Deliberately a small shuffle, not a real patrol across the level: robots are placed to
+    // guard specific structures in already-tuned level layouts, and moving the actual
+    // Rigidbody2D/collider (kept Static, not switched to Kinematic — see WalkTo()'s comment) a
+    // large distance risks walking off a support ledge or overlapping a neighbouring robot in a
+    // dense level. PatrolRange is comfortably smaller than the smallest robot-to-robot spacing
+    // seen in any hand-built level layout to date.
+    private const float PatrolRange       = 0.3f;  // world units either side of spawn X
+    private const float PatrolSpeed       = 0.2f;  // world units/sec
+    private const float PatrolHoldDuration = 0.4f; // pause at each walked extreme
+    private const float PatrolPauseMin    = 1.0f;  // rest before the next walk
+    private const float PatrolPauseMax    = 2.5f;
+
+    // Continuous taunt-loop animation (2026-07-18, CommanderRobot only, user request: "animate
+    // the robot between these three images as a loop - so it looks like the commander is taunting
+    // the animals... once hit and exploding change to [Commander_Explode]"). Reuses the exact
+    // sprites already wired for the old health-threshold pose system (_robotSprite/_alertSprite/
+    // _criticalSprite = Commander/Commander_Alert/Commander_Hit — see EnsureCommanderRobotPrefab)
+    // instead of that discrete "swap once and stay" progression: cycles through all three on a
+    // fixed timer, continuously, regardless of health, replacing rather than layering on top of
+    // both the old alert/critical threshold logic AND FlashDamage()'s per-hit sprite flash (both
+    // skipped below when this is active — see TakeDamage()) so nothing fights the loop for
+    // _sr.sprite. Detected automatically via `_alertSprite != null`, which today is unique to
+    // Commander (no other robot type has alert art) — no new [SerializeField] needed. Die() swaps
+    // straight to _deathExplosionSprite (Commander_Explode.png) before the squish/destroy
+    // sequence, matching "once hit and exploding change to" the 4th image.
+    private bool _isTauntLoop;
+    private const float TauntFrameDuration = 0.6f;
+
     void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
@@ -208,7 +247,34 @@ public class RobotEnemy : MonoBehaviour
 
         if (!hasArt) AddEyes();
 
-        StartCoroutine(IdleLookAroundRoutine());
+        _isTauntLoop = _alertSprite != null;
+
+        // Commander (taunt-loop mode) skips both the walking patrol and the in-place idle-turn —
+        // TauntLoopRoutine() is its own "looks alive" animation. Everything else: robots with a
+        // right-facing sprite wired get the left/right walking patrol; anything with neither gets
+        // the older in-place turn-and-glance. See the field comments on _isTauntLoop/
+        // _sprFacingRight for why each one is a real second/third sprite, not a runtime flip.
+        if (_isTauntLoop)
+            StartCoroutine(TauntLoopRoutine());
+        else if (_sprFacingRight != null)
+            StartCoroutine(IdlePatrolRoutine());
+        else
+            StartCoroutine(IdleLookAroundRoutine());
+    }
+
+    // Cycles _robotSprite -> _alertSprite -> _criticalSprite -> repeat on a fixed timer, for as
+    // long as the robot is alive — continues through damage (unlike the patrol/look-around
+    // routines above), only stopping when IsDestroyed is set in Die().
+    IEnumerator TauntLoopRoutine()
+    {
+        Sprite[] frames = { _robotSprite, _alertSprite, _criticalSprite };
+        int i = 0;
+        while (!IsDestroyed)
+        {
+            _sr.sprite = frames[i % frames.Length];
+            i++;
+            yield return new WaitForSeconds(TauntFrameDuration);
+        }
     }
 
     // Loops while the robot is Static (resting) AND undamaged: pause -> quick turn to one side
@@ -259,6 +325,54 @@ public class RobotEnemy : MonoBehaviour
             yield return null;
         }
         transform.localRotation = Quaternion.Euler(0f, 0f, targetAngle);
+    }
+
+    // Shuffles the robot a small distance left/right of its spawn X, swapping between _robotSprite
+    // (facing left) and _sprFacingRight (facing right) to match the current direction of travel —
+    // same stop conditions as IdleLookAroundRoutine (any damage, going Dynamic, or destroyed).
+    // Directly drives transform.localPosition on a Static-bodied Rigidbody2D — the same pattern
+    // RotateTo() above already uses for rotation, kept Static (not switched to Kinematic) so this
+    // doesn't change how other scripts' collision-damage formulas treat this robot as a collision
+    // partner (several check `col.rigidbody.bodyType == RigidbodyType2D.Static` — see
+    // BlockBase.OnCollisionEnter2D — which would misclassify a Kinematic robot).
+    IEnumerator IdlePatrolRoutine()
+    {
+        bool IsIdle() => !IsDestroyed && _rb.bodyType == RigidbodyType2D.Static && Health >= _maxHealth;
+
+        float centerX = transform.localPosition.x;
+        float y       = transform.localPosition.y;
+        bool movingRight = Random.value < 0.5f;
+
+        while (IsIdle())
+        {
+            yield return new WaitForSeconds(Random.Range(PatrolPauseMin, PatrolPauseMax));
+            if (!IsIdle()) break;
+
+            _sr.sprite = movingRight ? _sprFacingRight : _robotSprite;
+            float targetX = centerX + (movingRight ? PatrolRange : -PatrolRange);
+            yield return WalkTo(targetX, y);
+            if (!IsIdle()) break;
+
+            yield return new WaitForSeconds(PatrolHoldDuration);
+            movingRight = !movingRight;
+        }
+    }
+
+    IEnumerator WalkTo(float targetX, float y)
+    {
+        float startX = transform.localPosition.x;
+        float distance = Mathf.Abs(targetX - startX);
+        float duration = distance / PatrolSpeed;
+        float t = 0f;
+        while (t < duration)
+        {
+            if (IsDestroyed || _rb.bodyType != RigidbodyType2D.Static) yield break;
+            t += Time.deltaTime;
+            float x = Mathf.Lerp(startX, targetX, Mathf.Clamp01(t / duration));
+            transform.localPosition = new Vector3(x, y, transform.localPosition.z);
+            yield return null;
+        }
+        transform.localPosition = new Vector3(targetX, y, transform.localPosition.z);
     }
 
     void AddEyes()
@@ -352,30 +466,25 @@ public class RobotEnemy : MonoBehaviour
         // kill the robot; a lethal hit goes straight to the death sound instead.
         if (!killed)
         {
-            // Enter the persistent "alert" pose exactly once, before the critical check below —
-            // fires at a higher health fraction (0.66) so it's naturally superseded by critical
-            // (0.4) as health keeps dropping, giving CommanderRobot its 3-pose progression:
-            // normal -> alert -> critical. No-op (both conditions false) for every other robot
-            // type, which has no _alertSprite wired.
-            if (!_isAlert && _alertSprite != null && Health <= _maxHealth * AlertHealthFraction)
+            // Skipped entirely in taunt-loop mode (CommanderRobot) — TauntLoopRoutine() already
+            // owns _sr.sprite, continuously cycling through these same three sprites regardless of
+            // health, so the old discrete "swap once and stay" progression and FlashDamage()'s
+            // per-hit flash would just fight it for the same field. Hit sound still plays either way.
+            if (!_isTauntLoop)
             {
-                _isAlert   = true;
-                _sr.sprite = _alertSprite;
-                _restColor = Color.white;
-            }
+                // Enter the persistent "critical" pose exactly once, before FlashDamage() runs —
+                // that coroutine captures whatever _sr.sprite currently is as the pose to restore
+                // to after its brief flash, so setting it here means the critical sprite naturally
+                // "sticks" through every flash from here on, no changes needed to FlashDamage() itself.
+                if (!_isCritical && _criticalSprite != null && Health <= _maxHealth * CriticalHealthFraction)
+                {
+                    _isCritical = true;
+                    _sr.sprite  = _criticalSprite;
+                    _restColor  = Color.white;
+                }
 
-            // Enter the persistent "critical" pose exactly once, before FlashDamage() runs —
-            // that coroutine captures whatever _sr.sprite currently is as the pose to restore
-            // to after its brief flash, so setting it here means the critical sprite naturally
-            // "sticks" through every flash from here on, no changes needed to FlashDamage() itself.
-            if (!_isCritical && _criticalSprite != null && Health <= _maxHealth * CriticalHealthFraction)
-            {
-                _isCritical = true;
-                _sr.sprite  = _criticalSprite;
-                _restColor  = Color.white;
+                StartCoroutine(FlashDamage());
             }
-
-            StartCoroutine(FlashDamage());
             if (_hitSoundOverride != null) AudioManager.PlayClip(_hitSoundOverride);
             else                            AudioManager.Play(AudioManager.Sound.RobotHit, 0.10f);
         }
@@ -448,6 +557,13 @@ public class RobotEnemy : MonoBehaviour
     void Die()
     {
         IsDestroyed = true;
+        // Taunt-loop robots (CommanderRobot) show their own dedicated explosion art on their own
+        // body as they die, not just the separate SpawnDeathExplosion() burst overlay every robot
+        // gets — user request: "once hit and exploding change to [Commander_Explode]". IsDestroyed
+        // is already true here, so TauntLoopRoutine() has already stopped touching _sr.sprite by
+        // the time DeathSequence()'s squish animation runs.
+        if (_isTauntLoop && _deathExplosionSprite != null && _sr != null)
+            _sr.sprite = _deathExplosionSprite;
         PlayerStatsTracker.RecordRobotDestroyed();
         _loader?.NotifyRobotDestroyed(this);
         foreach (var block in _destroyOnDeath)

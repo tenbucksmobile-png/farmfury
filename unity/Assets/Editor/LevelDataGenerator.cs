@@ -109,30 +109,34 @@ public static class LevelDataGenerator
             });
 
         // ── W1_L02  Harvest Yard ──────────────────────────────────────────────
-        // Layout replaced 2026-07-12 with the user's own hand-placed dump (FarmFury -> Debug ->
-        // Dump Level Layout To Log, unity/Logs/level_layout_dump.txt) — part of the L01-L18
-        // overhaul (L01-L04 SemiHarvester-only, Harvester introduced L05-L09, Bessie L10, full
-        // roster L11-L17, Captain L18). Both robots are now SemiHarvester (Harvester removed from
-        // this level entirely). Real per-sprite scale/hp values captured directly from the Scene
-        // view. The original dump also included 3 Wood blocks sourced from the 'WoodenFence'
-        // sprite, sitting between the cannon and the haybale/robot cluster — removed 2026-07-12
-        // (user report, screenshot: "this wood should not be there") since they were just the
-        // decorative fence prop picked up as gameplay blocks by mistake, not intended structure.
+        // Redesigned 2026-07-18 with a fresh hand-placed dump (FarmFury -> Debug -> Dump Level
+        // Layout To Log, unity/Logs/level_layout_dump.txt) — user request: "i have redesigned
+        // level2 - delete old level2 - update with new dump". Old layout (4 haybale + 2
+        // SemiHarvester, no wood/barrels) fully replaced: 3 haybale + a small 3-plank wood
+        // cluster (2 vertical Plank_Shork + 1 horizontal Plank_Horizontal bridging them) +
+        // 2 ExplodingBarrel props, guarded by 3 SemiHarvester. Kept the same asset filename
+        // ("L02_StoneWall") and id/name so no other reference needs updating — regenerating via
+        // "Generate All Level Data" overwrites this asset in place, no separate deletion needed.
         // Not visually re-verified (no Play-mode access here).
         Make(folder, "L02_StoneWall",
             id: "W1_L02", name: "Harvest Yard", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 5.377f, -5.163f, 1.205f, 1.151f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 4.46f,  -5.22f,  1.205f, 1.151f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 5.05f,  -5.37f,  1.205f, 1.151f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 7.6f,   -5.14f,  1.205f, 1.151f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 3.55f, -5.43f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 3.89f, -5.5f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 3.68f, -4.95f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood, 4.53f, -5.18f, 0.592f, 1.256f, artVariant: WoodArtVariant.Vertical), // sprite 'Plank_Shork'
+                B(BlockType.Wood, 4.9f,  -5.22f, 0.592f, 1.256f, artVariant: WoodArtVariant.Vertical), // sprite 'Plank_Shork'
+                B(BlockType.Wood, 4.65f, -4.56f, 1f,     0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
+                B(BlockType.Barrel, 6.94f, -5.17f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel, 7.54f, -5.21f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
             },
             robots: new[]
             {
-                R(6.54f, -5.23f, 5.687f, 5.921f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
-                R(4.78f, -4.45f, 5.687f, 5.921f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(6.24f,  -5.165f, 4.036f, 4.47f,  RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(4.706f, -4.136f, 3.726f, 3.974f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(7.238f, -3.965f, 3.602f, 3.912f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
             });
 
         // ── W1_L03  ────────────────────────────────────────────────────────────

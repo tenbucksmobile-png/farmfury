@@ -45,9 +45,9 @@ public static class SceneSetup
         EnsureExplodingBarrelPrefab(); // Create/update ExplodingBarrelBlock.prefab (WoodBlock + Barrel_Dynamite.png art, area damage on death)
         WireBlockSprites();     // Art sprites into WoodBlock + StoneBlock prefabs
         PositionCamera();       // Move camera to see the play area
-        // Runs AFTER PositionCamera() — needs the camera already at its known rest framing
-        // (0,-2,-10 / orthoSize 4.5) to size the Edit-mode preview of the parallax layers.
-        EnsureEnvironmentDepthSystem(); // Parallax far hills/midground/foreground paintings, fills the cannon-to-structure gap
+        // Runs AFTER PositionCamera() so the Edit-mode preview (RescaleToCamera(), also called at
+        // runtime on every OnLevelStarted) sizes against the camera's known rest framing.
+        EnsureEnvironmentDepthSystem(); // 3-layer FarHills/Midground/Foreground parallax stack, clipped via FarmFury/ParallaxBandClip
         SpriteWiring.WireAll(); // Wire character pose sprites into all 8 animal prefabs
 
         // Delete visual-only placeholder GOs that duplicate code-spawned gameplay objects.
@@ -163,79 +163,142 @@ public static class SceneSetup
         Debug.Log($"[FarmFury] Scenery: {field} → {filename}");
     }
 
-    // ── Environment depth system: parallax midground painting ────────────────────────
-    // Fills the horizontal gap between the cannon (X=-7.54) and each level's structures, which
-    // otherwise reads as blank sky while a bird is in flight. Lives once in the scene (not per
-    // level) and rescales itself off the camera's actual current orthoSize/position — see
-    // EnvironmentDepthSystem.UpdateParallaxScale(), hooked from CatapultLauncher.OnLevelStarted().
-    // Does NOT touch camera-size logic, cannon position, or launch-speed tuning.
-    //
-    // 2026-07-17: simplified to a single painting (ParallaxMidground.png) per user decision —
-    // originally stacked 3 full-scene paintings (far hills/midground/foreground) via a band-clip
-    // shader, but the user deleted the other two directly in the Editor and asked to keep only
-    // Midground. This method now also actively removes any leftover Layer_FarHills/
-    // Layer_Foreground GameObjects so a future Wire Scene References run can't resurrect what was
-    // deliberately deleted.
-
+    // ── Environment depth system: 3-layer parallax stack (rebuilt 2026-07-18) ────────
+    // History: a single frozen Layer_Midground (hand-placed/computed once, never touched again)
+    // repeatedly failed to cover the camera at every per-level zoom — see CLAUDE.md's earlier
+    // 2026-07-18 entries — so it was deleted and `EnsureBackground()` briefly took over showing
+    // ParallaxMidground.png full-screen via BackgroundController's proven per-frame cover-scale.
+    // Rebuilt AGAIN the same day per explicit user spec: three full-bleed opaque paintings
+    // (ParallaxFarHills/Midground/Foreground.png, each a complete scene including its own sky),
+    // stacked like theatre flats via the existing `FarmFury/ParallaxBandClip` shader — each layer
+    // only reveals its own bottom [0, ClipAbove] UV band (see EnvironmentDepthSystem.cs and the
+    // shader source for the exact math), so a nearer layer's transparent upper region lets the
+    // layer behind it show through. Unlike the earlier frozen version, THIS layer's transform is
+    // recomputed fresh every single Wire Scene References pass (Editor-time preview) AND every
+    // runtime OnLevelStarted (EnvironmentDepthSystem.RescaleToCamera(), see that class) — no
+    // isNew guard, no hand-placed literal to go stale, because the whole point this time is to
+    // track the camera's REAL current orthoSize/aspect (CatapultLauncher clamps orthoSize
+    // 4.5-8.0 per level) rather than freeze at whatever it happened to be once. `Background`
+    // reverted to plain Background_SkyV1.png (see EnsureBackground() below) as a defensive
+    // fallback sky BEHIND this stack — normally fully hidden, since FarHillsClipAbove defaults to
+    // 1.0 (fully uncropped, its own painted sky fills whatever's left at the top), but still there
+    // if any of the 3 new sprites ever fails to load.
     static void EnsureEnvironmentDepthSystem()
     {
         var go = GameObject.Find("EnvironmentDepthSystem");
+        bool isNewComponent = false;
         if (go == null)
         {
             go = new GameObject("EnvironmentDepthSystem");
             Debug.Log("[FarmFury] Created 'EnvironmentDepthSystem' GameObject.");
         }
         var eds = go.GetComponent<EnvironmentDepthSystem>();
-        if (eds == null) eds = go.AddComponent<EnvironmentDepthSystem>();
+        if (eds == null)
+        {
+            eds = go.AddComponent<EnvironmentDepthSystem>();
+            isNewComponent = true;
+        }
 
         const string skiesFolder = "Assets/Sprites/Environment/Skies";
         var so = new SerializedObject(eds);
 
-        WireParallaxPainting(so, "_sprMidground", "ParallaxMidground.png", skiesFolder);
-        // Midground is now the only backdrop layer — fully uncropped (1.0), since there's nothing
-        // left behind it that needs revealing at the top of the frame.
-        so.FindProperty("_midgroundClipAbove").floatValue = 1.0f;
+        WireParallaxPainting(so, "_sprFarHills",   "ParallaxFarHills.png",   skiesFolder);
+        WireParallaxPainting(so, "_sprMidground",  "ParallaxMidground.png", skiesFolder);
+        WireParallaxPainting(so, "_sprForeground", "ParallaxForeground.png", skiesFolder);
 
-        foreach (var staleName in new[] { "Layer_FarHills", "Layer_Foreground" })
+        // ClipAbove defaults are only stamped once, on first creation — same "don't fight the
+        // user's own later tuning" convention used everywhere else in this file (see FarmCannon's
+        // fallback stamp above) — these 3 fields are deliberately exposed as live Inspector
+        // sliders specifically so the split points can be re-tuned without re-exporting art;
+        // stomping them back to these defaults on every Wire Scene References pass would defeat
+        // that. FarHills=1.0 (fully uncropped — its own sky fills the top); Midground=0.23 is
+        // measured, not guessed (see EnvironmentDepthSystem.cs's field comment — pixel-sampled
+        // against the source art; the uniform clip line must clear the LOWEST dip in the hill
+        // ridge, not the highest peak, which is lower than the windmill's own blade-tip height —
+        // a real, confirmed tradeoff, not a bug); Foreground=0.30 is a starting band, not yet
+        // similarly measured — tune live in Play mode or the Inspector, no re-export needed.
+        if (isNewComponent)
         {
-            var stale = go.transform.Find(staleName);
-            if (stale != null)
-            {
-                Object.DestroyImmediate(stale.gameObject);
-                Debug.Log($"[FarmFury] EnvironmentDepthSystem: removed leftover '{staleName}' (simplified to Midground-only).");
-            }
+            so.FindProperty("_farHillsClipAbove").floatValue   = 1.0f;
+            so.FindProperty("_midgroundClipAbove").floatValue  = 0.23f;
+            so.FindProperty("_foregroundClipAbove").floatValue = 0.30f;
         }
 
-        // Build/refresh the persistent Layer_Midground GameObject here (Editor time), not only in
-        // EnvironmentDepthSystem.Awake() — Awake() only ever runs during Play mode, and Unity
-        // discards anything runtime-created the instant Play mode stops, reverting to whatever
-        // was actually saved in Game.unity. Without a persistent Edit-mode copy, the backdrop
-        // appeared to "revert to the old sky" every time Play was stopped (real user report) —
-        // it wasn't reverting, the layer simply never existed outside Play mode at all. Sized
-        // against the camera's CURRENT rest framing (PositionCamera() must run before this — see
-        // WireAll()'s call order) as a reasonable Edit-mode preview; EnvironmentDepthSystem still
-        // re-scales live per-level during actual Play. EnvironmentDepthSystem.Awake() finds and
-        // reuses this same GameObject instead of creating a duplicate.
-        var mat = EnsureParallaxBandClipMaterial();
-        var cam = Object.FindAnyObjectByType<Camera>();
-        float orthoSize = cam != null ? cam.orthographicSize : 4.5f;
-        float aspect    = cam != null && cam.aspect > 0f ? cam.aspect : 16f / 9f;
-        Vector3 camPos  = cam != null ? cam.transform.position : new Vector3(0f, -2f, -10f);
-
-        WireParallaxLayer(go.transform, "Layer_Midground", (Sprite)so.FindProperty("_sprMidground").objectReferenceValue,
-            -35, so.FindProperty("_midgroundClipAbove").floatValue, mat, orthoSize, aspect, camPos);
-
         so.ApplyModifiedProperties();
-        Debug.Log("[FarmFury] EnvironmentDepthSystem wired (Midground-only backdrop, persistent in Edit mode).");
+
+        // Editor-time preview (Awake()/RescaleToCamera() only run in Play mode) — mirrors
+        // EnvironmentDepthSystem.CoverFit() exactly so the Scene/Game view shows the correctly
+        // sized stack even before pressing Play, and after every Wire Scene References run, not
+        // just once. PositionCamera() must run before this in WireAll()'s call order.
+        var cam = Object.FindAnyObjectByType<Camera>();
+        if (cam != null)
+        {
+            CoverFitLayer(go.transform, "Layer_FarHills",   (Sprite)so.FindProperty("_sprFarHills").objectReferenceValue,   -40, cam);
+            CoverFitLayer(go.transform, "Layer_Midground",  (Sprite)so.FindProperty("_sprMidground").objectReferenceValue,  -30, cam);
+            CoverFitLayer(go.transform, "Layer_Foreground", (Sprite)so.FindProperty("_sprForeground").objectReferenceValue, -20, cam);
+        }
+
+        ApplyClipEditor(go.transform, "Layer_FarHills",   so.FindProperty("_farHillsClipAbove").floatValue);
+        ApplyClipEditor(go.transform, "Layer_Midground",  so.FindProperty("_midgroundClipAbove").floatValue);
+        ApplyClipEditor(go.transform, "Layer_Foreground", so.FindProperty("_foregroundClipAbove").floatValue);
+
+        Debug.Log("[FarmFury] EnvironmentDepthSystem wired (3-layer FarHills/Midground/Foreground stack).");
+    }
+
+    // Finds-or-creates one parallax layer child, wires its sprite + the shared ParallaxBandClip
+    // material, and cover-fits it to the camera's CURRENT orthoSize/aspect/position — called
+    // unconditionally every pass (see EnsureEnvironmentDepthSystem's comment on why this one is
+    // deliberately NOT an isNew-guarded hand-placement fallback like FarmCannon/the old
+    // Layer_Midground).
+    static void CoverFitLayer(Transform parent, string name, Sprite sprite, int sortingOrder, Camera cam)
+    {
+        var existing = parent.Find(name);
+        GameObject layerGO = existing != null ? existing.gameObject : new GameObject(name);
+        if (existing == null) layerGO.transform.SetParent(parent, false);
+
+        var sr = layerGO.GetComponent<SpriteRenderer>();
+        if (sr == null) sr = layerGO.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.sortingOrder = sortingOrder;
+        var mat = EnsureParallaxBandClipMaterial();
+        if (mat != null) sr.sharedMaterial = mat;
+
+        if (sprite == null) return;
+        Vector2 native = sprite.bounds.size; // world-space size at localScale = 1
+        if (native.x <= 0f || native.y <= 0f) return;
+
+        float camH = cam.orthographicSize * 2f;
+        float camW = camH * (cam.aspect > 0f ? cam.aspect : 16f / 9f);
+        // 'Cover' scale — fills the camera with no gaps at any aspect ratio. At the widest
+        // per-level zoom (orthoSize 8.0, e.g. L18) this scales the source paintings up somewhat
+        // past their native resolution — an accepted tradeoff for a single static painting (not a
+        // seamless tile), not a bug, unless it visibly softens.
+        float scale = Mathf.Max(camW / native.x, camH / native.y);
+        var camPos = cam.transform.position;
+        layerGO.transform.position   = new Vector3(camPos.x, camPos.y, layerGO.transform.position.z);
+        layerGO.transform.localScale = new Vector3(scale, scale, 1f);
+    }
+
+    static void ApplyClipEditor(Transform parent, string name, float clipAbove)
+    {
+        var existing = parent.Find(name);
+        if (existing == null) return;
+        var sr = existing.GetComponent<SpriteRenderer>();
+        if (sr == null) return;
+        var mpb = new MaterialPropertyBlock();
+        sr.GetPropertyBlock(mpb);
+        mpb.SetFloat("_ClipAbove", clipAbove);
+        sr.SetPropertyBlock(mpb);
     }
 
     // Single shared Material asset (not an ephemeral runtime-only instance) so the layers render
     // correctly while just editing the scene, not only during Play. Created once at
     // Assets/Materials/ParallaxBandClip.mat; the per-layer band cutoff is NOT baked into this
     // shared asset (that would make every layer clip identically) — it's applied per-renderer via
-    // a MaterialPropertyBlock in WireParallaxLayer()/EnvironmentDepthSystem.SetClip(), which is
-    // safe to set at Editor time (persists with the scene) and safe to overwrite every frame at
-    // runtime (never dirties the shared asset itself, unlike mutating sharedMaterial directly).
+    // a MaterialPropertyBlock (ApplyClipEditor above / EnvironmentDepthSystem's runtime
+    // equivalent), which is safe to set at Editor time (persists with the scene) and safe to
+    // overwrite every frame at runtime (never dirties the shared asset itself, unlike mutating
+    // sharedMaterial directly).
     static Material EnsureParallaxBandClipMaterial()
     {
         const string matFolder = "Assets/Materials";
@@ -259,52 +322,11 @@ public static class SceneSetup
         return mat;
     }
 
-    // Finds-or-creates one parallax layer child. Position/scale are ONLY set on first creation
-    // (same cover-scale formula EnvironmentDepthSystem used to use for its now-removed runtime
-    // rescale) — fixed 2026-07-17, same bug class as the FarmCannon stamp above: this used to
-    // reposition/rescale the layer UNCONDITIONALLY on every Wire Scene References pass, silently
-    // overwriting the user's own hand-placed composition (they position Layer_Midground directly
-    // in the Editor to match a specific fixed scene). An already-existing layer's transform is
-    // never touched here again. Sprite/sortingOrder/material/clip are still refreshed every pass
-    // (those are meant to follow code/Inspector changes, not user drag-repositioning).
-    static void WireParallaxLayer(Transform parent, string name, Sprite sprite, int sortingOrder,
-        float clipAbove, Material mat, float orthoSize, float aspect, Vector3 camPos)
-    {
-        var existing = parent.Find(name);
-        bool isNew = existing == null;
-        GameObject layerGO = isNew ? new GameObject(name) : existing.gameObject;
-        if (isNew) layerGO.transform.SetParent(parent, false);
-
-        var sr = layerGO.GetComponent<SpriteRenderer>();
-        if (sr == null) sr = layerGO.AddComponent<SpriteRenderer>();
-        sr.sprite = sprite;
-        sr.sortingOrder = sortingOrder;
-        if (mat != null) sr.sharedMaterial = mat;
-
-        if (isNew && sprite != null)
-        {
-            Vector2 nativeSize = sprite.bounds.size; // world-space size at localScale = 1
-            if (nativeSize.x > 0f && nativeSize.y > 0f)
-            {
-                float camWidth  = orthoSize * aspect * 2f;
-                float camHeight = orthoSize * 2f;
-                float scale = Mathf.Max(camWidth / nativeSize.x, camHeight / nativeSize.y);
-                layerGO.transform.position   = new Vector3(camPos.x, camPos.y, layerGO.transform.position.z);
-                layerGO.transform.localScale = new Vector3(scale, scale, 1f);
-            }
-        }
-
-        var mpb = new MaterialPropertyBlock();
-        sr.GetPropertyBlock(mpb);
-        mpb.SetFloat("_ClipAbove", clipAbove);
-        sr.SetPropertyBlock(mpb);
-    }
-
     // Same PPU=100 convention as Background_SkyV1 (both are full-camera-cover backdrops, not
     // PPU=512 world props) — but with quality import settings tuned for these specifically:
     // painted sky gradients band visibly under default/crunched compression, so this forces
     // CompressedHQ with crunch off and a max size comfortably above the source art's native
-    // 2720x1536 (so Unity never downsamples before the shader gets to scale it up per-level).
+    // resolution (so Unity never downsamples before the cover-scale enlarges it per-level).
     static void WireParallaxPainting(SerializedObject so, string field, string filename, string folder)
     {
         string path = $"{folder}/{filename}";
@@ -318,7 +340,7 @@ public static class SceneSetup
             if (imp.alphaIsTransparency)                                         { imp.alphaIsTransparency = false;                               dirty = true; } // opaque paintings, no alpha channel to preserve
             if (imp.textureCompression  != TextureImporterCompression.CompressedHQ) { imp.textureCompression = TextureImporterCompression.CompressedHQ; dirty = true; }
             if (imp.crunchedCompression)                                         { imp.crunchedCompression = false;                               dirty = true; } // crunch reintroduces banding on gradient skies
-            if (imp.maxTextureSize      < 4096)                                  { imp.maxTextureSize      = 4096;                                dirty = true; } // native is 2720x1536 — never downsample before the shader scales it up per-level
+            if (imp.maxTextureSize      < 4096)                                  { imp.maxTextureSize      = 4096;                                dirty = true; } // never downsample before the cover-scale enlarges it per-level
             if (imp.mipmapEnabled)                                               { imp.mipmapEnabled       = false;                               dirty = true; } // full-screen cover backdrop, never viewed minified
             if (dirty) imp.SaveAndReimport();
         }
@@ -382,27 +404,39 @@ public static class SceneSetup
         var bc = go.GetComponent<BackgroundController>();
         if (bc == null) bc = go.AddComponent<BackgroundController>();
 
-        // "SkyPainting.png" doesn't exist on disk — the actual sky art committed to the project
-        // is Background_SkyV1.png (see Assets/Sprites/Environment/Skies/). This path pointed at
-        // a nonexistent file, so this whole wiring step silently no-op'd (LogWarning only) and
-        // relied entirely on the hand-authored Background_SkyV1 scene GO already having its own
-        // sprite set — which is why the live in-game sky always looked correct despite this.
-        const string skyPath = "Assets/Sprites/Environment/Skies/Background_SkyV1.png";
+        // Points at ParallaxFarHills.png — was Background_SkyV1.png until 2026-07-18, when that
+        // file turned out to have been deleted from disk at some point during the same session
+        // (confirmed via a direct folder listing, not assumed — Assets/Sprites/Environment/Skies/
+        // now only contains the 3 new Parallax paintings). Since EnvironmentDepthSystem's 3-layer
+        // stack renders in front of this GameObject and (with FarHillsClipAbove defaulting to 1.0,
+        // fully uncropped) normally fully covers it anyway, this is purely a defensive fallback —
+        // still auto-covered every frame by BackgroundController's proven ScaleToFillCamera()/
+        // LateUpdate() — so pointing it at the same painting as the top parallax layer means that
+        // IF it ever becomes visible (a load failure, or the razor-thin soft-edge fade at exactly
+        // UV.y=1.0 the ParallaxBandClip shader applies even at ClipAbove=1 — see that shader's own
+        // comment), it matches rather than seams against what's supposed to be showing anyway.
+        const string skyPath = "Assets/Sprites/Environment/Skies/ParallaxFarHills.png";
 
-        // Background_SkyV1 is 1920×1080 art — ensure it is imported as a Sprite before loading.
-        // If it was imported as the default Texture2D, LoadAssetAtPath<Sprite> returns null.
+        // Quality import settings tuned for this painting (opaque, no alpha channel; painted sky
+        // gradients band visibly under default/crunched compression) — same settings
+        // WireParallaxPainting() uses for this exact file when EnsureEnvironmentDepthSystem wires
+        // it as the top parallax layer.
         var skyImp = AssetImporter.GetAtPath(skyPath) as TextureImporter;
         if (skyImp != null)
         {
             bool dirty = false;
-            if (skyImp.textureType         != TextureImporterType.Sprite)          { skyImp.textureType         = TextureImporterType.Sprite;          dirty = true; }
-            if (skyImp.spritePixelsPerUnit != 100)                                   { skyImp.spritePixelsPerUnit = 100;                                  dirty = true; }
-            if (!skyImp.alphaIsTransparency)                                         { skyImp.alphaIsTransparency = true;                                 dirty = true; }
-            if (skyImp.spriteImportMode    != SpriteImportMode.Single)              { skyImp.spriteImportMode    = SpriteImportMode.Single;              dirty = true; }
-            if (dirty) { skyImp.SaveAndReimport(); Debug.Log("[FarmFury] Background_SkyV1.png re-imported as Sprite (PPU=100)."); }
+            if (skyImp.textureType         != TextureImporterType.Sprite)             { skyImp.textureType         = TextureImporterType.Sprite;             dirty = true; }
+            if (skyImp.spritePixelsPerUnit != 100)                                     { skyImp.spritePixelsPerUnit = 100;                                     dirty = true; }
+            if (skyImp.spriteImportMode    != SpriteImportMode.Single)                 { skyImp.spriteImportMode    = SpriteImportMode.Single;                 dirty = true; }
+            if (skyImp.alphaIsTransparency)                                            { skyImp.alphaIsTransparency = false;                                   dirty = true; } // opaque painting, no alpha channel to preserve
+            if (skyImp.textureCompression  != TextureImporterCompression.CompressedHQ) { skyImp.textureCompression  = TextureImporterCompression.CompressedHQ; dirty = true; }
+            if (skyImp.crunchedCompression)                                           { skyImp.crunchedCompression = false;                                   dirty = true; } // crunch reintroduces banding on gradient skies
+            if (skyImp.maxTextureSize      < 4096)                                     { skyImp.maxTextureSize      = 4096;                                    dirty = true; }
+            if (skyImp.mipmapEnabled)                                                  { skyImp.mipmapEnabled       = false;                                   dirty = true; } // full-screen cover backdrop, never viewed minified
+            if (dirty) { skyImp.SaveAndReimport(); Debug.Log("[FarmFury] ParallaxFarHills.png re-imported as Sprite (PPU=100, CompressedHQ)."); }
         }
         else
-            Debug.LogWarning($"[FarmFury] Background_SkyV1.png not found at {skyPath} — copy it there and re-run Wire Scene References.");
+            Debug.LogWarning($"[FarmFury] ParallaxFarHills.png not found at {skyPath}.");
 
         var skySprite = AssetDatabase.LoadAssetAtPath<Sprite>(skyPath);
         if (skySprite != null)
@@ -410,11 +444,11 @@ public static class SceneSetup
             var so = new SerializedObject(bc);
             so.FindProperty("_skySprite").objectReferenceValue = skySprite;
             so.ApplyModifiedProperties();
-            Debug.Log("[FarmFury] Background: Background_SkyV1 wired.");
+            Debug.Log("[FarmFury] Background: ParallaxFarHills.png wired (defensive fallback).");
         }
         else
         {
-            Debug.LogWarning($"[FarmFury] Background_SkyV1.png not found at {skyPath}.");
+            Debug.LogWarning($"[FarmFury] ParallaxFarHills.png not found at {skyPath}.");
         }
     }
 
@@ -975,23 +1009,21 @@ public static class SceneSetup
     // The chroma-keyed video's transparent areas used to show whatever the frozen gameplay
     // camera happened to be rendering behind it (busy level art) — user-reported as making the
     // character itself look like a translucent "ghost" hidden in the background. A plain sky
-    // backdrop behind the video (same asset EnsureBackground() already wires for the live scene,
-    // reimported as a Sprite there) gives Cluck/the robot a clean, consistent surface to stand
-    // on regardless of which level is paused. Must run after EnsureBackground() so
-    // Background_SkyV1's Sprite import settings are already correct by the time this loads it.
+    // backdrop behind the video gives Cluck/the robot a clean, consistent surface to stand on
+    // regardless of which level is paused — same ParallaxFarHills.png `EnsureBackground()` wires
+    // as its own defensive fallback sky (reimported as a Sprite there first).
     static void EnsureCelebrationVideoBackground()
     {
         var vck = VideoChromaKey.FindOrCreate();
         var so  = new SerializedObject(vck);
-        // Was "SkyPainting.png", which doesn't exist on disk — see the identical fix/comment in
-        // EnsureBackground() above. This meant _backgroundSprite was never actually wired, so the
-        // celebration overlay's transparent regions fell through to the frozen gameplay scene
-        // instead of a clean sky, unlike what the class comment on VideoChromaKey describes.
-        const string skyPath = "Assets/Sprites/Environment/Skies/Background_SkyV1.png";
+        // Was Background_SkyV1.png until 2026-07-18, when that file turned out to have been
+        // deleted from disk at some point during the same session — see EnsureBackground()'s own
+        // comment for the full explanation. Switched to ParallaxFarHills.png for the same reason.
+        const string skyPath = "Assets/Sprites/Environment/Skies/ParallaxFarHills.png";
         var sky = AssetDatabase.LoadAssetAtPath<Sprite>(skyPath);
         if (sky == null)
         {
-            Debug.LogWarning($"[FarmFury] Background_SkyV1.png not found at {skyPath} for CelebrationVideo backdrop.");
+            Debug.LogWarning($"[FarmFury] ParallaxFarHills.png not found at {skyPath} for CelebrationVideo backdrop.");
             return;
         }
         so.FindProperty("_backgroundSprite").objectReferenceValue = sky;
@@ -1191,8 +1223,14 @@ public static class SceneSetup
             // correctly conditional — SceneSetup just hadn't matched it. If the cannon needs a new
             // DEFAULT (for a brand-new scene with no FarmCannon yet), change the values below; an
             // already-existing, hand-placed FarmCannon is never touched here again.
-            cannonGO.transform.position   = new Vector3(-7.54f, -5.03f, 0f);
-            cannonGO.transform.localScale = new Vector3(1.4711188f, 1.3868444f, 1f);
+            // Re-synced 2026-07-18 to the barn-door-aligned position from the 2026-07-17 session
+            // (previously this literal was still the pre-alignment -7.54/-5.03 value, stale ever
+            // since the "only stamp on creation" fix stopped this line from ever running again on
+            // the live scene's already-existing FarmCannon — so it silently drifted out of sync
+            // with reality and would have recreated the WRONG cannon position had the GameObject
+            // ever been deleted).
+            cannonGO.transform.position   = new Vector3(-3.72f, -4.7032f, 0f);
+            cannonGO.transform.localScale = new Vector3(1.4711188f, 1.3316845f, 1f);
         }
 
         var cannonSR = cannonGO.GetComponent<SpriteRenderer>();
@@ -1607,6 +1645,7 @@ public static class SceneSetup
         {
             var so = new SerializedObject(robot);
             so.FindProperty("_robotSprite").objectReferenceValue = spriteAsset;
+            WireRobotFacingRight(so, "Assets/Sprites/Enemies/Robot/Robot_Pawn_right.png");
             WireRobotDeathFx(so);
             WireRobotDamagedArt(so, damagedSprite);
             // Re-sync _robotContactDamage to RobotEnemy's current class default (18f) — 2026-07-10,
@@ -1658,6 +1697,33 @@ public static class SceneSetup
         if (damagedSprite == null) return;
         so.FindProperty("_robotDamagedSprite").objectReferenceValue = damagedSprite;
         so.FindProperty("_criticalSprite").objectReferenceValue     = damagedSprite;
+    }
+
+    // Right-facing sprite for the new left/right patrol animation (2026-07-18, user-supplied
+    // Robot_Pawn_right.png / Robot_Harvestor_right.png / Robot_SemiHarvestor_right.png —
+    // hand-mirrored art, not a runtime flip). Same PPU=1746 import convention as every other
+    // robot sprite in this project. No Commander_right art exists, so EnsureCommanderRobotPrefab()
+    // never calls this — Commander keeps its old in-place idle-turn animation unchanged (see
+    // RobotEnemy.Awake()'s branch on _sprFacingRight being null).
+    static void WireRobotFacingRight(SerializedObject so, string spritePath)
+    {
+        var imp = AssetImporter.GetAtPath(spritePath) as TextureImporter;
+        if (imp == null)
+        {
+            Debug.LogWarning($"[FarmFury] Right-facing robot sprite not found at {spritePath} — patrol animation will fall back to the old in-place idle-turn.");
+            return;
+        }
+        bool dirty = false;
+        if (imp.textureType         != TextureImporterType.Sprite)  { imp.textureType         = TextureImporterType.Sprite;  dirty = true; }
+        if (imp.spritePixelsPerUnit != 1746)                          { imp.spritePixelsPerUnit = 1746;                        dirty = true; }
+        if (!imp.alphaIsTransparency)                                 { imp.alphaIsTransparency = true;                        dirty = true; }
+        if (imp.spriteImportMode    != SpriteImportMode.Single)      { imp.spriteImportMode    = SpriteImportMode.Single;    dirty = true; }
+        if (dirty) imp.SaveAndReimport();
+
+        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+        if (sprite == null) { Debug.LogWarning($"[FarmFury] {spritePath} failed to load as Sprite."); return; }
+        so.FindProperty("_sprFacingRight").objectReferenceValue = sprite;
+        Debug.Log($"[FarmFury] Wired _sprFacingRight <- {spritePath}");
     }
 
     // ── HarvesterRobot: create a SEPARATE prefab (distinct from Robot.prefab) ───
@@ -1730,6 +1796,7 @@ public static class SceneSetup
         {
             var so = new SerializedObject(robot);
             so.FindProperty("_robotSprite").objectReferenceValue = sprite;
+            WireRobotFacingRight(so, "Assets/Sprites/Enemies/Robot/Robot_Harvestor_right.png");
             WireRobotDamagedArt(so, damagedSprite);
             // _maxHealth: raised 35->40 originally (2026-07-01), LOWERED 40->22 same day
             // 2026-07-10 (user report: "I cannot get past level 2... ease the damage
@@ -1829,6 +1896,7 @@ public static class SceneSetup
         {
             var so = new SerializedObject(robot);
             so.FindProperty("_robotSprite").objectReferenceValue = sprite;
+            WireRobotFacingRight(so, "Assets/Sprites/Enemies/Robot/Robot_SemiHarvestor_right.png");
             WireRobotDamagedArt(so, damagedSprite);
             // 38->20->26 2026-07-10 — see HarvesterRobot's own _maxHealth comment for the full
             // reasoning (same day, same reports, both floors moved together).
