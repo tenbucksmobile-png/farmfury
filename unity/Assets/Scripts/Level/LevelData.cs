@@ -8,6 +8,12 @@ public class LevelData : ScriptableObject
     public string levelId;
     public string levelName;
     public int parBirds = 3;
+    // Which of the 6 planned worlds this level belongs to (1 = Meadow Ruins/World 1, 2 = Frozen
+    // Tundra/World 2, etc. — see CLAUDE.md's World table). Added 2026-07-19 alongside World 2's
+    // backdrop groundwork (EnvironmentDepthSystem's World-2 branch). Defaults to 1 so every
+    // existing L01-L18 asset (created before this field existed, and any generator Make() call
+    // that doesn't pass world explicitly) is implicitly World 1 with no data migration needed.
+    public int world = 1;
 
     [Header("Bird Queue")]
     public AnimalType[] birds;

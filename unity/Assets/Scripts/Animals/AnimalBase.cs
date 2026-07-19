@@ -72,6 +72,24 @@ public abstract class AnimalBase : MonoBehaviour
     private bool  _contactStarted;
     private float _contactTimer;
 
+    // Safety net added 2026-07-19, user report: "from level 8 the animal no longer fires (as if
+    // the game is stuck)." Root cause: CatapultLauncher only ever clears its "cannon busy" state
+    // (_activeAnimal) from OnAnimalDestroyed, which — before this fix — only ever fired from
+    // OnCollisionEnter2D below, i.e. a genuine Collision2D. If a shot's arc ever clears every
+    // collider in the level (a real possibility once levels got tall/dense — L08's redesigned
+    // 3-column fortress plus pass-through haybales that intentionally skip
+    // base.OnCollisionEnter2D, see CluckAnimal.OnCollisionEnter2D) and also somehow clears the
+    // ground plane, the animal just keeps falling forever, never collides, never destroys itself,
+    // and every subsequent tap silently no-ops in CatapultLauncher.HandleInput()'s
+    // "_activeAnimal == null" gate — permanently stuck. This is a level-agnostic latent bug, not
+    // something specific to L08's data; L08 just raised the odds of triggering it. Two independent
+    // fallbacks, checked every frame while in flight: a hard flight-time cap, and a "fell way below
+    // any plausible ground" check (Ground sits at Y=-6.60 per the project's coordinate system —
+    // MaxFallY gives a wide safety margin below that for any current or future level).
+    const float MaxFlightSeconds = 10f;
+    const float MaxFallY      = -30f;
+    private float _flightTimer;
+
     protected virtual void Awake()
     {
         // Real root cause of "eggs don't appear" (2026-07-10, second report, after the sorting-
@@ -140,6 +158,15 @@ public abstract class AnimalBase : MonoBehaviour
         {
             _contactTimer -= Time.deltaTime;
             if (_contactTimer <= 0f) DestroyAnimal();
+            return;
+        }
+
+        // See the _flightTimer field comment above — stuck-cannon safety net.
+        if (IsInFlight)
+        {
+            _flightTimer += Time.deltaTime;
+            if (_flightTimer >= MaxFlightSeconds || transform.position.y <= MaxFallY)
+                DestroyAnimal();
         }
     }
 

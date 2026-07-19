@@ -458,7 +458,16 @@ public abstract class BlockBase : MonoBehaviour
         const float checkHeight = 8f;
         Bounds b = _col.bounds;
         Vector2 checkCenter = new Vector2(b.center.x, b.max.y + checkHeight * 0.5f);
-        Vector2 checkSize   = new Vector2(b.size.x * 0.9f, checkHeight);
+        // Full width, not the old 0.9x-shrunk band (2026-07-19, user report: "structure still
+        // floating in the air when struck"). The box's bottom edge already sits exactly at
+        // b.max.y, so a same-level sideways neighbour (whose own top is also at b.max.y) never
+        // pokes into this box regardless of X width — the 0.9x shrink was never actually needed to
+        // exclude those, and only ever excluded genuine overlaps sitting near this block's own
+        // edge (an overhanging plank, a Skew/Diagonal-art block whose collider is a plain
+        // axis-aligned box under its angled sprite, anything placed slightly off-centre from a dump)
+        // from ever being detected as resting on top, leaving them permanently Static/floating once
+        // this block was destroyed.
+        Vector2 checkSize   = new Vector2(b.size.x, checkHeight);
         var hits = Physics2D.OverlapBoxAll(checkCenter, checkSize, 0f, robotLayerMask);
         foreach (var hit in hits)
         {
@@ -511,7 +520,9 @@ public abstract class BlockBase : MonoBehaviour
         const float checkHeight = 1.5f;
         Bounds b = _col.bounds;
         Vector2 checkCenter = new Vector2(b.center.x, b.max.y + checkHeight * 0.5f);
-        Vector2 checkSize   = new Vector2(b.size.x * 0.9f, checkHeight);
+        // Full width, not the old 0.9x-shrunk band — see the matching comment in
+        // CheckForRobotsOnTop() above (same fix, same reasoning, applied 2026-07-19).
+        Vector2 checkSize   = new Vector2(b.size.x, checkHeight);
         var hits = Physics2D.OverlapBoxAll(checkCenter, checkSize, 0f, blockLayerMask);
         foreach (var hit in hits)
         {

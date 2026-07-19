@@ -23,7 +23,13 @@ public class LevelMarker : MonoBehaviour
 
     // fallbackSpr: a plain white square used when no real marker art is wired yet, so markers
     // are still visible/tappable (tinted per state) before FarmFury -> Wire Scene References runs.
-    public void Init(int levelIndex, Vector2 anchoredPos, Sprite fallbackSpr, Action<int> onClicked)
+    // sizeOverride (added 2026-07-19 for World2MapController): null keeps the World-1 default
+    // MarkerSize (80x120) exactly as before; World 2's Frozen Tundra path is measured
+    // significantly shorter/tighter than Sunrise Meadows' full-canvas route (see
+    // World2MapController's PathPositions comment), so its markers need to be smaller to avoid
+    // 22 pins solidly overlapping along a short path.
+    public void Init(int levelIndex, Vector2 anchoredPos, Sprite fallbackSpr, Action<int> onClicked,
+                      Vector2? sizeOverride = null)
     {
         LevelIndex   = levelIndex;
         _onClicked   = onClicked;
@@ -34,7 +40,7 @@ public class LevelMarker : MonoBehaviour
         _rt.anchorMax        = new Vector2(0.5f, 0.5f);
         _rt.pivot            = new Vector2(0.5f, 0.5f);
         _rt.anchoredPosition = anchoredPos;
-        _rt.sizeDelta        = MarkerSize;
+        _rt.sizeDelta        = sizeOverride ?? MarkerSize;
 
         _image = gameObject.AddComponent<Image>();
         // LevelMarker_Locked.png is 256x384 (2:3, matches MarkerSize exactly) but

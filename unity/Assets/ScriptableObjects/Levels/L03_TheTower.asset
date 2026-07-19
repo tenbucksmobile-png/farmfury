@@ -15,69 +15,115 @@ MonoBehaviour:
   levelId: W1_L03
   levelName: The Tower
   parBirds: 2
+  world: 1
   birds: 000000000000000000000000
   blocks:
-  - type: 2
-    position: {x: 3.686, y: -5.153}
-    size: {x: 1.188, y: 1.143}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
+  - type: 0
+    position: {x: 5.659, y: -5.576}
+    size: {x: 1, y: 0.81}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
-  - type: 2
-    position: {x: 4.14, y: -5.26}
-    size: {x: 1.188, y: 1.143}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
+  - type: 0
+    position: {x: 6.22, y: -5.6}
+    size: {x: 1, y: 0.81}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
-  - type: 2
-    position: {x: 3.94, y: -4.53}
-    size: {x: 1.188, y: 1.143}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
+  - type: 0
+    position: {x: 5.68, y: -4.49}
+    size: {x: 1, y: 0.81}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
-  - type: 2
-    position: {x: 6.42, y: -5.14}
-    size: {x: 1.188, y: 1.143}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
+  - type: 0
+    position: {x: 7.61, y: -5.52}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
-  - type: 2
-    position: {x: 6.89, y: -5.25}
-    size: {x: 1.188, y: 1.143}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
+  - type: 3
+    position: {x: 7.61, y: -4.85}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
-  - type: 2
-    position: {x: 6.65, y: -4.57}
-    size: {x: 1.188, y: 1.143}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
+  - type: 1
+    position: {x: 5.66, y: -5.06}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
     indestructible: 0
-    artVariant: 0
+    artVariant: 11
+    forceStayKinematic: 0
+  - type: 0
+    position: {x: 5.57, y: -3.87}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+  - type: 0
+    position: {x: 5.89, y: -3.87}
+    size: {x: 1, y: 1.064}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+  - type: 0
+    position: {x: 5.83, y: -3.11}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 15
+    forceStayKinematic: 0
+  - type: 0
+    position: {x: 5.73, y: -2.53}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+  - type: 0
+    position: {x: 6.64, y: -2.53}
+    size: {x: 1, y: 0.492}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
     forceStayKinematic: 0
   robots:
   - robotType: 2
-    position: {x: 5.28, y: -5.14}
-    scale: {x: 5.914, y: 5.967}
+    position: {x: 5.75, y: -1.987}
+    scale: {x: 5.103, y: 6.242}
   - robotType: 2
-    position: {x: 3.98, y: -3.76}
-    scale: {x: 5.914, y: 5.967}
+    position: {x: 6.68, y: -2.01}
+    scale: {x: 5.103, y: 6.242}
   - robotType: 2
-    position: {x: 6.67, y: -3.79}
-    scale: {x: 5.914, y: 5.967}
+    position: {x: 6.95, y: -5.49}
+    scale: {x: 5.103, y: 6.242}

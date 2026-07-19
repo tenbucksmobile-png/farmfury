@@ -28,6 +28,20 @@ public class LevelLoader : MonoBehaviour
     [SerializeField] private RobotEnemy _semiHarvesterPrefab;
     [SerializeField] private RobotEnemy _commanderPrefab; // L18 boss
 
+    // World 2 (Frozen Tundra) reskins of the same 3 tiers — added 2026-07-19. Deliberately NOT
+    // new RobotType enum values: the World 2 match-up cards were already wired
+    // (SceneSetup.WireWorld2MatchUpCards) indexed by the EXISTING RobotType.Basic/Harvester/
+    // SemiHarvester values (FrostRobot=Basic tier, IceHarvestor=Harvester tier,
+    // GlacierHarvestor=SemiHarvester tier), so SpawnRobot() below picks between these and the W1
+    // prefabs above based on LevelData.world, same division of responsibility as
+    // EnvironmentDepthSystem.ApplyWorldLayers() swapping backdrop sprites by world. No Commander
+    // reskin exists yet — World 2 L-final-boss levels fall back to CommanderRobot's W1 art until
+    // one does.
+    [Header("World 2 Enemy Prefabs (reskins, same RobotType tiers)")]
+    [SerializeField] private RobotEnemy _robotPrefabW2;
+    [SerializeField] private RobotEnemy _harvesterPrefabW2;
+    [SerializeField] private RobotEnemy _semiHarvesterPrefabW2;
+
     [Header("Parents")]
     [SerializeField] private Transform _blockParent;
     [SerializeField] private Transform _robotParent;
@@ -78,6 +92,9 @@ public class LevelLoader : MonoBehaviour
         if (_harvesterPrefab  == null) _harvesterPrefab  = LoadPrefabComponent<RobotEnemy>("HarvesterRobot");
         if (_semiHarvesterPrefab == null) _semiHarvesterPrefab = LoadPrefabComponent<RobotEnemy>("SemiHarvesterRobot");
         if (_commanderPrefab  == null) _commanderPrefab  = LoadPrefabComponent<RobotEnemy>("CommanderRobot");
+        if (_robotPrefabW2         == null) _robotPrefabW2         = LoadPrefabComponent<RobotEnemy>("FrostRobot");
+        if (_harvesterPrefabW2     == null) _harvesterPrefabW2     = LoadPrefabComponent<RobotEnemy>("IceHarvestorRobot");
+        if (_semiHarvesterPrefabW2 == null) _semiHarvesterPrefabW2 = LoadPrefabComponent<RobotEnemy>("GlacierHarvestorRobot");
         if (_cluckPrefab  == null) _cluckPrefab  = LoadPrefabComponent<CluckAnimal>("CluckAnimal");
         if (_bessiePrefab == null) _bessiePrefab = LoadPrefabComponent<BessieAnimal>("BessieAnimal");
         if (_percyPrefab  == null) _percyPrefab  = LoadPrefabComponent<PercyAnimal>("PercyAnimal");
@@ -124,7 +141,7 @@ public class LevelLoader : MonoBehaviour
         foreach (var b in data.birds) _birdQueue.Enqueue(b);
 
         foreach (var b in data.blocks) SpawnBlock(b);
-        foreach (var r in data.robots) SpawnRobot(r);
+        foreach (var r in data.robots) SpawnRobot(r, data.world);
 
         ScoreManager.Instance.InitLevel(
             GameManager.Instance.CurrentLevelIndex,
@@ -233,9 +250,24 @@ public class LevelLoader : MonoBehaviour
         _spawnedBlocks.Add(block);
     }
 
-    void SpawnRobot(LevelData.RobotSpawnData data)
+    void SpawnRobot(LevelData.RobotSpawnData data, int world = 1)
     {
-        var prefab = data.robotType switch
+        // World 2 reskins picked first when available and the level actually belongs to World
+        // 2 — falls through to the normal World 1 switch below whenever a W2 variant isn't
+        // wired yet (e.g. Commander, which has no reskin), so this can never spawn a null robot
+        // just because one tier's reskin is still missing.
+        RobotEnemy prefab = null;
+        if (world == 2)
+        {
+            prefab = data.robotType switch
+            {
+                RobotType.Harvester     => _harvesterPrefabW2,
+                RobotType.SemiHarvester => _semiHarvesterPrefabW2,
+                RobotType.Basic         => _robotPrefabW2,
+                _                       => null,
+            };
+        }
+        prefab ??= data.robotType switch
         {
             RobotType.Harvester     when _harvesterPrefab     != null => _harvesterPrefab,
             RobotType.SemiHarvester when _semiHarvesterPrefab != null => _semiHarvesterPrefab,

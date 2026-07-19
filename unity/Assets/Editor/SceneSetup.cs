@@ -28,6 +28,8 @@ public static class SceneSetup
         EnsureHUD();            // HUDController GO (builds Canvas at runtime)
         EnsureMainMenu();       // MainMenuController GO (Canvas sortingOrder 400)
         EnsureWorldMap();       // WorldMapController GO (Sunrise Meadows level-map — PLAY's destination)
+        EnsureWorld2Landing();  // World2LandingController GO (Frozen Tundra interstitial — L18 transition's destination)
+        EnsureWorld2Map();      // World2MapController GO (Frozen Tundra level-map)
         EnsureAudioManager();   // AudioManager GO wired with music/cannon/falling clips
         EnsureLevelCompleteManager();  // Cluck celebration video + laugh audio
         EnsureLevelFailedManager();    // Robot taunt video + taunt audio
@@ -41,6 +43,9 @@ public static class SceneSetup
         EnsureHarvesterRobotPrefab();  // Create/update HarvesterRobot.prefab (separate from Robot)
         EnsureSemiHarvesterRobotPrefab();  // Create/update SemiHarvesterRobot.prefab (separate from Robot/HarvesterRobot)
         EnsureCommanderRobotPrefab();  // Create/update CommanderRobot.prefab (L18 boss)
+        EnsureFrostRobotPrefab();            // World 2 reskin of RobotType.Basic
+        EnsureIceHarvestorRobotPrefab();     // World 2 reskin of RobotType.Harvester
+        EnsureGlacierHarvestorRobotPrefab(); // World 2 reskin of RobotType.SemiHarvester
         EnsureHaybaleBlockPrefab();    // Create/update HaybaleBlock.prefab (WoodBlock + Haybail.png art)
         EnsureExplodingBarrelPrefab(); // Create/update ExplodingBarrelBlock.prefab (WoodBlock + Barrel_Dynamite.png art, area damage on death)
         WireBlockSprites();     // Art sprites into WoodBlock + StoneBlock prefabs
@@ -131,6 +136,18 @@ public static class SceneSetup
         // _sprStoneWallTall intentionally not wired — StoneWall_Tall.png was renamed to StoneTower.png above
         WireProp(so, "_sprOldBarn",          "OldBarn_Right.png",    propsFolder); // FIXED: actual filename
         WireProp(so, "_sprDamagedBarn",      "DamagedBarn.png",      propsFolder);
+
+        // World 2 (Frozen Tundra) ground-seam ice dressing — added 2026-07-19. Mapped from the
+        // spec's generic names ("Ice Block / Packed Snow / Icicle Spike") to the closest actual
+        // filenames under World2Props/ — several similarly-named files exist there
+        // (IceBlock.png vs Ice_block.png, Snowdrift.png vs Snow_block.png/Snow_short.png) that
+        // may be gameplay block art rather than decorative scatter props; this mapping is a best
+        // guess, not confirmed with the user — flag/correct if the wrong asset got picked.
+        const string ice2PropsFolder = "Assets/Sprites/Environment/World2Props";
+        WireProp(so, "_sprIceBlock",    "IceBlock.png",   ice2PropsFolder);
+        WireProp(so, "_sprPackedSnow",  "Snowdrift.png",  ice2PropsFolder);
+        WireProp(so, "_sprIcicleSpike", "IceSpire.png",   ice2PropsFolder);
+
         // Level 1 scenery is hand-authored as scene GOs — skip all code-spawning for level 0
         so.FindProperty("_useExactPlacement").boolValue = true;
         so.ApplyModifiedProperties();
@@ -206,6 +223,14 @@ public static class SceneSetup
         WireParallaxPainting(so, "_sprMidground",  "ParallaxMidground.png", skiesFolder);
         WireParallaxPainting(so, "_sprForeground", "ParallaxForeground.png", skiesFolder);
 
+        // World 2 (Frozen Tundra) backdrop — added 2026-07-19. Note the actual filename is
+        // "ParallaxMidGrounds_W2.png" (capital G, trailing 's') per the user-supplied asset, not
+        // "ParallaxMidground_W2.png" — matched exactly here. No World-2 Foreground painting exists
+        // or is wired (see EnvironmentDepthSystem.ApplyWorldLayers — Layer_Foreground is simply
+        // deactivated for World 2, not given art).
+        WireParallaxPainting(so, "_sprFarHillsW2",  "ParallaxFarHills_W2.png",   skiesFolder);
+        WireParallaxPainting(so, "_sprMidgroundW2", "ParallaxMidGrounds_W2.png", skiesFolder);
+
         // ClipAbove defaults are only stamped once, on first creation — same "don't fight the
         // user's own later tuning" convention used everywhere else in this file (see FarmCannon's
         // fallback stamp above) — these 3 fields are deliberately exposed as live Inspector
@@ -222,6 +247,12 @@ public static class SceneSetup
             so.FindProperty("_farHillsClipAbove").floatValue   = 1.0f;
             so.FindProperty("_midgroundClipAbove").floatValue  = 0.23f;
             so.FindProperty("_foregroundClipAbove").floatValue = 0.30f;
+            // World 2 defaults — see EnvironmentDepthSystem.cs's field comment for the pixel
+            // measurement behind 0.21 (ParallaxMidGrounds_W2.png's own baked-in aurora sky must
+            // never be revealed; FarHills_W2 supplies all sky content instead, same division of
+            // responsibility as World 1's FarHills/Midground).
+            so.FindProperty("_farHillsClipAboveW2").floatValue  = 1.0f;
+            so.FindProperty("_midgroundClipAboveW2").floatValue = 0.21f;
         }
 
         so.ApplyModifiedProperties();
@@ -243,6 +274,64 @@ public static class SceneSetup
         ApplyClipEditor(go.transform, "Layer_Foreground", so.FindProperty("_foregroundClipAbove").floatValue);
 
         Debug.Log("[FarmFury] EnvironmentDepthSystem wired (3-layer FarHills/Midground/Foreground stack).");
+    }
+
+    // Lets the World 2 backdrop be seen and worked against directly in the Scene view WITHOUT
+    // Play mode and without any real World 2 LevelData existing yet — added 2026-07-19, user
+    // question: "how do i see the background layout for world 2 so I can build sprites - like
+    // the barn, cannon etc - currently I only see world1?" EnvironmentDepthSystem only ever shows
+    // World 2's art at runtime when a level with world=2 actually loads (HandleLevelStarted), and
+    // no such LevelData exists yet, so there was previously no way to see it at all. Reuses
+    // CoverFitLayer/ApplyClipEditor directly (same "Awake() doesn't run in Edit mode" reason
+    // EnsureEnvironmentDepthSystem's own preview above has to bypass the runtime component's
+    // private fields) rather than calling EnvironmentDepthSystem.PreviewWorld() — that method
+    // only actually does anything once Awake() has populated its private layer Transform
+    // references, i.e. in Play mode. Purely visual: touches no level data, camera rest position,
+    // or anything "Wire Scene References" itself tracks — running that command again always
+    // re-forces World 1's sprites back via the preview above, so there's nothing to remember to
+    // reset by hand after using this.
+    [MenuItem("FarmFury/Debug/Preview World 2 Backdrop (Editor)")]
+    public static void PreviewWorld2Backdrop() => PreviewWorldBackdrop(2);
+
+    [MenuItem("FarmFury/Debug/Preview World 1 Backdrop (Editor)")]
+    public static void PreviewWorld1Backdrop() => PreviewWorldBackdrop(1);
+
+    static void PreviewWorldBackdrop(int world)
+    {
+        var go = GameObject.Find("EnvironmentDepthSystem");
+        if (go == null)
+        {
+            Debug.LogWarning("[FarmFury] 'EnvironmentDepthSystem' not found in the open scene — run Wire Scene References first.");
+            return;
+        }
+        var eds = go.GetComponent<EnvironmentDepthSystem>();
+        if (eds == null) return;
+        var so = new SerializedObject(eds);
+
+        bool isWorld2 = world == 2;
+        string farHillsField  = isWorld2 ? "_sprFarHillsW2"  : "_sprFarHills";
+        string midgroundField = isWorld2 ? "_sprMidgroundW2" : "_sprMidground";
+        float farHillsClip    = so.FindProperty(isWorld2 ? "_farHillsClipAboveW2"  : "_farHillsClipAbove").floatValue;
+        float midgroundClip   = so.FindProperty(isWorld2 ? "_midgroundClipAboveW2" : "_midgroundClipAbove").floatValue;
+        var farHillsSprite    = (Sprite)so.FindProperty(farHillsField).objectReferenceValue;
+        var midgroundSprite   = (Sprite)so.FindProperty(midgroundField).objectReferenceValue;
+
+        var cam = Object.FindAnyObjectByType<Camera>();
+        if (cam != null)
+        {
+            CoverFitLayer(go.transform, "Layer_FarHills",  farHillsSprite,  -40, cam);
+            CoverFitLayer(go.transform, "Layer_Midground", midgroundSprite, -30, cam);
+        }
+        ApplyClipEditor(go.transform, "Layer_FarHills",  farHillsClip);
+        ApplyClipEditor(go.transform, "Layer_Midground", midgroundClip);
+
+        // World 2 has no opaque Foreground painting by design (see EnvironmentDepthSystem's
+        // class comment) — hide the Foreground layer for this preview so it doesn't sit in front
+        // of the World 2 art showing World 1's foreground painting; restore it for World 1.
+        var foregroundGO = go.transform.Find("Layer_Foreground");
+        if (foregroundGO != null) foregroundGO.gameObject.SetActive(!isWorld2);
+
+        Debug.Log($"[FarmFury] Previewing World {world} backdrop in the Scene view.");
     }
 
     // Finds-or-creates one parallax layer child, wires its sprite + the shared ParallaxBandClip
@@ -819,6 +908,128 @@ public static class SceneSetup
             AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Commander_robot.png");
     }
 
+    // ── World2LandingController (Frozen Tundra interstitial) ──────────────────────
+    // Same PLAY/SETTINGS icon assets as EnsureMainMenu — "ensure all icons and navigation are
+    // the same" per the 2026-07-19 spec. Landing art lives at Assets/Sprites/UI/LevelCards/World2/
+    // (already saved there by the user, not generated by this pass).
+    static void EnsureWorld2Landing()
+    {
+        var go = GameObject.Find("World2Landing");
+        if (go == null)
+        {
+            go = new GameObject("World2Landing");
+            Debug.Log("[FarmFury] Created 'World2Landing' GameObject.");
+        }
+        if (go.GetComponent<World2LandingController>() == null)
+            go.AddComponent<World2LandingController>();
+
+        var so = new SerializedObject(go.GetComponent<World2LandingController>());
+        WireSprite(so, "_landingSprite",        "Assets/Sprites/UI/LevelCards/World2/FarmFury_W2.png");
+        WireSprite(so, "_playButtonSprite",     "Assets/Sprites/UI/Icon/Btn_play.png");
+        WireSprite(so, "_settingsButtonSprite", "Assets/Sprites/UI/Icon/Btn_settings.png");
+        so.ApplyModifiedProperties();
+    }
+
+    // ── World2MapController (Frozen Tundra level-map) ──────────────────────────────
+    // Dedicated World 2 marker/player-position art already exists at
+    // Assets/Sprites/UI/LevelCards/World2/ (LevelMarker_Locked.png/LevelMarker_tick.png/
+    // PlayerPosition.png) — found on disk, not assumed; only PLAY/HOME reuse the shared
+    // Assets/Sprites/UI/Icon/ nav icons, same as everywhere else in this project.
+    static void EnsureWorld2Map()
+    {
+        const string bgFolder   = "Assets/Sprites/UI/LevelCards/World2";
+        const string iconFolder = "Assets/Sprites/UI/Icon";
+
+        var go = GameObject.Find("World2Map");
+        if (go == null)
+        {
+            go = new GameObject("World2Map");
+            Debug.Log("[FarmFury] Created 'World2Map' GameObject.");
+        }
+        if (go.GetComponent<World2MapController>() == null)
+            go.AddComponent<World2MapController>();
+
+        var mapSo = new SerializedObject(go.GetComponent<World2MapController>());
+        WireSprite(mapSo, "_backgroundSprite",     $"{bgFolder}/FrozenTundra.png");
+        WireSprite(mapSo, "_lockedSprite",         $"{bgFolder}/LevelMarker_Locked.png");
+        WireSprite(mapSo, "_unlockedSprite",       $"{bgFolder}/LevelMarker_tick.png");
+        WireSprite(mapSo, "_playerPositionSprite", $"{bgFolder}/PlayerPosition.png");
+        WireSprite(mapSo, "_playButtonSprite",     $"{iconFolder}/Btn_play.png");
+        WireSprite(mapSo, "_homeButtonSprite",     $"{iconFolder}/Btn_home.png");
+
+        WireWorld2MatchUpCards(mapSo);
+
+        mapSo.ApplyModifiedProperties();
+    }
+
+    // Smaller sibling of WireMatchUpCards — that method hardcodes
+    // headerArr.arraySize = WorldMapController.LevelCount (18), which would silently truncate
+    // World2MapController's own 22-element _levelHeaderSprites array if reused directly, so this
+    // is a dedicated (if largely duplicate) method rather than a shared one. Only wires index 0
+    // (the fallback MatchUpScreen.Show() already uses for any empty slot) — no dedicated World 2
+    // level header art exists yet (per-level counters to be dropped in later by the user), and no
+    // World 2 LevelData exists yet either, so every marker shows MatchUpScreen's generic "COMING
+    // SOON" branch regardless.
+    //
+    // Background + card art updated 2026-07-19 to the user-supplied World 2 set (no longer
+    // reusing World 1's placeholders): Matchup_W2.png background, FrostRobot_card.png/
+    // GlacierRobot_card.png/IceHarvestor_card.png for the 3 robot slots, Percy_Pig.png/
+    // Woolly_Sheep.png for the animal slots (picked up automatically by the existing
+    // WireArrayByKeyword keyword scan below — CardKeywords already expects those exact
+    // filenames, see that array's own comment — no code change needed there, just the new files
+    // existing in this same matchUpFolder).
+    //
+    // Robot slot mapping is a BEST GUESS, not confirmed with the user — flag/correct if wrong:
+    // RobotType enum order is Basic/Harvester/SemiHarvester/Commander. "IceHarvestor_card.png"
+    // maps to Harvester (index 1) matching World 1's own naming precedent exactly (W1's plain
+    // "Harvestor_Robot.png", no "Semi" prefix, is also Harvester — see the array below).
+    // "FrostRobot_card.png" maps to Basic (index 0) since a matching FrostRobot_left/right.png
+    // gameplay sprite pair already exists under Assets/Sprites/Enemies/Robot/ for the most common
+    // enemy type. "GlacierRobot_card.png" is the one left over, mapped to SemiHarvester (index 2)
+    // by elimination — no GlacierRobot gameplay sprite was found on disk to cross-check this one
+    // against. No World 2 Commander/boss card was supplied — index 3 stays unwired, same
+    // "COMMANDER" text-label fallback MatchUpScreen already uses when a robot card is null.
+    static void WireWorld2MatchUpCards(SerializedObject mapSo)
+    {
+        const string matchUpFolder = "Assets/Sprites/UI/MatchUp";
+
+        WireSprite(mapSo, "_matchUpBackgroundSprite", $"{matchUpFolder}/Matchup_W2.png");
+        WireSprite(mapSo, "_vsSprite",                $"{matchUpFolder}/VS.png");
+
+        var headerArr = mapSo.FindProperty("_levelHeaderSprites");
+        headerArr.arraySize = World2MapController.LevelCount;
+        headerArr.GetArrayElementAtIndex(0).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/LevelHeader1.png");
+
+        WireSprite(mapSo, "_countdown3Sprite",     $"{matchUpFolder}/countdown3.png");
+        WireSprite(mapSo, "_countdown2Sprite",     $"{matchUpFolder}/countdown2.png");
+        WireSprite(mapSo, "_countdown1Sprite",     $"{matchUpFolder}/countdown1.png");
+        WireSprite(mapSo, "_countdownReadySprite", $"{matchUpFolder}/Countdown_Ready.png");
+        WireAudioClip(mapSo, "_countdownClip",     "Assets/Audio/Countdown.mp3");
+        WireSprite(mapSo, "_cluckFlySprite",       "Assets/Sprites/Characters/Cluck/Cluck_InFlight.png");
+        WireAudioClip(mapSo, "_cluckFallingClip",  "Assets/Audio/Cluck_falling.mp3");
+        WireSprite(mapSo, "_bessieFlySprite",      "Assets/Sprites/Characters/Bessie/Bessie_InFlight.png");
+        WireAudioClip(mapSo, "_bessieFallingClip", "Assets/Audio/Bessie_falling.mp3");
+        WireSprite(mapSo, "_eggSprite",            "Assets/Sprites/Characters/Cluck/Egg.png");
+        WireSprite(mapSo, "_skipButtonSprite",     "Assets/Sprites/UI/Icon/Btn_skip.png");
+
+        WireArrayByKeyword(mapSo, "_animalCardSprites", matchUpFolder, CardKeywords, "animal");
+
+        var robotArr = mapSo.FindProperty("_robotCardSprites");
+        robotArr.arraySize = 4;
+        robotArr.GetArrayElementAtIndex(0).objectReferenceValue = // Basic
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/FrostRobot_card.png");
+        robotArr.GetArrayElementAtIndex(1).objectReferenceValue = // Harvester
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/IceHarvestor_card.png");
+        robotArr.GetArrayElementAtIndex(2).objectReferenceValue = // SemiHarvester
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/GlacierRobot_card.png");
+        // index 3 (Commander) explicitly cleared, not just left alone — a stale reference here
+        // (e.g. from before this method stopped wiring it) would otherwise silently survive in
+        // Game.unity forever, the same [SerializeField] stale-value trap documented throughout
+        // this file. No World 2 boss card exists yet.
+        robotArr.GetArrayElementAtIndex(3).objectReferenceValue = null;
+    }
+
     // Added 2026-07-24 — a Sunrise Meadows screenshot showed level markers rendering with
     // leftover star-tier art from earlier testing sessions, which looked like a bug at first
     // glance. It isn't one: WorldMapController.IsUnlocked()/ScoreManager.GetBestStars() were
@@ -1155,6 +1366,9 @@ public static class SceneSetup
         SetPrefab(so, "_harvesterPrefab",  "HarvesterRobot",  "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_semiHarvesterPrefab", "SemiHarvesterRobot", "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_commanderPrefab",     "CommanderRobot",     "Assets/Prefabs/Enemies", typeof(RobotEnemy));
+        SetPrefab(so, "_robotPrefabW2",         "FrostRobot",            "Assets/Prefabs/Enemies", typeof(RobotEnemy));
+        SetPrefab(so, "_harvesterPrefabW2",     "IceHarvestorRobot",     "Assets/Prefabs/Enemies", typeof(RobotEnemy));
+        SetPrefab(so, "_semiHarvesterPrefabW2", "GlacierHarvestorRobot", "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_haybalePrefab",    "HaybaleBlock",    "Assets/Prefabs/Blocks",  typeof(WoodBlock));
         SetPrefab(so, "_barrelPrefab",     "ExplodingBarrelBlock", "Assets/Prefabs/Blocks", typeof(ExplodingBarrelBlock));
 
@@ -1921,6 +2135,99 @@ public static class SceneSetup
         AssetDatabase.Refresh();
         Debug.Log("[FarmFury] SemiHarvesterRobot.prefab created with Robot_SemiHarvest.png (PPU=1746).");
     }
+
+    // ── World 2 (Frozen Tundra) robot reskins — 2026-07-19 ──────────────────────────────
+    // Same 3-tier structure as Robot/HarvesterRobot/SemiHarvesterRobot above, reusing the SAME
+    // RobotType.Basic/Harvester/SemiHarvester values (not new enum members — see
+    // LevelLoader.SpawnRobot's own comment on why). Factored into one shared helper instead of
+    // copy-pasting the Ensure*RobotPrefab shape a third time, since these three are otherwise
+    // identical to each other (and to their W1 counterparts) except for name/sprite paths/HP.
+    // No damaged-flash art exists for any of these yet (unlike HarvesterRobot/SemiHarvesterRobot,
+    // which have dedicated _Damaged art) — falls back to RobotEnemy's plain white-tint flash,
+    // same graceful-degradation behaviour as the base Robot.prefab (RobotType.Basic) already has.
+    static void EnsureWorld2RobotPrefab(string prefabName, string leftSpritePath, string rightSpritePath, float maxHealth)
+    {
+        string prefabPath = $"Assets/Prefabs/Enemies/{prefabName}.prefab";
+
+        var imp = AssetImporter.GetAtPath(leftSpritePath) as TextureImporter;
+        if (imp == null)
+        {
+            Debug.LogWarning($"[FarmFury] {prefabName}: sprite not found at {leftSpritePath}.");
+            return;
+        }
+        bool dirty = false;
+        if (imp.textureType         != TextureImporterType.Sprite)  { imp.textureType         = TextureImporterType.Sprite;  dirty = true; }
+        if (imp.spritePixelsPerUnit != 1746)                          { imp.spritePixelsPerUnit = 1746;                        dirty = true; }
+        if (!imp.alphaIsTransparency)                                 { imp.alphaIsTransparency = true;                        dirty = true; }
+        if (imp.spriteImportMode    != SpriteImportMode.Single)      { imp.spriteImportMode    = SpriteImportMode.Single;    dirty = true; }
+        if (dirty) imp.SaveAndReimport();
+
+        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(leftSpritePath);
+        if (sprite == null) { Debug.LogWarning($"[FarmFury] {leftSpritePath} failed to load as Sprite."); return; }
+
+        bool exists = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null;
+        GameObject go;
+        if (exists)
+        {
+            go = PrefabUtility.LoadPrefabContents(prefabPath);
+        }
+        else
+        {
+            go       = new GameObject(prefabName);
+            go.layer = 9;
+            var rb   = go.AddComponent<Rigidbody2D>();
+            rb.mass  = 20f;
+            var bc   = go.AddComponent<BoxCollider2D>();
+            bc.size  = new Vector2(1f, 1f);
+            go.AddComponent<SpriteRenderer>();
+            go.AddComponent<RobotEnemy>();
+        }
+
+        var robot = go.GetComponent<RobotEnemy>();
+        if (robot != null)
+        {
+            var so = new SerializedObject(robot);
+            so.FindProperty("_robotSprite").objectReferenceValue = sprite;
+            WireRobotFacingRight(so, rightSpritePath);
+            so.FindProperty("_maxHealth").floatValue = maxHealth;
+            so.FindProperty("_robotContactDamage").floatValue = 18f;
+            WireRobotDeathFx(so);
+            so.ApplyModifiedProperties();
+        }
+
+        PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+        if (exists) PrefabUtility.UnloadPrefabContents(go);
+        else        Object.DestroyImmediate(go);
+        AssetDatabase.Refresh();
+        Debug.Log($"[FarmFury] {prefabName}.prefab created with {leftSpritePath} (PPU=1746).");
+    }
+
+    // RobotType.Basic tier — matches Robot.prefab's own _maxHealth (35).
+    static void EnsureFrostRobotPrefab() =>
+        EnsureWorld2RobotPrefab("FrostRobot",
+            "Assets/Sprites/Enemies/Robot/FrostRobot_left.png",
+            "Assets/Sprites/Enemies/Robot/FrostRobot_right.png",
+            35f);
+
+    // RobotType.Harvester tier — matches HarvesterRobot.prefab's own _maxHealth (28). Note the
+    // real on-disk filename is "Iceharvestor_right.png" (lowercase h) — matched exactly, not
+    // "corrected", since AssetDatabase paths are effectively case-sensitive on iOS/Android builds
+    // even though Windows tolerates the mismatch (same class of gotcha documented for L13's
+    // "Level13.png" match-up header elsewhere in this file).
+    static void EnsureIceHarvestorRobotPrefab() =>
+        EnsureWorld2RobotPrefab("IceHarvestorRobot",
+            "Assets/Sprites/Enemies/Robot/IceHarvestor_left.png",
+            "Assets/Sprites/Enemies/Robot/Iceharvestor_right.png",
+            28f);
+
+    // RobotType.SemiHarvester tier — matches SemiHarvesterRobot.prefab's own _maxHealth (26).
+    // Real filename is "GlacierHarvestor_Right.png" (capital R) — matched exactly, same
+    // case-sensitivity reasoning as IceHarvestor above.
+    static void EnsureGlacierHarvestorRobotPrefab() =>
+        EnsureWorld2RobotPrefab("GlacierHarvestorRobot",
+            "Assets/Sprites/Enemies/Robot/GlacierHarvestor_left.png",
+            "Assets/Sprites/Enemies/Robot/GlacierHarvestor_Right.png",
+            26f);
 
     // ── CommanderRobot: create a SEPARATE prefab (distinct from all other robot types) ───
     // LevelLoader picks this prefab when RobotSpawnData.robotType == RobotType.Commander.

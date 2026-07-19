@@ -135,7 +135,16 @@ public class MainMenuController : MonoBehaviour
     // scoreboard backdrop"). Reuses the same AudioManager.MusicEnabled/SfxEnabled + PlayerPrefs-
     // backed state HUDController's top-right mute button already toggles, so the two screens
     // can't disagree about whether audio is on.
-    void OnSettingsClicked()
+    void OnSettingsClicked() => OpenSettings();
+
+    // Public entry point (2026-07-19) — the Settings popup used to be reachable only via this
+    // class's own gear icon, since it lived as a child of MainMenuController's own landing-page
+    // Canvas (_panel) and was therefore only ever active while _panel itself was. Any OTHER
+    // screen (e.g. World2LandingController) needed the identical popup without also forcing
+    // MainMenuController's own background/PLAY/SETTINGS buttons to show underneath it — see
+    // BuildSettingsPopup below, which now gives the popup its own independent Canvas instead of
+    // parenting it under _panel. Behaviour from THIS class's own gear icon is unchanged.
+    public void OpenSettings()
     {
         _setMusicToggleVisual(AudioManager.MusicEnabled);
         _setSfxToggleVisual(AudioManager.SfxEnabled);
@@ -288,7 +297,7 @@ public class MainMenuController : MonoBehaviour
         settingsBtn.colors  = sc;
         settingsBtn.onClick.AddListener(OnSettingsClicked);
 
-        BuildSettingsPopup(root);
+        BuildSettingsPopup();
 
         _panel.SetActive(false);
     }
@@ -305,10 +314,27 @@ public class MainMenuController : MonoBehaviour
     // _tabPanels, ready for content in later passes — just build inside the matching container,
     // no structural changes needed here. Same self-contained dismiss-catcher-behind-a-box pattern
     // used elsewhere (MatchUpScreen/LevelPreviewCard).
-    void BuildSettingsPopup(Transform root)
+    // Own top-level Canvas (2026-07-19), separate from _panel/cvGO — a settings popup parented
+    // under _panel would only ever be active while _panel was, which made it unreachable from
+    // any screen other than this one (see OpenSettings' comment above). sortingOrder 410 sits
+    // above MainMenuController's own landing Canvas (400) and WorldMapController's map Canvas
+    // (300), so it always renders on top regardless of which screen opened it.
+    void BuildSettingsPopup()
     {
+        var settingsCvGO = new GameObject("SettingsCanvas");
+        settingsCvGO.transform.SetParent(transform, false);
+        var settingsCv = settingsCvGO.AddComponent<Canvas>();
+        settingsCv.renderMode   = RenderMode.ScreenSpaceOverlay;
+        settingsCv.sortingOrder = 410;
+        var settingsCs = settingsCvGO.AddComponent<CanvasScaler>();
+        settingsCs.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        settingsCs.referenceResolution = new Vector2(1920f, 1080f);
+        settingsCs.screenMatchMode     = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        settingsCs.matchWidthOrHeight  = 0.5f;
+        settingsCvGO.AddComponent<GraphicRaycaster>();
+
         var popGO = new GameObject("SettingsPopup");
-        popGO.transform.SetParent(root, false);
+        popGO.transform.SetParent(settingsCvGO.transform, false);
         var popRT = popGO.AddComponent<RectTransform>();
         popRT.anchorMin = Vector2.zero;
         popRT.anchorMax = Vector2.one;
@@ -606,7 +632,7 @@ public class MainMenuController : MonoBehaviour
         AddStoryRow(storyTab, "World Journal", "6 pages, one per world",
             new Vector2(0f, -200f * VScale), "World Journal", StoryContent.Worlds);
 
-        BuildStoryReaderPopup(root);
+        BuildStoryReaderPopup(settingsCvGO.transform);
 
         // ── About tab content (2026-07-13) ───────────────────────────────────────
         // Privacy Policy / Terms of Service / Support-Contact / Rate The App / Restore Purchases

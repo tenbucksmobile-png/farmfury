@@ -40,6 +40,19 @@ public class SceneryBuilder : MonoBehaviour
     [Header("Exact Placement (Level 1 only)")]
     [SerializeField] private bool _useExactPlacement;
 
+    // World 2 (Frozen Tundra) ground-seam dressing — added 2026-07-19. Scattered along the
+    // ground seam where EnvironmentDepthSystem's Midground layer meets gameplay, using the same
+    // RNG-scatter shape as World 1's (currently-disabled, see the early `return` in
+    // BuildForLevel) fence/rock/flower placement — System.Random seeded by level index,
+    // randomized scale AND rotation (rotation is new; World 1's Place() never needed it), light
+    // density so gameplay stays readable. No per-level tuning yet since no real World 2 LevelData
+    // exists — the X range below is a placeholder matching World 1's typical level-content span;
+    // revisit once actual World 2 levels are built and their real ground-seam extents are known.
+    [Header("World 2 - Ice Ground Dressing")]
+    [SerializeField] private Sprite _sprIceBlock;
+    [SerializeField] private Sprite _sprPackedSnow;
+    [SerializeField] private Sprite _sprIcicleSpike;
+
     private readonly List<GameObject> _props = new();
 
     private const float GroundSurface = -6.60f;
@@ -56,12 +69,22 @@ public class SceneryBuilder : MonoBehaviour
             GameManager.Instance.OnLevelStarted -= OnLevelStarted;
     }
 
-    void OnLevelStarted(LevelData _) =>
-        BuildForLevel(GameManager.Instance?.CurrentLevelIndex ?? 0);
+    void OnLevelStarted(LevelData data) =>
+        BuildForLevel(GameManager.Instance?.CurrentLevelIndex ?? 0, data != null ? data.world : 1);
 
-    public void BuildForLevel(int levelIdx)
+    // world param added 2026-07-19 (default 1 preserves every existing call site/behaviour).
+    // World 2 branches to BuildIceGroundProps() below instead of falling into World 1's
+    // exact-placement/disabled-RNG logic — World 1's own path (including the early `return`
+    // that disables its RNG scatter) is completely untouched by this branch.
+    public void BuildForLevel(int levelIdx, int world = 1)
     {
         ClearProps();
+
+        if (world == 2)
+        {
+            BuildIceGroundProps(levelIdx);
+            return;
+        }
 
         // Level 1 scenery is hand-authored in the scene as Scenery_L1 GameObjects.
         // When exact placement is on, skip all code-spawning for level 0 so those
@@ -216,6 +239,53 @@ public class SceneryBuilder : MonoBehaviour
     {
         if (go == null) return;
         go.AddComponent<ParallaxScroller>().speed = speed;
+    }
+
+    // ── World 2: Ice ground-seam dressing ────────────────────────────────────
+    // Same seed formula as World 1's (disabled) RNG scatter above, so layouts stay deterministic
+    // per level index. Light density (8 props spread across the placeholder X range) deliberately
+    // sparser than World 1's old scatter counts, per the "light density so gameplay stays
+    // readable" spec — this is ground-seam dressing, not a wall of props between the cannon and
+    // the structures.
+    void BuildIceGroundProps(int levelIdx)
+    {
+        var rng = new System.Random(levelIdx * 137 + 42);
+        Sprite[] props = { _sprIceBlock, _sprPackedSnow, _sprIcicleSpike };
+
+        const int   count = 8;
+        const float xMin  = -1.0f;
+        const float xMax  = 9.0f;
+        for (int i = 0; i < count; i++)
+        {
+            Sprite s = props[rng.Next(props.Length)];
+            float x        = R(rng, xMin, xMax);
+            float scale    = R(rng, 0.22f, 0.42f);
+            float rotation = R(rng, -8f, 8f); // slight tilt only — a prop rotated far off-axis
+                                               // would read as floating/wrong rather than "scattered ice debris"
+            PlaceRotated(s, x, scale, rotation, 1);
+        }
+    }
+
+    // Same ground-anchor math as Place() below, plus a Z rotation — World 1's Place() never
+    // needed rotation, so this is a separate helper rather than a param added to every existing
+    // W1 call site.
+    void PlaceRotated(Sprite sprite, float worldX, float scale, float rotationDeg, int sortOrder)
+    {
+        if (sprite == null) return;
+
+        var go = new GameObject("Prop_" + sprite.name);
+        go.transform.SetParent(transform);
+        go.transform.localScale = new Vector3(scale, scale, 1f);
+        go.transform.rotation  = Quaternion.Euler(0f, 0f, rotationDeg);
+
+        float pivotH = sprite.pivot.y / sprite.pixelsPerUnit;
+        go.transform.position = new Vector3(worldX, GroundSurface + pivotH * scale, 0f);
+
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite       = sprite;
+        sr.sortingOrder = sortOrder;
+
+        _props.Add(go);
     }
 
     // ── RNG helpers ───────────────────────────────────────────────────────────

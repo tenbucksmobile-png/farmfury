@@ -691,7 +691,7 @@ public class HUDController : MonoBehaviour
         // every other level, so this is a no-op fallback everywhere except L18.
         int levelIndex = GameManager.Instance != null ? GameManager.Instance.CurrentLevelIndex : -1;
         if (WorldTransitionManager.Instance != null &&
-            WorldTransitionManager.Instance.TryPlayTransition(levelIndex, GoToMenuSkippingWorldMap))
+            WorldTransitionManager.Instance.TryPlayTransition(levelIndex, GoToWorldLandingAfterTransition))
         {
             return;
         }
@@ -699,13 +699,19 @@ public class HUDController : MonoBehaviour
         GameManager.Instance?.LoadMenu();
     }
 
-    // Shared by the transition-video path above — lands on the main menu directly rather than
-    // flashing the World 1 map first, same "skip the map" pattern as Home/Quit
-    // (WorldMapController.SkipToMainMenu) — there's no real World 2 map to show yet anyway.
-    void GoToMenuSkippingWorldMap()
+    // Shared by the transition-video path above. Renamed 2026-07-19 (was
+    // GoToMenuSkippingWorldMap, landed on MainMenuController — World 2 didn't exist yet) — now
+    // lands on World2LandingController's Frozen Tundra interstitial instead, the same "skip
+    // whatever WorldMapController would otherwise auto-show on this Idle transition" pattern
+    // WorldMapController.SkipToMainMenu() uses for the Home/Quit case, just redirected to a
+    // different destination. Since _triggerLevelIndices currently has exactly one entry (L18),
+    // this callback only ever fires for the L18 -> Frozen Tundra transition today; a future
+    // world-ending level with a different destination would need this to branch on levelIndex.
+    void GoToWorldLandingAfterTransition()
     {
         GameManager.Instance?.LoadMenu();
-        WorldMapController.Instance?.SkipToMainMenu();
+        WorldMapController.Instance?.HideForExternalTransition();
+        World2LandingController.Instance?.Show();
     }
 
     // Btn_back (was Btn_home) — 2026-07-16, user request: this button should land on the World 1

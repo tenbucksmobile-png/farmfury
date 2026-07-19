@@ -151,6 +151,14 @@ public class WorldMapController : MonoBehaviour
 
     public void Show() => ShowPanel();
 
+    // Added 2026-07-19 for the L18 -> World2LandingController transition (see
+    // HUDController.GoToWorldLandingAfterTransition) — GameManager.LoadMenu() always transitions
+    // to GameState.Idle, which this class's own OnStateChanged reacts to by showing itself (the
+    // default PLAY destination); that caller needs to immediately hide this map again and show
+    // World2LandingController instead, the same "atomic same-frame override" pattern
+    // SkipToMainMenu() already uses for MainMenuController.
+    public void HideForExternalTransition() => HidePanel();
+
     // Called by other panels (e.g. HUDController's Quit button, and this class's own Home button)
     // that need to land on the main menu specifically, not the world map — Level Complete/Failed's
     // Back buttons stopped calling this 2026-07-16 (they now land on the world map instead, which

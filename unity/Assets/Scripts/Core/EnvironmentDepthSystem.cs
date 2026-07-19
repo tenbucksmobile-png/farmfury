@@ -23,6 +23,14 @@ public class EnvironmentDepthSystem : MonoBehaviour
     [SerializeField] Sprite _sprMidground;
     [SerializeField] Sprite _sprForeground;
 
+    // World 2 (Frozen Tundra) backdrop — added 2026-07-19. Only FarHills/Midground: World 2 has
+    // no opaque Foreground painting by design (per spec — the ground-seam ice/snow dressing is
+    // instead a SceneryBuilder prop scatter, matching the World-1 fence/rock/flower pattern, not
+    // a third full-bleed painting), so Layer_Foreground is simply deactivated whenever the
+    // current level's World == 2 rather than ever being assigned World-2 art.
+    [SerializeField] Sprite _sprFarHillsW2;
+    [SerializeField] Sprite _sprMidgroundW2;
+
     // Tunable per-layer reveal bands — the fraction (0-1) of EACH painting's own local UV height
     // that stays visible before the shader clips the rest to transparent. Exposed as live
     // Inspector sliders (not baked into the shared material) specifically so the split point can
@@ -50,6 +58,29 @@ public class EnvironmentDepthSystem : MonoBehaviour
     [SerializeField, Range(0f, 1f)] float _midgroundClipAbove  = 0.23f;
     [SerializeField, Range(0f, 1f)] float _foregroundClipAbove = 0.30f;
 
+    // World 2's Midground (ParallaxMidGrounds_W2.png) has its own baked-in aurora sky filling
+    // roughly the top 60% of the frame — same lesson as World 1's windmill fix: two independently
+    // painted skies both being partially revealed shows a visible seam, so only FarHills may
+    // contribute sky content. Measured directly against the source art (pixel sampling — per-
+    // column scan classifying genuine open-sky purple/violet pixels vs. the terrain's navy-shadow/
+    // cyan-ice palette, which share similar hue and would otherwise false-positive; cross-checked
+    // against direct visual crops with row-number gridlines, same method as the W1 windmill
+    // diagnostic). The single deepest sky gap — where sky reaches furthest down between two
+    // flanking mountain peaks on the right side of the painting — bottoms out at row 1188 of 1536
+    // (v≈0.227), confirmed pixel-precise (sky purple through row 1188, a 2-3px white rim-light
+    // highlight at 1190-1193, solid terrain navy from row ~1196 on). Ceiling set to v=0.21 (row
+    // ≈1213, ~25 rows/1.6% margin below the measured dip), matching W1 Midground's own margin
+    // convention. FarHillsW2 defaults to 1.0 (fully uncropped, same as W1) since it's the one
+    // layer meant to supply all sky content.
+    [SerializeField, Range(0f, 1f)] float _farHillsClipAboveW2  = 1.0f;
+    [SerializeField, Range(0f, 1f)] float _midgroundClipAboveW2 = 0.21f;
+
+    // Which world's layers are currently active — set from LevelData.world on every
+    // OnLevelStarted (see HandleLevelStarted/ApplyWorldLayers below). Defaults to World 1 so the
+    // main menu / World 1 map (which loads before any level's OnLevelStarted has fired) renders
+    // exactly as it always has.
+    int _currentWorld = 1;
+
     const int FarHillsSortingOrder   = -40;
     const int MidgroundSortingOrder  = -30;
     const int ForegroundSortingOrder = -20;
@@ -71,9 +102,7 @@ public class EnvironmentDepthSystem : MonoBehaviour
         _midground  = MakeLayer("Layer_Midground",  _sprMidground,  MidgroundSortingOrder);
         _foreground = MakeLayer("Layer_Foreground", _sprForeground, ForegroundSortingOrder);
 
-        ApplyClip(_farHills,   _farHillsClipAbove);
-        ApplyClip(_midground,  _midgroundClipAbove);
-        ApplyClip(_foreground, _foregroundClipAbove);
+        ApplyWorldLayers();
 
         // Initial rest framing (main menu / world map / before any level has loaded) — the camera
         // already carries its saved rest orthoSize/position at this point (see SceneSetup.
@@ -93,7 +122,55 @@ public class EnvironmentDepthSystem : MonoBehaviour
             GameManager.Instance.OnLevelStarted -= HandleLevelStarted;
     }
 
-    void HandleLevelStarted(LevelData data) => RescaleToCamera();
+    void HandleLevelStarted(LevelData data)
+    {
+        _currentWorld = data != null ? data.world : 1;
+        ApplyWorldLayers();
+        RescaleToCamera();
+    }
+
+    // Swaps FarHills/Midground to the current world's art + clip band, and shows/hides the
+    // Foreground layer entirely (World 1 only — World 2 has no opaque Foreground painting by
+    // design, see the _sprFarHillsW2/_sprMidgroundW2 field comment). Falls back to the World-1
+    // sprite/clip whenever a World-2 sprite isn't wired (e.g. before SceneSetup has assigned it),
+    // so an unwired World 2 never renders as a blank/missing layer.
+    // Editor-only preview hook (2026-07-19) — DebugPreviewWorldBackdrop.cs calls this directly
+    // in Edit mode (no Play mode needed) so World 2 scenery/props can be hand-placed against the
+    // real backdrop the same way World 1's barn/cannon were, before any real World 2 LevelData
+    // exists to trigger HandleLevelStarted normally. Purely a live Scene-view preview — the next
+    // "Wire Scene References" pass always re-forces World 1's sprites back via its own
+    // CoverFitLayer editor-time preview (EnsureEnvironmentDepthSystem), so this never needs
+    // resetting by hand, and never gets saved as if it were real level data.
+    public void PreviewWorld(int world)
+    {
+        _currentWorld = world;
+        ApplyWorldLayers();
+        RescaleToCamera();
+    }
+
+    void ApplyWorldLayers()
+    {
+        bool isWorld2 = _currentWorld == 2;
+
+        Sprite farHillsSprite  = (isWorld2 && _sprFarHillsW2  != null) ? _sprFarHillsW2  : _sprFarHills;
+        Sprite midgroundSprite = (isWorld2 && _sprMidgroundW2 != null) ? _sprMidgroundW2 : _sprMidground;
+        float  farHillsClip    = isWorld2 ? _farHillsClipAboveW2  : _farHillsClipAbove;
+        float  midgroundClip   = isWorld2 ? _midgroundClipAboveW2 : _midgroundClipAbove;
+
+        SetLayerSprite(_farHills,  farHillsSprite);
+        SetLayerSprite(_midground, midgroundSprite);
+        ApplyClip(_farHills,  farHillsClip);
+        ApplyClip(_midground, midgroundClip);
+
+        if (_foreground != null) _foreground.gameObject.SetActive(!isWorld2);
+    }
+
+    static void SetLayerSprite(Transform layer, Sprite sprite)
+    {
+        if (layer == null) return;
+        var sr = layer.GetComponent<SpriteRenderer>();
+        if (sr != null) sr.sprite = sprite;
+    }
 
     // Re-fits every layer to the camera's ACTUAL current orthoSize/aspect/position. Called at
     // Awake(), on every OnLevelStarted, AND on every LateUpdate() where orthoSize has actually
@@ -189,8 +266,8 @@ public class EnvironmentDepthSystem : MonoBehaviour
     // why these three are exposed as sliders in the first place.
     void OnValidate()
     {
-        if (_farHills   != null) ApplyClip(_farHills,   _farHillsClipAbove);
-        if (_midground  != null) ApplyClip(_midground,  _midgroundClipAbove);
+        if (_farHills  != null) ApplyClip(_farHills,  _currentWorld == 2 ? _farHillsClipAboveW2  : _farHillsClipAbove);
+        if (_midground != null) ApplyClip(_midground, _currentWorld == 2 ? _midgroundClipAboveW2 : _midgroundClipAbove);
         if (_foreground != null) ApplyClip(_foreground, _foregroundClipAbove);
     }
 #endif
