@@ -68,12 +68,22 @@ public class EnvironmentDepthSystem : MonoBehaviour
     // diagnostic). The single deepest sky gap — where sky reaches furthest down between two
     // flanking mountain peaks on the right side of the painting — bottoms out at row 1188 of 1536
     // (v≈0.227), confirmed pixel-precise (sky purple through row 1188, a 2-3px white rim-light
-    // highlight at 1190-1193, solid terrain navy from row ~1196 on). Ceiling set to v=0.21 (row
-    // ≈1213, ~25 rows/1.6% margin below the measured dip), matching W1 Midground's own margin
-    // convention. FarHillsW2 defaults to 1.0 (fully uncropped, same as W1) since it's the one
-    // layer meant to supply all sky content.
+    // highlight at 1190-1193, solid terrain navy from row ~1196 on).
+    //
+    // RAISED 0.21 -> 0.60 (2026-07-26, user request: "too much night sky in the parallax", pushed
+    // ahead knowingly despite the seam this reintroduces — user chose "push it anyway, accept the
+    // seam" over waiting for revised art). 0.60 clears the tallest mountain peaks on the left side
+    // of the painting (measured onset of the snow-capped silhouette around row 600-650, v≈0.58-0.61
+    // from the top) so the full ice bridge/mountain/tree scene reads before the seam. The seam
+    // itself sits at the OLD v=0.227 boundary — a visible horizontal color-break where Midground's
+    // own sky (revealed from v=0.227 up to v=0.60) meets FarHills' sky behind it, confirmed via a
+    // direct pixel composite of the two source paintings at this value. This is an ART limitation,
+    // not a further tuning problem: fix it properly by re-painting ParallaxMidGrounds_W2.png with
+    // taller terrain and/or no separate baked sky above the peaks, then this can safely return
+    // toward 0.21-0.23 territory without the seam. FarHillsW2 defaults to 1.0 (fully uncropped,
+    // same as W1) since it's the one layer meant to supply all sky content.
     [SerializeField, Range(0f, 1f)] float _farHillsClipAboveW2  = 1.0f;
-    [SerializeField, Range(0f, 1f)] float _midgroundClipAboveW2 = 0.21f;
+    [SerializeField, Range(0f, 1f)] float _midgroundClipAboveW2 = 0.60f;
 
     // Which world's layers are currently active — set from LevelData.world on every
     // OnLevelStarted (see HandleLevelStarted/ApplyWorldLayers below). Defaults to World 1 so the

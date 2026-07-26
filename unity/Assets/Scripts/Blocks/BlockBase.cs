@@ -47,6 +47,22 @@ public abstract class BlockBase : MonoBehaviour
     // as the other named-shape fixes this session.
     [SerializeField] protected Sprite _sprFlat;           // 2D_Block_Wood_Flat.png
 
+    // World 2 (Frozen Tundra) ice/snow reskins — added 2026-07-26 (user: "how do i build level 19
+    // with new sprites"). Only the 5 shapes that actually have ice art today (see
+    // Assets/Sprites/Environment/World2Props/): Normal/Square (Ice_block.png), Vertical
+    // (Ice_vertical.png), Horizontal (Snow_block.png), Diagonal (Ice_diagonal.png), Short
+    // (Snow_short.png). Every OTHER WoodArtVariant (Skew/Cart/Barrel/RuinedWall/Tower/etc.) has no
+    // ice counterpart yet and simply falls back to whichever of these 5 resolves for "normal" —
+    // see Initialise()'s world-aware `normal`/`vertical`/etc. locals, which every other variant's
+    // own `?? ` fallback chain already resolves through. Wired on both WoodBlock.prefab and
+    // StoneBlock.prefab (SceneSetup.WireBlockSprites) — "ice" is a visual reskin only, not a new
+    // BlockType; physics/health/damage behaviour is unchanged (still plain Wood/Stone).
+    [SerializeField] protected Sprite _sprNormalW2;
+    [SerializeField] protected Sprite _sprVerticalW2;
+    [SerializeField] protected Sprite _sprHorizontalW2;
+    [SerializeField] protected Sprite _sprDiagonalW2;
+    [SerializeField] protected Sprite _sprShortW2;
+
     // Optional hit-reaction art (e.g. Haybail_Damaged.png) — null on block types that don't
     // have one wired, in which case TakeDamage() only does the existing colour-tint/crack
     // feedback below, unchanged.
@@ -203,9 +219,21 @@ public abstract class BlockBase : MonoBehaviour
         _crackSR2 = MakeCrackOverlay("CrackH", _crackSprite2, sortingOrder: 4);
     }
 
-    public void Initialise(float width, float height, WoodArtVariant artVariant = WoodArtVariant.Auto)
+    public void Initialise(float width, float height, WoodArtVariant artVariant = WoodArtVariant.Auto, int world = 1)
     {
         _baseColor = _sr.color; // subclass Awake has already set the material colour
+
+        // World 2 reskin — resolve the 5 shapes that have ice art (see the _sprNormalW2 etc.
+        // field comment), falling back to the World 1 sprite whenever the ice counterpart isn't
+        // wired. Every OTHER variant below still references these locals (not the raw W1 fields
+        // directly) via its own `?? ` chain, so e.g. a Skew block on a World 2 level correctly
+        // falls back to the ice "normal" tile rather than always landing on wood/stone art.
+        bool   isW2       = world == 2;
+        Sprite normal     = (isW2 && _sprNormalW2     != null) ? _sprNormalW2     : _sprNormal;
+        Sprite vertical   = (isW2 && _sprVerticalW2   != null) ? _sprVerticalW2   : _sprVertical;
+        Sprite horizontal = (isW2 && _sprHorizontalW2 != null) ? _sprHorizontalW2 : _sprHorizontal;
+        Sprite diagonal   = (isW2 && _sprDiagonalW2   != null) ? _sprDiagonalW2   : _sprDiagonal;
+        Sprite shortSpr   = (isW2 && _sprShortW2      != null) ? _sprShortW2      : _sprShort;
 
         // Select art sprite: an explicit artVariant (set by LevelLayoutDumper directly from the
         // design-time sprite's own filename) always wins over the aspect-ratio guess below —
@@ -217,25 +245,25 @@ public abstract class BlockBase : MonoBehaviour
         float aspect = width / height;
         Sprite chosen = artVariant switch
         {
-            WoodArtVariant.Vertical      => _sprVertical      ?? _sprNormal,
-            WoodArtVariant.Horizontal    => _sprHorizontal    ?? _sprNormal,
-            WoodArtVariant.Flat          => _sprFlat ?? _sprNormal,
-            WoodArtVariant.Short         => _sprShort         ?? _sprNormal,
-            WoodArtVariant.VerticalShort => _sprVerticalShort ?? _sprVertical ?? _sprNormal,
-            WoodArtVariant.Horizontal2D  => _sprHorizontal2D  ?? _sprHorizontal ?? _sprNormal,
-            WoodArtVariant.Shork2D       => _sprShork2D       ?? _sprVertical ?? _sprNormal,
-            WoodArtVariant.Shork         => _sprShork         ?? _sprNormal,
-            WoodArtVariant.Cart          => _sprCart          ?? _sprNormal,
-            WoodArtVariant.Barrel        => _sprBarrelProp    ?? _sprNormal,
-            WoodArtVariant.Square        => _sprSquare        ?? _sprNormal,
-            WoodArtVariant.Block         => _sprBlock         ?? _sprNormal,
-            WoodArtVariant.RuinedWall    => _sprRuinedWall    ?? _sprNormal,
-            WoodArtVariant.Tower         => _sprTower         ?? _sprNormal,
-            WoodArtVariant.Skew          => _sprSkew          ?? _sprNormal,
-            WoodArtVariant.Diagonal      => _sprDiagonal      ?? _sprNormal,
-            _ => aspect < 0.72f ? (_sprVertical   ?? _sprNormal)
-               : aspect > 1.5f  ? (_sprHorizontal ?? _sprNormal)
-               : _sprNormal,
+            WoodArtVariant.Vertical      => vertical          ?? normal,
+            WoodArtVariant.Horizontal    => horizontal        ?? normal,
+            WoodArtVariant.Flat          => _sprFlat ?? normal,
+            WoodArtVariant.Short         => shortSpr          ?? normal,
+            WoodArtVariant.VerticalShort => _sprVerticalShort ?? vertical ?? normal,
+            WoodArtVariant.Horizontal2D  => _sprHorizontal2D  ?? horizontal ?? normal,
+            WoodArtVariant.Shork2D       => _sprShork2D       ?? vertical ?? normal,
+            WoodArtVariant.Shork         => _sprShork         ?? normal,
+            WoodArtVariant.Cart          => _sprCart          ?? normal,
+            WoodArtVariant.Barrel        => _sprBarrelProp    ?? normal,
+            WoodArtVariant.Square        => _sprSquare        ?? normal,
+            WoodArtVariant.Block         => _sprBlock         ?? normal,
+            WoodArtVariant.RuinedWall    => _sprRuinedWall    ?? normal,
+            WoodArtVariant.Tower         => _sprTower         ?? normal,
+            WoodArtVariant.Skew          => _sprSkew          ?? normal,
+            WoodArtVariant.Diagonal      => diagonal          ?? normal,
+            _ => aspect < 0.72f ? (vertical   ?? normal)
+               : aspect > 1.5f  ? (horizontal ?? normal)
+               : normal,
         };
         if (chosen != null)
         {

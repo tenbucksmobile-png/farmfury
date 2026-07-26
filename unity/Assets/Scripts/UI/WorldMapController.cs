@@ -108,6 +108,12 @@ public class WorldMapController : MonoBehaviour
     [SerializeField] private Sprite[] _robotCardSprites  = new Sprite[4]; // Sprites/UI/MatchUp/, RobotType-indexed (Basic/Harvester/SemiHarvester/Commander)
     [SerializeField] private Sprite   _eggSprite;                // Assets/Sprites/Characters/Cluck/Egg.png — cluster-bomb teaser, re-added 2026-07-12, see MatchUpScreen.SpawnEggBurst
     [SerializeField] private Sprite   _skipButtonSprite;          // Assets/Sprites/UI/Icon/Btn_skip.png — replaces the old plain box+"SKIP" label placeholder
+    // Percy_Pig/Trigger.png — REPLACES Cluck's fly-by whenever a level's birds[0] is Percy (see
+    // MatchUpScreen.PercyFlyBy). No World 1 level uses Percy today, so this is wired for symmetry
+    // with World2MapController (same pattern as _bessieFlySprite above) rather than because it's
+    // expected to fire here.
+    [SerializeField] private Sprite   _percyFlySprite;
+    [SerializeField] private AudioClip _percyFallingClip;
 
     private GameObject       _panel;
     private Sprite           _squareSpr;
@@ -428,7 +434,8 @@ public class WorldMapController : MonoBehaviour
         _matchUpScreen.Init(_squareSpr, _matchUpBackgroundSprite, _vsSprite, _levelHeaderSprites,
             _countdown3Sprite, _countdown2Sprite, _countdown1Sprite, _countdownReadySprite, _countdownClip,
             _cluckFlySprite, _cluckFallingClip, _bessieFlySprite, _bessieFallingClip,
-            _animalCardSprites, _robotCardSprites, _eggSprite, _skipButtonSprite);
+            _animalCardSprites, _robotCardSprites, _eggSprite, _skipButtonSprite,
+            _percyFlySprite, _percyFallingClip);
 
         _panel.SetActive(false);
     }

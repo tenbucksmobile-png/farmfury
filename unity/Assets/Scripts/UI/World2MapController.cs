@@ -99,6 +99,12 @@ public class World2MapController : MonoBehaviour
     [SerializeField] private Sprite[] _robotCardSprites  = new Sprite[4];
     [SerializeField] private Sprite   _eggSprite;
     [SerializeField] private Sprite   _skipButtonSprite;
+    // Percy_Pig/Trigger.png — REPLACES Cluck's fly-by whenever a level's birds[0] is Percy (his
+    // Bounce Roll ability art, doubling as "the pig flythrough doing its power of rolling" per
+    // the 2026-07-26 request). Percy is World 2's own debut animal, so this is the map this
+    // actually fires from in practice — see MatchUpScreen.PercyFlyBy.
+    [SerializeField] private Sprite   _percyFlySprite;
+    [SerializeField] private AudioClip _percyFallingClip;
 
     private GameObject       _panel;
     private Sprite           _squareSpr;
@@ -331,7 +337,8 @@ public class World2MapController : MonoBehaviour
         _matchUpScreen.Init(_squareSpr, _matchUpBackgroundSprite, _vsSprite, _levelHeaderSprites,
             _countdown3Sprite, _countdown2Sprite, _countdown1Sprite, _countdownReadySprite, _countdownClip,
             _cluckFlySprite, _cluckFallingClip, _bessieFlySprite, _bessieFallingClip,
-            _animalCardSprites, _robotCardSprites, _eggSprite, _skipButtonSprite);
+            _animalCardSprites, _robotCardSprites, _eggSprite, _skipButtonSprite,
+            _percyFlySprite, _percyFallingClip);
 
         _panel.SetActive(false);
     }

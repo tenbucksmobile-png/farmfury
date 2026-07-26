@@ -46,7 +46,12 @@ public class RobotEnemy : MonoBehaviour
     // Robot-vs-robot contact damage (_robotContactDamage below) remains its own, separate,
     // impulse-plus-floor category, untouched by this pass.
     private const float DirectHitDamageFraction    = 0.55f;
-    private const float ExplosionDamageFraction    = 0.55f;
+    // Lowered 0.55 -> 0.20 (2026-07-26, user request) — a haybale/barrel exploding directly
+    // against a robot should chip it, not near-kill it in 2 hits like a direct thrown-animal
+    // impact. Only affects robot damage; block-to-block chain destruction (WoodBlock.DamageNearby's
+    // _areaDamage falloff, which still levels nearby wood/ice blocks at full force) is a completely
+    // separate code path and is untouched by this constant.
+    private const float ExplosionDamageFraction    = 0.20f;
     // Raised 0.12 -> 0.16 (2026-07-12, user request: "give the eggs slightly stronger damage") —
     // still deliberately the weakest per-hit category (a Cluster Bomb supplement, not a solo-kill
     // weapon), just a bit more impactful now (~6-7 connecting eggs to kill instead of ~9).

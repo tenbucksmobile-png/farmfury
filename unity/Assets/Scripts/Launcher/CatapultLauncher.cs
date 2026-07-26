@@ -94,7 +94,14 @@ public class CatapultLauncher : MonoBehaviour
 
     [Header("Farm Cannon")]
     [SerializeField] private GameObject _cannonGO;      // wired to "FarmCannon" scene GO
-    [SerializeField] private Sprite     _cannonSprite;   // single "Cannon" sprite — never swapped
+    [SerializeField] private Sprite     _cannonSprite;   // World 1 "Cannon" sprite (default/fallback)
+    // World 2 (Frozen Tundra) cannon reskin — added 2026-07-26 (user: "how do i build level 19
+    // with new sprites, cannon"). Swapped purely by LevelData.world in OnLevelStarted(), same
+    // "swap the sprite, not the GameObject/position" pattern EnvironmentDepthSystem uses for the
+    // backdrop and LevelLoader.SpawnRobot uses for robot prefabs — the GDD's actual "Ice Cannon"
+    // mechanic (angle + ricochet) is NOT implemented here, only the visual reskin; CatapultLauncher
+    // is still a single static, non-rotating prop regardless of which sprite is showing.
+    [SerializeField] private Sprite     _cannonSpriteW2;
 
     // Cannon-relative offsets (world-space, added to the cannon's REST position — recoil never
     // affects the launch point or the loaded-bird position, only the cannon's own sprite).
@@ -449,6 +456,11 @@ public class CatapultLauncher : MonoBehaviour
         if (_returnRoutine != null) StopCoroutine(_returnRoutine);
         if (_fireRoutine   != null) StopCoroutine(_fireRoutine);
         if (_cannonGO != null) _cannonGO.transform.position = _cannonRestPos;
+        // World 2 reskin — falls back to the World 1 sprite whenever the W2 art isn't wired or
+        // this isn't a World 2 level, so an unwired _cannonSpriteW2 never renders a blank cannon.
+        if (_cannonSR != null)
+            _cannonSR.sprite = (data != null && data.world == 2 && _cannonSpriteW2 != null)
+                ? _cannonSpriteW2 : _cannonSprite;
         if (_camera != null) _camera.orthographicSize = ComputeOrthoSizeForLevel(data);
         RefreshRestPoint();
         // Restart/Replay now reuses this same handler (GameManager.RestartLevel ->

@@ -71,6 +71,21 @@ public class MatchUpScreen : MonoBehaviour
     private AudioSource _bessieFallingAudioSrc;
     private bool _bessieFlyEnabledForLevel; // set in Show() — only true when this level's birds[] includes Bessie
 
+    // Percy's fly-by pass — added 2026-07-26 (user request: "instead of cluck chicken flying
+    // across the screen - have the pig flythrough doing its power of 'rolling'", for World 2's
+    // Percy-led levels). REPLACES Cluck's pass rather than running alongside it (see Show() and
+    // the _cluckFlyImg.enabled line below) — unlike Bessie, who's a second, additional animal on
+    // a level Cluck still headlines, Percy is a level's own primary animal (birds[0]), so seeing
+    // Cluck fly across a Percy level would be a factually wrong "wrong bird" moment. Sprite is
+    // Percy_Pig/Trigger.png — his actual Bounce Roll ability art (curled into a ball) — reused
+    // here rather than a plain in-flight pose so the tease literally shows "his power of
+    // rolling". No dedicated falling/whoosh audio clip currently exists for Percy (optional,
+    // same null-guarded pattern as Cluck/Bessie's own clips — silently skips audio if unwired).
+    private Sprite _percyFlySprite;
+    private AudioClip _percyFallingClip;
+    private AudioSource _percyFallingAudioSrc;
+    private bool _percyFlyEnabledForLevel; // set in Show() — only true when this level's birds[0] is Percy
+
     private GameObject      _panel;
     private Image            _fadeOverlayImg; // fades to opaque black just before auto-launch, see PlaySequence step 6
     private Image            _bgImg;
@@ -117,6 +132,8 @@ public class MatchUpScreen : MonoBehaviour
     private Image             _cluckFlyImg;
     private RectTransform    _bessieFlyRT; // flies the opposite direction, crossing Cluck, see BessieFlyBy()
     private Image             _bessieFlyImg;
+    private RectTransform    _percyFlyRT;  // REPLACES Cluck's pass on a Percy-led level, see PercyFlyBy()
+    private Image             _percyFlyImg;
 
     // Skip button (2026-07-10, user request: "allow the player to skip the match up scene").
     // Bottom-right corner, same anchoring convention as WorldMapController's own corner-anchored
@@ -144,6 +161,7 @@ public class MatchUpScreen : MonoBehaviour
     // path that can interrupt a pass (Show()/Hide()/Skip()).
     private Coroutine _cluckFlyRoutine;
     private Coroutine _bessieFlyRoutine;
+    private Coroutine _percyFlyRoutine;
 
     // Rest positions for the two cards / VS graphic (2026-07-23 pass — "fuller" layout per user
     // feedback: bigger cards, closer together, touching VS). Cards are 560x560 (half-width 280),
@@ -217,6 +235,12 @@ public class MatchUpScreen : MonoBehaviour
     // opposite travel directions to tell them apart.
     private const float BessieFlyArcHeight = 360f;
 
+    // Percy's pass reuses Cluck's own arc height/path (they never fly together — see the class
+    // comment on _percyFlySprite) and adds a continuous spin so the "rolling" read is obvious even
+    // as a still art asset — PercyFlyBy() rotates the icon by this many degrees/second for the
+    // whole pass.
+    private const float PercyRollSpinDegPerSec = 480f;
+
     // Cluck's egg-burst teaser — re-added 2026-07-12 (user request to bring back what was removed
     // 2026-07-11 alongside the L07 Bessie-crossing rework) fanning 5 small Egg.png icons outward
     // from Cluck's current position at the halfway point of his fly-by, mirroring
@@ -267,7 +291,7 @@ public class MatchUpScreen : MonoBehaviour
         AudioClip countdownClip, Sprite cluckFlySprite, AudioClip cluckFallingClip,
         Sprite bessieFlySprite, AudioClip bessieFallingClip,
         Sprite[] animalCardSprites, Sprite[] robotCardSprites, Sprite eggSprite = null,
-        Sprite skipButtonSprite = null)
+        Sprite skipButtonSprite = null, Sprite percyFlySprite = null, AudioClip percyFallingClip = null)
     {
         _backgroundSprite      = backgroundSprite;
         _vsSprite               = vsSprite;
@@ -285,6 +309,8 @@ public class MatchUpScreen : MonoBehaviour
         _robotCardSprites       = robotCardSprites;
         _eggSprite              = eggSprite;
         _skipButtonSprite       = skipButtonSprite;
+        _percyFlySprite         = percyFlySprite;
+        _percyFallingClip       = percyFallingClip;
         BuildUI(squareSpr);
     }
 
@@ -386,10 +412,15 @@ public class MatchUpScreen : MonoBehaviour
             // in PlaySequence) and her falling-loop SFX never plays either, without needing to
             // touch BessieFlyBy()/BessieFlyArcHeight/etc. themselves — only Cluck's own pass shows.
             _bessieFlyEnabledForLevel = false;
+
+            // Percy REPLACES Cluck's pass (not an additional one, unlike Bessie above) whenever
+            // he's this level's own primary animal — see the _percyFlySprite field comment.
+            _percyFlyEnabledForLevel = animal == AnimalType.Percy && _percyFlySprite != null;
         }
         else
         {
             _bessieFlyEnabledForLevel = false;
+            _percyFlyEnabledForLevel  = false;
             // Level data doesn't exist yet (only L01-L02 are authored right now, out of 18
             // marker slots — see CLAUDE.md Gap Analysis). The sequence still plays (see SCOPE
             // NOTE at the top of this file) but skips the auto-launch at the end and just
@@ -404,6 +435,9 @@ public class MatchUpScreen : MonoBehaviour
         }
 
         _bessieFlyImg.enabled = _bessieFlySprite != null && _bessieFlyEnabledForLevel;
+        _percyFlyImg.enabled  = _percyFlySprite  != null && _percyFlyEnabledForLevel;
+        // Percy's pass REPLACES Cluck's — see the _percyFlySprite field comment.
+        _cluckFlyImg.enabled  = _cluckFlySprite  != null && !_percyFlyEnabledForLevel;
 
         // Menu music (looping under the world map/landing page) is paused for the whole
         // match-up/countdown sequence so only the countdown SFX plays underneath it — see
@@ -429,8 +463,10 @@ public class MatchUpScreen : MonoBehaviour
     {
         if (_cluckFlyRoutine != null) { StopCoroutine(_cluckFlyRoutine); _cluckFlyRoutine = null; }
         if (_bessieFlyRoutine != null) { StopCoroutine(_bessieFlyRoutine); _bessieFlyRoutine = null; }
+        if (_percyFlyRoutine != null) { StopCoroutine(_percyFlyRoutine); _percyFlyRoutine = null; }
         if (_cluckFallingAudioSrc != null && _cluckFallingAudioSrc.isPlaying) _cluckFallingAudioSrc.Stop();
         if (_bessieFallingAudioSrc != null && _bessieFallingAudioSrc.isPlaying) _bessieFallingAudioSrc.Stop();
+        if (_percyFallingAudioSrc != null && _percyFallingAudioSrc.isPlaying) _percyFallingAudioSrc.Stop();
     }
 
     public void Hide()
@@ -496,6 +532,8 @@ public class MatchUpScreen : MonoBehaviour
         _countdownImg.enabled    = false;
         _cluckFlyRT.anchoredPosition  = new Vector2(CluckFlyStartX, CluckFlyY); // in case Show() re-fires mid-flight
         _bessieFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY); // same start as Cluck now — see BessieFlyBy
+        _percyFlyRT.anchoredPosition  = new Vector2(CluckFlyStartX, CluckFlyY); // replaces Cluck's start, see PercyFlyBy
+        _percyFlyRT.localRotation     = Quaternion.identity; // in case Show() re-fires mid-roll
         _eggBurstFiredThisPass        = false;
 
         // 1) Level header pops in. (Future hook: AudioManager whoosh/pop SFX.)
@@ -553,6 +591,7 @@ public class MatchUpScreen : MonoBehaviour
         // the countdown beats below rather than blocking them.
         if (_cluckFlyImg.enabled) _cluckFlyRoutine = StartCoroutine(CluckFlyBy(CountdownClipLength));
         if (_bessieFlyImg.enabled) _bessieFlyRoutine = StartCoroutine(BessieFlyBy(CountdownClipLength));
+        if (_percyFlyImg.enabled) _percyFlyRoutine = StartCoroutine(PercyFlyBy(CountdownClipLength));
         yield return CountdownBeat(_countdown3Sprite, CountdownBeepInterval);
         yield return CountdownBeat(_countdown2Sprite, CountdownBeepInterval);
         yield return CountdownBeat(_countdown1Sprite, CountdownBeepInterval);
@@ -859,6 +898,49 @@ public class MatchUpScreen : MonoBehaviour
         _bessieFallingAudioSrc.Stop();
     }
 
+    // Percy's pass — REPLACES Cluck's whenever Percy is this level's own primary animal (see the
+    // _percyFlySprite field comment and Show()'s _cluckFlyImg.enabled line), so it reuses Cluck's
+    // exact path/arc/timing rather than needing its own tuned constants. The one deliberate
+    // difference: a continuous spin (PercyRollSpinDegPerSec) for the whole pass, so the still
+    // Trigger.png art (Percy curled into a ball) actually reads as "rolling" in motion rather than
+    // just gliding across like a normal flight pose.
+    IEnumerator PercyFlyBy(float duration)
+    {
+        AudioManager.Play(AudioManager.Sound.Launch);
+
+        if (_percyFallingClip != null)
+        {
+            _percyFallingAudioSrc.mute   = !AudioManager.SfxEnabled;
+            _percyFallingAudioSrc.clip   = _percyFallingClip;
+            _percyFallingAudioSrc.volume = 1f;
+            _percyFallingAudioSrc.Play();
+        }
+
+        _percyFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY);
+        _percyFlyRT.localRotation    = Quaternion.identity;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float x = Mathf.Lerp(CluckFlyStartX, CluckFlyEndX, t);
+            float y = CluckFlyY + Mathf.Sin(t * Mathf.PI) * CluckFlyArcHeight;
+            _percyFlyRT.anchoredPosition = new Vector2(x, y);
+            _percyFlyRT.Rotate(0f, 0f, -PercyRollSpinDegPerSec * Time.unscaledDeltaTime);
+
+            if (_percyFallingAudioSrc.isPlaying)
+            {
+                float remaining = duration - elapsed;
+                _percyFallingAudioSrc.volume = remaining < CluckFallingFadeDuration
+                    ? Mathf.Clamp01(remaining / CluckFallingFadeDuration)
+                    : 1f;
+            }
+            yield return null;
+        }
+        _percyFlyRT.anchoredPosition = new Vector2(CluckFlyEndX, CluckFlyY);
+        _percyFallingAudioSrc.Stop();
+    }
+
     // from -> to scale over duration; bounce=true uses an ease-out-back overshoot (only sensible
     // for a 0->1 entrance, peak configurable — see PopScale), bounce=false is a plain SmoothStep
     // (used for the 1->0 exit).
@@ -942,6 +1024,10 @@ public class MatchUpScreen : MonoBehaviour
         _bessieFallingAudioSrc.playOnAwake = false;
         _bessieFallingAudioSrc.loop        = true;
 
+        _percyFallingAudioSrc             = gameObject.AddComponent<AudioSource>();
+        _percyFallingAudioSrc.playOnAwake = false;
+        _percyFallingAudioSrc.loop        = true;
+
         // Background — MatchUpBackground.png, full-bleed, deliberately OUTSIDE the SafeArea
         // below (should paint edge-to-edge including under a notch/rounded corner). Also blocks
         // raycasts to whatever is behind this screen (the world map markers) since
@@ -1004,6 +1090,23 @@ public class MatchUpScreen : MonoBehaviour
         _bessieFlyImg.enabled        = false;
         _bessieFlyImg.preserveAspect = true;
         _bessieFlyImg.raycastTarget  = false;
+
+        // Percy's own fly-by icon — same parent/anchoring/start position as Cluck's (they never
+        // show together, see the _percyFlySprite field comment). enabled is set per-level in
+        // Show(), not here.
+        var percyFlyGO = new GameObject("PercyFlyBy");
+        percyFlyGO.transform.SetParent(safe, false);
+        _percyFlyRT = percyFlyGO.AddComponent<RectTransform>();
+        _percyFlyRT.anchorMin        = new Vector2(0.5f, 0f);
+        _percyFlyRT.anchorMax        = new Vector2(0.5f, 0f);
+        _percyFlyRT.pivot            = new Vector2(0.5f, 0.5f);
+        _percyFlyRT.anchoredPosition = new Vector2(CluckFlyStartX, CluckFlyY);
+        _percyFlyRT.sizeDelta        = new Vector2(180f, 180f);
+        _percyFlyImg = percyFlyGO.AddComponent<Image>();
+        _percyFlyImg.sprite         = _percyFlySprite;
+        _percyFlyImg.enabled        = false;
+        _percyFlyImg.preserveAspect = true;
+        _percyFlyImg.raycastTarget  = false;
 
         // Level header — LevelHeader1.png (see SCOPE NOTE at the top of this file). Top-anchored
         // within the safe area with a small fixed inset, NOT centre-anchored with a guessed

@@ -69,8 +69,45 @@ public class SceneryBuilder : MonoBehaviour
             GameManager.Instance.OnLevelStarted -= OnLevelStarted;
     }
 
-    void OnLevelStarted(LevelData data) =>
-        BuildForLevel(GameManager.Instance?.CurrentLevelIndex ?? 0, data != null ? data.world : 1);
+    void OnLevelStarted(LevelData data)
+    {
+        int world = data != null ? data.world : 1;
+        BuildForLevel(GameManager.Instance?.CurrentLevelIndex ?? 0, world);
+        ToggleHandAuthoredScenery(world);
+    }
+
+    // Both worlds' permanent hand-authored/scripted background structures (Scenery_World1's
+    // barn/tree/fence, Scenery_World2's igloo/ice-tree/etc — see SceneSetup.EnsureWorld2Scenery)
+    // live in the SAME shared world-space region (both worlds' levels reuse the same camera/
+    // launcher coordinates, per CLAUDE.md's Coordinate System) — added 2026-07-26 alongside
+    // Scenery_World2, since without this toggle World 1's barn and World 2's igloo would render
+    // on top of each other regardless of which level is actually loaded. Looked up by name lazily
+    // (not cached — this fires once per level start, not per frame), including inactive objects
+    // (see FindIncludingInactive) — GameObject.Find ONLY searches active objects, so if a group
+    // was ever left inactive (e.g. a scene saved mid-Editor-preview) a real level load using plain
+    // GameObject.Find could never find it again to turn it back on. No-ops safely if a group
+    // doesn't exist yet.
+    static void ToggleHandAuthoredScenery(int world)
+    {
+        var w1 = FindIncludingInactive("Scenery_World1");
+        if (w1 != null) w1.SetActive(world != 2);
+        var w2 = FindIncludingInactive("Scenery_World2");
+        if (w2 != null) w2.SetActive(world == 2);
+    }
+
+    // Runtime counterpart of SceneSetup.FindIncludingInactive (Editor-only, can't be shared
+    // directly) — GameObject.Find skips inactive objects; this searches every root's full
+    // hierarchy regardless of active state.
+    static GameObject FindIncludingInactive(string name)
+    {
+        foreach (var root in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+        {
+            if (root.name == name) return root;
+            foreach (var child in root.GetComponentsInChildren<Transform>(true))
+                if (child.name == name) return child.gameObject;
+        }
+        return null;
+    }
 
     // world param added 2026-07-19 (default 1 preserves every existing call site/behaviour).
     // World 2 branches to BuildIceGroundProps() below instead of falling into World 1's

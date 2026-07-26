@@ -282,4 +282,4 @@ MonoBehaviour:
   robots:
   - robotType: 3
     position: {x: 6.17, y: -2.94}
-    scale: {x: 1, y: 1}
+    scale: {x: 6.985, y: 7.555}

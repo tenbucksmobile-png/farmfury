@@ -8,8 +8,9 @@
 //
 // WORKFLOW — two supported ways to place objects, freely mixed in the same pass:
 //   A) Drag real prefabs (WoodBlock.prefab / StoneBlock.prefab / HaybaleBlock.prefab /
-//      Robot.prefab / HarvesterRobot.prefab from Assets/Prefabs/) into the Scene view. These are
-//      found anywhere in the scene via their BlockBase/RobotEnemy component.
+//      Robot.prefab / HarvesterRobot.prefab / FrostRobot.prefab / IceHarvestorRobot.prefab /
+//      GlacierHarvestorRobot.prefab from Assets/Prefabs/) into the Scene view. These are found
+//      anywhere in the scene via their BlockBase/RobotEnemy component.
 //   B) Drag raw sprite assets (Haybail.png, Block_Stone_Normal.png, Plank_Horizontal.png,
 //      Robot_Idle.png, HarvesterRobot.png, etc. — no prefab needed) straight from the Project
 //      window. These must be parented under an empty GameObject named exactly "LevelScratch"
@@ -17,8 +18,12 @@
 //      I'm designing a level with" apart from ordinary scene art (background, scenery props,
 //      HUD) without accidentally sweeping up the whole scene. Type is inferred from the sprite's
 //      name (case-insensitive keyword match — "hay"->Haybale, "stone"->Stone, "wood"/"plank"->
-//      Wood, "harvester"->Harvester robot, "robot"->Basic robot); unrecognised sprite names are
-//      skipped with a warning telling you what didn't match.
+//      Wood, "harvester"/"harvestor"->Harvester robot, "semiharvest"/"glacier"->SemiHarvester
+//      robot, "commander"->Commander, "robot"->Basic robot); unrecognised sprite names are
+//      skipped with a warning telling you what didn't match. World 2's Harvester/SemiHarvester
+//      tiers are spelled "Harvestor"/"Glacier..." (not "Harvester") — both spellings are
+//      recognised (see the type-detection switch/keyword chain below), a real bug found
+//      2026-07-26 (World 2 robots were silently skipped or misclassified until fixed).
 //
 // Either way:
 //   1. Open Game.unity in Edit mode (Play mode is NOT required — positions are read from the
@@ -109,13 +114,26 @@ public static class LevelLayoutDumper
             // the generic "Robot" catch-all and silently dumped as RobotType.Basic — no warning,
             // no skip, just a wrong type in the output (user report: "why is it not picking up
             // the commander from the sprite folder in project").
+            //
+            // World 2 reskins added 2026-07-26 (user report: "dumping but its not picking up any
+            // of the new robots") — root cause: World 2's prefabs are spelled "Harvestor" (an o),
+            // not "Harvester" (an e) — see SceneSetup's own comment on this exact spelling ("the
+            // real on-disk filename is Iceharvestor_right.png"). "GlacierHarvestorRobot" and
+            // "IceHarvestorRobot" matched NEITHER "SemiHarvesterRobot" nor "HarvesterRobot" above,
+            // so they fell through to the generic "Robot" catch-all and silently dumped as Basic
+            // instead of being skipped outright — same class of silent-misclassification bug as
+            // the Commander case, just with a spelling mismatch instead of a missing case.
+            // "GlacierHarvestorRobot" must be checked before "IceHarvestorRobot"/"Robot" for the
+            // same substring-ordering reason as SemiHarvesterRobot above.
             RobotType? type = prefabPath switch
             {
-                string p when p.Contains("SemiHarvesterRobot") => RobotType.SemiHarvester,
-                string p when p.Contains("HarvesterRobot")     => RobotType.Harvester,
-                string p when p.Contains("CommanderRobot")     => RobotType.Commander,
-                string p when p.Contains("Robot")              => RobotType.Basic,
-                _                                              => null,
+                string p when p.Contains("SemiHarvesterRobot")  => RobotType.SemiHarvester,
+                string p when p.Contains("GlacierHarvestorRobot") => RobotType.SemiHarvester,
+                string p when p.Contains("HarvesterRobot")      => RobotType.Harvester,
+                string p when p.Contains("IceHarvestorRobot")   => RobotType.Harvester,
+                string p when p.Contains("CommanderRobot")      => RobotType.Commander,
+                string p when p.Contains("Robot")               => RobotType.Basic,
+                _                                               => null,
             };
             if (type == null)
             {
@@ -187,14 +205,26 @@ public static class LevelLayoutDumper
                     blockLines.Add($"B(BlockType.Barrel, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f), // sprite '{sr.sprite.name}'");
                 else if (spriteName.Contains("wood") || spriteName.Contains("plank") || spriteName.Contains("barrel"))
                     blockLines.Add($"B(BlockType.Wood, {F(pos.x)}f, {F(pos.y)}f, {F(size.x)}f, {F(size.y)}f, artVariant: WoodArtVariant.{InferWoodArtVariant(spriteName)}), // sprite '{sr.sprite.name}'");
-                // "semiharvest" must be checked before "harvester"/"robot" — "Robot_SemiHarvest"
-                // contains both "robot" and (once the underscore is stripped by ToLowerInvariant
-                // leaving "semiharvest") no "harvester" substring, but it DOES contain "robot",
-                // so the generic "robot" check below would wrongly claim it as Basic if checked
-                // first (this was a real bug — first found via an actual level-2 dump 2026-07-09).
-                else if (spriteName.Contains("semiharvest"))
+                // "semiharvest"/"glacier" must be checked before "harvester"/"harvestor"/"robot" —
+                // "Robot_SemiHarvest" contains both "robot" and (once the underscore is stripped
+                // by ToLowerInvariant leaving "semiharvest") no "harvester" substring, but it DOES
+                // contain "robot", so the generic "robot" check below would wrongly claim it as
+                // Basic if checked first (this was a real bug — first found via an actual level-2
+                // dump 2026-07-09). "glacier" (World 2's SemiHarvester tier, e.g.
+                // "GlacierHarvestor_left.png") needs the same protection against the "harvestor"
+                // check right below it, which would otherwise also match "glacierharvestor" and
+                // misclassify it as Harvester instead of SemiHarvester.
+                else if (spriteName.Contains("semiharvest") || spriteName.Contains("glacier"))
                     robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.SemiHarvester), // sprite '{sr.sprite.name}'");
-                else if (spriteName.Contains("harvester"))
+                // World 2's Harvester-tier sprites are spelled "Harvestor" (an o), e.g.
+                // "IceHarvestor_left.png"/"Iceharvestor_right.png" (lowercase h — see
+                // SceneSetup's own comment on that exact filename) — added 2026-07-26 (user
+                // report: "dumping but its not picking up any of the new robots"). Unlike the
+                // Commander/prefab-path bug this fixes alongside, "harvestor" sprites don't even
+                // contain "robot" as a substring, so they fell all the way through to the
+                // unrecognised-keyword warning and were dropped from the dump entirely, not just
+                // misclassified.
+                else if (spriteName.Contains("harvester") || spriteName.Contains("harvestor"))
                     robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f, RobotType.Harvester), // sprite '{sr.sprite.name}'");
                 // Commander (L18 boss) — found missing entirely 2026-07-14 (user report: "why is
                 // it not picking up the commander from the sprite folder in project"). A raw
@@ -215,7 +245,7 @@ public static class LevelLayoutDumper
                     robotLines.Add($"R({F(pos.x)}f, {F(pos.y)}f, {F(scale.x)}f, {F(scale.y)}f), // sprite '{sr.sprite.name}'");
                 else
                 {
-                    Debug.LogWarning($"[LevelLayoutDumper] Skipping '{sr.gameObject.name}' under LevelScratch — sprite name '{sr.sprite.name}' doesn't match a known keyword (hay/stone/wood/plank/robot/harvester/semiharvest/commander).");
+                    Debug.LogWarning($"[LevelLayoutDumper] Skipping '{sr.gameObject.name}' under LevelScratch — sprite name '{sr.sprite.name}' doesn't match a known keyword (hay/stone/wood/plank/robot/harvester/harvestor/semiharvest/glacier/commander).");
                     skipped++;
                 }
             }

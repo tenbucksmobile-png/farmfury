@@ -140,7 +140,7 @@ public class LevelLoader : MonoBehaviour
         _birdQueue.Clear();
         foreach (var b in data.birds) _birdQueue.Enqueue(b);
 
-        foreach (var b in data.blocks) SpawnBlock(b);
+        foreach (var b in data.blocks) SpawnBlock(b, data.world);
         foreach (var r in data.robots) SpawnRobot(r, data.world);
 
         ScoreManager.Instance.InitLevel(
@@ -228,7 +228,7 @@ public class LevelLoader : MonoBehaviour
 
     void HandleLevelStarted(LevelData data) => LoadLevel(data);
 
-    void SpawnBlock(LevelData.BlockSpawnData data)
+    void SpawnBlock(LevelData.BlockSpawnData data, int world = 1)
     {
         var prefab = data.type switch
         {
@@ -242,7 +242,7 @@ public class LevelLoader : MonoBehaviour
             new Vector3(data.position.x, data.position.y, 0f),
             Quaternion.identity,
             _blockParent);
-        block.Initialise(data.size.x, data.size.y, data.artVariant);
+        block.Initialise(data.size.x, data.size.y, data.artVariant, world);
         block.ApplyOverrides(data.healthOverride, data.massOverride);
         block.Indestructible = data.indestructible;
         if (data.forceStayKinematic) block.SetStayKinematic(true);

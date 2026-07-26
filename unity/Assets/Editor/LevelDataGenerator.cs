@@ -946,15 +946,12 @@ public static class LevelDataGenerator
         // Commander-solo boss fight — fully destructible staircase (Stone_Square/RuinedStoneWall/
         // Barrel_Dynamite/Wood_Skew/Plank_2DShork), no indestructible structure, Commander is the
         // only robot.
-        // FLAG, not silently fixed: the dump captured the Commander at scale (1f, 1f) — every prior
-        // dump/hand-placement of this robot (and every other robot type in this file) used a scale
-        // well above 5 (the previous L18 Commander was 6.985x7.555; SemiHarvester/Harvester
-        // elsewhere in this redesign pass run 4.5-11.9). A 1x1 Commander would render far smaller
-        // than any other robot/boss in the game and likely wrong relative to the rescaled staircase
-        // around it — this reads as the Commander not having been scaled up in the Scene view
-        // before this dump was taken, not a deliberate design choice. Pasted as dumped rather than
-        // guessing a replacement value; worth confirming with a fresh dump once the Commander is
-        // properly scaled in-Editor.
+        // FIXED 2026-07-26 (user-reported: "commander is very small"): the 2026-07-19 dump had
+        // captured the Commander at scale (1f, 1f) — every other robot in this redesign pass runs
+        // 4.5-11.9. Restored to 6.985x7.555, the last known-good scale from before that dump (was
+        // never actually re-confirmed with a fresh in-Editor dump — if the redesigned staircase
+        // around it reads as mis-proportioned, re-dump from the Scene view instead of hand-tuning
+        // this value again).
         Make(folder, "L18_CaptainsLastStand",
             id: "W1_L18", name: "Captain's Last Stand", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
@@ -992,8 +989,54 @@ public static class LevelDataGenerator
             },
             robots: new[]
             {
-                R(6.17f, -2.94f, 1f, 1f, RobotType.Commander), // sprite 'Commander' — scale as dumped, see FLAG comment above
+                R(6.17f, -2.94f, 6.985f, 7.555f, RobotType.Commander), // sprite 'Commander' — restored to last known-good scale (2026-07-26, was dumped at a bare 1x1, see prior FLAG comment above)
             });
+
+        // ── W2_L01  Frostbound Watch (Level 19 — World 2's first level) ─────────
+        // Added 2026-07-26, user request: "wire the first ice harvestor robot and pig card...
+        // this is for level 19". The MatchUp screen art itself (Matchup_W2.png backdrop, Percy/
+        // IceHarvestor_card.png cards, VS.png, 3-2-1-ready countdown) was already wired world-wide
+        // back on 2026-07-19 (SceneSetup.WireWorld2MatchUpCards/WireMatchUpCards) — it applies to
+        // every World 2 level by RobotType/AnimalType, not per-level. But MatchUpScreen.Show()
+        // falls back to a plain "COMING SOON" screen for any level index with no LevelData asset,
+        // and World 2 had zero real levels until now — so none of that wiring was actually
+        // reachable in-game. GameManager auto-discovers LevelData purely by filename sort order;
+        // "L19_..." sorts right after World 1's "L18_...", landing at
+        // World2MapController.GlobalIndexOffset (=18), i.e. World 2's local index 0 / the game's
+        // "Level 19". Percy (pig) is the animal the GDD introduces for World 2 (see CLAUDE.md's
+        // animal table); robot is a single IceHarvestorRobot — RobotType.Harvester + world=2 routes
+        // to the IceHarvestorRobot prefab, not W1's HarvesterRobot (see LevelLoader.SpawnRobot) —
+        // per the explicit "first ice harvestor robot" request, one robot only.
+        //
+        // Real hand-authored layout, replacing the earlier coordinate-math placeholder — dumped
+        // 2026-07-26 via LevelLayoutDumper from the user's own Scene view build (see
+        // unity/Logs/level_layout_dump.txt), after fixing a dumper bug that was silently
+        // skipping/misclassifying World 2's "Harvestor"/"Glacier"-spelled robots (see CLAUDE.md's
+        // Recent major work entry). Blocks use BlockType.Wood with the sprite-inferred artVariant
+        // (Block/Vertical/Auto) — WoodBlock has no dedicated "_sprBlock" field wired, so the Block
+        // variant falls back to WoodBlock's own "normal" slot, which for a world=2 level resolves
+        // to the Ice_block.png reskin (see BlockBase.Initialise()'s world-aware fallback chain),
+        // so this still renders as ice despite the BlockType.Wood/"Wood..." sprite names in the
+        // dump comments. Not yet visually re-verified in Play mode (no Play-mode access here).
+        Make(folder, "L19_FrostboundWatch",
+            id: "W2_L01", name: "Frostbound Watch", par: 2,
+            birds: new[] { AnimalType.Percy, AnimalType.Percy, AnimalType.Percy },
+            blocks: new[]
+            {
+                B(BlockType.Wood, 4.49f, -5.45f, 0.746f, 0.709f, artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
+                B(BlockType.Wood, 4.45f, -4.19f, 0.746f, 0.71f,  artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
+                B(BlockType.Wood, 4.48f, -4.83f, 0.778f, 0.726f, artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
+                B(BlockType.Wood, 6.35f, -2.58f, 0.81f, 0.885f,  artVariant: WoodArtVariant.Vertical), // sprite 'WoodVertical_0'
+                B(BlockType.Wood, 6.06f, -1.48f, 1.286f, 0.582f, artVariant: WoodArtVariant.Auto), // sprite 'WoodStandard_0'
+                B(BlockType.Wood, 4.74f, -1.47f, 1.543f, 0.615f, artVariant: WoodArtVariant.Auto), // sprite 'WoodStandard_0'
+            },
+            robots: new[]
+            {
+                R(5.18f, -3.02f, 9.574f, 8.265f, RobotType.Harvester),     // sprite 'IceHarvestor_left'
+                R(5.58f, -5.18f, 9.574f, 8.265f, RobotType.Harvester),     // sprite 'IceHarvestor_left'
+                R(6.07f, -0.6f,  7.57f,  5.955f, RobotType.SemiHarvester), // sprite 'GlacierHarvestor_left'
+            },
+            world: 2);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();

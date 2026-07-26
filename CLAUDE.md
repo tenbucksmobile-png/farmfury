@@ -49,12 +49,56 @@ needing a live pass before shipping.
   one-shot L18-completion transition; every Home button (including theirs) always returns to
   `MainMenuController` (World 1's title). Needs a persisted "current/highest-unlocked world" state
   (touches `GameManager`) before World 2 can be a normal, replayable destination.
-- **L18's Commander robot dumped at `scale (1,1)`** in the current `LevelDataGenerator.cs` entry —
-  every other robot in that redesign pass used scale 4.5-12. Likely wasn't scaled up in the Scene
-  view before the dump was taken. Re-dump once confirmed.
-- **World 2 match-up robot card mapping is an unconfirmed guess**: `FrostRobot_card.png` →
-  Basic, `IceHarvestor_card.png` → Harvester, `GlacierRobot_card.png` → SemiHarvester (see
-  `SceneSetup.WireWorld2MatchUpCards`) — based on naming precedent, not confirmed with the user.
+- **World 2 match-up robot card mapping**: `FrostRobot_card.png` → Basic, `IceHarvestor_card.png`
+  → Harvester, `GlacierRobot_card.png` → SemiHarvester (see `SceneSetup.WireWorld2MatchUpCards`).
+  The Harvester mapping (IceHarvestorRobot) is now user-confirmed (2026-07-26, L19's matchup);
+  Basic/SemiHarvester are still the original naming-precedent guess, unconfirmed.
+- **`World2MapController._levelHeaderSprites` is indexed by the GLOBAL `GameManager` level index**
+  (`MatchUpScreen.Show(GlobalIndexOffset + localIndex)`), not World 2's own 0-based local index,
+  even though the array is only sized `World2MapController.LevelCount` (22). Only global indices
+  < 22 — World 2's own local levels 0-3, i.e. "level 19"-"level 22" — can ever get unique header
+  art before running off the end of the array; every level from local index 4 onward will
+  silently fall back to index 0 regardless of any future art added for it. Not yet a real problem
+  (only 3 per-level headers exist today, `19.png`/`20.png`/`21.png` at indices 18-20), but will
+  need a real fix (either resize the array to cover the full global range, or switch to indexing
+  by local index) once World 2 levels reach L23+.
+- **World 2's countdown "1" has no ice-themed art.** `three.png`/`two.png`/`ready.png` in
+  `Assets/Sprites/UI/Matchup_W2/` are all ice-styled (blue/frost), but no matching `one.png` was
+  supplied — `_countdown1Sprite` falls back to the old orange/fire-styled
+  `Assets/Sprites/UI/MatchUp/countdown1.png`, which will visibly clash with the other three during
+  World 2's countdown beat. Swap in a real ice-themed "1" once one exists (see
+  `SceneSetup.WireWorld2MatchUpCards`'s `_countdown1Sprite` line).
+- **L19 ("Frostbound Watch") is now a real hand-authored layout**, dumped 2026-07-26 via
+  `LevelLayoutDumper` from the user's own Scene view build (superseding the earlier coordinate-math
+  placeholder) — 6 `BlockType.Wood` blocks (rendering with the World 2 ice reskin, see below) + 2
+  IceHarvestorRobots + 1 GlacierHarvestorRobot. Not yet visually re-verified in Play mode (no
+  Play-mode access here).
+- **World 2 block reskin only covers 5 of ~14 `WoodArtVariant` shapes.** `BlockBase._sprNormalW2`/
+  `_sprVerticalW2`/`_sprHorizontalW2`/`_sprDiagonalW2`/`_sprShortW2` (wired on both `WoodBlock.prefab`
+  and `StoneBlock.prefab` from `Ice_block.png`/`Ice_vertical.png`/`Snow_block.png`/
+  `Ice_diagonal.png`/`Snow_short.png`) are the only shapes with real ice/snow art today — Skew,
+  Square, Cart, Barrel, RuinedWall, Tower, etc. have no ice counterpart and fall back to whichever
+  of the 5 resolves as that world's "normal" tile. A level built with `LevelLayoutDumper` using
+  those unwired shapes will read as a mix of ice blocks and leftover World 1 wood/stone art until
+  more ice variants are supplied.
+- **World 2 parallax seam re-introduced on purpose.** `EnvironmentDepthSystem._midgroundClipAboveW2`
+  raised 0.21 -> 0.60 (2026-07-26, user request: "too much night sky in the parallax", explicitly
+  chose "push it anyway, accept the seam" over waiting for new art). There's now a visible
+  horizontal color-break around the old v=0.227 boundary where `ParallaxMidGrounds_W2.png`'s own
+  baked-in sky (revealed between 0.227 and 0.60) meets `ParallaxFarHills_W2.png`'s sky behind it —
+  confirmed via direct pixel composite, not guessed. The only real fix is new Midground art with
+  taller terrain and/or no separate baked sky above the peaks; once that exists this can drop back
+  toward 0.21-0.23 without the seam.
+- **`Scenery_World2` is a first-draft, code-placed prop set, not visually verified.** Added
+  2026-07-26 (user request: "add in the igloo, ice cannon and other built sprites") — mirrors
+  `Scenery_World1`'s hand-placed barn/tree/fence with an Igloo, two IceTrees, BuriedRuin,
+  IceSpire/IceCrystals/IceBoulder (see `SceneSetup.EnsureWorld2Scenery`), positioned by reading
+  `Scenery_World1`'s own real coordinates from `Game.unity` and computing a comparable scale/
+  position — but never seen rendered (no Play-mode access here). Treat every position as a
+  starting point to drag around in-Editor; re-running Wire Scene References won't reset a
+  hand-tuned position (same "only touch on first creation" convention as `FarmCannon`).
+  `SceneryBuilder.ToggleHandAuthoredScenery` (new) shows/hides this group vs. `Scenery_World1`
+  by `LevelData.world` on every level load, since both groups occupy the same world-space region.
 - **World 2 ice-prop ground-seam scatter** (`SceneryBuilder.BuildIceGroundProps`) uses a
   placeholder X range copied from World 1's typical level span — no real World 2 `LevelData`
   exists yet to know the actual ground-seam extent.
@@ -83,6 +127,134 @@ needing a live pass before shipping.
 
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
+- **2026-07-26** — Recovered from a real data-loss incident caused by the cannon/scenery preview
+  fix directly below (user report: "we have erased the barn and all the scenery from world 1, and
+  nothing has rendered correctly from world 2"). Two separate problems, both traced to
+  `GameObject.Find()` only ever searching ACTIVE objects:
+  1. **World 1's hand-placed `Scenery_World1` children (`OldBarn_Right`, `OakTree`, `Windmill`,
+     all 3 `WoodenFence`s, etc.) were gone from the saved scene entirely.** Recovered by diffing
+     against the last git commit (none of this session's scene edits had been committed) and
+     splicing the missing GameObject/Transform/SpriteRenderer blocks back in under the current
+     `Scenery_World1`, generating fresh non-colliding fileIDs. (First recovery attempt used
+     `max(existing fileID) + 1000` for new IDs and picked up Unity's own reserved
+     `SceneRoots` sentinel object, whose fileID is exactly `Int64.MaxValue` — pushed the new IDs
+     past it into corrupt territory; caught before saving, redone with a bounded-range generator.)
+  2. **Three separate `Scenery_World2` hierarchies existed at once** — `EnsureWorld2Scenery`'s
+     `GameObject.Find("Scenery_World2")` silently returned null whenever the group was inactive
+     (from the very preview-toggle fix below), so it "helpfully" created a brand-new placeholder
+     copy each time instead of finding the real one. The user's actual hand-built World 2 scene
+     (17 objects — their own IceCannon prop, ice signs, snowdrifts, etc., not just the original
+     5-prop placeholder) was still fully intact, just buried inactive under two duplicate
+     placeholder copies — identified by content and restored as the only surviving copy; the two
+     placeholder duplicates were deleted (including their entries in the scene's `SceneRoots`
+     list). Root cause fixed properly: new `SceneSetup.FindIncludingInactive()` /
+     `SceneryBuilder.FindIncludingInactive()` helpers (search the full hierarchy via
+     `GetRootGameObjects()` + `GetComponentsInChildren(includeInactive: true)`) now back every
+     lookup that could ever target a toggled-off object (`Scenery_World1`, `Scenery_World2`,
+     `FarmCannon`, in both `SceneSetup.cs` and `SceneryBuilder.cs`).
+- Fixed a real Edit-mode preview gap (user report: cannon "showing up somewhere
+  it shouldn't", i.e. World 1's `Cannon.png` still visible while looking at World 2 in the Scene
+  view). Root cause: `CatapultLauncher`'s cannon-sprite swap and `SceneryBuilder`'s
+  `Scenery_World1`/`Scenery_World2` toggle both only fire at RUNTIME (`OnLevelStarted`) — an event
+  that never fires in Edit mode — while the parallax backdrop already had its own Edit-mode
+  preview (`PreviewWorld1Backdrop`/`PreviewWorld2Backdrop`). So switching backdrop previews never
+  touched the cannon or scenery, leaving them stuck on whichever world was last shown. New shared
+  `SceneSetup.PreviewCannonAndScenery(isWorld2)` helper now runs from both the manual preview menu
+  items AND unconditionally at the end of every `Wire Scene References` pass (which always resets
+  the backdrop to World 1 too) — so all three now always agree.
+- L19 "Frostbound Watch" replaced with the user's real hand-built layout, dumped
+  via the now-fixed `LevelLayoutDumper` (see the fix entry directly below) — 6 blocks + 3 robots
+  (2 IceHarvestorRobot, 1 GlacierHarvestorRobot). `Generate All Level Data` regenerated the asset,
+  `Wire Scene References` re-ran clean and auto-deleted the `LevelScratch` design container per
+  normal cleanup. Noted in passing: that same wire pass logged `Created 'FarmCannon' GameObject`
+  — it was missing from the saved scene and got recreated at `SceneSetup`'s documented fallback
+  position `(-3.72, -4.7032)` scale `(1.47, 1.33)`, which matches this file's own "current truth"
+  coordinate, so not a regression, but flagged in case the user had it somewhere else on purpose.
+- Fixed a real `LevelLayoutDumper` bug (user report: "dumping but its not picking
+  up any of the new robots") — World 2's Harvester/SemiHarvester-tier prefabs and sprites are
+  spelled **"Harvestor"**/**"Glacier..."** (an o, matching `IceHarvestorRobot.prefab`/
+  `GlacierHarvestorRobot.prefab`), but the dumper's type-detection only ever checked for World 1's
+  spelling, **"Harvester"**. `GlacierHarvestorRobot`/`IceHarvestorRobot` prefab instances fell
+  through to the generic "Robot" catch-all and silently dumped as `RobotType.Basic`; their raw
+  sprites (`IceHarvestor_left.png` etc., which don't even contain "robot" as a substring) were
+  skipped entirely. Both the prefab-path switch and the `LevelScratch` raw-sprite keyword chain
+  now recognise "Harvestor"/"Glacier" alongside the existing "Harvester"/"SemiHarvest".
+- World 2 parallax + scenery pass, both user-requested after seeing the current
+  state. **Parallax**: `_midgroundClipAboveW2` raised 0.21 -> 0.60 to show far more ice terrain and
+  far less aurora sky ("too much night sky in the parallax") — knowingly reintroduces a seam where
+  Midground's own baked sky peeks through (verified via pixel composite at 0.35/0.45/0.55/0.60
+  before picking 0.60); the user explicitly chose to accept that over waiting for revised Midground
+  art. Field is now force-applied every Wire Scene References pass (previously a first-creation-
+  only default) so it can't silently revert. **Scenery**: new `Scenery_World2` group (Igloo, 2x
+  IceTree, BuriedRuin, IceSpire/IceCrystals/IceBoulder — `SceneSetup.EnsureWorld2Scenery`),
+  code-placed (no Play-mode/Scene-view access here to hand-place it like `Scenery_World1`) by
+  reading that group's own real `Game.unity` coordinates and computing comparable positions/
+  scales — unverified, flagged as a first draft. `SceneryBuilder` gained
+  `ToggleHandAuthoredScenery()`, shows/hides `Scenery_World1` vs. `Scenery_World2` by
+  `LevelData.world` on every level load (previously neither group was ever hidden — harmless while
+  only World 1 existed, but would have rendered both worlds' background structures on top of each
+  other now that World 2 levels share the same world-space region).
+- Two more World 2 visual reskins, both following the same "swap purely by
+  `LevelData.world`" pattern already used for robots/backdrop (user question: "how do i build
+  level 19 with new sprites, cannon"). **`CatapultLauncher._cannonSpriteW2`** (wired from
+  `IceCannon.png`) swaps in `OnLevelStarted` for any `world=2` level — visual reskin only, the
+  GDD's real Ice Cannon mechanic (angle + ricochet) isn't implemented. **`BlockBase` gained a
+  5-shape ice/snow reskin** (`_sprNormalW2`/`_sprVerticalW2`/`_sprHorizontalW2`/`_sprDiagonalW2`/
+  `_sprShortW2`, wired on both `WoodBlock.prefab` and `StoneBlock.prefab`) — `Initialise()` now
+  takes a `world` param (threaded through `LevelLoader.SpawnBlock`) and resolves these 5 fields
+  first when `world==2`, falling back to World 1 art for both an unwired W2 field AND every other
+  `WoodArtVariant` shape that has no ice counterpart at all yet (see the matching Known Issues
+  entry on coverage). Still plain `BlockType.Wood`/`BlockType.Stone` underneath — this is a visual
+  reskin, not a new block type.
+- World 2's MatchUp screen re-wired against a dedicated new art folder,
+  `Assets/Sprites/UI/Matchup_W2/` (relabelled/corrected versions of the backdrop, robot cards, and
+  a full ice-themed VS/countdown set — separate from the original assets that used to live mixed
+  into the shared `Assets/Sprites/UI/MatchUp/`). `SceneSetup.WireWorld2MatchUpCards` now sources
+  everything World-2-specific from this new folder; only genuinely shared/world-agnostic assets
+  (Countdown.mp3, Btn_skip.png) still come from the old one. Per-level headers (global indices
+  18-20) are now pre-composited images — `tools/compose_w2_level_headers.py` (new) merges the
+  "LEVEL" banner (`W2_level.png`) with each numbered badge (`19.png`/`20.png`/`21.png`) into a
+  single `LevelNN.png`, number centred under the banner with its top ~18px tucked behind the
+  banner's bottom edge (paste order: number first, banner second) — per user request ("match the
+  number under it (middle with slight overlay)"), matching how World 1's own `LevelHeader1.png`
+  reads as one flat image rather than two separately-positioned layers (`MatchUpScreen` only ever
+  shows one header sprite at a time, no runtime layering support). See the new Known Issues entry
+  on why that array's indexing is fragile past local World 2 level 3, and the World-2-countdown-"1"
+  entry for a related art gap found during this pass. **Cluck's
+  fly-by REPLACED with Percy's** for any level whose `birds[0]` is Percy (World 2's own debut
+  animal) — `MatchUpScreen` gained a parallel `PercyFlyBy()` pass reusing Cluck's exact arc/timing
+  but spinning the icon continuously (`PercyRollSpinDegPerSec`) and using Percy's actual Bounce
+  Roll ability art (`Percy_Pig/Trigger.png`, the curled-into-a-ball pose) instead of a plain
+  in-flight sprite, per explicit user request ("have the pig flythrough doing its power of
+  rolling"). `MatchUpScreen.Init()`, `WorldMapController`, and `World2MapController` all extended
+  with the new `_percyFlySprite`/`_percyFallingClip` fields (wired on both maps for symmetry, even
+  though only World 2 can trigger it today). **`CatapultLauncher` gained a World 2 cannon
+  reskin** (`_cannonSpriteW2`, wired from `Assets/Sprites/Environment/Launchers/IceCannon.png`) —
+  swapped purely by `LevelData.world` in `OnLevelStarted`, same "swap the sprite, not the
+  GameObject" pattern `EnvironmentDepthSystem` uses for the backdrop. Visual reskin only — the
+  GDD's actual Ice Cannon mechanic (angle + ricochet) is NOT implemented; the launcher is still a
+  single static, non-rotating prop regardless of which sprite is showing.
+- World 2's parallax backdrop re-wired against a user-supplied
+  `ParallaxFarHills_W2.png` (aurora/starfield sky) via `Wire Scene References`; composited a
+  simulation of the actual `ParallaxBandClip` shader logic against the existing
+  `ParallaxMidGrounds_W2.png` and confirmed the existing clip tuning (FarHills=1.0,
+  Midground=0.21, set 2026-07-19) still produces a clean seam with the new art — no retuning
+  needed. Added World 2's first LevelData, L19 "Frostbound Watch" (`W2_L01`, id sorts right after
+  L18 so it lands at `GameManager` index 18 / `World2MapController.GlobalIndexOffset`, i.e. the
+  game's "Level 19") — Percy (pig) vs. a single IceHarvestorRobot, making the already-wired World
+  2 MatchUp screen (`Matchup_W2.png` backdrop, `IceHarvestor_card.png`/pig cards, VS + 3-2-1-ready
+  countdown, all wired since 2026-07-19) reachable in-game for the first time. See the Known
+  Issues entry above — L19's block layout is a coordinate-math placeholder, not a real
+  `LevelLayoutDumper` dump. `LevelDataGenerator.cs`'s Commander-boss fix and the
+  `RobotEnemy.ExplosionDamageFraction` balance change below happened the same session.
+- L18's Commander boss robot restored from a bare `scale (1,1)` (a stale dump
+  artifact — flagged since 2026-07-19, user-reported "commander is very small") to its last
+  known-good `6.985x7.555` in `LevelDataGenerator.cs`; worth a fresh `LevelLayoutDumper` re-dump
+  once someone can eyeball it against L18's redesigned staircase in-Editor. Also lowered
+  `RobotEnemy.ExplosionDamageFraction` 0.55 -> 0.20 (user request) — a haybale/barrel exploding
+  directly against a robot now chips ~20% of its health instead of ~55%; block-to-block chain
+  destruction (`WoodBlock.DamageNearby`'s `_areaDamage` falloff, which still levels neighbouring
+  wood/ice blocks at full force) is a separate code path, untouched by this constant.
 - **2026-07-19** — All 18 World 1 levels (L01-L18) redesigned via fresh `LevelLayoutDumper` dumps
   against the rebuilt parallax backdrop. Two live gameplay bugs fixed: structures left floating
   after being struck (`BlockBase`'s wake-cascade overlap box was too narrow), and the cannon going
@@ -145,7 +317,7 @@ Only Cluck and Bessie are used in World 1 so far; the other 6 are fully scripted
 | 5 — Sunken City | Torpedo Tube (angle + bubble pop) | Current lanes + lever switches | 22 |
 | 6 — Robot Mothership | Gravity Sling (angle + gravity wells) | Zero-G ability modifiers | 16 |
 
-World 1 is fully built. World 2's front-end shell exists as of 2026-07-19 (backdrop, landing/map screens, match-up art, robot-tier reskins — see Current Status) but has zero real levels yet. Worlds 3–6 are Phase 5, 0% started.
+World 1 is fully built. World 2's front-end shell exists as of 2026-07-19 (backdrop, landing/map screens, match-up art, robot-tier reskins — see Current Status); its first real level (L19 / W2_L01, "Frostbound Watch" — Percy vs. a single IceHarvestorRobot) was added 2026-07-26 as a placeholder pending a real `LevelLayoutDumper` pass — see Current Status. Worlds 3–6 are Phase 5, 0% started.
 
 ### Star System
 - 1★ — all robots dead (progress gate)

@@ -10,6 +10,33 @@ using UnityEngine.Video;
 
 public static class SceneSetup
 {
+    // GameObject.Find() ONLY searches ACTIVE objects — a real bug found 2026-07-26 (user report:
+    // "we have erased the barn and all the scenery from world 1, and nothing has rendered
+    // correctly from world 2"). Root cause: PreviewCannonAndScenery (below) sets
+    // Scenery_World1/Scenery_World2 inactive via SetActive() as part of previewing the other
+    // world, and if a scene save happened while one of them was inactive, every SUBSEQUENT Wire
+    // Scene References pass's `GameObject.Find("Scenery_World2")` call in EnsureWorld2Scenery
+    // silently returned null (object exists, just inactive) — which that method then "fixed" by
+    // creating a whole NEW "Scenery_World2" parent + a fresh set of default-positioned children,
+    // leaving the ORIGINAL hand-built one (with everything the user had actually placed) sitting
+    // inactive and orphaned. This happened THREE times before being caught, hence three duplicate
+    // Scenery_World2 hierarchies existing at once. This helper searches the whole scene hierarchy
+    // (including inactive objects) by name instead, so a toggled-off group is still found.
+    static GameObject FindIncludingInactive(string name)
+    {
+        foreach (var root in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+        {
+            if (root.name == name) return root;
+            var t = root.transform.Find(name); // Transform.Find DOES include inactive children
+            if (t != null) return t.gameObject;
+            // Find() only checks direct children by that exact path — recurse for safety in case
+            // a matching name is nested deeper than one level under some root.
+            foreach (var child in root.GetComponentsInChildren<Transform>(includeInactive: true))
+                if (child.name == name) return child.gameObject;
+        }
+        return null;
+    }
+
     [MenuItem("FarmFury/Wire Scene References")]
     public static void WireAll()
     {
@@ -23,6 +50,7 @@ public static class SceneSetup
         EnsureGround();         // Static ground plane with collider + renderer
         EnsureBackground();     // Sky painting backdrop behind all game objects
         EnsureScenery();        // SceneryBuilder GO + World1Props sprite refs
+        EnsureWorld2Scenery();  // Scenery_World2 GO: hand-authored igloo/ice-tree background props
         EnsureEggPrefab();      // Create Egg prefab + wire into CluckAnimal prefab
         EnsureAnimalPrefabs();  // Create Percy/Woolly/Ducky/Horace/Gerald/Billy prefabs
         EnsureHUD();            // HUDController GO (builds Canvas at runtime)
@@ -180,6 +208,110 @@ public static class SceneSetup
         Debug.Log($"[FarmFury] Scenery: {field} → {filename}");
     }
 
+    // ── World 2 (Frozen Tundra) hand-authored background scenery ────────────────
+    // Added 2026-07-26, user request: "remove the sprites and add in the igloo, ice cannon and
+    // other built sprites" — mirrors World 1's Scenery_World1 group (OldBarn_Right/OakTree/
+    // WoodenFence etc., hand-placed by the user directly in-Editor) with a World-2-themed
+    // equivalent, EXCEPT this one is created by code, not hand-placed, since no Play-mode/
+    // Scene-view access exists in this environment to place it visually. IceCannon.png is NOT
+    // duplicated here — it's the real gameplay launcher, already reskinned automatically by
+    // CatapultLauncher._cannonSpriteW2 (see that class), not a decorative prop.
+    //
+    // POSITIONS WERE A FIRST DRAFT (computed, not visually placed) — the user has since opened
+    // this in-Editor and hand-tuned it directly (2026-07-26): repositioned/rescaled Igloo,
+    // IceTree, IceCrystals, IceSpire, and BuriedRuin, and DELETED "IceTree (1)" and "IceBoulder"
+    // entirely (didn't want a second tree or the boulder). Both removed from the list below to
+    // match — leaving them in would have silently recreated them on the next Wire Scene
+    // References pass, since MakeWorld2Prop's find-or-create-by-name has no memory of a
+    // deliberate deletion. The 5 remaining props' hand-tuned positions in Game.unity are now the
+    // real ground truth; the values below only matter the first time this group doesn't exist at
+    // all (e.g. a fresh checkout) — MakeWorld2Prop never touches an already-existing GameObject's
+    // transform (see its own comment).
+    //
+    // ToggleHandAuthoredScenery (SceneryBuilder.cs) shows/hides this group vs. Scenery_World1
+    // based on LevelData.world on every level load — both groups share the same world-space
+    // region (World 2 levels reuse World 1's camera/launcher coordinates), so without that toggle
+    // they'd render on top of each other regardless of which level is active.
+    static void EnsureWorld2Scenery()
+    {
+        var parent = FindIncludingInactive("Scenery_World2");
+        bool isNew = parent == null;
+        if (isNew)
+        {
+            parent = new GameObject("Scenery_World2");
+            Debug.Log("[FarmFury] Created 'Scenery_World2' GameObject.");
+        }
+
+        const string folder = "Assets/Sprites/Environment/World2Props";
+
+        // (name, file, worldX, targetHeight) — targetHeight is the desired WORLD-SPACE height in
+        // units; width follows automatically from the source art's own aspect ratio (no stretch).
+        // Y is derived per-prop below: the two background structures (Igloo/IceTree) float at a
+        // fixed Y like Scenery_World1's barn/tree do (artistic background placement, not physically
+        // grounded); the smaller clutter pieces are bottom-anchored to GroundSurface instead
+        // (SceneryBuilder.GroundSurface = -6.60), matching how actual ground-level props read.
+        (string name, string file, float x, float targetHeight, bool groundAnchored)[] props =
+        {
+            ("Igloo",        "Igloo.png",        -5.5f, 5.5f, false), // background structure, mirrors OldBarn_Right's role/position
+            ("IceTree",      "IceTree.png",       -3.3f, 6.0f, false), // mirrors OakTree's role/position
+            ("BuriedRuin",    "BuriedRuin.png",     5.6f, 3.0f, true),  // ground-level ruin accent near the level's typical content span
+            ("IceSpire",      "IceSpire.png",      -1.2f, 1.8f, true),  // ground clutter near the launcher, mirrors WoodenBarrel's scale/role
+            ("IceCrystals",   "IceCrystals.png",   -0.4f, 1.3f, true),
+        };
+
+        foreach (var (name, file, x, targetHeight, groundAnchored) in props)
+            MakeWorld2Prop(parent.transform, name, $"{folder}/{file}", x, targetHeight, groundAnchored);
+    }
+
+    const float World2SceneryGroundSurface = -6.60f; // matches SceneryBuilder.GroundSurface
+
+    // Find-or-create a single decorative prop GameObject under `parent`. Only sets position/scale
+    // ON FIRST CREATION (isNew) — same "don't fight the user's own later hand-tuning" convention
+    // used everywhere else in this file (see FarmCannon's own comment) — once someone has dragged
+    // this prop to a better spot in-Editor, re-running Wire Scene References must never snap it
+    // back. The sprite reference itself IS always re-wired (cheap, and picks up art replacements).
+    static void MakeWorld2Prop(Transform parent, string name, string spritePath, float x, float targetHeight, bool groundAnchored)
+    {
+        var imp = AssetImporter.GetAtPath(spritePath) as TextureImporter;
+        if (imp == null)
+        {
+            Debug.LogWarning($"[FarmFury] World2 scenery: sprite not found at {spritePath}.");
+            return;
+        }
+        bool dirty = false;
+        if (imp.textureType         != TextureImporterType.Sprite)          { imp.textureType         = TextureImporterType.Sprite;          dirty = true; }
+        if (imp.spritePixelsPerUnit != 512)                                  { imp.spritePixelsPerUnit = 512;                                 dirty = true; }
+        if (!imp.alphaIsTransparency)                                        { imp.alphaIsTransparency = true;                                dirty = true; }
+        if (imp.spriteImportMode    != SpriteImportMode.Single)             { imp.spriteImportMode    = SpriteImportMode.Single;             dirty = true; }
+        if (dirty) imp.SaveAndReimport();
+
+        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+        if (sprite == null) { Debug.LogWarning($"[FarmFury] {spritePath} failed to load as Sprite."); return; }
+
+        var existing = parent.Find(name);
+        bool isNew = existing == null;
+        var go = isNew ? new GameObject(name) : existing.gameObject;
+        if (isNew) go.transform.SetParent(parent, false);
+
+        var sr = go.GetComponent<SpriteRenderer>();
+        if (sr == null) sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.sortingOrder = 0; // matches Scenery_World1's own hand-placed props (OldBarn_Right/OakTree)
+
+        if (isNew)
+        {
+            // native size at PPU=512, then scaled so the rendered sprite's height == targetHeight
+            // (width follows the same uniform scale, preserving the source art's own aspect).
+            Vector2 native = sprite.bounds.size;
+            float   scale  = native.y > 0.0001f ? targetHeight / native.y : 1f;
+            float   worldHeight = native.y * scale;
+            float   y = groundAnchored ? World2SceneryGroundSurface + worldHeight * 0.5f
+                                        : -3.2f; // rough background-structure height, mirrors Scenery_World1's barn/tree Y range (-2.07 to -2.8)
+            go.transform.localPosition = new Vector3(x, y, 0f);
+            go.transform.localScale    = new Vector3(scale, scale, 1f);
+        }
+    }
+
     // ── Environment depth system: 3-layer parallax stack (rebuilt 2026-07-18) ────────
     // History: a single frozen Layer_Midground (hand-placed/computed once, never touched again)
     // repeatedly failed to cover the camera at every per-level zoom — see CLAUDE.md's earlier
@@ -248,12 +380,20 @@ public static class SceneSetup
             so.FindProperty("_midgroundClipAbove").floatValue  = 0.23f;
             so.FindProperty("_foregroundClipAbove").floatValue = 0.30f;
             // World 2 defaults — see EnvironmentDepthSystem.cs's field comment for the pixel
-            // measurement behind 0.21 (ParallaxMidGrounds_W2.png's own baked-in aurora sky must
-            // never be revealed; FarHills_W2 supplies all sky content instead, same division of
-            // responsibility as World 1's FarHills/Midground).
+            // measurement behind these values (ParallaxMidGrounds_W2.png's own baked-in aurora sky
+            // must never be revealed; FarHills_W2 supplies all sky content instead, same division
+            // of responsibility as World 1's FarHills/Midground).
             so.FindProperty("_farHillsClipAboveW2").floatValue  = 1.0f;
-            so.FindProperty("_midgroundClipAboveW2").floatValue = 0.21f;
         }
+        // _midgroundClipAboveW2 is deliberately UNCONDITIONAL (not gated by isNewComponent like
+        // its siblings above) — 2026-07-26, user request: "too much night sky in the parallax."
+        // This is a real, one-time re-tune (0.21 -> 0.60, see the field's own comment in
+        // EnvironmentDepthSystem.cs for the seam tradeoff this knowingly accepts), not a live-
+        // tunable Inspector default any more — re-stamping it here every Wire Scene References
+        // pass keeps it from silently reverting if the scene's serialized component ever predates
+        // this change. Safe to hand-tune further in the Inspector; only this specific historical
+        // value is force-applied.
+        so.FindProperty("_midgroundClipAboveW2").floatValue = 0.60f;
 
         so.ApplyModifiedProperties();
 
@@ -272,6 +412,16 @@ public static class SceneSetup
         ApplyClipEditor(go.transform, "Layer_FarHills",   so.FindProperty("_farHillsClipAbove").floatValue);
         ApplyClipEditor(go.transform, "Layer_Midground",  so.FindProperty("_midgroundClipAbove").floatValue);
         ApplyClipEditor(go.transform, "Layer_Foreground", so.FindProperty("_foregroundClipAbove").floatValue);
+
+        // Always resets the cannon + hand-authored scenery back to World 1 alongside the backdrop
+        // above, same "every Wire Scene References pass re-forces World 1" convention that block
+        // already followed — added 2026-07-26 (user report: the World 1 cannon was still visibly
+        // showing while looking at World 2 in the Scene view). Without this, running Wire Scene
+        // References after a "Preview World 2 Backdrop" pass reset the BACKDROP to World 1 but
+        // left the cannon/scenery stuck showing whichever world was last manually previewed —
+        // exactly the inconsistent state that caused the report. Use the Preview World 2 Backdrop
+        // menu item to see World 2's version of all three together.
+        PreviewCannonAndScenery(isWorld2: false);
 
         Debug.Log("[FarmFury] EnvironmentDepthSystem wired (3-layer FarHills/Midground/Foreground stack).");
     }
@@ -331,7 +481,36 @@ public static class SceneSetup
         var foregroundGO = go.transform.Find("Layer_Foreground");
         if (foregroundGO != null) foregroundGO.gameObject.SetActive(!isWorld2);
 
-        Debug.Log($"[FarmFury] Previewing World {world} backdrop in the Scene view.");
+        PreviewCannonAndScenery(isWorld2);
+
+        Debug.Log($"[FarmFury] Previewing World {world} backdrop (+ cannon, scenery) in the Scene view.");
+    }
+
+    // Edit-mode preview for the two other world-swapped visuals besides the backdrop: FarmCannon's
+    // sprite (CatapultLauncher._cannonSR only swaps this at runtime, from OnLevelStarted — an
+    // event that never fires in Edit mode) and Scenery_World1/Scenery_World2's visibility
+    // (SceneryBuilder.ToggleHandAuthoredScenery has the same runtime-only gap). Added 2026-07-26
+    // (user report: the World 1 cannon/barn were still visibly showing while building/looking at
+    // World 2 in the Scene view) — called both from the manual Preview World N Backdrop menu
+    // items and unconditionally at the end of EnsureEnvironmentDepthSystem's own always-resets-
+    // to-World-1 wiring pass, so the cannon/scenery never drift out of sync with the backdrop.
+    static void PreviewCannonAndScenery(bool isWorld2)
+    {
+        var cannonGO = FindIncludingInactive("FarmCannon");
+        if (cannonGO != null)
+        {
+            var cannonSR = cannonGO.GetComponent<SpriteRenderer>();
+            if (cannonSR != null)
+            {
+                var w1Cannon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Environment/Launchers/Cannon.png");
+                var w2Cannon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Environment/Launchers/IceCannon.png");
+                cannonSR.sprite = (isWorld2 && w2Cannon != null) ? w2Cannon : w1Cannon;
+            }
+        }
+        var scenery1 = FindIncludingInactive("Scenery_World1");
+        if (scenery1 != null) scenery1.SetActive(!isWorld2);
+        var scenery2 = FindIncludingInactive("Scenery_World2");
+        if (scenery2 != null) scenery2.SetActive(isWorld2);
     }
 
     // Finds-or-creates one parallax layer child, wires its sprite + the shared ParallaxBandClip
@@ -873,6 +1052,9 @@ public static class SceneSetup
         WireAudioClip(mapSo, "_cluckFallingClip",      "Assets/Audio/Cluck_falling.mp3");
         WireSprite(mapSo, "_bessieFlySprite",          "Assets/Sprites/Characters/Bessie/Bessie_InFlight.png");
         WireAudioClip(mapSo, "_bessieFallingClip",     "Assets/Audio/Bessie_falling.mp3");
+        // Wired for symmetry with World2MapController (no World 1 level uses Percy today, so this
+        // never actually fires here — see MatchUpScreen.Show()'s _percyFlyEnabledForLevel check).
+        WireSprite(mapSo, "_percyFlySprite",           "Assets/Sprites/Characters/Percy_Pig/Trigger.png");
         WireSprite(mapSo, "_eggSprite",                "Assets/Sprites/Characters/Cluck/Egg.png");
         WireSprite(mapSo, "_skipButtonSprite",         "Assets/Sprites/UI/Icon/Btn_skip.png");
 
@@ -971,58 +1153,101 @@ public static class SceneSetup
     // World 2 LevelData exists yet either, so every marker shows MatchUpScreen's generic "COMING
     // SOON" branch regardless.
     //
-    // Background + card art updated 2026-07-19 to the user-supplied World 2 set (no longer
-    // reusing World 1's placeholders): Matchup_W2.png background, FrostRobot_card.png/
-    // GlacierRobot_card.png/IceHarvestor_card.png for the 3 robot slots, Percy_Pig.png/
-    // Woolly_Sheep.png for the animal slots (picked up automatically by the existing
-    // WireArrayByKeyword keyword scan below — CardKeywords already expects those exact
-    // filenames, see that array's own comment — no code change needed there, just the new files
-    // existing in this same matchUpFolder).
+    // Background + card art updated 2026-07-19 to the user-supplied World 2 set, then RE-POINTED
+    // 2026-07-26 to a dedicated "Assets/Sprites/UI/Matchup_W2" folder (user: "i have placed the
+    // correct matchup cards and labelling in this folder... re wire the matchup scene
+    // accordingly") — a separate, relabelled set distinct from the original Matchup_W2.png/
+    // *_card.png files that used to live in the shared Assets/Sprites/UI/MatchUp/ folder
+    // alongside World 1's own art. Everything World-2-specific below now sources from
+    // matchUpFolderW2; only the shared, world-agnostic assets (Countdown.mp3, Btn_skip.png,
+    // Cluck/Bessie fly art — World 2 never shows Cluck/Bessie, see below) still come from the
+    // original Assets/Sprites/UI/MatchUp/.
     //
-    // Robot slot mapping is a BEST GUESS, not confirmed with the user — flag/correct if wrong:
-    // RobotType enum order is Basic/Harvester/SemiHarvester/Commander. "IceHarvestor_card.png"
-    // maps to Harvester (index 1) matching World 1's own naming precedent exactly (W1's plain
-    // "Harvestor_Robot.png", no "Semi" prefix, is also Harvester — see the array below).
-    // "FrostRobot_card.png" maps to Basic (index 0) since a matching FrostRobot_left/right.png
-    // gameplay sprite pair already exists under Assets/Sprites/Enemies/Robot/ for the most common
-    // enemy type. "GlacierRobot_card.png" is the one left over, mapped to SemiHarvester (index 2)
-    // by elimination — no GlacierRobot gameplay sprite was found on disk to cross-check this one
-    // against. No World 2 Commander/boss card was supplied — index 3 stays unwired, same
-    // "COMMANDER" text-label fallback MatchUpScreen already uses when a robot card is null.
+    // Robot slot mapping (Basic/Harvester/SemiHarvester/Commander enum order): "IceHarvestor_card.png"
+    // -> Harvester (index 1), user-confirmed 2026-07-26 (this exact mapping was the subject of
+    // "wire the first ice harvestor robot... for level 19"). "FrostRobot_card.png" -> Basic
+    // (index 0) and "GlacierRobot_card.png" -> SemiHarvester (index 2) remain the original
+    // 2026-07-19 naming-precedent guess, still unconfirmed — see CLAUDE.md Known Issues. No
+    // World 2 Commander/boss card exists yet — index 3 stays unwired, same "COMMANDER" text-label
+    // fallback MatchUpScreen already uses when a robot card is null.
+    //
+    // Level header art: this instance's own _levelHeaderSprites array is only ever indexed with
+    // the GLOBAL GameManager level index (MatchUpScreen.Show(GlobalIndexOffset + localIndex) —
+    // see World2MapController.OnMarkerClicked/OnPlayClicked), NOT World 2's own 0-based local
+    // index, even though the array is sized World2MapController.LevelCount (22) — so only global
+    // indices < 22 (i.e. World 2's own local levels 0-3, global "level 19"-"level 22") can ever
+    // get unique header art before running off the end of this array; every level from local
+    // index 4 onward ("level 23"+) will silently fall back to index 0 regardless of any future art
+    // added for it. Flagged, not fixed here — out of scope for this pass, and not yet a real
+    // problem since only 3 real per-level headers (19/20/21.png, indices 18-20) exist today.
+    // Index 0 uses W2_level.png (a generic "LEVEL" banner) as this instance's OWN fallback/
+    // generic slot — distinct from World 1's LevelHeader1.png, which this instance no longer
+    // references at all.
     static void WireWorld2MatchUpCards(SerializedObject mapSo)
     {
-        const string matchUpFolder = "Assets/Sprites/UI/MatchUp";
+        const string matchUpFolder   = "Assets/Sprites/UI/MatchUp";     // shared, world-agnostic assets only
+        const string matchUpFolderW2 = "Assets/Sprites/UI/Matchup_W2";  // dedicated World 2 set, see class comment above
 
-        WireSprite(mapSo, "_matchUpBackgroundSprite", $"{matchUpFolder}/Matchup_W2.png");
-        WireSprite(mapSo, "_vsSprite",                $"{matchUpFolder}/VS.png");
+        WireSprite(mapSo, "_matchUpBackgroundSprite", $"{matchUpFolderW2}/Matchup_W2.png");
+        WireSprite(mapSo, "_vsSprite",                $"{matchUpFolderW2}/vs.png");
 
         var headerArr = mapSo.FindProperty("_levelHeaderSprites");
         headerArr.arraySize = World2MapController.LevelCount;
         headerArr.GetArrayElementAtIndex(0).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/LevelHeader1.png");
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/W2_level.png");
+        // Per-level headers — global level 19/20/21 land at array indices 18/19/20 (see the
+        // GLOBAL-vs-local indexing note above). MatchUpScreen only ever shows ONE header sprite
+        // (no separate banner+number layers at runtime), so W2_level.png (the "LEVEL" banner) and
+        // NN.png (the number badge) are pre-composited offline into a single LevelNN.png per user
+        // request 2026-07-26 ("match the number under it (middle with slight overlay)") — number
+        // centred under the banner, its top ~18px tucked behind the banner's bottom edge, banner
+        // drawn last so it occludes that overlap band exactly like LevelHeader1.png's own
+        // established "number peeking out from under LEVEL" look. See
+        // tools/compose_w2_level_headers.py for the exact compositing math if a 4th+ level header
+        // is ever needed. No "Level22.png"+ exists yet.
+        headerArr.GetArrayElementAtIndex(18).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/Level19.png");
+        headerArr.GetArrayElementAtIndex(19).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/Level20.png");
+        headerArr.GetArrayElementAtIndex(20).objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/Level21.png");
 
-        WireSprite(mapSo, "_countdown3Sprite",     $"{matchUpFolder}/countdown3.png");
-        WireSprite(mapSo, "_countdown2Sprite",     $"{matchUpFolder}/countdown2.png");
+        WireSprite(mapSo, "_countdown3Sprite",     $"{matchUpFolderW2}/three.png");
+        WireSprite(mapSo, "_countdown2Sprite",     $"{matchUpFolderW2}/two.png");
+        // No "one.png"/countdown-1 art exists in the new World 2 set — falls back to the shared
+        // World 1 asset rather than leaving this slot null (MatchUpScreen would just skip that
+        // numeral's pop entirely otherwise). Swap to a real World-2-themed "1" if one is ever
+        // supplied.
         WireSprite(mapSo, "_countdown1Sprite",     $"{matchUpFolder}/countdown1.png");
-        WireSprite(mapSo, "_countdownReadySprite", $"{matchUpFolder}/Countdown_Ready.png");
+        WireSprite(mapSo, "_countdownReadySprite", $"{matchUpFolderW2}/ready.png");
         WireAudioClip(mapSo, "_countdownClip",     "Assets/Audio/Countdown.mp3");
+        // Cluck/Bessie fly art is still wired here even though World 2 never shows either (Percy
+        // REPLACES Cluck's pass whenever he's the level's own animal — see _percyFlySprite below
+        // and MatchUpScreen.Show()) — kept for symmetry/graceful-degradation with WireMatchUpCards,
+        // same reasoning as _cluckFlySprite being wired on WorldMapController despite W1 having no
+        // Percy levels.
         WireSprite(mapSo, "_cluckFlySprite",       "Assets/Sprites/Characters/Cluck/Cluck_InFlight.png");
         WireAudioClip(mapSo, "_cluckFallingClip",  "Assets/Audio/Cluck_falling.mp3");
         WireSprite(mapSo, "_bessieFlySprite",      "Assets/Sprites/Characters/Bessie/Bessie_InFlight.png");
         WireAudioClip(mapSo, "_bessieFallingClip", "Assets/Audio/Bessie_falling.mp3");
+        // Percy's Bounce Roll ability art doubles as his match-up fly-by pose — see
+        // MatchUpScreen.PercyFlyBy's class comment for why Trigger.png (the curled-ball ability
+        // pose) was chosen over a plain in-flight sprite. No dedicated falling/whoosh clip exists
+        // for Percy yet, so _percyFallingClip stays unwired (null-guarded in MatchUpScreen).
+        WireSprite(mapSo, "_percyFlySprite",       "Assets/Sprites/Characters/Percy_Pig/Trigger.png");
         WireSprite(mapSo, "_eggSprite",            "Assets/Sprites/Characters/Cluck/Egg.png");
         WireSprite(mapSo, "_skipButtonSprite",     "Assets/Sprites/UI/Icon/Btn_skip.png");
 
-        WireArrayByKeyword(mapSo, "_animalCardSprites", matchUpFolder, CardKeywords, "animal");
+        WireArrayByKeyword(mapSo, "_animalCardSprites", matchUpFolderW2, CardKeywords, "animal");
 
         var robotArr = mapSo.FindProperty("_robotCardSprites");
         robotArr.arraySize = 4;
         robotArr.GetArrayElementAtIndex(0).objectReferenceValue = // Basic
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/FrostRobot_card.png");
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/FrostRobot_card.png");
         robotArr.GetArrayElementAtIndex(1).objectReferenceValue = // Harvester
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/IceHarvestor_card.png");
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/IceHarvestor_card.png");
         robotArr.GetArrayElementAtIndex(2).objectReferenceValue = // SemiHarvester
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/GlacierRobot_card.png");
+            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/GlacierRobot_card.png");
         // index 3 (Commander) explicitly cleared, not just left alone — a stale reference here
         // (e.g. from before this method stopped wiring it) would otherwise silently survive in
         // Game.unity forever, the same [SerializeField] stale-value trap documented throughout
@@ -1424,7 +1649,7 @@ public static class SceneSetup
             if (old != null) { Object.DestroyImmediate(old); Debug.Log($"[FarmFury] Deleted trebuchet GO '{n}'."); }
         }
 
-        var cannonGO = GameObject.Find("FarmCannon");
+        var cannonGO = FindIncludingInactive("FarmCannon");
         if (cannonGO == null)
         {
             cannonGO = new GameObject("FarmCannon");
@@ -1470,6 +1695,27 @@ public static class SceneSetup
         }
         else
             Debug.LogWarning("[FarmFury] Cannon.png not found at " + cannonPath);
+
+        // World 2 (Frozen Tundra) reskin — visual sprite swap only, see CatapultLauncher's own
+        // _cannonSpriteW2 field comment. Same import settings as World 1's Cannon.png above.
+        const string iceCannonPath = "Assets/Sprites/Environment/Launchers/IceCannon.png";
+        if (AssetDatabase.LoadAssetAtPath<Texture2D>(iceCannonPath) != null)
+        {
+            var imp = AssetImporter.GetAtPath(iceCannonPath) as TextureImporter;
+            if (imp != null)
+            {
+                bool dirty = false;
+                if (imp.textureType         != TextureImporterType.Sprite) { imp.textureType         = TextureImporterType.Sprite; dirty = true; }
+                if (!imp.alphaIsTransparency)                               { imp.alphaIsTransparency = true;                       dirty = true; }
+                if (imp.spriteImportMode    != SpriteImportMode.Single)    { imp.spriteImportMode    = SpriteImportMode.Single;    dirty = true; }
+                if (dirty) imp.SaveAndReimport();
+            }
+            so.FindProperty("_cannonSpriteW2").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<Sprite>(iceCannonPath);
+            Debug.Log("[FarmFury] Launcher: IceCannon.png wired (World 2, Single mode).");
+        }
+        else
+            Debug.LogWarning("[FarmFury] IceCannon.png not found at " + iceCannonPath);
 
         so.FindProperty("_cannonGO").objectReferenceValue = cannonGO;
 
@@ -1528,6 +1774,19 @@ public static class SceneSetup
             ("_sprExplode",     "WoodDebris.png"),
         });
 
+        // World 2 (Frozen Tundra) reskin — see BlockBase's _sprNormalW2 etc. field comment for
+        // why only these 5 shapes are wired (the only ones with real ice/snow art today).
+        // Different source folder than the W1 wiring above, so a separate WireBlockPrefab call.
+        const string folderW2 = "Assets/Sprites/Environment/World2Props";
+        WireBlockPrefab("Assets/Prefabs/Blocks/WoodBlock.prefab", folderW2, new[]
+        {
+            ("_sprNormalW2",     "Ice_block.png"),
+            ("_sprVerticalW2",   "Ice_vertical.png"),
+            ("_sprHorizontalW2", "Snow_block.png"),
+            ("_sprDiagonalW2",   "Ice_diagonal.png"),
+            ("_sprShortW2",      "Snow_short.png"),
+        });
+
         // Was 1.4 (WoodDebris.png is full-bleed, unlike Haybail_Damaged.png's ~92%x83% fill, so
         // it read bigger/more dominant than haybale's burst at the old shared 2.2x default).
         // BlockBase's own default is now a flat 0.5 for every block type (2026-07-10, settled
@@ -1569,6 +1828,16 @@ public static class SceneSetup
             ("_sprBlock",       "Stone_Block.png"),
             ("_sprRuinedWall",  "RuinedStoneWall.png"),
             ("_sprTower",       "StoneTower.png"),
+        });
+
+        // World 2 reskin — same 5 shapes/source as WoodBlock's own W2 wiring above.
+        WireBlockPrefab("Assets/Prefabs/Blocks/StoneBlock.prefab", folderW2, new[]
+        {
+            ("_sprNormalW2",     "Ice_block.png"),
+            ("_sprVerticalW2",   "Ice_vertical.png"),
+            ("_sprHorizontalW2", "Snow_block.png"),
+            ("_sprDiagonalW2",   "Ice_diagonal.png"),
+            ("_sprShortW2",      "Snow_short.png"),
         });
     }
 
