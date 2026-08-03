@@ -1828,6 +1828,13 @@ public static class SceneSetup
             ("_sprBlock",       "Stone_Block.png"),
             ("_sprRuinedWall",  "RuinedStoneWall.png"),
             ("_sprTower",       "StoneTower.png"),
+            // StoneDebris.png (broken-rubble burst art, user-supplied 2026-08-03) — wired to both
+            // the brief pre-death hit-reaction flash (_sprDamaged) and the actual death-burst
+            // shown by DestroyBlock() (_sprExplode), same dual-use pattern WoodBlock uses with
+            // WoodDebris.png. Deliberately a separate asset, not a reuse of WoodDebris.png — a
+            // shattering stone chunk should not look like broken wood splinters.
+            ("_sprDamaged",     "StoneDebris.png"),
+            ("_sprExplode",     "StoneDebris.png"),
         });
 
         // World 2 reskin — same 5 shapes/source as WoodBlock's own W2 wiring above.
@@ -1905,8 +1912,9 @@ public static class SceneSetup
             so.FindProperty("_silentHit").boolValue      = true;
             // Haybale is a genuine explosive prop (unlike plain Wood, which uses the same
             // WoodBlock component but stays false here) — 2026-07-10 fifth balance pass, see
-            // WoodBlock._explodesOnRobots.
-            so.FindProperty("_explodesOnRobots").boolValue = true;
+            // WoodBlock._isExplosive. Only used for the chain-reaction gate (never damages
+            // robots directly) — see RobotEnemy.cs's damage-model comment.
+            so.FindProperty("_isExplosive").boolValue = true;
             // Re-sync _areaDamage to WoodBlock's current class default (25f) — same
             // [SerializeField] stale-value issue as WoodBlock.prefab itself (see
             // WireBlockSprites' own comment on this); Haybale shares WoodBlock's block-to-block

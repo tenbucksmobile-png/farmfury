@@ -7,35 +7,28 @@ public class WoodBlock : BlockBase
     [SerializeField] public bool _passThrough;
 
     // Damage-factor model v2 (2026-07-10, fifth balance pass — see the comment block at the top
-    // of RobotEnemy.cs for the full rationale). Root cause of the "level 3 onward is one hit"
-    // complaint: EVERY block in this family firing a flat, no-falloff robot explosion hit at a
-    // wide (1.6-2.0u) radius on death let one swing chain-break a whole packed tower, each break
-    // landing a "free" hit on any nearby robot. Two changes fix this:
-    //   1. Plain Wood no longer damages robots on death AT ALL — it is now purely structural.
-    //      Only _explodesOnRobots=true blocks (Haybale, ExplodingBarrelBlock) still call
-    //      RobotEnemy.TakeExplosionDamage() when they die near a robot. A robot standing on wood
-    //      that gets destroyed still suffers — via BlockBase.CheckForRobotsOnTop() ->
-    //      RobotEnemy.MakeDynamicFromSupportLoss() -> TakeFallDamage(), a distinct, weaker
-    //      category — but breaking wood 2 units away from a robot now does nothing to it.
-    //   2. Blast radius ("explosive force") is no longer an arbitrary flat number independent of
-    //      the block's own size — it's now ExplosiveForceScale (40%) of the block's own rendered
-    //      footprint (see EffectiveBlastRadius below), computed fresh from the actual collider
-    //      bounds at the moment of death. A ~1x1 block now has a ~0.4u blast radius instead of
-    //      1.6-2.0u, so a single break can only ever reach directly-touching neighbours, not an
-    //      entire tower — this is what actually "minimises the chain reaction," not the damage
-    //      amount below (_areaDamage), which is unchanged and still governs block-to-block
-    //      falloff damage only.
-    [SerializeField] protected bool  _explodesOnRobots = false;
+    // of RobotEnemy.cs for the full rationale). Wood/Stone breaking is purely structural — it
+    // never damages a robot directly (2026-08-03: explosion damage to robots was removed
+    // entirely). A robot standing on a block that gets destroyed still suffers — via
+    // BlockBase.CheckForRobotsOnTop() -> RobotEnemy.MakeDynamicFromSupportLoss() ->
+    // TakeFallDamage(), a distinct, weaker category driven by the fall itself, not a blast.
+    // Blast radius ("explosive force") is not an arbitrary flat number independent of the
+    // block's own size — it's ExplosiveForceScale (40%) of the block's own rendered footprint
+    // (see EffectiveBlastRadius below), computed fresh from the actual collider bounds at the
+    // moment of death. A ~1x1 block has a ~0.4u blast radius, so a single break can only ever
+    // reach directly-touching neighbours, not an entire tower.
     protected const float ExplosiveForceScale = 0.4f;
     [SerializeField] protected float _areaDamage        = 25f;
 
-    // Multiplies RobotEnemy.TakeExplosionDamage()'s usual fraction for THIS block type only —
-    // added 2026-07-10, user request: "these barrels must explode like the haybales, only with
-    // stronger strength." Haybale and plain explosive Wood both use the default 1x (identical to
-    // RobotEnemy.ExplosionDamageFraction, the same "genuine explosion" tier every explosive prop
-    // shares); ExplodingBarrelBlock overrides this higher so a barrel reads as a dramatically
-    // bigger threat without needing a second, parallel damage category.
-    [SerializeField] protected float _explosionStrengthMultiplier = 1f;
+    // Marks a genuine explosive prop (Haybale, ExplodingBarrelBlock) as opposed to a plain
+    // structural block (Wood, Stone). Only used for the chain-reaction gate below — 2026-08-03,
+    // user request: "an exploding wood or stone should also not affect an explosion of a haybale
+    // or dynamite barrel — only a direct hit of a character or ability should affect an
+    // explosion; however an explosion of haybale and dynamite barrel will cause the explosion of
+    // wood or stone." A plain block's own falloff-damage chain skips any explosive neighbour it
+    // reaches; an explosive prop's own chain still freely damages everything nearby (including
+    // other explosive props), same as always.
+    [SerializeField] protected bool  _isExplosive = false;
 
     // Radius of this block's blast, derived from its own actual world-space size (not a flat
     // constant) — see the class comment above. Falls back to a plain 1u footprint if the
@@ -66,14 +59,17 @@ public class WoodBlock : BlockBase
 
     // 2026-07-11 fundamental gameplay rule, user request: "if a robot falls and lands on a
     // haybale or dynamite barrel this will automatically explode." Only genuine explosive props
-    // (_explodesOnRobots — Haybale, ExplodingBarrelBlock) are guaranteed to detonate on ANY robot
+    // (_isExplosive — Haybale, ExplodingBarrelBlock) are guaranteed to detonate on ANY robot
     // landing, bypassing BlockBase's normal impulse-threshold math entirely so even a gentle
     // settle (e.g. a robot dropped by MakeDynamicFromSupportLoss coming to rest on top, not a
     // hard crash) still always triggers the explosion — a plain structural Wood block still only
-    // reacts to real impact force via the inherited base behaviour below.
+    // reacts to real impact force via the inherited base behaviour below. This still only
+    // detonates the block itself (no robot damage results, per the 2026-08-03 change above) — it
+    // exists purely so a robot's weight can still trigger the prop's own chain reaction into
+    // nearby blocks.
     protected override void OnCollisionEnter2D(Collision2D col)
     {
-        if (_explodesOnRobots && !IsDestroyed && col.gameObject.GetComponentInParent<RobotEnemy>() != null)
+        if (_isExplosive && !IsDestroyed && col.gameObject.GetComponentInParent<RobotEnemy>() != null)
         {
             TakeDamage(MaxHealth);
             return;
@@ -102,10 +98,10 @@ public class WoodBlock : BlockBase
     }
 
     // Damages every OTHER block within EffectiveBlastRadius (structural chain reaction — applies
-    // to every block in this family, Wood included) and, ONLY if _explodesOnRobots is true
-    // (Haybale, ExplodingBarrelBlock — plain Wood never), every robot in that same now-much-
-    // smaller radius via the flat, no-falloff RobotEnemy.TakeExplosionDamage(). Wood dying near a
-    // robot but NOT under it does nothing to that robot at all — see the class comment above.
+    // to every block in this family, Wood included). Never touches robots — see the class
+    // comment above. Gated so a plain block's own destruction can't detonate a nearby explosive
+    // prop (only a direct hit can do that); an explosive prop's own chain is ungated and still
+    // freely damages/detonates anything nearby, explosive or not.
     protected void DamageNearby()
     {
         float radius = EffectiveBlastRadius;
@@ -114,23 +110,17 @@ public class WoodBlock : BlockBase
         {
             if (hit == null || hit.gameObject == gameObject) continue;
 
-            if (_explodesOnRobots)
-            {
-                var robot = hit.GetComponentInParent<RobotEnemy>();
-                if (robot != null && !robot.IsDestroyed)
-                {
-                    robot.TakeExplosionDamage(_explosionStrengthMultiplier);
-                    continue;
-                }
-            }
-
             float dist    = Vector2.Distance(transform.position, hit.transform.position);
             float falloff = Mathf.Clamp01(1f - dist / radius);
             if (falloff <= 0f) continue;
 
             var block = hit.GetComponentInParent<BlockBase>();
-            if (block != null && block != (BlockBase)this && !block.IsDestroyed)
-                block.TakeDamage(_areaDamage * falloff);
+            if (block == null || block == (BlockBase)this || block.IsDestroyed) continue;
+
+            if (!_isExplosive && block is WoodBlock nearbyWood && nearbyWood._isExplosive)
+                continue;
+
+            block.TakeDamage(_areaDamage * falloff);
         }
     }
 }

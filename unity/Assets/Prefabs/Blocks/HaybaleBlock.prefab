@@ -218,6 +218,5 @@ MonoBehaviour:
   _fragmentSpeed: 4
   Indestructible: 0
   _passThrough: 0
-  _explodesOnRobots: 1
   _areaDamage: 25
-  _explosionStrengthMultiplier: 1
+  _isExplosive: 1

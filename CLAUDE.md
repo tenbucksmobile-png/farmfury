@@ -127,6 +127,18 @@ needing a live pass before shipping.
 
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
+- **2026-08-03** — Robot-vs-block damage rebalance, user-requested. (1) **Block explosions no
+  longer damage robots at all** — `RobotEnemy.TakeExplosionDamage()`/`ExplosionDamageFraction`
+  removed entirely; a robot now only takes damage from a direct animal hit, a connecting egg, or
+  `TakeFallDamage()` when its own support block is destroyed (structural collapse, not a blast).
+  (2) **Chain-reaction gating**: `WoodBlock._explodesOnRobots` renamed `_isExplosive` and
+  repurposed — a plain block's (Wood/Stone) own destruction chain can no longer detonate a nearby
+  explosive prop (Haybale/ExplodingBarrelBlock); only a direct hit from a character/ability can
+  trigger THEIR explosion. An explosive prop's own chain is unchanged — it still freely
+  damages/detonates anything nearby, so a Haybale/barrel exploding still chains into nearby
+  Wood/Stone. (3) **StoneBlock gained its own death-burst art** — `_sprDamaged`/`_sprExplode` wired
+  to a new user-supplied `StoneDebris.png` (was previously unwired, `fileID: 0`) — deliberately not
+  a reuse of WoodBlock's `WoodDebris.png`, so shattering stone doesn't look like broken wood.
 - **2026-07-26** — Recovered from a real data-loss incident caused by the cannon/scenery preview
   fix directly below (user report: "we have erased the barn and all the scenery from world 1, and
   nothing has rendered correctly from world 2"). Two separate problems, both traced to
@@ -552,23 +564,40 @@ unity/Assets/Scripts/
                               see Known Issues), baseMass=5, bounciness=0.2; _passThrough (public);
                               _sprDamaged/_sprExplode both wired to WoodDebris.png — every wood plank
                               gets a dedicated hit-flash/death-burst instead of the generic 4-fragment
-                              fade. **_explodesOnRobots (bool, default false, added 2026-07-10 fifth
-                              balance pass)** — when false (plain Wood), DamageNearby() on death chains
-                              damage to nearby BLOCKS ONLY, never robots; only Haybale (wired true via
+                              fade. **No block explosion damages a robot any more (2026-08-03)** —
+                              `RobotEnemy.TakeExplosionDamage()` was removed entirely; a robot only
+                              ever takes damage from a direct animal hit, an egg, or
+                              `TakeFallDamage()` when its own support is destroyed (see RobotEnemy.cs
+                              below). **`_isExplosive` (bool, default false — renamed from the old
+                              `_explodesOnRobots`, added 2026-07-10 fifth balance pass)** now exists
+                              purely to gate the block-to-block chain reaction: a plain block's
+                              (Wood/Stone) own destruction chain skips any `_isExplosive` neighbour it
+                              reaches (so a plain block breaking can never detonate a nearby Haybale/
+                              barrel — only a direct hit from a character/ability can), while an
+                              `_isExplosive` block's own chain is ungated and freely damages/detonates
+                              anything nearby, explosive or not (Haybale/ExplodingBarrelBlock exploding
+                              WILL still chain into nearby Wood/Stone). Wired true on Haybale (via
                               SceneSetup.EnsureHaybaleBlockPrefab()) and ExplodingBarrelBlock (sets true
-                              in its own Awake()) still call RobotEnemy.TakeExplosionDamage(). Blast
-                              radius (EffectiveBlastRadius) is no longer a flat constant — it's
-                              Mathf.Max(_col.bounds.size.x, _col.bounds.size.y) * ExplosiveForceScale
-                              (0.4f, i.e. 40% of the block's own rendered footprint), recomputed at the
-                              moment of death — see Known Issues for the "one hit" bug this fixes.
+                              in its own Awake()). Blast radius (EffectiveBlastRadius) is not a flat
+                              constant — it's Mathf.Max(_col.bounds.size.x, _col.bounds.size.y) *
+                              ExplosiveForceScale (0.4f, i.e. 40% of the block's own rendered
+                              footprint), recomputed at the moment of death — see Known Issues for the
+                              "one hit" bug this fixes.
     ExplodingBarrelBlock.cs      — WoodBlock subclass, baseMaxHealth=5 (pops in one hit, same as
-                              Haybale/Wood); _explodesOnRobots=true, _areaDamage=55 (bigger block-to-
+                              Haybale/Wood); _isExplosive=true, _areaDamage=55 (bigger block-to-
                               block chain damage than plain Wood's 25 — blast radius is shared/derived,
                               see WoodBlock above, not a separate override any more). WoodenBarrel.png
                               art (SceneSetup.EnsureExplodingBarrelPrefab()), reuses RobotEnemy's own
                               Explosion.png/Explosion_Robot.mp3 death FX via the existing
-                              _sprExplode/_destroyClipOverride fields rather than new art.
-    StoneBlock.cs                — baseMaxHealth=220, baseMass=8, bounciness=0.1
+                              _sprExplode/_destroyClipOverride fields rather than new art. No longer
+                              deals any direct robot damage (2026-08-03) — see WoodBlock.cs above.
+    StoneBlock.cs                — baseMaxHealth=220, baseMass=8, bounciness=0.1. **_sprDamaged/
+                              _sprExplode wired to StoneDebris.png (2026-08-03, user-supplied)** —
+                              deliberately a separate asset from WoodBlock's WoodDebris.png, so a
+                              shattering stone chunk doesn't look like broken wood splinters. StoneBlock
+                              itself has no DamageNearby()/chain-reaction call at all (inherited
+                              directly from BlockBase, not WoodBlock) — a Stone block's own destruction
+                              was never able to chain-damage neighbours in the first place.
   Enemies/
     RobotEnemy.cs                — HP=35 (class default; HarvesterRobot.prefab overrides to 28,
                               SemiHarvesterRobot.prefab to 26); scale=(0.6,0.9); BoxCollider2D.size=(1,1),
@@ -595,16 +624,21 @@ unity/Assets/Scripts/
                               **Damage-factor model v2 (2026-07-10, fifth balance pass — see Known
                               Issues)**: every damage source is a fixed fraction of _maxHealth, no
                               impulse/speed dependency. TakeDirectHitDamage() (animal collision,
-                              DirectHitDamageFraction=0.34, ~3 hits), TakeExplosionDamage() (a genuine
-                              explosive prop — Haybale/ExplodingBarrelBlock — dying nearby,
-                              ExplosionDamageFraction=0.28, ~4 hits), TakeEggDamage() (one connecting
-                              Cluster Bomb egg, EggDamageFraction=0.12, ~9 hits — deliberately the
+                              DirectHitDamageFraction=0.55, ~2 hits), TakeEggDamage() (one connecting
+                              Cluster Bomb egg, EggDamageFraction=0.16, ~6-7 hits — deliberately the
                               weakest), TakeFallDamage() (MakeDynamicFromSupportLoss — a robot's support
                               block destroyed, structural collapse only, FallDamageFraction=0.15, ~7
-                              hits). Robot-vs-robot contact damage (_robotContactDamage, default 18) is
-                              the one remaining impulse-plus-floor category, added to the real impulse
-                              (not just whichever is bigger) via OnCollisionEnter2D's robot-vs-robot
-                              branch — any robot-vs-robot touch always counts as a hit regardless of
+                              hits). **TakeExplosionDamage()/ExplosionDamageFraction removed entirely
+                              (2026-08-03, user request)** — no block explosion (Wood, Stone, Haybale,
+                              ExplodingBarrelBlock) damages a robot any more, regardless of proximity;
+                              a robot near a detonating prop is unaffected unless it was actually
+                              resting on the block that broke, in which case TakeFallDamage() (a
+                              distinct, weaker category driven by the fall itself, not the blast)
+                              applies via CheckForRobotsOnTop() -> MakeDynamicFromSupportLoss(). Robot-
+                              vs-robot contact damage (_robotContactDamage, default 18) is the one
+                              remaining impulse-plus-floor category, added to the real impulse (not
+                              just whichever is bigger) via OnCollisionEnter2D's robot-vs-robot branch —
+                              any robot-vs-robot touch always counts as a hit regardless of
                               _minDamageImpulse.
   Scoring/
     ScoreManager.cs               — Robot +1000, Wood +100, Stone +200, Egg +50, bird-left bonus +500;

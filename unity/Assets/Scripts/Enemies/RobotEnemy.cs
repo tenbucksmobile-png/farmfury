@@ -20,10 +20,6 @@ public class RobotEnemy : MonoBehaviour
     // the physics engine happened to resolve it):
     //   - Direct hit   (TakeDirectHitDamage) — a launched animal physically colliding with the
     //     robot. 2 hits to kill.
-    //   - Explosion    (TakeExplosionDamage) — ONLY from a genuine explosive prop dying next to
-    //     the robot (Haybale or ExplodingBarrelBlock — see WoodBlock._explodesOnRobots). Plain
-    //     Wood breaking apart no longer triggers this at all (see WoodBlock.DamageNearby) — wood
-    //     is now purely structural, see the Fall category below. 2 hits to kill.
     //   - Egg          (TakeEggDamage) — Cluck's Cluster Bomb ability, one call per egg that
     //     actually connects. Deliberately the weakest of the four (a supplementary tool, not a
     //     solo-kill weapon) — ~9 eggs (nearly two full 5-egg bursts) to kill unassisted.
@@ -35,23 +31,18 @@ public class RobotEnemy : MonoBehaviour
     //     fractional damage." Weaker than a real explosion. ~7 falls to kill unassisted (in
     //     practice the subsequent landing impact via OnCollisionEnter2D usually adds more on top).
     // Sixth balance pass (2026-07-10, same day — user report: "I am not able to destroy all
-    // robots within the 3 animals... retune the factors so 3 birds works"): raised Direct-hit and
-    // Explosion 0.34/0.28 -> 0.55 each (both now exactly 2 hits to kill, matching this project's
-    // long-standing "always exactly 2 direct hits" design language from the fourth balance pass,
-    // just now shared by explosions too) so a level's 3 birds have real room to clear a dense
-    // multi-robot layout (e.g. L05's 5 robots) via a mix of direct hits, an explosive prop or two,
-    // and incidental fall/contact damage, without needing to widen blast radius back out (which
-    // would reintroduce the "one hit chain-kills everything" bug this pass fixed). Egg/Fall left
-    // untouched — still the deliberately weaker supplementary categories.
+    // robots within the 3 animals... retune the factors so 3 birds works"): raised Direct-hit to
+    // 0.55 (now exactly 2 hits to kill) so a level's 3 birds have real room to clear a dense
+    // multi-robot layout (e.g. L05's 5 robots) via a mix of direct hits and incidental fall/
+    // contact damage. Egg/Fall left untouched — still the deliberately weaker supplementary
+    // categories.
     // Robot-vs-robot contact damage (_robotContactDamage below) remains its own, separate,
     // impulse-plus-floor category, untouched by this pass.
+    // Explosion damage removed entirely (2026-08-03, user request) — no block explosion (Wood,
+    // Stone, Haybale, ExplodingBarrelBlock) damages a robot any more. A robot standing on a block
+    // that gets destroyed is still affected, but purely via TakeFallDamage() below (structural
+    // collapse), not a blast.
     private const float DirectHitDamageFraction    = 0.55f;
-    // Lowered 0.55 -> 0.20 (2026-07-26, user request) — a haybale/barrel exploding directly
-    // against a robot should chip it, not near-kill it in 2 hits like a direct thrown-animal
-    // impact. Only affects robot damage; block-to-block chain destruction (WoodBlock.DamageNearby's
-    // _areaDamage falloff, which still levels nearby wood/ice blocks at full force) is a completely
-    // separate code path and is untouched by this constant.
-    private const float ExplosionDamageFraction    = 0.20f;
     // Raised 0.12 -> 0.16 (2026-07-12, user request: "give the eggs slightly stronger damage") —
     // still deliberately the weakest per-hit category (a Cluster Bomb supplement, not a solo-kill
     // weapon), just a bit more impactful now (~6-7 connecting eggs to kill instead of ~9).
@@ -74,20 +65,16 @@ public class RobotEnemy : MonoBehaviour
     // 3 solid direct hits to kill instead of 2, sized to exactly this level's 3-bird budget.
     [SerializeField] private float _damageResistance = 1f;
 
-    // Separate multiplier for the two PASSIVE/environmental damage categories — TakeExplosionDamage
-    // (a nearby explosive prop dying) and TakeFallDamage (this robot's own support collapsing).
-    // Added 2026-07-14, same session as _damageResistance above, same user request extended:
-    // "make the commander stronger - it should take all three sprites to destroy - even with
-    // falling structure." L18's redesigned staircase is built from destructible Stone/Wood
-    // pieces plus 2 dynamite barrels around the Commander — without a SEPARATE multiplier here,
-    // Explosion/Fall damage would apply the SAME _damageResistance as a direct hit (both
-    // ExplosionDamageFraction and DirectHitDamageFraction are 0.55, identical), so one barrel
-    // catching him in its blast plus 2 direct hits could finish him in "2.5 birds," undermining
-    // the "must take all three" requirement — the collapsing structure would let the player
-    // shortcut the fight instead of needing 3 genuine thrown-animal hits. Defaults to 1f (no
-    // behaviour change for every other robot type, which has no boss-tier toughness to protect);
-    // wired to a much lower 0.1 on Commander specifically, so structural collapse/explosions
-    // chip only token damage and can't meaningfully shortcut the 3-hit requirement above.
+    // Separate multiplier for the PASSIVE/environmental damage category — TakeFallDamage (this
+    // robot's own support collapsing; explosion damage was removed entirely 2026-08-03, see
+    // above). Added 2026-07-14, same session as _damageResistance above, same user request
+    // extended: "make the commander stronger - it should take all three sprites to destroy - even
+    // with falling structure." L18's redesigned staircase is built from destructible Stone/Wood
+    // pieces around the Commander — without a SEPARATE multiplier here, Fall damage would apply
+    // the SAME _damageResistance as a direct hit, letting a collapsing structure shortcut the
+    // fight instead of needing genuine thrown-animal hits. Defaults to 1f (no behaviour change for
+    // every other robot type, which has no boss-tier toughness to protect); wired to a much lower
+    // 0.1 on Commander specifically, so structural collapse chips only token damage.
     [SerializeField] private float _structuralDamageResistance = 1f;
 
     public float Health      { get; private set; }
@@ -429,25 +416,13 @@ public class RobotEnemy : MonoBehaviour
         // damage-model comment at the top of this class) — on top of whatever the eventual fall/
         // landing impact adds via OnCollisionEnter2D below, since a gentle drop onto the next
         // block down could otherwise produce near-zero impulse and read as "nothing happened"
-        // even though its support was just blown out from under it. Deliberately NOT
-        // TakeExplosionDamage() — a structural collapse from wood is not a real explosion, per
-        // the 2026-07-10 fifth balance pass.
+        // even though its support was just blown out from under it.
         TakeFallDamage();
     }
 
     // Direct hit from a launched animal (Cluck etc.) — always exactly this fraction of max HP,
     // regardless of impact speed/angle. See the damage-model comment at the top of this class.
     public void TakeDirectHitDamage() => TakeDamage(_maxHealth * DirectHitDamageFraction * _damageResistance);
-
-    // A genuine explosive prop (Haybale or ExplodingBarrelBlock — see
-    // WoodBlock._explodesOnRobots) dying within blast range. See the damage-model comment at the
-    // top of this class. strengthMultiplier lets a specific prop type hit harder than the shared
-    // base fraction (2026-07-10, user request: "these barrels must explode like the haybales,
-    // only with stronger strength") — Haybale/plain explosive Wood pass the default 1x
-    // (WoodBlock._explosionStrengthMultiplier's own default), ExplodingBarrelBlock overrides
-    // theirs higher.
-    public void TakeExplosionDamage(float strengthMultiplier = 1f) =>
-        TakeDamage(_maxHealth * ExplosionDamageFraction * strengthMultiplier * _structuralDamageResistance);
 
     // One connecting egg from Cluck's Cluster Bomb ability. Deliberately the weakest category —
     // see the damage-model comment at the top of this class.
