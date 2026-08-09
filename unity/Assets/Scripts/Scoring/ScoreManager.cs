@@ -18,11 +18,19 @@ public class ScoreManager : MonoBehaviour
     public int  Stars           { get; private set; }
     public bool IsNewBest       { get; private set; }
 
+    // "Perfect" tier (GDD 4th star tier: 3-star clear + every block on the level destroyed too,
+    // not just the robots) — added 2026-08-09 as a mastery target for players who were one-
+    // shotting structures and getting a trivial 3-star with blocks still standing. Tracked/
+    // persisted here; no dedicated art exists yet to surface it in the Level Complete panel (see
+    // HUDController), so it's scoring-layer only for now.
+    public bool IsPerfect       { get; private set; }
+
     public event Action<int> OnScoreChanged;
     public event Action<int> OnStarsAwarded;
 
     private int  _levelIndex;
     private int  _totalRobots;
+    private int  _totalBlocks;
     private bool _levelEnded;
 
     void Awake()
@@ -35,14 +43,16 @@ public class ScoreManager : MonoBehaviour
         Instance = this;
     }
 
-    public void InitLevel(int levelIndex, int totalBirds, int totalRobots)
+    public void InitLevel(int levelIndex, int totalBirds, int totalRobots, int totalBlocks = 0)
     {
         _levelIndex     = levelIndex;
         _totalRobots    = totalRobots;
+        _totalBlocks    = totalBlocks;
         _levelEnded     = false;
         IsNewBest       = false;
         Score           = 0;
         Stars           = 0;
+        IsPerfect       = false;
         BirdsRemaining  = totalBirds;
         RobotsDestroyed = 0;
         BlocksDestroyed = 0;
@@ -79,7 +89,8 @@ public class ScoreManager : MonoBehaviour
         int bonus = BirdsRemaining * PtsBirdLeft;
         if (bonus > 0) AwardPoints(bonus);
 
-        Stars = CalculateStars();
+        Stars     = CalculateStars();
+        IsPerfect = Stars >= 3 && _totalBlocks > 0 && BlocksDestroyed >= _totalBlocks;
         SaveIfBest();
         OnStarsAwarded?.Invoke(Stars);
     }
@@ -89,6 +100,9 @@ public class ScoreManager : MonoBehaviour
 
     public static int GetBestStars(int levelIndex) =>
         PlayerPrefs.GetInt(StarsKey(levelIndex), 0);
+
+    public static bool GetIsPerfect(int levelIndex) =>
+        PlayerPrefs.GetInt(PerfectKey(levelIndex), 0) != 0;
 
     void AwardPoints(int amount)
     {
@@ -113,9 +127,12 @@ public class ScoreManager : MonoBehaviour
         }
         if (Stars > GetBestStars(_levelIndex))
             PlayerPrefs.SetInt(StarsKey(_levelIndex), Stars);
+        if (IsPerfect && !GetIsPerfect(_levelIndex))
+            PlayerPrefs.SetInt(PerfectKey(_levelIndex), 1);
         PlayerPrefs.Save();
     }
 
-    static string ScoreKey(int idx) => $"ff_score_{idx}";
-    static string StarsKey(int idx) => $"ff_stars_{idx}";
+    static string ScoreKey(int idx)   => $"ff_score_{idx}";
+    static string StarsKey(int idx)   => $"ff_stars_{idx}";
+    static string PerfectKey(int idx) => $"ff_perfect_{idx}";
 }

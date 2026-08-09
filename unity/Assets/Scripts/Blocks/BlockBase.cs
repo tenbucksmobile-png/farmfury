@@ -196,6 +196,18 @@ public abstract class BlockBase : MonoBehaviour
 
     protected virtual void Awake()
     {
+        // Self-healing, same pattern WoodBlock/StoneBlock already use for baseMaxHealth/
+        // baseMass/bounciness — 2026-08-09, after an audit found Robot.prefab and both
+        // WoodBlock.prefab/StoneBlock.prefab still serialized at 2.5/2 (the pre-2026-06-27
+        // values) six weeks after the C# default changed to 1.0f/1.5f, because nothing ever
+        // re-applies a [SerializeField] default once it's baked into an existing prefab. A
+        // SceneSetup.cs Ensure...() fix would only self-correct on the next "Wire Scene
+        // References" run — this is exactly how the original mismatch survived six weeks
+        // unnoticed. Asserting here means every block always uses the current intended value
+        // regardless of whatever happens to be serialized on its prefab.
+        impulseDamageMultiplier = 1.0f;
+        minDamageImpulse        = 1.5f;
+
         _rb  = GetComponent<Rigidbody2D>();
         // Continuous detection (2026-07-16) — with more blocks now genuinely falling under
         // gravity (see the _stayKinematic flip above and the collapse cascade this class already
@@ -437,10 +449,20 @@ public abstract class BlockBase : MonoBehaviour
     {
         if (IsDestroyed) return;
         IsDestroyed = true;
-        // CheckForRobotsOnTop() no longer lives here — TakeDamage() now calls it once on every
-        // hit (lethal or not), see that method's comment. Calling it again here would double-fire
-        // for the specific hit that both damages AND destroys the block (the common case for any
-        // one-hit-kill block like Haybale/Wood/Barrel).
+        // 2026-08-09 (user report: wood/stone left hanging mid-air, "unaffected by gravity" on
+        // some levels). Re-run here unconditionally rather than relying on TakeDamage() to have
+        // already done it: TakeDamage() calls this cascade on every hit (lethal or not) BEFORE
+        // deciding whether to call DestroyBlock(), which covers the normal "player hits a block"
+        // path — but ForceDestroy() (used by RobotEnemy.Die()'s _destroyOnDeath, e.g. L18's
+        // Commander crumbling its own StoneTower) calls DestroyBlock() directly and skips
+        // TakeDamage() entirely, so nothing ever told whatever was resting on that block that its
+        // support just vanished. Both CheckForRobotsOnTop/CheckForBlocksOnTop only ever wake a
+        // block/robot that's still Static, so this second call is a harmless no-op for the
+        // already-cascaded TakeDamage() path and the only cascade for the ForceDestroy() path —
+        // every real destruction now unconditionally wakes whatever depended on it, regardless of
+        // which path triggered the destruction.
+        CheckForRobotsOnTop();
+        CheckForBlocksOnTop();
         CameraShake.Shake(0.22f, 0.20f);
         if (_sprExplode != null) SpawnExplosion();
         else                     SpawnFragments();
@@ -542,6 +564,17 @@ public abstract class BlockBase : MonoBehaviour
     // to reach sideways/downward at all. Block colliders are already correctly re-fitted to their
     // visuals in Initialise(), so this narrow column reliably catches a directly-stacked neighbour
     // without reaching into an unrelated structure elsewhere in the level.
+    // How long a tier of a collapsing stack waits before its own cascade continues upward —
+    // 2026-08-09, "mechanism 2 option D" (user report: a whole tower could be released and
+    // destroy everything in it in a single instant, far beyond whatever the player actually
+    // touched). The block directly above a hit still wakes (Static -> Dynamic) immediately, same
+    // as always — only the CONTINUATION of the cascade into whatever rests on THAT block is
+    // deferred by this delay, so a tall structure comes down tier by tier over real time instead
+    // of the entire stack letting go in the same physics frame. Does not reintroduce the old
+    // "floating block" bug this cascade was built to fix (see the method comment below) — every
+    // tier still eventually wakes and falls, it's just staggered, never skipped.
+    const float CascadeStaggerDelay = 0.1f;
+
     void CheckForBlocksOnTop()
     {
         const int blockLayerMask = 1 << 8;
@@ -578,10 +611,22 @@ public abstract class BlockBase : MonoBehaviour
                 // fall over and hang in the middle of the air." Recursion terminates naturally —
                 // it only ever climbs through however many blocks are actually touching this one,
                 // and stops the moment it finds no more Static blocks in range.
-                block.CheckForRobotsOnTop();
-                block.CheckForBlocksOnTop();
+                //
+                // The CONTINUATION beyond this tier is staggered (see CascadeStaggerDelay above)
+                // rather than called inline here — this block itself still wakes and starts
+                // falling this same frame (no change), only whatever rests on IT gets checked a
+                // beat later, so a tall stack releases tier by tier instead of all at once.
+                block.StartCoroutine(block.DelayedOnTopCascade());
             }
         }
+    }
+
+    IEnumerator DelayedOnTopCascade()
+    {
+        yield return new WaitForSeconds(CascadeStaggerDelay);
+        if (this == null || IsDestroyed) yield break;
+        CheckForRobotsOnTop();
+        CheckForBlocksOnTop();
     }
 
     // Death burst for block types with dedicated explosion art (see _sprExplode) — replaces the

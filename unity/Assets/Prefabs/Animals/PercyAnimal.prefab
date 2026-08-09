@@ -173,11 +173,11 @@ MonoBehaviour:
   mass: 8
   bounciness: 0.4
   linearDrag: 0.008
-  _sprIdle: {fileID: 0}
-  _sprLoaded: {fileID: 0}
-  _sprInFlight: {fileID: 0}
+  _sprIdle: {fileID: 21300000, guid: f3442fead481b4b4ab3a33cc04493527, type: 3}
+  _sprLoaded: {fileID: 21300000, guid: f3442fead481b4b4ab3a33cc04493527, type: 3}
+  _sprInFlight: {fileID: 21300000, guid: 8030d83fada59da4b91ee2a6e5f63c56, type: 3}
   _sprImpact: {fileID: 0}
-  _sprAbility: {fileID: 0}
+  _sprAbility: {fileID: 21300000, guid: 4288d687bd20df74cb75d1c19818d5ee, type: 3}
   _sprImpactStars: {fileID: 21300000, guid: 29a3399c4bd78ea41a2903fd9d1809b5, type: 3}
   _contactTimeout: 0.45
   _maxBounces: 3

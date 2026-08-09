@@ -305,6 +305,16 @@ public static class LevelLayoutDumper
         if (spriteNameLower.Contains("diagonal"))                                       return "Diagonal";
         if (spriteNameLower.Contains("square"))                                         return "Square";
         if (spriteNameLower.Contains("block"))                                          return "Block";
+        // Added 2026-08-09 — BlockBase.cs already had dedicated sprite fields/WoodArtVariant
+        // cases for all four (_sprBarrelProp/Barrel, _sprCart/Cart, _sprRuinedWall/RuinedWall,
+        // _sprTower/Tower) but this function never checked for their keywords, so every
+        // WoodenBarrel/WoodenCart/RuinedStoneWall/StoneTower sprite fell through to Auto on
+        // every dump since this function existed — confirmed against 24 already-dumped
+        // WoodenBarrel/WoodenCart/RuinedStoneWall instances across L03-L18, all Auto.
+        if (spriteNameLower.Contains("barrel"))                                         return "Barrel";
+        if (spriteNameLower.Contains("cart"))                                           return "Cart";
+        if (spriteNameLower.Contains("wall"))                                           return "RuinedWall";
+        if (spriteNameLower.Contains("tower"))                                          return "Tower";
         return "Auto";
     }
 }

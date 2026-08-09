@@ -13,11 +13,15 @@ public class WoodBlock : BlockBase
     // BlockBase.CheckForRobotsOnTop() -> RobotEnemy.MakeDynamicFromSupportLoss() ->
     // TakeFallDamage(), a distinct, weaker category driven by the fall itself, not a blast.
     // Blast radius ("explosive force") is not an arbitrary flat number independent of the
-    // block's own size — it's ExplosiveForceScale (40%) of the block's own rendered footprint
-    // (see EffectiveBlastRadius below), computed fresh from the actual collider bounds at the
-    // moment of death. A ~1x1 block has a ~0.4u blast radius, so a single break can only ever
-    // reach directly-touching neighbours, not an entire tower.
-    protected const float ExplosiveForceScale = 0.4f;
+    // block's own size — it's ExplosiveForceScale of the block's own rendered footprint (see
+    // EffectiveBlastRadius below), computed fresh from the actual collider bounds at the moment
+    // of death. Lowered 0.4 -> 0.25 (2026-08-09, difficulty pass, "mechanism 1 option B" — user
+    // report: a single barrel/haybale touch could chain-detonate several others across a level).
+    // A ~1x1 block now has a ~0.25u blast radius, so ordinary level-authoring spacing (props
+    // placed roughly half a unit or more apart, the norm across every shipped level) no longer
+    // falls inside another explosive prop's blast at all — only props placed essentially
+    // touching/overlapping on purpose can still chain into each other.
+    protected const float ExplosiveForceScale = 0.25f;
     [SerializeField] protected float _areaDamage        = 25f;
 
     // Marks a genuine explosive prop (Haybale, ExplodingBarrelBlock) as opposed to a plain
@@ -38,18 +42,28 @@ public class WoodBlock : BlockBase
 
     protected override void Awake()
     {
-        // Lowered 80 -> 5 (2026-07-10, user report: "wood... currently it is not damaging" —
-        // early levels are meant to be easy, single-hit destruction for all three environmental
-        // block types (haybale/wood/barrel), with the actual challenge coming from robot HP and
-        // the fall/contact damage mechanics instead). BlockBase.Initialise() scales this by
-        // area/StdArea (StdArea=0.48) — for a standard 1x1 block that's baseMaxHealth*2.083, so
-        // 5 lands right around Haybale's explicit hp:10 override (its own class default is
-        // irrelevant there since every Haybale B() call already passes an explicit override) —
-        // a typical Cluck impact (~15-20 damage per CLAUDE.md) now reliably one-shots any
-        // standard wood block without needing a per-instance hp override in every level's data.
-        baseMaxHealth = 5f;
+        // Lowered 80 -> 5 on 2026-07-10 for a deliberate single-hit-destruction feel from a
+        // direct animal hit. Raised 5 -> 8 (2026-08-09, "mechanism 2 option F" — user report of
+        // a falling-block domino chain destroying far more than the animal itself ever touched):
+        // a direct Cluck/Bessie hit (~15-20 damage) still one-shots a standard wood block just as
+        // reliably as before, but a WEAKER glancing impact — specifically another block landing
+        // on it after falling, which generates less force than a direct thrown-animal hit — is
+        // now less likely to also destroy it outright, so a collapsing stack is more likely to
+        // topple/settle a few pieces deep rather than shatter everything below it in one chain.
+        // BlockBase.Initialise() scales this by area/StdArea (StdArea=0.48) — for a standard 1x1
+        // block that's baseMaxHealth*2.083, so 8 lands around ~16.7 effective HP.
+        baseMaxHealth = 8f;
         baseMass      = 5f;
         bounciness    = 0.2f;
+        // Self-healing — 2026-08-09. HaybaleBlock.prefab shares this exact component (see the
+        // class comment at the top of this file) and was found still serialized at 2.2 (over
+        // 4x wood's own 0.5 death-burst size) — the pre-2026-07-10 value. Reduced to 1.0 (2x
+        // wood's 0.5, not 4.4x) per explicit user request ("reduce the 4x radius to only two,
+        // make it seem realistic"). Branches on _isExplosive rather than a fixed value because
+        // this one Awake() covers both plain Wood (never explosive, wants 0.5) and Haybale
+        // (always explosive, wants 1.0) — _isExplosive is already deserialized from the prefab
+        // by the time Awake() runs, so this reads correctly for both without needing a subclass.
+        _explodeSizeMultiplier = _isExplosive ? 1.0f : 0.5f;
         base.Awake();
         if (_sr) _sr.color = new Color(0.65f, 0.38f, 0.12f); // wood brown
     }
@@ -94,14 +108,31 @@ public class WoodBlock : BlockBase
         // DamageNearby() starts means any reentrant chain back to this block now hits
         // BlockBase.TakeDamage()'s own "if (IsDestroyed) return;" guard immediately.
         base.DestroyBlock();
-        DamageNearby();
+        // 2026-08-09 (user-reported: a single animal was clearing entire structures in one hit).
+        // Only a genuine explosive prop's (_isExplosive — Haybale, ExplodingBarrelBlock) own
+        // destruction chain-damages nearby blocks any more. A plain structural block (Wood/Stone)
+        // breaking no longer directly damages its neighbours at all — this used to let one hit
+        // domino through an entire wall/tower via code-driven area damage, which isn't how real
+        // Angry Birds-style destruction works: there, a piece dying only affects neighbours
+        // through actual physics (falling once support is lost, or a real collision impulse),
+        // both of which still fully apply here (see BlockBase.CheckForRobotsOnTop /
+        // SettleUnsupportedBlocksNextFrame and BlockBase's own impulse-driven TakeDamage). Every
+        // remaining block in a structure now only dies from being hit directly or from a genuine
+        // physics collapse, not from a neighbour's death alone.
+        if (_isExplosive) DamageNearby();
     }
 
-    // Damages every OTHER block within EffectiveBlastRadius (structural chain reaction — applies
-    // to every block in this family, Wood included). Never touches robots — see the class
-    // comment above. Gated so a plain block's own destruction can't detonate a nearby explosive
-    // prop (only a direct hit can do that); an explosive prop's own chain is ungated and still
-    // freely damages/detonates anything nearby, explosive or not.
+    // Damage against another explosive prop caught in this blast is reduced by this fraction —
+    // 2026-08-09, "mechanism 1 option C" (user request: a chain shouldn't be a guaranteed sure
+    // thing). Combined with option B's shrunk blast radius above: two explosive props have to be
+    // placed essentially touching for this to matter at all, and even then the reduced damage
+    // isn't always enough to finish off a full-health neighbour outright.
+    protected const float ExplosiveNeighbourDamageScale = 0.5f;
+
+    // Damages every OTHER block within EffectiveBlastRadius. Only ever called for a genuine
+    // explosive prop's own destruction (see DestroyBlock above) — never for a plain Wood/Stone
+    // block. Still skips no one: an explosive prop's chain can still reach another explosive
+    // prop, but at reduced strength (see ExplosiveNeighbourDamageScale above).
     protected void DamageNearby()
     {
         float radius = EffectiveBlastRadius;
@@ -117,10 +148,10 @@ public class WoodBlock : BlockBase
             var block = hit.GetComponentInParent<BlockBase>();
             if (block == null || block == (BlockBase)this || block.IsDestroyed) continue;
 
-            if (!_isExplosive && block is WoodBlock nearbyWood && nearbyWood._isExplosive)
-                continue;
-
-            block.TakeDamage(_areaDamage * falloff);
+            float dmg = _areaDamage * falloff;
+            if (block is WoodBlock neighbourWood && neighbourWood._isExplosive)
+                dmg *= ExplosiveNeighbourDamageScale;
+            block.TakeDamage(dmg);
         }
     }
 }

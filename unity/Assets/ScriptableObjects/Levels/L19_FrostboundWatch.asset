@@ -19,8 +19,8 @@ MonoBehaviour:
   birds: 020000000200000002000000
   blocks:
   - type: 0
-    position: {x: 4.49, y: -5.45}
-    size: {x: 0.746, y: 0.709}
+    position: {x: 4.24, y: -2.87}
+    size: {x: 0.721, y: 0.758}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
@@ -28,8 +28,8 @@ MonoBehaviour:
     artVariant: 12
     forceStayKinematic: 0
   - type: 0
-    position: {x: 4.45, y: -4.19}
-    size: {x: 0.746, y: 0.71}
+    position: {x: 4.48, y: -2.23}
+    size: {x: 0.721, y: 0.758}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
@@ -37,48 +37,21 @@ MonoBehaviour:
     artVariant: 12
     forceStayKinematic: 0
   - type: 0
-    position: {x: 4.48, y: -4.83}
-    size: {x: 0.778, y: 0.726}
+    position: {x: 4.16, y: -1.54}
+    size: {x: 0.721, y: 0.758}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
     artVariant: 12
-    forceStayKinematic: 0
-  - type: 0
-    position: {x: 6.35, y: -2.58}
-    size: {x: 0.81, y: 0.885}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-    indestructible: 0
-    artVariant: 3
-    forceStayKinematic: 0
-  - type: 0
-    position: {x: 6.06, y: -1.48}
-    size: {x: 1.286, y: 0.582}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-    indestructible: 0
-    artVariant: 0
-    forceStayKinematic: 0
-  - type: 0
-    position: {x: 4.74, y: -1.47}
-    size: {x: 1.543, y: 0.615}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-    indestructible: 0
-    artVariant: 0
     forceStayKinematic: 0
   robots:
   - robotType: 1
-    position: {x: 5.18, y: -3.02}
-    scale: {x: 9.574, y: 8.265}
+    position: {x: 4.9, y: -4.48}
+    scale: {x: 6.329, y: 5.325}
   - robotType: 1
-    position: {x: 5.58, y: -5.18}
-    scale: {x: 9.574, y: 8.265}
-  - robotType: 2
-    position: {x: 6.07, y: -0.6}
-    scale: {x: 7.57, y: 5.955}
+    position: {x: 5.03, y: -2.88}
+    scale: {x: 6.329, y: 5.325}
+  - robotType: 1
+    position: {x: 5.92, y: -5.31}
+    scale: {x: 6.329, y: 5.325}

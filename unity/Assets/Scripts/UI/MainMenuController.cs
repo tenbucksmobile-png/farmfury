@@ -125,7 +125,15 @@ public class MainMenuController : MonoBehaviour
         // Idle transition (same event, same Canvas sortingOrder). World 2+ should get its own
         // map screen built on the WorldMapController pattern when that content exists, not a
         // resurrected LevelSelectController.
-        WorldMapController.Instance?.Show();
+        // 2026-08-09 — PLAY now routes by GameManager.CurrentWorld (persisted the moment the
+        // player first enters World 2's map via World2LandingController) instead of always
+        // opening World 1's map. Fixes the "must replay L18 every time" complaint: once a player
+        // has reached World 2 once, PLAY takes them straight back into World2MapController from
+        // then on, same as WorldMapController always has for World 1.
+        if (GameManager.Instance != null && GameManager.Instance.CurrentWorld == 2)
+            World2MapController.Instance?.Show();
+        else
+            WorldMapController.Instance?.Show();
     }
 
     // Re-added 2026-07-10 (was removed 2026-07-07, user request to simplify the landing page —

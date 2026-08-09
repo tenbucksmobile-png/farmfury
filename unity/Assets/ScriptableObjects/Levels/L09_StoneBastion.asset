@@ -268,14 +268,14 @@ MonoBehaviour:
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 0
+    artVariant: 10
     forceStayKinematic: 0
   robots:
   - robotType: 2
     position: {x: 5.12, y: -3.2}
     scale: {x: 4.988, y: 5.913}
   - robotType: 2
-    position: {x: 7.53, y: -1.39}
+    position: {x: 8.25, y: -1.81}
     scale: {x: 4.988, y: 5.913}
   - robotType: 2
     position: {x: 4.88, y: -4.64}

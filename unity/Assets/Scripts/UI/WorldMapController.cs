@@ -151,8 +151,18 @@ public class WorldMapController : MonoBehaviour
 
     void OnStateChanged(GameState state)
     {
-        if (state == GameState.Idle) ShowPanel();
-        else                         HidePanel();
+        // 2026-08-09 — gated on CurrentWorld so a player who has already reached World 2 doesn't
+        // get bounced back onto World 1's map on every Idle transition (e.g. HUDController's
+        // Level Complete/Failed "Back" buttons, which deliberately rely on this auto-show instead
+        // of calling SkipToMainMenu() — see World2MapController's matching OnStateChanged for the
+        // symmetric World 2 half of this). Defaults to showing (World 1) whenever GameManager or
+        // its CurrentWorld can't be read, same as CurrentWorld's own "1" default.
+        if (state == GameState.Idle)
+        {
+            if (GameManager.Instance == null || GameManager.Instance.CurrentWorld != 2)
+                ShowPanel();
+        }
+        else HidePanel();
     }
 
     public void Show() => ShowPanel();

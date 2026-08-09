@@ -181,8 +181,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RobotEnemy
   _maxHealth: 35
-  _impulseDamageMultiplier: 2.5
-  _minDamageImpulse: 2
+  _impulseDamageMultiplier: 1
+  _minDamageImpulse: 1.5
   _robotContactDamage: 18
   _damageResistance: 1
   _structuralDamageResistance: 1

@@ -56,4 +56,32 @@ public static class DebugJumpToLevel
         }
         return true;
     }
+
+    // Added 2026-08-09 (user request: "build a link so i can jump between worlds to test") — a
+    // one-click swap between World 1's and World 2's maps, for testing without replaying through
+    // L18 every time (see GameManager.CurrentWorld's own comment for why that was ever needed at
+    // all). Explicitly hides whichever map isn't the target and calls SetCurrentWorld() so the
+    // switch is fully consistent with the real navigation state — after using either of these,
+    // PLAY from the main menu (and Level Complete/Failed's "Back" buttons) will keep routing to
+    // whichever world you just switched to, exactly as if you'd reached it the normal way.
+    [MenuItem("FarmFury/Debug/Switch To World 1 Map")]
+    public static void SwitchToWorld1Map()
+    {
+        if (!RequirePlayMode()) return;
+        GameManager.Instance?.SetCurrentWorld(1);
+        World2MapController.Instance?.HideForExternalTransition();
+        World2LandingController.Instance?.Hide();
+        WorldMapController.Instance?.Show();
+        Debug.Log("[FarmFury] Switched to World 1 (Sunrise Meadows) map.");
+    }
+
+    [MenuItem("FarmFury/Debug/Switch To World 2 Map")]
+    public static void SwitchToWorld2Map()
+    {
+        if (!RequirePlayMode()) return;
+        GameManager.Instance?.SetCurrentWorld(2);
+        WorldMapController.Instance?.HideForExternalTransition();
+        World2MapController.Instance?.Show();
+        Debug.Log("[FarmFury] Switched to World 2 (Frozen Tundra) map.");
+    }
 }

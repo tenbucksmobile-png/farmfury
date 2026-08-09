@@ -209,7 +209,7 @@ MonoBehaviour:
   _sprShortW2: {fileID: 0}
   _sprDamaged: {fileID: 0}
   _sprExplode: {fileID: 21300000, guid: 4f6ed50ed421ceb41b2606157c2ba1ea, type: 3}
-  _explodeSizeMultiplier: 2.2
+  _explodeSizeMultiplier: 1
   _stayKinematic: 0
   _silentHit: 0
   _destroyClipOverride: {fileID: 8300000, guid: 59a272fa646d2ef4794592438a9ec9ab, type: 3}

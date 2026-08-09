@@ -5,9 +5,15 @@ public class BessieAnimal : AnimalBase
 {
     [Header("Ground Slam")]
     [SerializeField] private float      _slamImpulse     = 18f;
-    [SerializeField] private float      _shockwaveRadius = 3.6f;
+    // Radius/damage both reduced (3.6 -> 2.4, 30 -> 22) 2026-08-09, difficulty pass — a 3.6u
+    // radius could reach across an entire structure's ground tier and level it in one landing,
+    // which was one of the two main "one animal clears everything" complaints (the other being
+    // Cluck's egg spread, narrowed the same day — see CluckAnimal.cs). Still a strong AOE against
+    // whatever's immediately around the landing point, just no longer wide enough to substitute
+    // for aiming at the base of a structure versus its upper tiers.
+    [SerializeField] private float      _shockwaveRadius = 2.4f;
     [SerializeField] private float      _shockwaveForce  = 12f;
-    [SerializeField] private float      _shockwaveDamage = 30f;
+    [SerializeField] private float      _shockwaveDamage = 22f;
 
     [Header("VFX")]
     [SerializeField] private GameObject _shockwaveRingPrefab;

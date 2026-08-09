@@ -42,6 +42,11 @@ public class World2LandingController : MonoBehaviour
     void OnPlayClicked()
     {
         Hide();
+        // 2026-08-09 — see GameManager.CurrentWorld's own comment. This is the one moment the
+        // player actually commits to entering World 2's map, so it's the right place to persist
+        // it — MainMenuController's PLAY button reads this afterward to route straight back into
+        // World2MapController instead of World 1's map, without needing the L18 video again.
+        GameManager.Instance?.SetCurrentWorld(2);
         World2MapController.Instance?.Show();
     }
 

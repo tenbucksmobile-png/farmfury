@@ -25,6 +25,9 @@ public class ExplodingBarrelBlock : WoodBlock
         // directly — see RobotEnemy.cs's damage-model comment.
         _isExplosive = true;
         _areaDamage  = 55f;
+        // Explicit, not just inherited from WoodBlock.Awake()'s _isExplosive branch — 2026-08-09,
+        // same reduction (2.2 -> 1.0, "reduce the 4x radius to only two") as StoneBlock/Haybale.
+        _explodeSizeMultiplier = 1.0f;
     }
 
     protected override void DestroyBlock()

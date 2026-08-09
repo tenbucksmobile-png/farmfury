@@ -206,6 +206,16 @@ public class RobotEnemy : MonoBehaviour
 
     void Awake()
     {
+        // Self-healing — 2026-08-09, mirrors the fix in BlockBase.Awake(). An audit found
+        // Robot.prefab (the Basic tier, the most common robot in the game) still serialized at
+        // the pre-2026-06-27 values (2.5/2) six weeks after the C# default changed to 1.0f/1.5f;
+        // every other robot prefab happened to be created AFTER that rebalance so it baked in
+        // the new value by luck, not by design. Asserting here — rather than only fixing the
+        // prefab data — means neither field can silently drift out of sync with the code default
+        // again, regardless of whether "Wire Scene References" is ever re-run.
+        _impulseDamageMultiplier = 1.0f;
+        _minDamageImpulse        = 1.5f;
+
         _rb = GetComponent<Rigidbody2D>();
         _sr = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();

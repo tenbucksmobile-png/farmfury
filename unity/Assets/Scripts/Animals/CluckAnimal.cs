@@ -17,7 +17,13 @@ public class CluckAnimal : AnimalBase
     // −85° (nearly straight down), always canted forward+down regardless of Cluck's actual
     // in-flight angle at the moment of the tap.
     [SerializeField] private float      _coneCenterDeg = -45f;
-    [SerializeField] private float      _spreadDeg     = 80f;
+    // Narrowed 80 -> 50 (2026-08-09, difficulty pass — testers found one Cluck tap could shred
+    // an entire wide structure in a single ability use). Each egg still guarantees a one-hit
+    // kill on whatever it touches (see OnCollisionEnter2D below, unchanged), but a tighter cone
+    // means the 5 eggs land closer together instead of fanning across a whole level's width, so
+    // clearing a wide structure now needs the cannon shot itself aimed well plus multiple birds
+    // rather than one lucky mid-air tap covering everything.
+    [SerializeField] private float      _spreadDeg     = 50f;
 
     [Header("Flash")]
     [SerializeField] private float _flashDuration = 0.12f;

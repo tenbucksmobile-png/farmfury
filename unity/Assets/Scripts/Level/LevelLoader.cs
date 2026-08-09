@@ -137,16 +137,29 @@ public class LevelLoader : MonoBehaviour
     {
         ClearLevel();
 
+        // World2CharacterSelectScreen's one-shot bird-queue override (see GameManager's own
+        // comment on the field) — consumed and cleared here, in the one place every level actually
+        // starts, so it can never leak into a level the player didn't just pick a lineup for.
+        AnimalType[] birdsToUse = data.birds;
+        if (GameManager.Instance != null &&
+            GameManager.Instance.BirdQueueOverride != null &&
+            GameManager.Instance.BirdQueueOverride.Length > 0)
+        {
+            birdsToUse = GameManager.Instance.BirdQueueOverride;
+            GameManager.Instance.BirdQueueOverride = null;
+        }
+
         _birdQueue.Clear();
-        foreach (var b in data.birds) _birdQueue.Enqueue(b);
+        foreach (var b in birdsToUse) _birdQueue.Enqueue(b);
 
         foreach (var b in data.blocks) SpawnBlock(b, data.world);
         foreach (var r in data.robots) SpawnRobot(r, data.world);
 
         ScoreManager.Instance.InitLevel(
             GameManager.Instance.CurrentLevelIndex,
-            data.birds.Length,
-            _spawnedRobots.Count);
+            birdsToUse.Length,
+            _spawnedRobots.Count,
+            data.blocks.Length);
 
         StartCoroutine(SettleUnsupportedBlocksNextFrame());
     }

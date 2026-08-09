@@ -114,6 +114,7 @@ public class World2MapController : MonoBehaviour
     private int              _lastHighestUnlocked = -1;
     private int              _highestUnlocked;
     private MatchUpScreen    _matchUpScreen;
+    private World2CharacterSelectScreen _charSelect;
 
     void Awake()
     {
@@ -123,7 +124,50 @@ public class World2MapController : MonoBehaviour
         BuildUI();
     }
 
+    // 2026-08-09 (user report: tapping into a World 2 level showed only a solid black screen).
+    // Root cause: this class's own header comment explains why it never subscribed to
+    // GameManager.OnStateChanged the way WorldMapController does — to avoid racing
+    // WorldMapController to auto-show itself on a GameState.Idle transition, back when there was
+    // no way to tell which world a plain Idle transition should land on. OnMarkerTapped/
+    // OnPlayClicked -> MatchUpScreen.Show() fades in an opaque black overlay then calls
+    // GameManager.ForceStartLevel() — with no subscription here, HidePanel() (which also hides
+    // the nested MatchUpScreen/its black overlay) was only ever reachable via the Back button, so
+    // that overlay stayed on screen, at sortingOrder 301, permanently covering the game world
+    // underneath even though the level loaded and ran correctly.
+    // Now that GameManager.CurrentWorld exists (see its own comment — persisted the moment the
+    // player first enters World 2 via World2LandingController), this can safely subscribe fully,
+    // symmetric with WorldMapController.OnStateChanged: show on Idle only when CurrentWorld==2
+    // (so HUDController's Level Complete/Failed "Back" buttons, which rely on a bare LoadMenu()
+    // + this auto-show rather than an explicit SkipToMainMenu(), land back on World 2's map for a
+    // World 2 level instead of World 1's), hide on everything else (fixes the black screen above).
+    void Start()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnStateChanged += OnStateChanged;
+    }
+
+    void OnDestroy()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnStateChanged -= OnStateChanged;
+    }
+
+    void OnStateChanged(GameState state)
+    {
+        if (state == GameState.Idle)
+        {
+            if (GameManager.Instance != null && GameManager.Instance.CurrentWorld == 2)
+                ShowPanel();
+        }
+        else HidePanel();
+    }
+
     public void Show() => ShowPanel();
+
+    // Public hide, mirroring WorldMapController.HideForExternalTransition() — added 2026-08-09
+    // for DebugJumpToLevel's world-switch tool, so it can force this panel closed even if
+    // something else's OnStateChanged reaction would otherwise leave it showing.
+    public void HideForExternalTransition() => HidePanel();
 
     void ShowPanel()
     {
@@ -136,6 +180,7 @@ public class World2MapController : MonoBehaviour
     void HidePanel()
     {
         _matchUpScreen?.Hide();
+        _charSelect?.Hide();
         if (_bobRoutine != null) { StopCoroutine(_bobRoutine); _bobRoutine = null; }
         _panel.SetActive(false);
     }
@@ -163,13 +208,24 @@ public class World2MapController : MonoBehaviour
     static bool IsUnlocked(int localIndex) =>
         localIndex == 0 || ScoreManager.GetBestStars(GlobalIndexOffset + localIndex - 1) > 0;
 
+    // Shows the "choose your farmhands" grid for a level that has real LevelData; falls straight
+    // through to MatchUpScreen (unchanged) for a marker with no LevelData yet, since that class's
+    // existing "COMING SOON" handling already covers that case and shouldn't be duplicated here.
+    void ShowMatchUpFlow(int globalIndex)
+    {
+        if (GameManager.Instance?.GetLevelData(globalIndex) == null)
+            _matchUpScreen.Show(globalIndex);
+        else
+            _charSelect.Show(globalIndex);
+    }
+
     void OnMarkerTapped(int localIndex)
     {
         if (!IsUnlocked(localIndex)) { _markers[localIndex].PlayLockedShake(); return; }
-        _matchUpScreen.Show(GlobalIndexOffset + localIndex);
+        ShowMatchUpFlow(GlobalIndexOffset + localIndex);
     }
 
-    void OnPlayClicked() => _matchUpScreen.Show(GlobalIndexOffset + _highestUnlocked);
+    void OnPlayClicked() => ShowMatchUpFlow(GlobalIndexOffset + _highestUnlocked);
 
     void OnBackClicked()
     {
@@ -339,6 +395,21 @@ public class World2MapController : MonoBehaviour
             _cluckFlySprite, _cluckFallingClip, _bessieFlySprite, _bessieFallingClip,
             _animalCardSprites, _robotCardSprites, _eggSprite, _skipButtonSprite,
             _percyFlySprite, _percyFallingClip);
+
+        // "Choose your farmhands" roster grid — added 2026-08-09, shown BEFORE MatchUpScreen's own
+        // VS-slam/countdown sequence (see OnMarkerTapped/OnPlayClicked below). Shares the exact
+        // same _animalCardSprites/_robotCardSprites arrays MatchUpScreen already reads, so a card
+        // is tappable here iff it already has real match-up art — no separate lock list to keep in
+        // sync. Confirming sets GameManager's one-shot bird-queue override, then hands off to the
+        // existing MatchUpScreen sequence unchanged.
+        var charSelectGO = new GameObject("World2CharacterSelectScreen");
+        charSelectGO.transform.SetParent(root, false);
+        _charSelect = charSelectGO.AddComponent<World2CharacterSelectScreen>();
+        _charSelect.Init(_squareSpr, _animalCardSprites, _robotCardSprites, (idx, picks) =>
+        {
+            if (GameManager.Instance != null) GameManager.Instance.BirdQueueOverride = picks;
+            _matchUpScreen.Show(idx);
+        });
 
         _panel.SetActive(false);
     }

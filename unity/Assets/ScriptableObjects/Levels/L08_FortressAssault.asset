@@ -43,7 +43,7 @@ MonoBehaviour:
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 0
+    artVariant: 10
     forceStayKinematic: 0
   - type: 0
     position: {x: 4.3, y: -4.84}
@@ -52,7 +52,7 @@ MonoBehaviour:
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 0
+    artVariant: 10
     forceStayKinematic: 0
   - type: 0
     position: {x: 5.13, y: -5.058}

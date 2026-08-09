@@ -181,8 +181,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StoneBlock
   baseMaxHealth: 20
-  impulseDamageMultiplier: 2.5
-  minDamageImpulse: 2
+  impulseDamageMultiplier: 1
+  minDamageImpulse: 1.5
   baseMass: 5
   bounciness: 0.2
   _sprNormal: {fileID: 21300000, guid: cc08f701a51f0444ca45f7b917f7700a, type: 3}
@@ -209,7 +209,7 @@ MonoBehaviour:
   _sprShortW2: {fileID: 21300000, guid: 1c949f3237f9b2d44b0ba4f61948579b, type: 3}
   _sprDamaged: {fileID: 21300000, guid: 317666c944aed66459393cad8273dc5e, type: 3}
   _sprExplode: {fileID: 21300000, guid: 317666c944aed66459393cad8273dc5e, type: 3}
-  _explodeSizeMultiplier: 2.2
+  _explodeSizeMultiplier: 1
   _stayKinematic: 0
   _silentHit: 0
   _destroyClipOverride: {fileID: 0}

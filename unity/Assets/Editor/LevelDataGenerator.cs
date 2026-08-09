@@ -161,7 +161,7 @@ public static class LevelDataGenerator
                 B(BlockType.Wood, 5.659f, -5.576f, 1f, 0.81f, artVariant: WoodArtVariant.Auto), // sprite 'Plank_Short'
                 B(BlockType.Wood, 6.22f,  -5.6f,   1f, 0.81f, artVariant: WoodArtVariant.Auto), // sprite 'Plank_Short'
                 B(BlockType.Wood, 5.68f,  -4.49f,  1f, 0.81f, artVariant: WoodArtVariant.Auto), // sprite 'Plank_Short'
-                B(BlockType.Wood, 7.61f,  -5.52f,  0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 7.61f,  -5.52f,  0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
                 B(BlockType.Barrel, 7.61f, -4.85f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
                 B(BlockType.Stone, 5.66f, -5.06f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
                 B(BlockType.Wood, 5.57f, -3.87f, 1f, 1.064f, artVariant: WoodArtVariant.Vertical), // sprite 'Plank_2DShork'
@@ -195,7 +195,7 @@ public static class LevelDataGenerator
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood, 4.98f, -5.39f, 1.632f, 1.432f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenCart'
+                B(BlockType.Wood, 4.98f, -5.39f, 1.632f, 1.432f, artVariant: WoodArtVariant.Cart), // sprite 'WoodenCart'
                 B(BlockType.Haybale, 7.87f, -5.6f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
                 B(BlockType.Haybale, 5f,    -4.96f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
                 B(BlockType.Stone, 6.577f, -5.667f, 1f, 1f,       artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
@@ -291,9 +291,9 @@ public static class LevelDataGenerator
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood, 5.73f, -5.34f, 1.686f, 1.428f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenCart'
-                B(BlockType.Stone, 5.38f, -5f,   0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
-                B(BlockType.Stone, 6.29f, -4.99f, 0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
+                B(BlockType.Wood, 5.73f, -5.34f, 1.686f, 1.428f, artVariant: WoodArtVariant.Cart), // sprite 'WoodenCart'
+                B(BlockType.Stone, 5.05f, -4.7f,  0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical' — nudged from (5.38,-5) 2026-08-09, was 87% overlapping the WoodenCart's own footprint
+                B(BlockType.Stone, 6.5f,  -4.87f, 0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical' — nudged from (6.29,-4.99) 2026-08-09, was 86% overlapping the WoodenCart's own footprint
                 B(BlockType.Wood, 5.88f, -4.47f, 1f, 0.618f, artVariant: WoodArtVariant.Auto), // sprite 'Plank_VeriticalShort'
                 B(BlockType.Haybale, 4.74f, -5.32f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
                 B(BlockType.Haybale, 4.32f, -5.53f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
@@ -397,8 +397,8 @@ public static class LevelDataGenerator
             {
                 B(BlockType.Barrel, 3.97f, -5.45f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
                 B(BlockType.Barrel, 6.14f, -0.83f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
-                B(BlockType.Wood, 4.592f, -5.464f, 0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
-                B(BlockType.Wood, 4.3f,   -4.84f,  0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 4.592f, -5.464f, 0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 4.3f,   -4.84f,  0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
                 B(BlockType.Wood, 5.13f, -5.058f, 1f, 2.037f, artVariant: WoodArtVariant.Vertical), // sprite 'Plank_Shork'
                 B(BlockType.Wood, 7.7f,  -5.18f,  1f, 2.037f, artVariant: WoodArtVariant.Vertical), // sprite 'Plank_Shork'
                 B(BlockType.Wood, 6.41f, -5.1f,   1f, 2.037f, artVariant: WoodArtVariant.Vertical), // sprite 'Plank_Shork'
@@ -479,12 +479,12 @@ public static class LevelDataGenerator
                 B(BlockType.Wood, 6.65f,  -1.85f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
                 B(BlockType.Wood, 5.7f,   -1.86f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
                 B(BlockType.Wood, 4.78f,  -1.86f,  1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
-                B(BlockType.Wood, 4.96f,  -0.75f,  0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 4.96f,  -0.75f,  0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
             },
             robots: new[]
             {
                 R(5.12f, -3.2f,  4.988f, 5.913f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
-                R(7.53f, -1.39f, 4.988f, 5.913f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(8.25f, -1.81f, 4.988f, 5.913f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest' — nudged from (7.53,-1.39) 2026-08-09, was 100% overlapping the adjacent Harvester's visual footprint (physics collider is unaffected — RobotEnemy always uses a fixed 0.6x0.9 hitbox regardless of visual scale — this was purely a sprite-clipping fix)
                 R(4.88f, -4.64f, 4.988f, 5.913f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
                 R(6.7f,  -5.23f, 11.759f, 9.685f, RobotType.Harvester), // sprite 'HarvesterRobot'
                 R(6.48f, -2.97f, 11.759f, 9.685f, RobotType.Harvester), // sprite 'HarvesterRobot'
@@ -526,7 +526,7 @@ public static class LevelDataGenerator
                 B(BlockType.Haybale, 5.31f, -4.17f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
                 B(BlockType.Haybale, 4.88f, -3.58f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
                 B(BlockType.Barrel, 5.94f, -3.52f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
-                B(BlockType.Barrel, 6.49f, -1.35f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
+                B(BlockType.Barrel, 6.04f, -1.56f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite' — nudged from (6.49,-1.35) 2026-08-09, was 99% overlapping the adjacent Plank_Shork's footprint
                 B(BlockType.Wood, 6.51f, -0.95f, 1f, 2.037f, artVariant: WoodArtVariant.Vertical), // sprite 'Plank_Shork'
             },
             robots: new[]
@@ -551,9 +551,9 @@ public static class LevelDataGenerator
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
             blocks: new[]
             {
-                B(BlockType.Wood, 3.49f, -5.45f, 0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
-                B(BlockType.Wood, 3.81f, -5.69f, 0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
-                B(BlockType.Wood, 4.44f, -5.49f, 0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 3.49f, -5.45f, 0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 3.81f, -5.69f, 0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 4.44f, -5.49f, 0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
                 B(BlockType.Barrel, 3.69f, -4.99f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
                 B(BlockType.Barrel, 4.39f, -4.8f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
                 B(BlockType.Haybale, 7.45f, -3.26f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
@@ -569,9 +569,9 @@ public static class LevelDataGenerator
                 B(BlockType.Wood, 7.16f, -2.69f, 1f, 0.618f, artVariant: WoodArtVariant.Auto), // sprite 'Plank_VeriticalShort'
                 B(BlockType.Wood, 7.94f, -2.71f, 1f, 0.618f, artVariant: WoodArtVariant.Auto), // sprite 'Plank_VeriticalShort'
                 B(BlockType.Wood, 7.55f, -5.04f, 1f, 2.037f, artVariant: WoodArtVariant.Vertical), // sprite 'Plank_Shork'
-                B(BlockType.Stone, 5.01f, -2.14f, 1.545f, 1.443f, artVariant: WoodArtVariant.Auto), // sprite 'RuinedStoneWall'
-                B(BlockType.Stone, 6.2f, -2.14f, 1.545f, 1.443f, artVariant: WoodArtVariant.Auto), // sprite 'RuinedStoneWall'
-                B(BlockType.Stone, 7.42f, -2.12f, 1.545f, 1.443f, artVariant: WoodArtVariant.Auto), // sprite 'RuinedStoneWall'
+                B(BlockType.Stone, 5.01f, -2.14f, 1.545f, 1.443f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
+                B(BlockType.Stone, 6.2f, -2.14f, 1.545f, 1.443f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
+                B(BlockType.Stone, 7.42f, -2.12f, 1.545f, 1.443f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
                 B(BlockType.Wood, 5.704f, -4.13f, 1.148f, 1f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_2DHorizontal'
                 B(BlockType.Wood, 6.67f, -4.11f, 1f, 1f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_2DHorizontal'
             },
@@ -597,10 +597,10 @@ public static class LevelDataGenerator
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
             blocks: new[]
             {
-                B(BlockType.Wood, 3.44f, -5.519f, 0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
-                B(BlockType.Wood, 3.42f, -4.83f, 0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
-                B(BlockType.Wood, 4.86f, -4.92f, 0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
-                B(BlockType.Wood, 4.88f, -5.54f, 0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 3.44f, -5.519f, 0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 3.42f, -4.83f, 0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 4.86f, -4.92f, 0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 4.88f, -5.54f, 0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
                 B(BlockType.Stone, 3.61f, -4.45f, 1f, 1f, artVariant: WoodArtVariant.Diagonal), // sprite 'Stone_Diagonal'
                 B(BlockType.Stone, 4.59f, -4.45f, 1f, 1f, artVariant: WoodArtVariant.Diagonal), // sprite 'Stone_Diagonal'
                 B(BlockType.Stone, 6.7f, -5.5f, 0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
@@ -737,7 +737,7 @@ public static class LevelDataGenerator
                 B(BlockType.Barrel, 4.66f, -0.98f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
                 B(BlockType.Barrel, 6.8f, -0.45f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
                 B(BlockType.Barrel, 4.11f, -5.46f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
-                B(BlockType.Wood, 3.783f, -4.875f, 0.977f, 0.977f, artVariant: WoodArtVariant.Auto), // sprite 'WoodenBarrel'
+                B(BlockType.Wood, 3.783f, -4.875f, 0.977f, 0.977f, artVariant: WoodArtVariant.Barrel), // sprite 'WoodenBarrel'
                 B(BlockType.Wood, 4.53f, -5.04f, 1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
                 B(BlockType.Wood, 4.65f, -2.91f, 1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
                 B(BlockType.Wood, 5.5f, -2.92f, 1f, 0.492f, artVariant: WoodArtVariant.Horizontal), // sprite 'Plank_Horizontal'
@@ -828,9 +828,9 @@ public static class LevelDataGenerator
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
             blocks: new[]
             {
-                B(BlockType.Stone, 4.577f, -5.334f, 1.34f, 1.208f, artVariant: WoodArtVariant.Auto), // sprite 'RuinedStoneWall'
-                B(BlockType.Stone, 6.016f, -5.345f, 1.307f, 1.158f, artVariant: WoodArtVariant.Auto), // sprite 'RuinedStoneWall'
-                B(BlockType.Stone, 7.503f, -5.395f, 1.241f, 1.158f, artVariant: WoodArtVariant.Auto), // sprite 'RuinedStoneWall'
+                B(BlockType.Stone, 4.577f, -5.334f, 1.34f, 1.208f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
+                B(BlockType.Stone, 6.016f, -5.345f, 1.307f, 1.158f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
+                B(BlockType.Stone, 7.503f, -5.395f, 1.241f, 1.158f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
                 B(BlockType.Wood, 5.373f, -5.381f, 1f, 0.81f, artVariant: WoodArtVariant.Auto), // sprite 'Plank_Short'
                 B(BlockType.Wood, 6.81f, -5.41f, 1f, 0.81f, artVariant: WoodArtVariant.Auto), // sprite 'Plank_Short'
                 B(BlockType.Stone, 5.17f, -4.79f, 0.48f, 1f, artVariant: WoodArtVariant.Vertical), // sprite 'Stone_Vertical'
@@ -889,8 +889,8 @@ public static class LevelDataGenerator
                 B(BlockType.Haybale, 4.07f, -5.54f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
                 B(BlockType.Haybale, 7.33f, -5.59f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
                 B(BlockType.Haybale, 7.95f, -5.62f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Stone, 4.942f, -5.396f, 1.416f, 1.403f, artVariant: WoodArtVariant.Auto), // sprite 'RuinedStoneWall'
-                B(BlockType.Stone, 6.549f, -5.391f, 1.336f, 1.336f, artVariant: WoodArtVariant.Auto), // sprite 'RuinedStoneWall'
+                B(BlockType.Stone, 4.942f, -5.396f, 1.416f, 1.403f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
+                B(BlockType.Stone, 6.549f, -5.391f, 1.336f, 1.336f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
                 B(BlockType.Barrel, 5.75f, -5.389f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
                 B(BlockType.Barrel, 6.19f, -1.38f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
                 B(BlockType.Barrel, 7.28f, -1.21f, 0.977f, 0.977f), // sprite 'Barrel_Dynamite'
@@ -957,8 +957,8 @@ public static class LevelDataGenerator
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
             blocks: new[]
             {
-                B(BlockType.Stone, 5.24f, -3.79f, 1.932f, 1.454f, artVariant: WoodArtVariant.Auto), // sprite 'RuinedStoneWall'
-                B(BlockType.Stone, 7.11f, -3.76f, 1.762f, 1.471f, artVariant: WoodArtVariant.Auto), // sprite 'RuinedStoneWall'
+                B(BlockType.Stone, 5.24f, -3.79f, 1.932f, 1.454f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
+                B(BlockType.Stone, 7.11f, -3.76f, 1.762f, 1.471f, artVariant: WoodArtVariant.RuinedWall), // sprite 'RuinedStoneWall'
                 B(BlockType.Stone, 4.83f, -5.54f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
                 B(BlockType.Stone, 6.08f, -5.59f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
                 B(BlockType.Stone, 7.45f, -5.64f, 1f, 1f, artVariant: WoodArtVariant.Square), // sprite 'Stone_Square'
@@ -1017,24 +1017,25 @@ public static class LevelDataGenerator
         // variant falls back to WoodBlock's own "normal" slot, which for a world=2 level resolves
         // to the Ice_block.png reskin (see BlockBase.Initialise()'s world-aware fallback chain),
         // so this still renders as ice despite the BlockType.Wood/"Wood..." sprite names in the
-        // dump comments. Not yet visually re-verified in Play mode (no Play-mode access here).
+        // dump comments.
+        // RE-DUMPED 2026-08-09 (fresh Scene view pass) — replaces the above 6-block/3-robot layout
+        // with a simpler 3-block/3-robot one (3 stacked ice blocks, 3 IceHarvestorRobot instances
+        // all detected as RobotType.Harvester — no Glacier-tier robot placed this time). Not yet
+        // visually re-verified in Play mode (no Play-mode access here).
         Make(folder, "L19_FrostboundWatch",
             id: "W2_L01", name: "Frostbound Watch", par: 2,
             birds: new[] { AnimalType.Percy, AnimalType.Percy, AnimalType.Percy },
             blocks: new[]
             {
-                B(BlockType.Wood, 4.49f, -5.45f, 0.746f, 0.709f, artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
-                B(BlockType.Wood, 4.45f, -4.19f, 0.746f, 0.71f,  artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
-                B(BlockType.Wood, 4.48f, -4.83f, 0.778f, 0.726f, artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
-                B(BlockType.Wood, 6.35f, -2.58f, 0.81f, 0.885f,  artVariant: WoodArtVariant.Vertical), // sprite 'WoodVertical_0'
-                B(BlockType.Wood, 6.06f, -1.48f, 1.286f, 0.582f, artVariant: WoodArtVariant.Auto), // sprite 'WoodStandard_0'
-                B(BlockType.Wood, 4.74f, -1.47f, 1.543f, 0.615f, artVariant: WoodArtVariant.Auto), // sprite 'WoodStandard_0'
+                B(BlockType.Wood, 4.24f, -2.87f, 0.721f, 0.758f, artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
+                B(BlockType.Wood, 4.48f, -2.23f, 0.721f, 0.758f, artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
+                B(BlockType.Wood, 4.16f, -1.54f, 0.721f, 0.758f, artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
             },
             robots: new[]
             {
-                R(5.18f, -3.02f, 9.574f, 8.265f, RobotType.Harvester),     // sprite 'IceHarvestor_left'
-                R(5.58f, -5.18f, 9.574f, 8.265f, RobotType.Harvester),     // sprite 'IceHarvestor_left'
-                R(6.07f, -0.6f,  7.57f,  5.955f, RobotType.SemiHarvester), // sprite 'GlacierHarvestor_left'
+                R(4.9f,  -4.48f, 6.329f, 5.325f, RobotType.Harvester), // sprite 'IceHarvestor_left'
+                R(5.03f, -2.88f, 6.329f, 5.325f, RobotType.Harvester), // sprite 'IceHarvestor_left'
+                R(5.92f, -5.31f, 6.329f, 5.325f, RobotType.Harvester), // sprite 'IceHarvestor_left'
             },
             world: 2);
 
