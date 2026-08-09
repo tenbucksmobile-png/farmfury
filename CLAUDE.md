@@ -44,11 +44,6 @@ needing a live pass before shipping.
 
 ### Known open issues / flags
 
-- **World 1 ↔ World 2 navigation gap.** There's no "which world is the player currently in"
-  concept anywhere — `World2LandingController`/`World2MapController` are only reachable via the
-  one-shot L18-completion transition; every Home button (including theirs) always returns to
-  `MainMenuController` (World 1's title). Needs a persisted "current/highest-unlocked world" state
-  (touches `GameManager`) before World 2 can be a normal, replayable destination.
 - **World 2 match-up robot card mapping**: `FrostRobot_card.png` → Basic, `IceHarvestor_card.png`
   → Harvester, `GlacierRobot_card.png` → SemiHarvester (see `SceneSetup.WireWorld2MatchUpCards`).
   The Harvester mapping (IceHarvestorRobot) is now user-confirmed (2026-07-26, L19's matchup);
@@ -68,11 +63,12 @@ needing a live pass before shipping.
   `Assets/Sprites/UI/MatchUp/countdown1.png`, which will visibly clash with the other three during
   World 2's countdown beat. Swap in a real ice-themed "1" once one exists (see
   `SceneSetup.WireWorld2MatchUpCards`'s `_countdown1Sprite` line).
-- **L19 ("Frostbound Watch") is now a real hand-authored layout**, dumped 2026-07-26 via
-  `LevelLayoutDumper` from the user's own Scene view build (superseding the earlier coordinate-math
-  placeholder) — 6 `BlockType.Wood` blocks (rendering with the World 2 ice reskin, see below) + 2
-  IceHarvestorRobots + 1 GlacierHarvestorRobot. Not yet visually re-verified in Play mode (no
-  Play-mode access here).
+- **L19 ("Frostbound Watch") was re-dumped 2026-08-09**, replacing its earlier 6-block/3-robot
+  layout with a simpler one — 3 `BlockType.Wood` blocks (artVariant `Block`, rendering with the
+  World 2 ice reskin) + 3 IceHarvestorRobot instances (all detected as `RobotType.Harvester`, no
+  Glacier-tier robot placed this time). Percy's character art was also fixed the same session (see
+  2026-08-09 entry below) — a folder-name mismatch had it stuck on the pink-circle fallback. Not
+  yet visually re-verified in Play mode (no Play-mode access here).
 - **World 2 block reskin only covers 5 of ~14 `WoodArtVariant` shapes.** `BlockBase._sprNormalW2`/
   `_sprVerticalW2`/`_sprHorizontalW2`/`_sprDiagonalW2`/`_sprShortW2` (wired on both `WoodBlock.prefab`
   and `StoneBlock.prefab` from `Ice_block.png`/`Ice_vertical.png`/`Snow_block.png`/
@@ -127,6 +123,84 @@ needing a live pass before shipping.
 
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
+- **2026-08-09** — Large difficulty/stability session: a `[SerializeField]`-staleness audit,
+  damage/explosion rebalance, several real bug fixes, World 1↔2 navigation, and a new World 2
+  character-select screen. Full trace/reasoning for each finding in `docs/HISTORY.md`; current
+  truth only, here:
+  - **Fixed a real six-week-old live bug**: `impulseDamageMultiplier`/`minDamageImpulse` on
+    `Robot.prefab` and both `WoodBlock.prefab`/`StoneBlock.prefab` were still serialized at
+    `2.5`/`2.0` — the pre-2026-06-27 balance values — because a `[SerializeField]` default change
+    never retroactively updates an already-existing prefab. Now self-healed unconditionally in
+    `BlockBase.Awake()`/`RobotEnemy.Awake()` (same pattern `baseMaxHealth`/`baseMass`/`bounciness`
+    already used), plus the stale prefab values corrected directly. Audited every other
+    `[SerializeField]` on both classes for the same exposure — found one more live instance
+    (`_explodeSizeMultiplier`, see below) and two look-alikes that are NOT bugs
+    (`RobotEnemy._damageResistance`/`_structuralDamageResistance` — `CommanderRobot`'s `0.61`/`0.1`
+    is deliberate boss tuning, self-healing those would have erased it).
+  - **Difficulty rebalance** (user report: one animal/one barrel could clear an entire
+    structure, sometimes without the blast even touching most of what died): narrowed Cluck's
+    egg-cluster spread 80°→50° and Bessie's ground-slam radius/damage 3.6u/30→2.4u/22; stopped
+    plain Wood/Stone destruction from chain-damaging neighbours at all (only genuine explosive
+    props — Haybale/Barrel — still can); shrank the explosive blast radius `ExplosiveForceScale`
+    0.4→0.25 of a prop's own footprint and halved damage against another explosive prop caught in
+    the blast, so barrel/haybale chains need deliberately-close placement, not accidental level
+    spacing; staggered the block-collapse cascade's recursive continuation (0.1s/tier — the block
+    directly above a hit still wakes instantly, only checking what rests on THAT block is
+    deferred) so a tall structure comes down over real time instead of one physics frame; raised
+    Wood's base health 5→8. Also found and fixed the actual root cause of "one touch explodes the
+    whole structure, even where the blast never touched": the support-loss wake cascade has no
+    distance limit at all, and low block HP meant a falling piece landing on the next block often
+    one-shot it too — a pure-physics domino chain unrelated to any blast radius.
+  - **Debris-size fix**: `_explodeSizeMultiplier` — Stone/Haybale/Barrel were still rendering
+    death bursts at `2.2` (over 4x Wood's correct `0.5`), the pre-2026-07-10 value, on the same
+    "changed default never reaches an existing prefab" bug shape as above. Reduced to `1.0` (2x
+    Wood's, not 4.4x) per explicit request, self-healed in each block type's own `Awake()`.
+  - **`BlockBase.DestroyBlock()` now unconditionally re-runs the support-loss wake cascade** —
+    `RobotEnemy.Die()`'s `ForceDestroy()` path (a boss crumbling a guarded structure) skipped
+    `TakeDamage()` entirely, so anything resting on that block stayed permanently floating,
+    ignoring gravity. Confirmed via `git blame`-style tracing, not guessed.
+  - **World 1 ↔ World 2 navigation fixed** — added `GameManager.CurrentWorld` (persisted via
+    `PlayerPrefs`), set the moment a player enters World 2 through `World2LandingController`. Both
+    `WorldMapController` and `World2MapController`'s auto-show-on-`Idle` are now gated on it, and
+    `MainMenuController`'s PLAY button reads it — a player who's reached World 2 once no longer
+    has to replay L18 to get back in. Also fixed a genuine solid-black-screen bug this surfaced:
+    `World2MapController` never hid itself once a level actually started (only ever hid via its
+    own Back button), so `MatchUpScreen`'s fade-to-black overlay — a child of its canvas — stayed
+    on screen forever after launching. Added an Editor debug menu (`FarmFury → Debug → Switch To
+    World 1/2 Map`) for testing either state without replaying the unlock chain.
+  - **Fixed Percy/Woolly's character art** — folders were named `Percy_Pig`/`Woolly_Sheep` on
+    disk, but `SpriteWiring.cs` looks for the short-name convention every other character uses
+    (`Percy`/`Woolly`) — this exact failure mode is already documented above in "Auto-Compile
+    Pipeline." Silent mismatch left both animals on the salmon-pink procedural-fallback circle.
+    Renamed both folders; re-running **Wire Sprites** now correctly wires all three of Percy's
+    poses (`Loaded`/`in flight`/`Trigger`).
+  - **`LevelLayoutDumper.InferWoodArtVariant()` was missing keyword checks for barrel/cart/wall/
+    tower** despite `BlockBase` already having dedicated sprite fields and `WoodArtVariant` enum
+    cases for all four — any `WoodenBarrel`/`WoodenCart`/`RuinedStoneWall`/`StoneTower` sprite
+    silently fell through to `Auto` on every dump. Added the four keyword checks, then mechanically
+    patched the 24 already-known-affected `Auto` instances across L03-L18 using each `B(...)`
+    call's own `// sprite 'X'` comment as ground truth (not re-authored by hand).
+  - **Repositioned 4 of 6 flagged heavy-overlap placements** in L06 (2 Stone_Vertical posts vs.
+    the WoodenCart), L09 (1 SemiHarvester vs. Harvester), and L10 (1 dynamite barrel vs. a wood
+    plank) — each re-verified against every other object in its level, not just the flagged pair.
+    Left 2 SemiHarvester-vs-Harvester pairs (L07, L09) for manual review — their large sprite
+    footprints made any small-nudge fix unreachable without abandoning the robot's guard position;
+    confirmed these are cosmetic sprite-overlap only, not a physics bug (`RobotEnemy`'s collider
+    is always a fixed 0.6×0.9 regardless of visual scale).
+  - **New: `World2CharacterSelectScreen`** (`Scripts/UI/`) — a tap-to-choose roster grid shown
+    before World 2's existing match-up VS-slam/countdown sequence. Percy/Woolly/Cluck/Bessie are
+    selectable (derived from which `AnimalType` slots already have real card art in
+    `World2MapController._animalCardSprites` — not a hardcoded list, so a future animal unlocks
+    itself the moment its art is wired); Ducky/Horace/Gerald/Billy show locked (no art exists for
+    them anywhere in the project yet). Picks fill a lineup queue sized to the level's own bird
+    count, shown next to a non-interactive robot preview; confirming sets a new one-shot
+    `GameManager.BirdQueueOverride` that `LevelLoader.LoadLevel()` consumes and clears without
+    ever mutating the `LevelData` asset itself. Not visually verified in Play mode (no Play-mode
+    access here).
+  - Every fix in this session was closed by actually running `.\Run-Unity.ps1 check`/`setup`/
+    `levels` directly (not just asking the user to) wherever the project state allowed it —
+    several earlier attempts hit the batch-mode-vs-open-Editor project lock; retried once the lock
+    cleared and confirmed clean each time.
 - **2026-08-03** — Robot-vs-block damage rebalance, user-requested. (1) **Block explosions no
   longer damage robots at all** — `RobotEnemy.TakeExplosionDamage()`/`ExplosionDamageFraction`
   removed entirely; a robot now only takes damage from a direct animal hit, a connecting egg, or
@@ -437,6 +511,14 @@ unity/Assets/Scripts/
                               TryAutoLoadLevels() auto-discovers LevelData assets in Editor builds
                               BuildFallbackLevel() creates a hardcoded procedural level when no assets found
                               LoadMenu() is scene-optional: only loads MainMenu if it's in Build Settings
+                              CurrentWorld (int, persisted via PlayerPrefs, 2026-08-09) — which world's
+                              map PLAY opens; set by World2LandingController.OnPlayClicked() the moment
+                              a player actually enters World 2, read by MainMenuController's PLAY button
+                              and both WorldMapController/World2MapController's auto-show-on-Idle gating.
+                              BirdQueueOverride (AnimalType[], 2026-08-09) — one-shot override consumed
+                              and cleared by LevelLoader.LoadLevel(), set by World2CharacterSelectScreen
+                              so a player's chosen lineup becomes the level's real bird queue without
+                              ever mutating the shared LevelData asset.
     BackgroundController.cs — sortingOrder=−100; cover-scale in Start(); LateUpdate() follows camera
     AudioManager.cs          — 7 DSP-generated SFX clips + 3 external MP3 clips (Assets/Audio/*.mp3):
                               _musicClip (loops from first GameState.Playing, never restarts across levels),
@@ -548,7 +630,14 @@ unity/Assets/Scripts/
                               in L03 shifted/collapsed a completely unrelated wood tower), so the sweep was
                               removed entirely rather than patched per block type — every block's
                               fall/collapse is now purely local, matching RobotEnemy's per-robot support-loss
-                              check. health =
+                              check. **DestroyBlock() unconditionally re-runs the support-loss wake
+                              cascade (2026-08-09)** — previously only TakeDamage()'s own hit path
+                              triggered it, so RobotEnemy.Die()'s ForceDestroy() (a boss crumbling a
+                              guarded structure) skipped it entirely, leaving anything resting on
+                              that block permanently floating; now both paths always cascade, and the
+                              recursive continuation into further tiers is staggered
+                              (CascadeStaggerDelay=0.1s) rather than instant, so a tall structure
+                              comes down over real time instead of one physics frame. health =
                               baseMaxHealth × area/stdArea; tints at 50%/25%/0% health; damage = impulse ×
                               1.0; on death: _sprExplode (if wired) shows a death-burst sprite via
                               SpawnExplosion() instead of the default 4-fragments-fly-outward-fade-1->0-
@@ -560,44 +649,60 @@ unity/Assets/Scripts/
                               dedicated damaged-state art exists, e.g. HaybaleBlock) — in practice this
                               never gets seen on a one-hit-kill block like Haybale; _sprExplode above is
                               the one that matters there.
-    WoodBlock.cs                — baseMaxHealth=5 (~10.4 effective HP for a 1x1 block via area-scaling —
-                              see Known Issues), baseMass=5, bounciness=0.2; _passThrough (public);
-                              _sprDamaged/_sprExplode both wired to WoodDebris.png — every wood plank
-                              gets a dedicated hit-flash/death-burst instead of the generic 4-fragment
-                              fade. **No block explosion damages a robot any more (2026-08-03)** —
-                              `RobotEnemy.TakeExplosionDamage()` was removed entirely; a robot only
-                              ever takes damage from a direct animal hit, an egg, or
-                              `TakeFallDamage()` when its own support is destroyed (see RobotEnemy.cs
-                              below). **`_isExplosive` (bool, default false — renamed from the old
-                              `_explodesOnRobots`, added 2026-07-10 fifth balance pass)** now exists
-                              purely to gate the block-to-block chain reaction: a plain block's
-                              (Wood/Stone) own destruction chain skips any `_isExplosive` neighbour it
-                              reaches (so a plain block breaking can never detonate a nearby Haybale/
-                              barrel — only a direct hit from a character/ability can), while an
-                              `_isExplosive` block's own chain is ungated and freely damages/detonates
-                              anything nearby, explosive or not (Haybale/ExplodingBarrelBlock exploding
-                              WILL still chain into nearby Wood/Stone). Wired true on Haybale (via
-                              SceneSetup.EnsureHaybaleBlockPrefab()) and ExplodingBarrelBlock (sets true
-                              in its own Awake()). Blast radius (EffectiveBlastRadius) is not a flat
-                              constant — it's Mathf.Max(_col.bounds.size.x, _col.bounds.size.y) *
-                              ExplosiveForceScale (0.4f, i.e. 40% of the block's own rendered
-                              footprint), recomputed at the moment of death — see Known Issues for the
-                              "one hit" bug this fixes.
+    WoodBlock.cs                — baseMaxHealth=8 (raised from 5, 2026-08-09 difficulty pass — a
+                              direct animal hit still one-shots a standard block same as before, but
+                              a weaker landing-impact hit from a falling block is less likely to
+                              also one-shot it, ~16.7 effective HP for a 1x1 block via area-scaling),
+                              baseMass=5, bounciness=0.2; _passThrough (public); _sprDamaged/
+                              _sprExplode both wired to WoodDebris.png — every wood plank gets a
+                              dedicated hit-flash/death-burst instead of the generic 4-fragment fade.
+                              _explodeSizeMultiplier self-heals to 0.5 for plain Wood, 1.0 for
+                              Haybale (branches on `_isExplosive`, already deserialized from the
+                              prefab by the time Awake() runs — see BlockBase.cs below for why this
+                              needed self-healing in the first place). **No block explosion damages a
+                              robot any more (2026-08-03)** — `RobotEnemy.TakeExplosionDamage()` was
+                              removed entirely; a robot only ever takes damage from a direct animal
+                              hit, an egg, or `TakeFallDamage()` when its own support is destroyed
+                              (see RobotEnemy.cs below). **`_isExplosive` (bool, default false —
+                              renamed from the old `_explodesOnRobots`, added 2026-07-10 fifth
+                              balance pass)** gates the block-to-block chain reaction — **as of
+                              2026-08-09, a plain block's (Wood/Stone) own destruction never calls
+                              `DamageNearby()` at all** (used to still reach non-explosive
+                              neighbours; removed entirely after a user report that one hit could
+                              domino through a whole wall — physics/support-loss now does that job
+                              instead, see BlockBase.cs's collapse cascade below), only a genuine
+                              `_isExplosive` prop's (Haybale/ExplodingBarrelBlock) own destruction
+                              still calls it. That chain can still reach another explosive prop, but
+                              at half strength (`ExplosiveNeighbourDamageScale=0.5`, added the same
+                              day so a barrel/haybale chain isn't a guaranteed sure thing). Wired true
+                              on Haybale (via SceneSetup.EnsureHaybaleBlockPrefab()) and
+                              ExplodingBarrelBlock (sets true in its own Awake()). Blast radius
+                              (EffectiveBlastRadius) is not a flat constant — it's
+                              Mathf.Max(_col.bounds.size.x, _col.bounds.size.y) *
+                              ExplosiveForceScale (0.25f — lowered from 0.4f 2026-08-09, so ordinary
+                              level-authoring spacing no longer falls inside another explosive prop's
+                              blast; only deliberately-touching placements can still chain).
     ExplodingBarrelBlock.cs      — WoodBlock subclass, baseMaxHealth=5 (pops in one hit, same as
-                              Haybale/Wood); _isExplosive=true, _areaDamage=55 (bigger block-to-
-                              block chain damage than plain Wood's 25 — blast radius is shared/derived,
-                              see WoodBlock above, not a separate override any more). WoodenBarrel.png
-                              art (SceneSetup.EnsureExplodingBarrelPrefab()), reuses RobotEnemy's own
+                              Haybale/Wood — NOT affected by WoodBlock's own baseMaxHealth=8 raise,
+                              this class sets its own value after base.Awake()); _isExplosive=true,
+                              _areaDamage=55 (bigger block-to-block chain damage than plain Wood's
+                              25 — blast radius is shared/derived, see WoodBlock above, not a
+                              separate override any more), _explodeSizeMultiplier=1.0 (explicit,
+                              2026-08-09). WoodenBarrel.png art
+                              (SceneSetup.EnsureExplodingBarrelPrefab()), reuses RobotEnemy's own
                               Explosion.png/Explosion_Robot.mp3 death FX via the existing
                               _sprExplode/_destroyClipOverride fields rather than new art. No longer
                               deals any direct robot damage (2026-08-03) — see WoodBlock.cs above.
-    StoneBlock.cs                — baseMaxHealth=220, baseMass=8, bounciness=0.1. **_sprDamaged/
-                              _sprExplode wired to StoneDebris.png (2026-08-03, user-supplied)** —
-                              deliberately a separate asset from WoodBlock's WoodDebris.png, so a
-                              shattering stone chunk doesn't look like broken wood splinters. StoneBlock
-                              itself has no DamageNearby()/chain-reaction call at all (inherited
-                              directly from BlockBase, not WoodBlock) — a Stone block's own destruction
-                              was never able to chain-damage neighbours in the first place.
+    StoneBlock.cs                — baseMaxHealth=220, baseMass=8, bounciness=0.1,
+                              _explodeSizeMultiplier=1.0 (self-healed 2026-08-09 — was still
+                              serialized at the pre-2026-07-10 value 2.2, over 4x Wood's own 0.5).
+                              **_sprDamaged/_sprExplode wired to StoneDebris.png (2026-08-03,
+                              user-supplied)** — deliberately a separate asset from WoodBlock's
+                              WoodDebris.png, so a shattering stone chunk doesn't look like broken
+                              wood splinters. StoneBlock itself has no DamageNearby()/chain-reaction
+                              call at all (inherited directly from BlockBase, not WoodBlock) — a
+                              Stone block's own destruction was never able to chain-damage
+                              neighbours in the first place.
   Enemies/
     RobotEnemy.cs                — HP=35 (class default; HarvesterRobot.prefab overrides to 28,
                               SemiHarvesterRobot.prefab to 26); scale=(0.6,0.9); BoxCollider2D.size=(1,1),
@@ -843,6 +948,37 @@ unity/Assets/Scripts/
                               by showing itself (it's the PLAY destination) — SkipToMainMenu() runs
                               immediately after in the same call stack, hiding the map again before a frame
                               ever renders it, so "Home" lands on the main menu instead of flashing the map.
+                              **OnStateChanged now gated on GameManager.CurrentWorld != 2 (2026-08-09)**
+                              — previously showed itself unconditionally on every Idle transition,
+                              which would bounce a player who'd already reached World 2 back onto
+                              World 1's map (e.g. via Level Complete/Failed's "Back" buttons, which
+                              rely on this auto-show rather than an explicit navigation call). See
+                              World2MapController's own symmetric gating (CurrentWorld == 2) below.
+    World2MapController.cs             — Frozen Tundra (World 2) level map, same ScreenSpaceOverlay/
+                              LevelMarker pattern as WorldMapController above, sortingOrder 301.
+                              OnStateChanged mirrors WorldMapController's own (added 2026-08-09,
+                              gated on CurrentWorld == 2) — also unconditionally hides on every
+                              non-Idle state, fixing a real solid-black-screen bug: this class
+                              previously only ever hid via its own Back button, so MatchUpScreen's
+                              fade-to-black overlay (a child of this canvas) stayed on screen forever
+                              once a level actually started. OnMarkerTapped/OnPlayClicked now route
+                              through ShowMatchUpFlow(), which shows World2CharacterSelectScreen for
+                              a level with real LevelData, or falls straight to MatchUpScreen's
+                              existing "COMING SOON" handling otherwise.
+    World2CharacterSelectScreen.cs     — "choose your farmhands" roster grid (2026-08-09), shown by
+                              World2MapController before MatchUpScreen's own VS-slam/countdown
+                              sequence. Reuses World2MapController's existing _animalCardSprites/
+                              _robotCardSprites arrays (passed via Init(), same arrays MatchUpScreen
+                              already reads) rather than duplicating art fields — a card is tappable
+                              iff that AnimalType slot already has real match-up art, so Percy/
+                              Woolly/Cluck/Bessie are selectable and Ducky/Horace/Gerald/Billy show
+                              locked automatically, no hardcoded list to keep in sync. Tapping fills
+                              a lineup queue sized to the level's own birds[].Length (generalises to
+                              any future World 2 level's bird count); tapping a filled queue slot
+                              removes that pick. Launch only interactable once the queue is full;
+                              confirming sets GameManager.BirdQueueOverride then hands off to
+                              MatchUpScreen's existing sequence unchanged. Robots are always a plain
+                              Image, never a Button — displayed, not selectable, per spec.
     LevelMarker.cs                     — UI Image+Button (not SpriteRenderer — Button needs uGUI) + level
                               number TMP label; MarkerSize=80x120 (2:3 aspect, matches the 256x384 source
                               art). Refresh(unlocked,stars,...) picks locked/unlocked/star1/2/3 art (falls
