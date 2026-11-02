@@ -1268,17 +1268,18 @@ public static class SceneSetup
     // menu item just clears that leftover test data on demand, standalone from Wire Scene
     // References (which is scene/asset wiring, not runtime save data — bundling this into it
     // would be a surprising side effect of an unrelated action).
-    [MenuItem("FarmFury/Reset World Map Progress")]
+    // Since 2026-11-02 (franchise save model) progress lives in SaveManager's FF_ keys by levelId; this clears
+    // those plus the pre-port ff_*_N keys. Coins and purchases are kept.
+    [MenuItem("FarmFury/Reset Progress")]
     public static void ResetWorldMapProgress()
     {
-        for (int i = 0; i < WorldMapController.LevelCount; i++)
-        {
-            PlayerPrefs.DeleteKey($"ff_score_{i}");
-            PlayerPrefs.DeleteKey($"ff_stars_{i}");
-        }
-        PlayerPrefs.Save();
-        Debug.Log($"[FarmFury] Cleared ff_score_N/ff_stars_N for all {WorldMapController.LevelCount} levels — " +
-                   "world map will show a fresh save (level 1 unlocked, rest locked) next time it opens.");
+        var levels = AssetDatabase.FindAssets("t:LevelData", new[] { "Assets/ScriptableObjects/Levels" })
+            .Select(g => AssetDatabase.LoadAssetAtPath<LevelData>(AssetDatabase.GUIDToAssetPath(g)))
+            .Where(l => l != null)
+            .OrderBy(l => l.name, System.StringComparer.Ordinal)
+            .ToList();
+        FarmFury.Core.SaveManager.ClearProgressKeys(levels);
+        Debug.Log($"[FarmFury] Cleared progress for {levels.Count} levels — next launch starts from a fresh save (coins/purchases kept).");
     }
 
     static void WireArrayByKeyword(SerializedObject so, string fieldName, string folder, string[] keywords, string label)
@@ -1566,6 +1567,25 @@ public static class SceneSetup
         so.ApplyModifiedProperties();
 
         Debug.Log($"[FarmFury] GameManager: wired {levels.Length} LevelData assets.");
+
+        // Franchise save/data layer (2026-11-02): DataManager + SaveManager live on the GameManager GO
+        // (DontDestroyOnLoad). World list from WorldDataGenerator — generated on first run.
+        var worlds = WorldDataGenerator.LoadAll();
+        if (worlds.Length == 0)
+        {
+            WorldDataGenerator.GenerateAll();
+            worlds = WorldDataGenerator.LoadAll();
+        }
+        var dm = gm.GetComponent<FarmFury.Core.DataManager>();   // not ?? — Unity's fake-null defeats it
+        if (dm == null) dm = gm.gameObject.AddComponent<FarmFury.Core.DataManager>();
+        if (gm.GetComponent<FarmFury.Core.SaveManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.SaveManager>();
+        var dso = new SerializedObject(dm);
+        var wprop = dso.FindProperty("_worlds");
+        wprop.arraySize = worlds.Length;
+        for (int i = 0; i < worlds.Length; i++)
+            wprop.GetArrayElementAtIndex(i).objectReferenceValue = worlds[i];
+        dso.ApplyModifiedProperties();
+        Debug.Log($"[FarmFury] DataManager: wired {worlds.Length} WorldData assets.");
     }
 
     // ── LevelLoader: wire 5 prefabs + 2 parent transforms ────────────────────

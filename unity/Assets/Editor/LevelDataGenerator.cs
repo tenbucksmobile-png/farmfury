@@ -990,7 +990,8 @@ public static class LevelDataGenerator
             robots: new[]
             {
                 R(6.17f, -2.94f, 6.985f, 7.555f, RobotType.Commander), // sprite 'Commander' — restored to last known-good scale (2026-07-26, was dumped at a bare 1x1, see prior FLAG comment above)
-            });
+            },
+            isBoss: true);
 
         // ── W2_L01  Frostbound Watch (Level 19 — World 2's first level) ─────────
         // Added 2026-07-26, user request: "wire the first ice harvestor robot and pig card...
@@ -1066,7 +1067,8 @@ public static class LevelDataGenerator
         AnimalType[] birds,
         LevelData.BlockSpawnData[] blocks,
         LevelData.RobotSpawnData[] robots,
-        int world = 1)
+        int world = 1,
+        bool isBoss = false)
     {
         string path = $"{folder}/{filename}.asset";
         if (AssetDatabase.LoadAssetAtPath<LevelData>(path) != null)
@@ -1080,6 +1082,7 @@ public static class LevelDataGenerator
         asset.blocks      = blocks;
         asset.robots      = robots;
         asset.world       = world;
+        asset.isBossLevel = isBoss;
 
         AssetDatabase.CreateAsset(asset, path);
         Debug.Log($"[FarmFury] Created {path}");

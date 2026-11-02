@@ -16,6 +16,7 @@ MonoBehaviour:
   levelName: Captain's Last Stand
   parBirds: 3
   world: 1
+  isBossLevel: 1
   birds: 000000000000000001000000
   blocks:
   - type: 1

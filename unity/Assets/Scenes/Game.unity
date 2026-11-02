@@ -1756,6 +1756,8 @@ GameObject:
   m_Component:
   - component: {fileID: 809980729}
   - component: {fileID: 809980728}
+  - component: {fileID: 809980731}
+  - component: {fileID: 809980730}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -1813,6 +1815,40 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &809980730
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 809980727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cfd9d17d6dacc24ba12fe1c81eca903, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FarmFury.Core.SaveManager
+--- !u!114 &809980731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 809980727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9904d49b7c6e4448917c870edfd9bab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FarmFury.Core.DataManager
+  _worlds:
+  - {fileID: 11400000, guid: 1a635787c62bd344995a7e45527ee041, type: 2}
+  - {fileID: 11400000, guid: 89270ca6beb5ed648b2621a00e6980ef, type: 2}
+  - {fileID: 11400000, guid: d53729c61eb2a724cb781ae92adc20a4, type: 2}
+  - {fileID: 11400000, guid: 13c7cbfb0ae8ccd498008d924e191e0e, type: 2}
+  - {fileID: 11400000, guid: 5ceabfb9265368742867b39638ebef70, type: 2}
+  - {fileID: 11400000, guid: 149f3148f156cf9499ec17815bb09c94, type: 2}
+  - {fileID: 11400000, guid: 5a694fb1e8f5f8549aad61fcbb56da27, type: 2}
+  - {fileID: 11400000, guid: 72cbf27d5d458ea4f9fe987e154388f8, type: 2}
+  - {fileID: 11400000, guid: 3ebae3ab0030fc74a90b0256187d9298, type: 2}
 --- !u!1 &908990634
 GameObject:
   m_ObjectHideFlags: 0

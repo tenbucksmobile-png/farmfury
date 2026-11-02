@@ -15,6 +15,14 @@ public class LevelData : ScriptableObject
     // that doesn't pass world explicitly) is implicitly World 1 with no data migration needed.
     public int world = 1;
 
+    // The world's boss level (L18 Commander for World 1). Clearing it unlocks the next story world and that
+    // world's animals (SaveManager); Level Select draws it as the shield slot, opened once every regular level
+    // in the world is complete. Added 2026-11-02 with the franchise-flow port.
+    public bool isBossLevel;
+
+    /// <summary>The franchise WorldType for the 1-based <see cref="world"/> int.</summary>
+    public global::WorldType WorldType => (global::WorldType)Mathf.Clamp(world - 1, 0, (int)global::WorldType.CropFactory);
+
     [Header("Bird Queue")]
     public AnimalType[] birds;
 

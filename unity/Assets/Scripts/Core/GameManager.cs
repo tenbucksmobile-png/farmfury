@@ -62,6 +62,11 @@ public class GameManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        // Franchise save/data layer (2026-11-02). Wire Scene References adds both to this GameObject; this is
+        // the same null-safety fallback CatapultLauncher uses for AudioManager, for a scene not yet re-wired.
+        if (GetComponent<FarmFury.Core.DataManager>() == null) gameObject.AddComponent<FarmFury.Core.DataManager>();
+        if (GetComponent<FarmFury.Core.SaveManager>() == null) gameObject.AddComponent<FarmFury.Core.SaveManager>();
+
         // Eggs spawn AT the firing Cluck's own position (see CluckAnimal.SpawnEggs()), so with
         // every layer pair colliding by default (Physics2D's project-wide matrix), each egg
         // immediately overlapped and collided with the very bird that just fired it — Cluck's

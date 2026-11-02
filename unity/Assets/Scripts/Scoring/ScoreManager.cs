@@ -1,4 +1,5 @@
 using System;
+using FarmFury.Core;
 using UnityEngine;
 
 public class ScoreManager : MonoBehaviour
@@ -32,6 +33,7 @@ public class ScoreManager : MonoBehaviour
     private int  _totalRobots;
     private int  _totalBlocks;
     private bool _levelEnded;
+    private float _levelStartTime;
 
     void Awake()
     {
@@ -49,6 +51,7 @@ public class ScoreManager : MonoBehaviour
         _totalRobots    = totalRobots;
         _totalBlocks    = totalBlocks;
         _levelEnded     = false;
+        _levelStartTime = Time.time;   // scaled time: pausing (timeScale 0) doesn't count toward Fastest Time
         IsNewBest       = false;
         Score           = 0;
         Stars           = 0;
@@ -95,14 +98,23 @@ public class ScoreManager : MonoBehaviour
         OnStarsAwarded?.Invoke(Stars);
     }
 
+    // Index-based lookups kept for the pre-port World 1/2 maps (removed in the franchise-flow Phase 2); since
+    // 2026-11-02 they read SaveManager by levelId — the ff_score_N/ff_stars_N keys are migrated once and no
+    // longer written.
     public static int GetBestScore(int levelIndex) =>
-        PlayerPrefs.GetInt(ScoreKey(levelIndex), 0);
+        SaveManager.Instance != null && LevelIdAt(levelIndex) is string id ? SaveManager.Instance.GetBestScore(id) : 0;
 
     public static int GetBestStars(int levelIndex) =>
-        PlayerPrefs.GetInt(StarsKey(levelIndex), 0);
+        SaveManager.Instance != null && LevelIdAt(levelIndex) is string id ? SaveManager.Instance.GetLevelStars(id) : 0;
 
     public static bool GetIsPerfect(int levelIndex) =>
-        PlayerPrefs.GetInt(PerfectKey(levelIndex), 0) != 0;
+        SaveManager.Instance != null && LevelIdAt(levelIndex) is string id && SaveManager.Instance.IsLevelPerfect(id);
+
+    static string LevelIdAt(int levelIndex)
+    {
+        var level = GameManager.Instance != null ? GameManager.Instance.GetLevelData(levelIndex) : null;
+        return level != null && !string.IsNullOrEmpty(level.levelId) ? level.levelId : null;
+    }
 
     void AwardPoints(int amount)
     {
@@ -118,21 +130,32 @@ public class ScoreManager : MonoBehaviour
         return 1;
     }
 
+    // Writes through SaveManager (franchise save model). Stars/score keep the best; a 1+ star clear records the
+    // completion, which on a boss level clears the world and unlocks the next one — WorldUnlocked reports that
+    // for the results screen.
+    public WorldType? WorldUnlocked { get; private set; }
+
     void SaveIfBest()
     {
-        if (Score > GetBestScore(_levelIndex))
+        WorldUnlocked = null;
+        var save  = SaveManager.Instance;
+        var level = GameManager.Instance != null ? GameManager.Instance.GetLevelData(_levelIndex) : null;
+        if (save == null || level == null || string.IsNullOrEmpty(level.levelId))
         {
-            PlayerPrefs.SetInt(ScoreKey(_levelIndex), Score);
-            IsNewBest = true;
+            Debug.LogWarning("[ScoreManager] No SaveManager or levelId — result not saved.");
+            return;
         }
-        if (Stars > GetBestStars(_levelIndex))
-            PlayerPrefs.SetInt(StarsKey(_levelIndex), Stars);
-        if (IsPerfect && !GetIsPerfect(_levelIndex))
-            PlayerPrefs.SetInt(PerfectKey(_levelIndex), 1);
-        PlayerPrefs.Save();
+
+        string id = level.levelId;
+        IsNewBest = Score > save.GetBestScore(id);
+        if (Stars > 0)
+        {
+            save.SetLevelStars(id, Stars);
+            if (IsPerfect) save.MarkLevelPerfect(id);
+            save.RecordLevelResult(id, Score, Time.time - _levelStartTime, BirdsRemaining, CatapultLauncher.LastAnimalUsed);
+            WorldUnlocked = save.RecordLevelCompleted(level);
+        }
+        save.SaveProgress();
     }
 
-    static string ScoreKey(int idx)   => $"ff_score_{idx}";
-    static string StarsKey(int idx)   => $"ff_stars_{idx}";
-    static string PerfectKey(int idx) => $"ff_perfect_{idx}";
 }
