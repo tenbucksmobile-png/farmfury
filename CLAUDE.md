@@ -116,12 +116,17 @@ needing a live pass before shipping.
 - **2026-11-02 — Franchise flow: everything outside gameplay now follows FarmFury_Stampede/Arcade** (branch
   `align-franchise-ui`). User decisions: drop the MatchUp VS/countdown screen; keep a pre-level character select
   that offers animals as their worlds unlock; revive = +1 animal (5 coins / ad); Stampede art as stand-ins plus a
-  Kling list (`docs/ART_REQUIREMENTS.md`); full monetisation; add the three paid worlds. Phases, one commit each:
+  Kling list (`docs/ART_REQUIREMENTS.md`); full monetisation; add the three paid worlds. Branch pushed to origin
+  2026-11-02, not merged into `main`. Phases, one commit each:
   (1) save/data foundation, (2) GameFlow + Landing/World/Level/Character Select, (3) Pause/Results/New Character,
   (4) Settings family, (5a) store/ads/analytics/coins/revive/shop, (5b) hats/trails/Locker, (6) home-screen name,
   F1 debug panel, docs. Removed: MainMenuController, WorldMapController, World2MapController,
   World2LandingController, LevelMarker, MatchUpScreen, World2CharacterSelectScreen, GameplaySettings, and the HUD's
   result panels/Quit/Mute. Existing World 1 progress migrates once from `ff_stars_N` to levelId keys.
+  Follow-up (same day, after the user re-ran Generate All Level Data + Wire Scene References in the Editor): every
+  LevelData asset now serializes `isBossLevel` (only L18 = 1); the LevelPlay package added the scripting define
+  `LEVELPLAY_DEPENDENCIES_INSTALLED` (Standalone) to ProjectSettings — expected, keep it; the Editor re-fitted the
+  parallax layer scales to its Game view (`EnvironmentDepthSystem.RescaleToCamera`, recomputed at runtime anyway).
 
 - **2026-08-09** — Large difficulty/stability session: a `[SerializeField]`-staleness audit,
   damage/explosion rebalance, several real bug fixes, World 1↔2 navigation, and a new World 2
@@ -456,9 +461,8 @@ Open `unity/` in Unity Hub (Unity 6.5 / 6000.5.0f1). Open `Assets/Scenes/Game.un
 Primary interface for batch Unity operations. Run from the repo root in PowerShell:
 
 ```powershell
-.\Run-Unity.ps1 levels        # Generate/overwrite all 6 LevelData ScriptableObjects — safe for L01
-                               #   (kept in sync since 2026-07-01), destructive-neutral for L02-L06
-                               #   (they're already broken; regenerating won't fix or worsen them)
+.\Run-Unity.ps1 levels        # Generate/overwrite every LevelData asset (L01-L19) from LevelDataGenerator.cs —
+                               #   safe: the generator is the source of truth for all of them
 .\Run-Unity.ps1 setup         # Wire all Inspector references in Game.unity (= Wire Scene References)
 .\Run-Unity.ps1 check         # Compile check — exits 1 on error
 .\Run-Unity.ps1 build         # Windows 64-bit -> unity/Builds/Windows/
@@ -472,7 +476,7 @@ Logs written to `unity/Logs/batch_<command>.log`. Filtered output is printed to 
 | Menu | When to run |
 |---|---|
 | **FarmFury → Wire Scene References** | After adding a new prefab, level, or after clean checkout. Wires all Inspector refs in Game.unity. Also sets camera position/orthoSize and `_cameraRestOffset`. |
-| **FarmFury → Generate All Level Data** | Recreate the L01/L02 LevelData assets (overwrites existing) and delete any stale `.asset` for a level whose `Make(...)` call was removed (see `DeleteStaleAsset`). L01 is kept in sync — safe to run. Run Wire Scene References after. |
+| **FarmFury → Generate All Level Data** | Recreate every LevelData asset (L01–L19; overwrites existing, sets `isBossLevel` — L18 only) and delete any stale `.asset` for a level whose `Make(...)` call was removed (see `DeleteStaleAsset`). L01 is kept in sync — safe to run. Run Wire Scene References after. |
 | **FarmFury → Wire Sprites** | After adding new character art to `Assets/Sprites/Characters/`. Sets PPU and wires pose sprites into all 8 animal prefabs. |
 | **FarmFury → Reimport Sprites** | Force-reimport all sprites in Launchers/, Characters/, and Enemies/ folders. Run if sprites look stale after the art pipeline. |
 | **FarmFury → Reset Progress** | Clears all progress keys (SaveManager's `FF_` keys by levelId, plus the pre-port `ff_*_N` keys) — coins and purchases are kept. |

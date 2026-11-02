@@ -16,6 +16,7 @@ MonoBehaviour:
   levelName: Stone and Pawns
   parBirds: 3
   world: 1
+  isBossLevel: 0
   birds: 000000000000000001000000
   blocks:
   - type: 2
