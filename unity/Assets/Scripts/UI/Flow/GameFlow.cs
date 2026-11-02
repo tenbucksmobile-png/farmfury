@@ -23,6 +23,7 @@ namespace FarmFury.UI
     {
         [SerializeField] private MenuArt _menuArt = new();
         [SerializeField] private ShopArt _shopArt = new();
+        [SerializeField] private LeaderboardArt _leaderboardArt = new();
 
         public static GameFlow Instance { get; private set; }
 
@@ -33,6 +34,9 @@ namespace FarmFury.UI
         public PauseScreen Pause { get; private set; }
         public ResultsScreen Results { get; private set; }
         public NewCharacterScreen NewCharacter { get; private set; }
+        public ParentalGate Gate { get; private set; }
+        public MenuHubScreen MenuHub { get; private set; }
+        public SettingsScreen Settings { get; private set; }
         public MenuArt Art => _menuArt;
         public ShopArt Shop => _shopArt;
         public WorldType CurrentWorld { get; private set; } = WorldType.MeadowRuins;
@@ -47,6 +51,7 @@ namespace FarmFury.UI
             Instance = this;
             _menuArt ??= new MenuArt();
             _shopArt ??= new ShopArt();
+            _leaderboardArt ??= new LeaderboardArt();
 
             var canvas = UIKit.CreateCanvas("MenuCanvas", 400, transform);
             UIKit.EnsureEventSystem(transform);
@@ -67,7 +72,16 @@ namespace FarmFury.UI
         private void BuildOverlays()
         {
             var c = CanvasTransform;
+            // Every Settings / Shop page shares the Leaderboard's backdrop.
+            if (_shopArt.pageBackground == null) { _shopArt.pageBackground = _leaderboardArt.background; }
+            Gate = Add(new ParentalGate(c, _menuArt, _shopArt));
             NewCharacter = Add(new NewCharacterScreen(c, _menuArt, _shopArt));
+            var legal = Add(new LegalScreen(c, _menuArt, _shopArt, Gate));
+            var story = Add(new CharacterStoryScreen(c, _menuArt, _shopArt));
+            var worldDetail = Add(new WorldDetailScreen(c, _menuArt, _shopArt, _leaderboardArt));
+            var leaderboards = Add(new LeaderboardsScreen(c, _menuArt, _shopArt, _leaderboardArt, worldDetail.Show, OpenWorldShop));
+            Settings = Add(new SettingsScreen(c, _menuArt, _shopArt, leaderboards.Show, story.Show, legal.Show));
+            MenuHub = Add(new MenuHubScreen(c, _menuArt, _shopArt, Gate, Settings.Show, OpenShop));
         }
 
         private T Add<T>(T overlay) where T : OverlayScreen
@@ -251,16 +265,16 @@ namespace FarmFury.UI
             return level != null && DataManager.Instance != null ? DataManager.Instance.GetWorldData(level.WorldType) : null;
         }
 
-        /// <summary>Pause's cog: Settings over the pause screen (franchise Phase 4).</summary>
-        public void OpenSettings()
-        {
-            Debug.Log("[GameFlow] Settings not built yet (franchise-flow Phase 4).");
-        }
+        /// <summary>Pause's cog: straight to Settings, over the pause screen (bypassing the hub).</summary>
+        public void OpenSettings() => Settings.Show();
 
-        /// <summary>Settings cog: the Settings / Shop menu hub (franchise Phase 4).</summary>
-        public void OpenMenuHub()
+        /// <summary>Settings cog (landing, Level Complete): the menu hub over that screen; Back returns to it.</summary>
+        public void OpenMenuHub() => MenuHub.Show();
+
+        /// <summary>The menu hub's Shop sign (franchise Phase 5).</summary>
+        public void OpenShop()
         {
-            Debug.Log("[GameFlow] Settings / Shop hub not built yet (franchise-flow Phase 4).");
+            Debug.Log("[GameFlow] Shop not built yet (franchise-flow Phase 5).");
         }
 
         /// <summary>A paid world's badge: the world shop (franchise Phase 5).</summary>

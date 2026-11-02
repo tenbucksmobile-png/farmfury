@@ -48,6 +48,10 @@ namespace FarmFury.UI
         [Tooltip("Framed animal cards (name baked in), indexed by AnimalType.")]
         public Sprite[] animalCards = new Sprite[8];
 
+        [Header("Character Story")]
+        [Tooltip("Robot sprites for the Robots tab, in RobotType order (Pawn, Harvester, Semi-Harvester, Commander).")]
+        public Sprite[] robotPortraits = new Sprite[4];
+
         [Header("Pause / results")]
         public Sprite pauseBackground;
         public Sprite levelCompleteBackground;

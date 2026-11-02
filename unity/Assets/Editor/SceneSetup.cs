@@ -933,7 +933,66 @@ public static class SceneSetup
             cardsProp.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(fa + "/Cards/" + cards[i] + ".png");
         so.ApplyModifiedProperties();
 
+        // Robots tab of Character Story: FarmFury's own robot sprites, RobotType order.
+        var robots = new[] { "Robot_Pawn", "HarvesterRobot", "Robot_SemiHarvest", "Commander" };
+        var robotsProp = so.FindProperty("_menuArt.robotPortraits");
+        robotsProp.arraySize = robots.Length;
+        for (int i = 0; i < robots.Length; i++)
+            robotsProp.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Enemies/Robot/" + robots[i] + ".png");
+
+        // ShopArt (Settings / Shop overlays) and LeaderboardArt — Stampede's file table (StampedeShopArt /
+        // StampedeLeaderboardArt), copied into Franchise/Shop, Franchise/Leaderboard, Franchise/WorldNames.
+        string shop = fa + "/Shop/";
+        WireSprite(so, "_shopArt.pageBackground",     fa + "/Canvas/Settings_Canvas_Wide.png");
+        var shopFields = new System.Collections.Generic.Dictionary<string, string>
+        {
+            { "settingsSign", "SettingsSign" }, { "shopSign", "ShopBanner" }, { "merchBanner", "MerchBanner" },
+            { "legalSign", "Legal" }, { "leaderboardSign", "Leaderboard" },
+            { "musicIcon", "Btn_music-remove" }, { "leaderboardIcon", "Btn_LeaderBoard" },
+            { "characterStoryIcon", "Btn_CharacterStory" }, { "policiesIcon", "Policies" },
+            { "cashIcon", "Shop" }, { "worldsIcon", "WorldMaze" }, { "removeAdsIcon", "Ads" }, { "cosmeticsIcon", "Cosmetics_Icon" },
+            { "plaque", "Btn_plaque" }, { "worldPrice", "3.99" }, { "hatsBanner", "Hats&Caps" }, { "trailsBanner", "Trails" },
+            { "machinesBanner", "machine" }, { "ownedBadge", "EquippedBadge_Icon" }, { "purchaseComplete", "PurchaseComplete" },
+            { "coinIcon", "Coin_UI" }, { "yesButton", "Yes" }, { "noButton", "No" }, { "revivePanel", "Revive Prompt panel background" },
+            { "watchAd", "WatchAd" }, { "doubleCoins", "DoubleCoins" }, { "useCoinsSign", "UseCoins" },
+            { "lockerIcon", "Locker" }, { "lockerBanner", "LockerBanner" }, { "lockerSuggestion", "LockerAd" },
+            { "cardFrame", "PurchaseCardFrame" }, { "promoNewWorlds", "Promo_NewWorlds" }, { "promoNoAds", "Promo_NoAds" },
+        };
+        foreach (var kv in shopFields)
+            WireSprite(so, "_shopArt." + kv.Key, shop + kv.Value + ".png");
+        WireSpriteArray(so, "_shopArt.coinPacks", shop, new[] { "100", "500", "5000", "15000" });
+        WireSpriteArray(so, "_shopArt.hatItems", shop, new[] { "sombrero_price", "baseball_price", "cowboy_price", "ChefHat_price", "Crown_price" });
+        WireSpriteArray(so, "_shopArt.trailItems", shop, new[] { "RainbowRibbon_price", "SparkleDust_Price", "CornHusk_price", "EmberTrail_price", "Confetti_price", "Bubble_price" });
+        WireSpriteArray(so, "_shopArt.machineItems", shop, new[] { "Price_Clucky_truck", "Price_Bessie_truck", "Price_Horace_truck" });
+        WireSpriteArray(so, "_shopArt.abilityIcons", shop, new[] { "Cluck_ability", "Bessie_ability", "Percy_ability", "Woolly_ability", "Ducky_ability", "Horace_ability", "Gerald_ability", "Billy_ability" });
+        WireSpriteArray(so, "_shopArt.cosmeticIcons", shop, new[] { "Sombrero", "BaseballHat", "CowboyHat", "ChefHat", "CrownHat", "Ribbon", "SparkleDust", "CornHusk", "Ember", "Confetti", "bubbles", "CluckyTruck", "BessieTruck", "HoraceTruck" });
+
+        WireSprite(so, "_leaderboardArt.background",       fa + "/Canvas/Settings_Canvas_Wide.png");
+        WireSprite(so, "_leaderboardArt.bestLabel",        fa + "/Leaderboard/Best.png");
+        WireSprite(so, "_leaderboardArt.highScoreLabel",   fa + "/Leaderboard/HighScore.png");
+        WireSprite(so, "_leaderboardArt.fastestTimeLabel", fa + "/Leaderboard/FastestTime.png");
+        WireSprite(so, "_leaderboardArt.coin",             fa + "/Leaderboard/Collectable Coin.png");
+        var logo = AssetDatabase.LoadAssetAtPath<Sprite>(fa + "/Menu/FF_Logo.png");   // FarmFury logo: not made yet
+        so.FindProperty("_leaderboardArt.logo").objectReferenceValue = logo;
+        WireSpriteArray(so, "_leaderboardArt.worldNames", fa + "/WorldNames/",
+            new[] { "MeadowRuins", "FrozenTundra", "WatermillVillage", "SkyIslands", "SunkenCity", "MotherShip", "DustbowlCanyon", "HarvestFairground", "CropFactory" });
+        so.ApplyModifiedProperties();
+
         WireWorldMenuArt();
+    }
+
+    static void WireSpriteArray(SerializedObject so, string field, string folder, string[] files)
+    {
+        var prop = so.FindProperty(field);
+        prop.arraySize = files.Length;
+        int found = 0;
+        for (int i = 0; i < files.Length; i++)
+        {
+            var spr = AssetDatabase.LoadAssetAtPath<Sprite>(folder + files[i] + ".png");
+            prop.GetArrayElementAtIndex(i).objectReferenceValue = spr;
+            if (spr != null) found++;
+        }
+        Debug.Log($"[FarmFury] Wired {field}: {found}/{files.Length} sprites from {folder}");
     }
 
     // Per-world menu art on each WorldData asset: badge, Level Select backdrop, and (non-Meadow) Stampede's

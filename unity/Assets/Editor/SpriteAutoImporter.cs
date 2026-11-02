@@ -100,6 +100,12 @@ public class SpriteAutoImporter : AssetPostprocessor
             {
                 if (imp.maxTextureSize < 4096) imp.maxTextureSize = 4096;
                 if (imp.mipmapEnabled) imp.mipmapEnabled = false;
+                // The price/label plaque is drawn 9-sliced at any width (Stampede/Arcade's border).
+                if (assetPath.EndsWith("Franchise/Shop/Btn_plaque.png"))
+                {
+                    var border = new Vector4(90f, 70f, 90f, 70f);
+                    if (imp.spriteBorder != border) imp.spriteBorder = border;
+                }
             }
         }
         // ── Robot enemy sprites (PPU=1746 → content 1746px = 1u; at scale 0.8 → 0.8u world) ──

@@ -2650,6 +2650,11 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 1cfaabd537b0698479b96de5c9ad3ca9, type: 3}
     - {fileID: 21300000, guid: fdc2f808d41a13a448a7c2008c2a18f6, type: 3}
     - {fileID: 21300000, guid: 7ac58ec6ed0ab69429d9faa2de604d56, type: 3}
+    robotPortraits:
+    - {fileID: 21300000, guid: 0c334c6f665217f4abb2ec6c28ec34b2, type: 3}
+    - {fileID: 21300000, guid: 07886339befb9504eb55ae959d3e12c4, type: 3}
+    - {fileID: 21300000, guid: 9dbb3e4297a7c2a4e8c23f09ad28d4c3, type: 3}
+    - {fileID: 21300000, guid: dd524b014eaae754d9638df78da5ea80, type: 3}
     pauseBackground: {fileID: 21300000, guid: 0c915cc2fa25b154bb53bbcf12ec13d4, type: 3}
     levelCompleteBackground: {fileID: 21300000, guid: 9ee46dbd04a965a40b80a67673dc8ec0, type: 3}
     levelFailedBackground: {fileID: 21300000, guid: 189b5fce170824b4aa2c66950f7b005b, type: 3}
@@ -2659,49 +2664,106 @@ MonoBehaviour:
     newCharacterSign: {fileID: 21300000, guid: aa55b59263914064a90d0b1c64ed943e, type: 3}
     worldUnlockedSign: {fileID: 21300000, guid: d5e2f4cacc7502a41badca56b344af99, type: 3}
   _shopArt:
-    pageBackground: {fileID: 0}
-    settingsSign: {fileID: 0}
-    shopSign: {fileID: 0}
-    merchBanner: {fileID: 0}
-    legalSign: {fileID: 0}
-    leaderboardSign: {fileID: 0}
-    musicIcon: {fileID: 0}
-    leaderboardIcon: {fileID: 0}
-    characterStoryIcon: {fileID: 0}
-    policiesIcon: {fileID: 0}
-    cashIcon: {fileID: 0}
-    worldsIcon: {fileID: 0}
-    removeAdsIcon: {fileID: 0}
-    cosmeticsIcon: {fileID: 0}
-    plaque: {fileID: 0}
-    coinPacks: []
-    worldPrice: {fileID: 0}
-    hatsBanner: {fileID: 0}
-    trailsBanner: {fileID: 0}
-    machinesBanner: {fileID: 0}
-    hatItems: []
-    trailItems: []
-    machineItems: []
-    ownedBadge: {fileID: 0}
-    purchaseComplete: {fileID: 0}
-    coinIcon: {fileID: 0}
-    yesButton: {fileID: 0}
-    noButton: {fileID: 0}
-    revivePanel: {fileID: 0}
-    watchAd: {fileID: 0}
-    doubleCoins: {fileID: 0}
-    useCoinsSign: {fileID: 0}
-    lockerIcon: {fileID: 0}
-    lockerBanner: {fileID: 0}
-    lockerSuggestion: {fileID: 0}
-    cardFrame: {fileID: 0}
-    promoNewWorlds: {fileID: 0}
-    promoNoAds: {fileID: 0}
+    pageBackground: {fileID: 21300000, guid: 628fd68719c3f6d4997a4a133f350927, type: 3}
+    settingsSign: {fileID: 21300000, guid: a3863225dcd6b0141a9690d48e72365e, type: 3}
+    shopSign: {fileID: 21300000, guid: b5088152c190dc444bee9dd67b7fe904, type: 3}
+    merchBanner: {fileID: 21300000, guid: 7df17461a0e47ce4196d79e10643c44d, type: 3}
+    legalSign: {fileID: 21300000, guid: 014a6d4116bd7b64884cfdbc79c808da, type: 3}
+    leaderboardSign: {fileID: 21300000, guid: 374f695f53792584fb7b1e364fcacd34, type: 3}
+    musicIcon: {fileID: 21300000, guid: fe33c7a168daa5a42a2457c85246a858, type: 3}
+    leaderboardIcon: {fileID: 21300000, guid: f651cf09db3f36c4a91ad4cd725c0af6, type: 3}
+    characterStoryIcon: {fileID: 21300000, guid: ac9418eb99def4948bdd4d9cb285e631, type: 3}
+    policiesIcon: {fileID: 21300000, guid: 3de0d08fbcf7cb24883a10b7df02e266, type: 3}
+    cashIcon: {fileID: 21300000, guid: 62a4f770bb5c21a4589f7c85063c1a54, type: 3}
+    worldsIcon: {fileID: 21300000, guid: 22c631fd9722de14ca776d8c421728aa, type: 3}
+    removeAdsIcon: {fileID: 21300000, guid: b610fbe70622e7042833ffd16284cd43, type: 3}
+    cosmeticsIcon: {fileID: 21300000, guid: 6b8044c06d99fbb43a011613115e5451, type: 3}
+    plaque: {fileID: 21300000, guid: 5794c251e57d7e14ca97721cd33826a5, type: 3}
+    coinPacks:
+    - {fileID: 21300000, guid: bbc5395c4dd553c4c973df3e619914e5, type: 3}
+    - {fileID: 21300000, guid: fd1a9eaaf4b9b52419a4eee9605c47ea, type: 3}
+    - {fileID: 21300000, guid: 277478f7245b98a47a6a96eb1beb9ba7, type: 3}
+    - {fileID: 21300000, guid: 208d5340901752d47a99b087f7ddee5a, type: 3}
+    worldPrice: {fileID: 21300000, guid: 38cf681b7457f3240939fe26dd85fffe, type: 3}
+    hatsBanner: {fileID: 21300000, guid: 4ef74562294ae4a43b73f67300278dc3, type: 3}
+    trailsBanner: {fileID: 21300000, guid: 6ee7067394a92f64588477c85b381167, type: 3}
+    machinesBanner: {fileID: 21300000, guid: 70328034571d61c4c95f4d7ee9fed31f, type: 3}
+    hatItems:
+    - {fileID: 21300000, guid: bf865a3941925cc45a243d3db9befe37, type: 3}
+    - {fileID: 21300000, guid: 5d3504566381edc44a26ee8d8f2a510d, type: 3}
+    - {fileID: 21300000, guid: fe20d3d02150c844ba4db6797376f46b, type: 3}
+    - {fileID: 21300000, guid: 6848e32e0398ff343bd182b84174a103, type: 3}
+    - {fileID: 21300000, guid: 82a989bec1bded842be61e7d2ccf885e, type: 3}
+    trailItems:
+    - {fileID: 21300000, guid: ce223dba768242f43b9cebff2cf35c3d, type: 3}
+    - {fileID: 21300000, guid: 07aaabe13bda69e40b8d27d8b5d76029, type: 3}
+    - {fileID: 21300000, guid: 4160505b2e916d34591e449e10a1d6f9, type: 3}
+    - {fileID: 21300000, guid: 02dcbee60d56d0043b9738b1d5a80333, type: 3}
+    - {fileID: 21300000, guid: f19dfeec21918054f870600e02edf787, type: 3}
+    - {fileID: 21300000, guid: d5c66f3e9ae71d9408795c47b26b40a9, type: 3}
+    machineItems:
+    - {fileID: 21300000, guid: ac027faeea8e7c94ca0b288655172e76, type: 3}
+    - {fileID: 21300000, guid: b6d9154bf697f824cbfeccddf33bd9b8, type: 3}
+    - {fileID: 21300000, guid: 2cebc613f051b6c43ac041f0cf8788c7, type: 3}
+    ownedBadge: {fileID: 21300000, guid: b6585d85573de464c861e48c6cd110bf, type: 3}
+    purchaseComplete: {fileID: 21300000, guid: 296a95b51ff662c488477e15951673a0, type: 3}
+    coinIcon: {fileID: 21300000, guid: 321509b04823b5d418efce3cce145b48, type: 3}
+    yesButton: {fileID: 21300000, guid: 2337e250bf65bc4469d9295e036f19e6, type: 3}
+    noButton: {fileID: 21300000, guid: 53a7ec9b64b404b409114314b2484df2, type: 3}
+    revivePanel: {fileID: 21300000, guid: ad1a7838bcefddb408d81768eb6cddad, type: 3}
+    watchAd: {fileID: 21300000, guid: 2d4956a4d81759240b8b3fc0a0b78c37, type: 3}
+    doubleCoins: {fileID: 21300000, guid: ba41b4a2e8c120e4cabff5371dfbd494, type: 3}
+    useCoinsSign: {fileID: 21300000, guid: 23f66078bf9284849a338d9b32f40468, type: 3}
+    lockerIcon: {fileID: 21300000, guid: e271d648c765f7a4b8e07a7adacddc7d, type: 3}
+    lockerBanner: {fileID: 21300000, guid: 80b663dc3fdac624384da7fce8264f8d, type: 3}
+    lockerSuggestion: {fileID: 21300000, guid: 8c48c4f631fd2cd4babab6f22e5d2c6c, type: 3}
+    cardFrame: {fileID: 21300000, guid: d3cb9c9429c3fdb4e84b77892575741a, type: 3}
+    promoNewWorlds: {fileID: 21300000, guid: 71fbff720a5dcab45b515200087af896, type: 3}
+    promoNoAds: {fileID: 21300000, guid: 515b6708eff7b4740adc99e2fc24c57d, type: 3}
     moveLeftButton: {fileID: 0}
     moveRightButton: {fileID: 0}
     jumpButton: {fileID: 0}
-    abilityIcons: []
-    cosmeticIcons: []
+    abilityIcons:
+    - {fileID: 21300000, guid: 9cd4969a35224ff4a80a4552dde04a79, type: 3}
+    - {fileID: 21300000, guid: 752650eacbb0e9f45be4d8a422e9a7a2, type: 3}
+    - {fileID: 21300000, guid: 5d3fe9f754116c942858838e5fb30b30, type: 3}
+    - {fileID: 21300000, guid: 083a9e9f1fd1dd2458f7028ea3a7b465, type: 3}
+    - {fileID: 21300000, guid: d13350972e7504a419f9c878adc4790f, type: 3}
+    - {fileID: 21300000, guid: 40009b055c575fa44a8047768e73246d, type: 3}
+    - {fileID: 21300000, guid: 85c0180c288cef841a91f98640bb9075, type: 3}
+    - {fileID: 21300000, guid: 534972f80ceddf74e8a622f13a4ac8b2, type: 3}
+    cosmeticIcons:
+    - {fileID: 21300000, guid: 4608a4ed2c24a8941be0a63efe97b460, type: 3}
+    - {fileID: 21300000, guid: a8381f94c4623154eaca01c8e4cd26c7, type: 3}
+    - {fileID: 21300000, guid: 4d4de20c5f05fed438142b666ad2895c, type: 3}
+    - {fileID: 21300000, guid: 6d6c2c98e30fc24429abb7a018f9d2a0, type: 3}
+    - {fileID: 21300000, guid: 51fc22e103a818448a78cc5998734bd3, type: 3}
+    - {fileID: 21300000, guid: 483ea64550ae07e49863ccdb71b27c77, type: 3}
+    - {fileID: 21300000, guid: 4da83b12fee26fa45b8ed26180236256, type: 3}
+    - {fileID: 21300000, guid: 74afd0659cb28474a8d672cbdcd84b06, type: 3}
+    - {fileID: 21300000, guid: 335838cacf0b29f42bef377356326810, type: 3}
+    - {fileID: 21300000, guid: 6b1d2e2c76bfd52408d9b22a8bd507f2, type: 3}
+    - {fileID: 21300000, guid: d6cb2bed56aed2942adc54abe9a47bf0, type: 3}
+    - {fileID: 21300000, guid: f3b68ce29369fee4b95cb7b912d5bfe8, type: 3}
+    - {fileID: 21300000, guid: 2060e36e1ee108946acc27c390d08f80, type: 3}
+    - {fileID: 21300000, guid: 46f0ec7d23cae88458cb20e7c362cb81, type: 3}
+  _leaderboardArt:
+    background: {fileID: 21300000, guid: 628fd68719c3f6d4997a4a133f350927, type: 3}
+    logo: {fileID: 0}
+    worldNames:
+    - {fileID: 21300000, guid: 1cfef1f1d459c91439da0e0e8408a2df, type: 3}
+    - {fileID: 21300000, guid: add229a1fc0cda741b01533fa7568d3b, type: 3}
+    - {fileID: 21300000, guid: 86ad03410b46de14ea9fbbda6b4195c1, type: 3}
+    - {fileID: 21300000, guid: 22e7acb4f75712a46ad3ab0da2ac3a92, type: 3}
+    - {fileID: 21300000, guid: fa8d16f748e77e547a19fbcf3da4924d, type: 3}
+    - {fileID: 21300000, guid: ef952c869168b394096086230b97c6cc, type: 3}
+    - {fileID: 21300000, guid: 1794491e6a52504429564a8b6c7cea4a, type: 3}
+    - {fileID: 21300000, guid: 884e9ebd818bcb641821fb6ef29bc964, type: 3}
+    - {fileID: 21300000, guid: bd66f41b369ba1f45a8898457294c198, type: 3}
+    bestLabel: {fileID: 21300000, guid: d61eab0fbaaee9548be5567fbe58ce30, type: 3}
+    highScoreLabel: {fileID: 21300000, guid: 9588db5493c5aca4dabc23dfc7cf4c73, type: 3}
+    fastestTimeLabel: {fileID: 21300000, guid: 0a3bb2f19de185f449b12fcdb79f15b7, type: 3}
+    coin: {fileID: 21300000, guid: b506cc2bc03bbf345896dbcbce35dc37, type: 3}
 --- !u!4 &1413223964
 Transform:
   m_ObjectHideFlags: 0
