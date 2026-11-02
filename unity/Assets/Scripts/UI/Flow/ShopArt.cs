@@ -101,6 +101,12 @@ namespace FarmFury.UI
         [Tooltip("Plain cosmetic art for the Cosmetics tab, in StoreProducts.CosmeticNames order.")]
         public Sprite[] cosmeticIcons = new Sprite[0];
 
+        [Header("Cosmetics drawn on the animals (StoreProducts order)")]
+        [Tooltip("Hat art worn in play, in StoreProducts.Hats order (Franchise/Cosmetics; caps/cowboy use Cluck's versions).")]
+        public Sprite[] hatArt = new Sprite[0];
+        [Tooltip("Trail art stamped behind a flying animal, in StoreProducts.Trails order.")]
+        public Sprite[] trailArt = new Sprite[0];
+
         public Sprite AbilityIcon(AnimalType type) => At(abilityIcons, (int)type);
 
         public static Sprite At(Sprite[] sprites, int index) =>

@@ -39,6 +39,7 @@ namespace FarmFury.UI
         public SettingsScreen Settings { get; private set; }
         public RevivePromptScreen Revive { get; private set; }
         public ShopScreen ShopHub { get; private set; }
+        public LockerScreen Locker { get; private set; }
         public MenuArt Art => _menuArt;
         public ShopArt Shop => _shopArt;
         public WorldType CurrentWorld { get; private set; } = WorldType.MeadowRuins;
@@ -106,6 +107,7 @@ namespace FarmFury.UI
             _trailsPage = Add(new ItemPurchaseScreen(c, "CosmeticsTrails", _menuArt, _shopArt, Gate, useCoins, _shopArt.trailsBanner, null, "TRAILS",
                 Items(StoreProducts.Trails, _shopArt.trailItems, trailsFirst), itemCell, 50f));
             var chooser = Add(new CosmeticsChooserScreen(c, _menuArt, _shopArt, _hatsPage.Show, _trailsPage.Show));
+            Locker = Add(new LockerScreen(c, _menuArt, _shopArt, _hatsPage.Show, _trailsPage.Show));
             var coins = Add(new CoinPurchaseScreen(c, _menuArt, _shopArt, Gate));
             ShopHub = Add(new ShopScreen(c, _menuArt, _shopArt, Gate, coins.Show, _worldShop.Show, chooser.Show));
 
@@ -319,6 +321,12 @@ namespace FarmFury.UI
         // ------------------------------------------------------------ in-level screens
 
         public void OpenPause() => _gm.PauseGame();
+
+        /// <summary>The HUD's Locker button: equip owned hats / trails mid-level (the level freezes while open).</summary>
+        public void OpenLocker()
+        {
+            if (_gm.State == GameState.Playing && !_gm.ReviveDecisionPending) { Locker?.Open(); }
+        }
 
         public void ResumeFromPause() => _gm.ResumeGame();
 

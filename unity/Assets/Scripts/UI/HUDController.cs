@@ -45,6 +45,7 @@ public class HUDController : MonoBehaviour
 
     [SerializeField] private Sprite _pauseButtonSprite; // Btn_pause.png
     [SerializeField] private Sprite _coinSprite;        // Franchise/Shop/Coin_UI.png
+    [SerializeField] private Sprite _lockerSprite;      // Franchise/Shop/Locker.png
     private RectTransform  _topRightRoot;
     private Text           _coinText;
 
@@ -216,6 +217,19 @@ public class HUDController : MonoBehaviour
         pauseBtn.targetGraphic = pauseImg;
         StyleTopButtonColors(pauseBtn);
         pauseBtn.onClick.AddListener(OnPauseClicked);
+
+        // Locker (franchise cosmetics), right under the pause button.
+        var lockerImg = MakeImage(_topRightRoot, "LockerBtn",
+                          _lockerSprite != null ? _lockerSprite : _squareSpr,
+                          _lockerSprite != null ? Color.white : new Color(0.62f, 0.38f, 0.17f),
+                          anchorMin: new Vector2(1f, 0f), anchorMax: new Vector2(1f, 0f),
+                          pivot:     new Vector2(1f, 1f),
+                          pos:       new Vector2(0f, -16f),
+                          size:      new Vector2(btnSize, btnSize));
+        var lockerBtn = lockerImg.gameObject.AddComponent<Button>();
+        lockerBtn.targetGraphic = lockerImg;
+        StyleTopButtonColors(lockerBtn);
+        lockerBtn.onClick.AddListener(() => FarmFury.UI.GameFlow.Instance?.OpenLocker());
 
         // Coin balance (franchise HUD chip): spinning coin + count, just left of the pause button.
         const float coinSize = 72f;

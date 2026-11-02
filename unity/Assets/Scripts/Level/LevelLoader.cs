@@ -206,7 +206,10 @@ public class LevelLoader : MonoBehaviour
             AnimalType.Billy  => _billyPrefab,
             _                 => _cluckPrefab,
         };
-        return Instantiate(prefab, spawnPosition, Quaternion.identity);
+        var animal = Instantiate(prefab, spawnPosition, Quaternion.identity);
+        // Equipped hat / trail (franchise cosmetics).
+        animal.gameObject.AddComponent<AnimalCosmeticRenderer>().Init(type);
+        return animal;
     }
 
     public void NotifyRobotDestroyed(RobotEnemy robot)

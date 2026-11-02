@@ -2084,6 +2084,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 7ac58ec6ed0ab69429d9faa2de604d56, type: 3}
   _pauseButtonSprite: {fileID: 21300000, guid: 31a8c674f4922e443a427e353a35d515, type: 3}
   _coinSprite: {fileID: 21300000, guid: 321509b04823b5d418efce3cce145b48, type: 3}
+  _lockerSprite: {fileID: 21300000, guid: e271d648c765f7a4b8e07a7adacddc7d, type: 3}
 --- !u!4 &1148615753
 Transform:
   m_ObjectHideFlags: 0
@@ -2798,6 +2799,19 @@ MonoBehaviour:
     - {fileID: 21300000, guid: f3b68ce29369fee4b95cb7b912d5bfe8, type: 3}
     - {fileID: 21300000, guid: 2060e36e1ee108946acc27c390d08f80, type: 3}
     - {fileID: 21300000, guid: 46f0ec7d23cae88458cb20e7c362cb81, type: 3}
+    hatArt:
+    - {fileID: 21300000, guid: 474faabf4a6c3f54ea273e7fbdcf1207, type: 3}
+    - {fileID: 21300000, guid: dc813ccaed3bc194bb820b3b8310696a, type: 3}
+    - {fileID: 21300000, guid: b08e1d854aae7424e8243a9b1320e811, type: 3}
+    - {fileID: 21300000, guid: fd86fb751edec1f4a814da882b499045, type: 3}
+    - {fileID: 21300000, guid: 35879ef103d72644c84f1006cf4b359b, type: 3}
+    trailArt:
+    - {fileID: 21300000, guid: 9d1f3f7d76392e04895ba6b40dc22f6a, type: 3}
+    - {fileID: 21300000, guid: 7575ff31bec310d41a95a8307ac66c43, type: 3}
+    - {fileID: 21300000, guid: b423cb2befad33f479068cb85be3282e, type: 3}
+    - {fileID: 21300000, guid: ac2f07ff674c87e44bbb0c4e1d46c01d, type: 3}
+    - {fileID: 21300000, guid: f4c0358670a7b344d9e072ebd13f5d30, type: 3}
+    - {fileID: 21300000, guid: 9e524b8b508b75844a8d3331f0e1d87a, type: 3}
   _leaderboardArt:
     background: {fileID: 21300000, guid: 628fd68719c3f6d4997a4a133f350927, type: 3}
     logo: {fileID: 0}

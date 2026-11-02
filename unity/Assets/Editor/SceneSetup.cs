@@ -830,6 +830,7 @@ public static class SceneSetup
         // button's art is left on the HUD.
         WireSprite(so, "_pauseButtonSprite",   "Assets/Sprites/UI/Icon/Btn_pause.png");
         WireSprite(so, "_coinSprite",          FranchiseArt + "/Shop/Coin_UI.png");
+        WireSprite(so, "_lockerSprite",        FranchiseArt + "/Shop/Locker.png");
 
         so.ApplyModifiedProperties();
 
@@ -967,6 +968,9 @@ public static class SceneSetup
         WireSpriteArray(so, "_shopArt.machineItems", shop, new[] { "Price_Clucky_truck", "Price_Bessie_truck", "Price_Horace_truck" });
         WireSpriteArray(so, "_shopArt.abilityIcons", shop, new[] { "Cluck_ability", "Bessie_ability", "Percy_ability", "Woolly_ability", "Ducky_ability", "Horace_ability", "Gerald_ability", "Billy_ability" });
         WireSpriteArray(so, "_shopArt.cosmeticIcons", shop, new[] { "Sombrero", "BaseballHat", "CowboyHat", "ChefHat", "CrownHat", "Ribbon", "SparkleDust", "CornHusk", "Ember", "Confetti", "bubbles", "CluckyTruck", "BessieTruck", "HoraceTruck" });
+
+        WireSpriteArray(so, "_shopArt.hatArt", fa + "/Cosmetics/", new[] { "Sombrero_1", "Baseball_Clucky", "Cowboy_Clucky", "ChefHat", "Crown" });
+        WireSpriteArray(so, "_shopArt.trailArt", fa + "/Cosmetics/", new[] { "RainbowRibbon", "SparkleDust", "CornHuskTrail", "EmberTrail", "ConfettiTrail", "BubblesTrail" });
 
         WireSprite(so, "_leaderboardArt.background",       fa + "/Canvas/Settings_Canvas_Wide.png");
         WireSprite(so, "_leaderboardArt.bestLabel",        fa + "/Leaderboard/Best.png");
