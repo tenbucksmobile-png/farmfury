@@ -22,6 +22,9 @@ public class GameManager : MonoBehaviour
     // is started directly by index (ForceStartLevel from Editor tools).
     public AnimalType[] CurrentLineup { get; private set; }
 
+    /// <summary>This attempt's outcome and per-attempt limits (reset on every attempt, filled on completion).</summary>
+    public FarmFury.Core.LevelRunState RunState { get; } = new();
+
     public event Action<GameState> OnStateChanged;
     public event Action<LevelData> OnLevelStarted;
 
@@ -157,15 +160,34 @@ public class GameManager : MonoBehaviour
             return;
         }
         Time.timeScale = 1f;
+        RunState.Reset();
         if (FarmFury.Core.SaveManager.Instance != null)
             FarmFury.Core.SaveManager.Instance.LastPlayedWorld = (int)data.WorldType;
         TransitionTo(GameState.Playing);
         OnLevelStarted?.Invoke(data);
     }
 
+    // LevelLoader calls ScoreManager.FinaliseLevel() (which saves the result) right before this, so the
+    // finalised numbers are copied into RunState for the results screen / New Character page.
     public void CompleteLevel()
     {
         if (State != GameState.Playing) return;
+        var score = ScoreManager.Instance;
+        var level = CurrentLevel;
+        if (score != null)
+        {
+            RunState.starsEarned = score.Stars;
+            RunState.score = score.Score;
+            RunState.isNewBest = score.IsNewBest;
+            RunState.isPerfect = score.IsPerfect;
+            RunState.firstClear = score.WasFirstClear;
+            RunState.previousBestStars = score.PreviousBestStars;
+            RunState.worldUnlocked = score.WorldUnlocked;
+        }
+        RunState.bossCleared = level != null && level.isBossLevel;
+        RunState.newlyUnlockedAnimals.Clear();
+        if (RunState.worldUnlocked.HasValue)
+            RunState.newlyUnlockedAnimals.AddRange(FarmFury.Core.SaveManager.AnimalsIntroducedBy(RunState.worldUnlocked.Value));
         TransitionTo(GameState.LevelComplete);
     }
 

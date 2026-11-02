@@ -2028,21 +2028,11 @@ MonoBehaviour:
   - {fileID: 21300000, guid: e1df3a77efa688641a58ec1a679fb833, type: 3}
   - {fileID: 21300000, guid: 75dabd66bad7c034fa45e9a0b7db1fa7, type: 3}
   - {fileID: 21300000, guid: c408c299a1127114b9c9af376f66eab9, type: 3}
-  - {fileID: 21300000, guid: bbf2e149ec82fde4e856eac1b169795b, type: 3}
-  - {fileID: 21300000, guid: 536150bd4fc1c64439cca54569cdf408, type: 3}
-  - {fileID: 21300000, guid: 10274d57663c03f4d87f729bee7c0187, type: 3}
-  - {fileID: 21300000, guid: d5730ddb717e53f418358d6a98b70236, type: 3}
-  _lcTitleSprite: {fileID: 21300000, guid: 55c76c54ccf22d048a30634f33af70af, type: 3}
-  _starSprite: {fileID: 21300000, guid: 94b1b72d55d99e0418c67d225c245dcf, type: 3}
-  _levelUpStarSprite: {fileID: 21300000, guid: 7b49a445146a4cf4c8283599db61843c, type: 3}
-  _lfTitleSprite: {fileID: 21300000, guid: e4eb9af51ce59bd4191a4805b798c680, type: 3}
-  _scoreboardSprite: {fileID: 21300000, guid: 4b9c61b5ffabce84fa6732409a7d4554, type: 3}
-  _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
-  _backButtonSprite: {fileID: 21300000, guid: 073762aa1112557439afd5f686dd3c3b, type: 3}
-  _quitButtonSprite: {fileID: 21300000, guid: b20bea32146aa834f9d2c59640d68c08, type: 3}
+  - {fileID: 21300000, guid: 55fe8b9317996ba47bc92619a4fd8a5d, type: 3}
+  - {fileID: 21300000, guid: 1cfaabd537b0698479b96de5c9ad3ca9, type: 3}
+  - {fileID: 21300000, guid: fdc2f808d41a13a448a7c2008c2a18f6, type: 3}
+  - {fileID: 21300000, guid: 7ac58ec6ed0ab69429d9faa2de604d56, type: 3}
   _pauseButtonSprite: {fileID: 21300000, guid: 31a8c674f4922e443a427e353a35d515, type: 3}
-  _musicOnSprite: {fileID: 21300000, guid: 9c446ccc315a94348b8ff51d3976471c, type: 3}
-  _musicOffSprite: {fileID: 21300000, guid: bbbd859f398c658469755d99fa850619, type: 3}
 --- !u!4 &1148615753
 Transform:
   m_ObjectHideFlags: 0
@@ -2668,6 +2658,50 @@ MonoBehaviour:
     newCharacterTitle: {fileID: 21300000, guid: b8ea99e1fd2e329418f236281465fbe3, type: 3}
     newCharacterSign: {fileID: 21300000, guid: aa55b59263914064a90d0b1c64ed943e, type: 3}
     worldUnlockedSign: {fileID: 21300000, guid: d5e2f4cacc7502a41badca56b344af99, type: 3}
+  _shopArt:
+    pageBackground: {fileID: 0}
+    settingsSign: {fileID: 0}
+    shopSign: {fileID: 0}
+    merchBanner: {fileID: 0}
+    legalSign: {fileID: 0}
+    leaderboardSign: {fileID: 0}
+    musicIcon: {fileID: 0}
+    leaderboardIcon: {fileID: 0}
+    characterStoryIcon: {fileID: 0}
+    policiesIcon: {fileID: 0}
+    cashIcon: {fileID: 0}
+    worldsIcon: {fileID: 0}
+    removeAdsIcon: {fileID: 0}
+    cosmeticsIcon: {fileID: 0}
+    plaque: {fileID: 0}
+    coinPacks: []
+    worldPrice: {fileID: 0}
+    hatsBanner: {fileID: 0}
+    trailsBanner: {fileID: 0}
+    machinesBanner: {fileID: 0}
+    hatItems: []
+    trailItems: []
+    machineItems: []
+    ownedBadge: {fileID: 0}
+    purchaseComplete: {fileID: 0}
+    coinIcon: {fileID: 0}
+    yesButton: {fileID: 0}
+    noButton: {fileID: 0}
+    revivePanel: {fileID: 0}
+    watchAd: {fileID: 0}
+    doubleCoins: {fileID: 0}
+    useCoinsSign: {fileID: 0}
+    lockerIcon: {fileID: 0}
+    lockerBanner: {fileID: 0}
+    lockerSuggestion: {fileID: 0}
+    cardFrame: {fileID: 0}
+    promoNewWorlds: {fileID: 0}
+    promoNoAds: {fileID: 0}
+    moveLeftButton: {fileID: 0}
+    moveRightButton: {fileID: 0}
+    jumpButton: {fileID: 0}
+    abilityIcons: []
+    cosmeticIcons: []
 --- !u!4 &1413223964
 Transform:
   m_ObjectHideFlags: 0

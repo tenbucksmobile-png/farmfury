@@ -45,6 +45,7 @@ public static class PanelPreview
                 {
                     GameManager.Instance.ForceStartLevel(0);
                     GameManager.Instance.FailLevel();
+                    FarmFury.UI.GameFlow.Instance?.ShowLevelFailed();   // skip the taunt video
                     _frameWait = 10;
                     _step = Step.ShotFailed;
                 }
@@ -56,7 +57,8 @@ public static class PanelPreview
                     ScreenCapture.CaptureScreenshot($"{ShotDir}/lf_panel.png");
                     GameManager.Instance.ForceStartLevel(0);
                     GameManager.Instance.CompleteLevel();
-                    _frameWait = 25; // Level Complete's star pops are staggered up to ~1.65s
+                    FarmFury.UI.GameFlow.Instance?.ShowLevelComplete();   // skip the celebration video
+                    _frameWait = 25;
                     _step = Step.ShotComplete;
                 }
                 break;
@@ -66,10 +68,7 @@ public static class PanelPreview
                 {
                     ScreenCapture.CaptureScreenshot($"{ShotDir}/lc_panel.png");
                     GameManager.Instance.ForceStartLevel(0);
-                    // OnPauseClicked() (and the pause button that called it) were removed
-                    // 2026-07-26 — ShowPausePanel() is the direct replacement target, still
-                    // private but reachable via SendMessage the same way OnPauseClicked was.
-                    HUDController.Instance.SendMessage("ShowPausePanel");
+                    GameManager.Instance.PauseGame();   // franchise flow: GameFlow's PauseScreen
                     _frameWait = 10;
                     _step = Step.ShotPause;
                 }

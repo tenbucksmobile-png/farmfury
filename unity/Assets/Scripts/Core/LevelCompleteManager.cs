@@ -100,7 +100,8 @@ public class LevelCompleteManager : MonoBehaviour
 
         Time.timeScale = 1f;
         _sequence = null;
-        _hud?.ShowLevelCompletePanel();
+        // Franchise flow: GameFlow's Results screen (+ New Character page when a boss clear opened a world).
+        FarmFury.UI.GameFlow.Instance?.ShowLevelComplete();
     }
 
     private VideoClip GetCelebrationClip(AnimalType animal)

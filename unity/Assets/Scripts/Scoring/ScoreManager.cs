@@ -134,10 +134,16 @@ public class ScoreManager : MonoBehaviour
     // completion, which on a boss level clears the world and unlocks the next one — WorldUnlocked reports that
     // for the results screen.
     public WorldType? WorldUnlocked { get; private set; }
+    /// <summary>This result was the level's first ever completion (read before it was recorded).</summary>
+    public bool WasFirstClear { get; private set; }
+    /// <summary>The level's best stars before this result.</summary>
+    public int PreviousBestStars { get; private set; }
 
     void SaveIfBest()
     {
         WorldUnlocked = null;
+        WasFirstClear = false;
+        PreviousBestStars = 0;
         var save  = SaveManager.Instance;
         var level = GameManager.Instance != null ? GameManager.Instance.GetLevelData(_levelIndex) : null;
         if (save == null || level == null || string.IsNullOrEmpty(level.levelId))
@@ -148,6 +154,8 @@ public class ScoreManager : MonoBehaviour
 
         string id = level.levelId;
         IsNewBest = Score > save.GetBestScore(id);
+        PreviousBestStars = save.GetLevelStars(id);
+        WasFirstClear = Stars > 0 && !save.IsLevelCompleted(id);
         if (Stars > 0)
         {
             save.SetLevelStars(id, Stars);

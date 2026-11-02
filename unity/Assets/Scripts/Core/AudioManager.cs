@@ -185,8 +185,16 @@ public class AudioManager : MonoBehaviour
         // restart it) — "continuously playing while the user is playing the game".
         // Untouched by the menu-music addition below: gameplay music, cannon fire, and the
         // Cluck falling loop all keep their exact existing behaviour.
+        // Pause screen (franchise flow): freeze the gameplay loop where it is; resuming unpauses it.
+        if (state == GameState.Paused)
+        {
+            PauseGameplayMusic();
+            return;
+        }
+
         if (state == GameState.Playing)
         {
+            if (_musicSrc != null) _musicSrc.UnPause();   // back from Pause: continue, don't restart the track
             if (_menuMusicSrc != null && _menuMusicSrc.isPlaying) _menuMusicSrc.Stop();
             if (_musicSrc != null && _musicSrc.clip != null && !_musicSrc.isPlaying)
                 _musicSrc.Play();

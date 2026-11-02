@@ -813,41 +813,22 @@ public static class SceneSetup
 
         var guids       = AssetDatabase.FindAssets("t:Sprite", new[] { cardsFolder });
         var matchUpGuids = AssetDatabase.FindAssets("t:Sprite", new[] { matchUpFolder });
+        // Third source (2026-11-02): the franchise animal cards (Stampede stand-ins), which cover all eight.
+        var franchiseGuids = AssetDatabase.FindAssets("t:Sprite", new[] { FranchiseArt + "/Cards" });
         int wired = 0;
         for (int i = 0; i < CardKeywords.Length; i++)
         {
             string kw = CardKeywords[i].ToLower();
-            Sprite spr = FindSpriteByKeyword(guids, kw) ?? FindSpriteByKeyword(matchUpGuids, kw);
+            Sprite spr = FindSpriteByKeyword(guids, kw) ?? FindSpriteByKeyword(matchUpGuids, kw) ?? FindSpriteByKeyword(franchiseGuids, kw);
             if (spr != null)
             {
                 arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
                 wired++;
             }
         }
-        // Level Complete / Level Failed panel art — Scoreboard/LevelComplete/LevelFailed/
-        // ScoreStars live in the MatchUp folder (already used elsewhere for the pre-match
-        // sequence); Btn_play/Btn_home are the shared Icon set also used by
-        // MainMenuController/WorldMapController. Scoreboard + the two buttons are shared
-        // between both end-of-level panels (same assets, same field).
-        WireSprite(so, "_lcTitleSprite",       "Assets/Sprites/UI/MatchUp/LevelComplete.png");
-        WireSprite(so, "_starSprite",          "Assets/Sprites/UI/MatchUp/ScoreStars.png");
-        WireSprite(so, "_levelUpStarSprite",   "Assets/Sprites/UI/MatchUp/Levelup.png");
-        WireSprite(so, "_lfTitleSprite",       "Assets/Sprites/UI/MatchUp/LevelFailed.png");
-        WireSprite(so, "_scoreboardSprite",    "Assets/Sprites/UI/MatchUp/Scoreboard.png");
-        WireSprite(so, "_playButtonSprite",    "Assets/Sprites/UI/Icon/Btn_play.png");
-        // Btn_back.png (2026-07-16, user-supplied) — was Btn_home.png/_homeButtonSprite, renamed
-        // alongside the Level Complete/Failed Back-to-world-map behaviour change (see
-        // HUDController.OnLevelCompleteHomeClicked/OnMenuClicked).
-        WireSprite(so, "_backButtonSprite",    "Assets/Sprites/UI/Icon/Btn_back.png");
-        // Btn_quite.png / NoSound.png renamed to Btn_quit.png / Btn_nosound.png outside this
-        // session (2026-07-12, fixing the "quite" typo) — re-pointed here since the old paths no
-        // longer exist and WireSprite silently leaves a stale sprite reference otherwise (same
-        // class of bug as the StoneBlock/Block_Stone_Normal.png fix earlier this session).
-        WireSprite(so, "_quitButtonSprite",    "Assets/Sprites/UI/Icon/Btn_quit.png");
-        // Top-right Quit/Mute/Pause row (2026-07-26) — Quit reuses _quitButtonSprite above.
+        // Franchise flow (2026-11-02): the end-of-level panels and Quit/Mute moved to GameFlow — only the pause
+        // button's art is left on the HUD.
         WireSprite(so, "_pauseButtonSprite",   "Assets/Sprites/UI/Icon/Btn_pause.png");
-        WireSprite(so, "_musicOnSprite",       "Assets/Sprites/UI/Icon/Btn_music.png");
-        WireSprite(so, "_musicOffSprite",      "Assets/Sprites/UI/Icon/Btn_nosound.png");
 
         so.ApplyModifiedProperties();
 

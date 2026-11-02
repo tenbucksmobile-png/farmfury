@@ -95,7 +95,7 @@ public class LevelFailedManager : MonoBehaviour
 
         Time.timeScale = 1f;
         _sequence = null;
-        _hud?.ShowLevelFailedPanel();
+        FarmFury.UI.GameFlow.Instance?.ShowLevelFailed();
     }
 
     private VideoClip GetTauntClip(int levelIndex)
