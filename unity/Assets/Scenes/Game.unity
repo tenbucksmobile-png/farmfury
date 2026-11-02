@@ -1604,6 +1604,9 @@ GameObject:
   - component: {fileID: 809980728}
   - component: {fileID: 809980731}
   - component: {fileID: 809980730}
+  - component: {fileID: 809980734}
+  - component: {fileID: 809980733}
+  - component: {fileID: 809980732}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -1692,6 +1695,53 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5a694fb1e8f5f8549aad61fcbb56da27, type: 2}
   - {fileID: 11400000, guid: 72cbf27d5d458ea4f9fe987e154388f8, type: 2}
   - {fileID: 11400000, guid: 3ebae3ab0030fc74a90b0256187d9298, type: 2}
+--- !u!114 &809980732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 809980727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3b504cc1e0e8b1449908399eec5ba7c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FarmFury.Core.AnalyticsManager
+--- !u!114 &809980733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 809980727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4de9f7ae6a5ec24197f0f094e05c1d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FarmFury.Core.AdManager
+  androidAppKey: 
+  iosAppKey: 
+  androidRewardedAdUnitId: 
+  iosRewardedAdUnitId: 
+  androidInterstitialAdUnitId: 
+  iosInterstitialAdUnitId: 
+  androidBannerAdUnitId: 
+  iosBannerAdUnitId: 
+  enableTestSuite: 1
+  autoLaunchTestSuite: 1
+  interstitialLevelInterval: 6
+--- !u!114 &809980734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 809980727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e08b7124a8b082448acd72192b6db65e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FarmFury.Core.IAPManager
 --- !u!1 &908990634
 GameObject:
   m_ObjectHideFlags: 0
@@ -2033,6 +2083,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: fdc2f808d41a13a448a7c2008c2a18f6, type: 3}
   - {fileID: 21300000, guid: 7ac58ec6ed0ab69429d9faa2de604d56, type: 3}
   _pauseButtonSprite: {fileID: 21300000, guid: 31a8c674f4922e443a427e353a35d515, type: 3}
+  _coinSprite: {fileID: 21300000, guid: 321509b04823b5d418efce3cce145b48, type: 3}
 --- !u!4 &1148615753
 Transform:
   m_ObjectHideFlags: 0

@@ -28,6 +28,26 @@ public class GameManager : MonoBehaviour
     public event Action<GameState> OnStateChanged;
     public event Action<LevelData> OnLevelStarted;
 
+    // ── Franchise economy (Arcade's numbers, Stampede's replay rule) ───────────────────────────────────────────
+    // 10 coins + 5 per star on a level's first clear; a replay pays 3 + 5 for each star it adds to the level's best,
+    // so replaying can't farm coins without end. A revive (+1 animal when the queue runs out) costs 5 coins once per
+    // attempt, or a rewarded ad any number of times, or is free once per attempt for Remove Ads owners.
+    public const int BaseCoinsPerLevel = 10;
+    public const int CoinsPerStar = 5;
+    public const int ReplayCoins = 3;
+    public const int ReviveCoinsCost = 5;
+    public const int ReviveAnimals = 1;
+
+    public static int LevelPayout(bool firstClear, int previousBestStars, int stars) =>
+        firstClear ? BaseCoinsPerLevel + stars * CoinsPerStar
+                   : ReplayCoins + Mathf.Max(0, stars - previousBestStars) * CoinsPerStar;
+
+    /// <summary>Raised when the queue ran out with robots left; GameFlow shows the revive prompt.</summary>
+    public event Action ReviveOffered;
+    public bool ReviveDecisionPending { get; private set; }
+    float _levelStartTime;
+    float Elapsed => Time.time - _levelStartTime;
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -42,6 +62,11 @@ public class GameManager : MonoBehaviour
         // the same null-safety fallback CatapultLauncher uses for AudioManager, for a scene not yet re-wired.
         if (GetComponent<FarmFury.Core.DataManager>() == null) gameObject.AddComponent<FarmFury.Core.DataManager>();
         if (GetComponent<FarmFury.Core.SaveManager>() == null) gameObject.AddComponent<FarmFury.Core.SaveManager>();
+        // Franchise monetisation (Phase 5): store, ads, analytics. AdManager stays inert until FarmFury's own
+        // LevelPlay keys are entered on it (Inspector); IAP uses the fake store in the Editor.
+        if (GetComponent<FarmFury.Core.IAPManager>() == null) gameObject.AddComponent<FarmFury.Core.IAPManager>();
+        if (GetComponent<FarmFury.Core.AdManager>() == null) gameObject.AddComponent<FarmFury.Core.AdManager>();
+        if (GetComponent<FarmFury.Core.AnalyticsManager>() == null) gameObject.AddComponent<FarmFury.Core.AnalyticsManager>();
 
         // Eggs spawn AT the firing Cluck's own position (see CluckAnimal.SpawnEggs()), so with
         // every layer pair colliding by default (Physics2D's project-wide matrix), each egg
@@ -161,10 +186,29 @@ public class GameManager : MonoBehaviour
         }
         Time.timeScale = 1f;
         RunState.Reset();
+        ReviveDecisionPending = false;
+        _levelStartTime = Time.time;
         if (FarmFury.Core.SaveManager.Instance != null)
             FarmFury.Core.SaveManager.Instance.LastPlayedWorld = (int)data.WorldType;
         TransitionTo(GameState.Playing);
         OnLevelStarted?.Invoke(data);
+        FarmFury.Core.AnalyticsManager.Instance?.LogLevelStart(CurrentLevelIndex + 1, data.levelId);
+        ShowInterstitialIfDue();
+    }
+
+    // Arcade's between-levels interstitial: every Nth level load (AdManager decides; never with Remove Ads). The game
+    // is frozen (time and audio) until the ad closes or times out.
+    void ShowInterstitialIfDue()
+    {
+        var ads = FarmFury.Core.AdManager.Instance;
+        if (ads == null) return;
+        Time.timeScale = 0f;
+        AudioListener.pause = true;
+        ads.NotifyLevelLoaded(() =>
+        {
+            AudioListener.pause = false;
+            if (State == GameState.Playing && !ReviveDecisionPending) Time.timeScale = 1f;
+        });
     }
 
     // LevelLoader calls ScoreManager.FinaliseLevel() (which saves the result) right before this, so the
@@ -188,19 +232,107 @@ public class GameManager : MonoBehaviour
         RunState.newlyUnlockedAnimals.Clear();
         if (RunState.worldUnlocked.HasValue)
             RunState.newlyUnlockedAnimals.AddRange(FarmFury.Core.SaveManager.AnimalsIntroducedBy(RunState.worldUnlocked.Value));
+
+        // Coins for the clear (franchise payout). firstClear/previousBestStars were read before the result was saved.
+        var save = FarmFury.Core.SaveManager.Instance;
+        RunState.coinsEarned = 0;
+        RunState.doubleCoinsClaimed = false;
+        if (save != null && level != null && RunState.starsEarned > 0)
+        {
+            RunState.coinsEarned = LevelPayout(RunState.firstClear, RunState.previousBestStars, RunState.starsEarned);
+            save.AddCoins(RunState.coinsEarned);
+            save.AddWorldCoinsEarned(level.WorldType, RunState.coinsEarned);
+            save.SaveProgress();
+        }
+        FarmFury.Core.AnalyticsManager.Instance?.LogLevelComplete(CurrentLevelIndex + 1, RunState.starsEarned, RunState.score, Elapsed);
         TransitionTo(GameState.LevelComplete);
+    }
+
+    /// <summary>Level Complete's Double Coins (rewarded ad): pays this clear's coins a second time.</summary>
+    public bool ClaimDoubleCoinsViaAd()
+    {
+        var save = FarmFury.Core.SaveManager.Instance;
+        if (RunState.doubleCoinsClaimed || RunState.coinsEarned <= 0 || save == null) return false;
+        save.AddCoins(RunState.coinsEarned);
+        if (CurrentLevel != null) save.AddWorldCoinsEarned(CurrentLevel.WorldType, RunState.coinsEarned);
+        save.SaveProgress();
+        RunState.doubleCoinsClaimed = true;
+        return true;
+    }
+
+    // ── Revive: +1 animal when the queue runs out (franchise continue-after-death) ──────────────────────────────
+
+    /// <summary>LevelLoader, when the last animal has flown and robots remain: offer a revive, or fail.</summary>
+    public void RequestRevive()
+    {
+        if (State != GameState.Playing) return;
+        if (ReviveOffered == null) { FailLevel(); return; }
+        ReviveDecisionPending = true;
+        Time.timeScale = 0f;
+        ReviveOffered.Invoke();
+    }
+
+    public void DeclineRevive()
+    {
+        if (!ReviveDecisionPending) return;
+        ReviveDecisionPending = false;
+        Time.timeScale = 1f;
+        FailLevel();
+    }
+
+    public bool AcceptRevive()
+    {
+        var save = FarmFury.Core.SaveManager.Instance;
+        if (!ReviveDecisionPending || RunState.coinReviveUsed || save == null || !save.SpendCoins(ReviveCoinsCost)) return false;
+        RunState.coinReviveUsed = true;
+        GrantRevive();
+        return true;
+    }
+
+    public bool AcceptFreeRevive()
+    {
+        var save = FarmFury.Core.SaveManager.Instance;
+        if (!ReviveDecisionPending || RunState.freeReviveUsed || save == null || !save.AdsRemoved) return false;
+        RunState.freeReviveUsed = true;
+        GrantRevive();
+        return true;
+    }
+
+    public bool AcceptReviveViaAd()
+    {
+        if (!ReviveDecisionPending) return false;
+        GrantRevive();
+        return true;
+    }
+
+    // One more of the animal that fired last goes into the cannon.
+    void GrantRevive()
+    {
+        ReviveDecisionPending = false;
+        Time.timeScale = 1f;
+        var loader = FindAnyObjectByType<LevelLoader>();
+        for (int i = 0; i < ReviveAnimals; i++)
+        {
+            if (loader != null) loader.AddBird(CatapultLauncher.LastAnimalUsed);
+            if (ScoreManager.Instance != null) ScoreManager.Instance.AddBird();
+        }
+        var launcher = FindAnyObjectByType<CatapultLauncher>();
+        if (launcher != null) launcher.ReloadAfterRevive();
+        Debug.Log($"[GameManager] Revived: +{ReviveAnimals} {CatapultLauncher.LastAnimalUsed}.");
     }
 
     public void FailLevel()
     {
         if (State != GameState.Playing) return;
+        ReviveDecisionPending = false;
+        FarmFury.Core.AnalyticsManager.Instance?.LogLevelFailed(CurrentLevelIndex + 1, Elapsed);
         TransitionTo(GameState.LevelFailed);
     }
 
     /// <summary>Pauses a level in progress (timeScale 0) without ending the attempt.</summary>
     public void PauseGame()
     {
-        if (State != GameState.Playing) return;
+        if (State != GameState.Playing || ReviveDecisionPending) return;
         Time.timeScale = 0f;
         TransitionTo(GameState.Paused);
     }

@@ -354,6 +354,9 @@ public class CatapultLauncher : MonoBehaviour
 
     // ── Fire ──────────────────────────────────────────────────────────────────
 
+    /// <summary>After a revive added an animal: load it into the cannon.</summary>
+    public void ReloadAfterRevive() => PrepareNextBird();
+
     void PrepareNextBird()
     {
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }

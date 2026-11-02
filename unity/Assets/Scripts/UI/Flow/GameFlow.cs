@@ -37,6 +37,8 @@ namespace FarmFury.UI
         public ParentalGate Gate { get; private set; }
         public MenuHubScreen MenuHub { get; private set; }
         public SettingsScreen Settings { get; private set; }
+        public RevivePromptScreen Revive { get; private set; }
+        public ShopScreen ShopHub { get; private set; }
         public MenuArt Art => _menuArt;
         public ShopArt Shop => _shopArt;
         public WorldType CurrentWorld { get; private set; } = WorldType.MeadowRuins;
@@ -61,7 +63,8 @@ namespace FarmFury.UI
             Worlds = new WorldSelectScreen(canvas.transform, EnterLevelSelect, OpenWorldShop, EnterLanding, _menuArt);
             Levels = new LevelSelectScreen(canvas.transform, PickLevel, EnterWorldSelect, _menuArt);
             CharacterSelect = new CharacterSelectScreen(canvas.transform, LaunchLevel, CloseCharacterSelect, _menuArt);
-            Results = new ResultsScreen(canvas.transform, PlayNextLevel, RestartLevel, QuitToLevelSelect, EnterLanding, OpenMenuHub, _menuArt);
+            Results = new ResultsScreen(canvas.transform, PlayNextLevel, RestartLevel, QuitToLevelSelect, EnterLanding, OpenMenuHub,
+                OpenPromo, OpenShopFromResults, _menuArt, _shopArt);
             Pause = new PauseScreen(canvas.transform, ResumeFromPause, OpenSettings, RestartLevel, QuitToLevelSelect, EnterLanding, _menuArt);
         }
 
@@ -81,7 +84,67 @@ namespace FarmFury.UI
             var worldDetail = Add(new WorldDetailScreen(c, _menuArt, _shopArt, _leaderboardArt));
             var leaderboards = Add(new LeaderboardsScreen(c, _menuArt, _shopArt, _leaderboardArt, worldDetail.Show, OpenWorldShop));
             Settings = Add(new SettingsScreen(c, _menuArt, _shopArt, leaderboards.Show, story.Show, legal.Show));
+
+            // Shop family (franchise Phase 5, Arcade's catalogue and layout).
+            var useCoins = Add(new UseCoinsPrompt(c, _menuArt, _shopArt));
+            Revive = Add(new RevivePromptScreen(c, _menuArt, _shopArt));
+            _worldShop = Add(new ItemPurchaseScreen(c, "WorldPurchase", _menuArt, _shopArt, Gate, useCoins, null, _menuArt.worldUnlockedSign,
+                "NEW WORLDS", WorldItems(), new Vector2(380f, 380f), 40f, _shopArt.worldPrice));
+            _worldShop.Closed += () => { if (Worlds.Root.activeSelf) { Worlds.Refresh(keepPosition: true); } };   // a bought world opens at once
+            _worldPromo = Add(new ItemPurchaseScreen(c, "WorldPromo", _menuArt, _shopArt, Gate, useCoins, _shopArt.promoNewWorlds, null,
+                "NEW WORLDS", WorldItems(), new Vector2(380f, 380f), 40f, _shopArt.worldPrice));
+            _worldPromo.Closed += () =>
+            {
+                var then = _afterWorldPromo;
+                _afterWorldPromo = null;
+                then?.Invoke();
+            };
+            var itemCell = new Vector2(OverlayScreen.ItemWidth, OverlayScreen.ItemHeight);
+            int trailsFirst = StoreProducts.Hats.Length;
+            _hatsPage = Add(new ItemPurchaseScreen(c, "CosmeticsHats", _menuArt, _shopArt, Gate, useCoins, _shopArt.hatsBanner, null, "HATS & CAPS",
+                Items(StoreProducts.Hats, _shopArt.hatItems, 0), itemCell, 77f));
+            _trailsPage = Add(new ItemPurchaseScreen(c, "CosmeticsTrails", _menuArt, _shopArt, Gate, useCoins, _shopArt.trailsBanner, null, "TRAILS",
+                Items(StoreProducts.Trails, _shopArt.trailItems, trailsFirst), itemCell, 50f));
+            var chooser = Add(new CosmeticsChooserScreen(c, _menuArt, _shopArt, _hatsPage.Show, _trailsPage.Show));
+            var coins = Add(new CoinPurchaseScreen(c, _menuArt, _shopArt, Gate));
+            ShopHub = Add(new ShopScreen(c, _menuArt, _shopArt, Gate, coins.Show, _worldShop.Show, chooser.Show));
+
             MenuHub = Add(new MenuHubScreen(c, _menuArt, _shopArt, Gate, Settings.Show, OpenShop));
+        }
+
+        private ItemPurchaseScreen _worldShop, _worldPromo, _hatsPage, _trailsPage;
+        private System.Action _afterWorldPromo;
+
+        // A price plaque per product; the label (shown only without art) is the cosmetic's name.
+        private static ItemPurchaseScreen.Item[] Items(string[] productIds, Sprite[] sprites, int firstNameIndex) =>
+            productIds.Select((id, i) => new ItemPurchaseScreen.Item(id, ShopArt.At(sprites, i),
+                StoreProducts.Cosmetics[firstNameIndex + i].name)).ToArray();
+
+        /// <summary>The Worlds page: the paid worlds (WorldData.purchaseRequired), each shown as its badge.</summary>
+        private static ItemPurchaseScreen.Item[] WorldItems() =>
+            IAPManager.PurchasableWorlds()
+                .Select(w => DataManager.Instance.GetWorldData(w))
+                .Where(w => w != null)
+                .Select(w => new ItemPurchaseScreen.Item(StoreProducts.World(w.worldType), w.selectBadge, w.displayName))
+                .ToArray();
+
+        /// <summary>Level Complete's shop card: that item's page over the results; Back returns to them.</summary>
+        private void OpenPromo(ShopPromo promo)
+        {
+            AnalyticsManager.Instance?.LogPromoTapped(ShopPromos.Id(promo));
+            switch (promo)
+            {
+                case ShopPromo.Hats: _hatsPage?.Show(); break;
+                case ShopPromo.Trails: _trailsPage?.Show(); break;
+                case ShopPromo.RemoveAds: ShopHub?.Show(); break;
+            }
+        }
+
+        /// <summary>Level Failed's Shop sign.</summary>
+        private void OpenShopFromResults()
+        {
+            AnalyticsManager.Instance?.LogPromoTapped("level_failed_shop");
+            ShopHub?.Show();
         }
 
         private T Add<T>(T overlay) where T : OverlayScreen
@@ -114,6 +177,7 @@ namespace FarmFury.UI
             }
             BuildOverlays();
             _gm.OnStateChanged += ApplyState;
+            _gm.ReviveOffered += Revive.Show;
             EnterLanding();
             ApplyState(_gm.State);   // the boot state is already MainMenu, so EnterLanding fires no change event
         }
@@ -121,12 +185,18 @@ namespace FarmFury.UI
         private void OnDestroy()
         {
             if (Instance == this) { Instance = null; }
-            if (_gm != null) { _gm.OnStateChanged -= ApplyState; }
+            if (_gm != null)
+            {
+                _gm.OnStateChanged -= ApplyState;
+                if (Revive != null) { _gm.ReviveOffered -= Revive.Show; }
+            }
         }
 
         private void Update()
         {
             if (_gm == null) { return; }
+            if (Revive != null && Revive.IsOpen) { Revive.Tick(); }
+            if (Results.Root.activeSelf) { Results.Tick(); }
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
             {
@@ -228,11 +298,22 @@ namespace FarmFury.UI
             ContinueAfterLevel();
         }
 
+        // After a boss: the first time it falls, the paid worlds not yet bought (New Worlds promo), then World Select.
         private void ContinueAfterLevel()
         {
             var level = _gm.CurrentLevel;
-            if (level == null || level.isBossLevel) { EnterWorldSelect(); return; }
-            QuitToLevelSelect();
+            if (level == null) { EnterWorldSelect(); return; }
+            if (!level.isBossLevel) { QuitToLevelSelect(); return; }
+
+            bool anyUnbought = IAPManager.PurchasableWorlds().Any(w => !SaveManager.Instance.IsWorldPurchased(w));
+            if (_gm.RunState.firstClear && anyUnbought && _worldPromo != null)
+            {
+                AnalyticsManager.Instance?.LogPromoShown("new_worlds");
+                _afterWorldPromo = EnterWorldSelect;
+                _worldPromo.Show();
+                return;
+            }
+            EnterWorldSelect();
         }
 
         // ------------------------------------------------------------ in-level screens
@@ -271,17 +352,11 @@ namespace FarmFury.UI
         /// <summary>Settings cog (landing, Level Complete): the menu hub over that screen; Back returns to it.</summary>
         public void OpenMenuHub() => MenuHub.Show();
 
-        /// <summary>The menu hub's Shop sign (franchise Phase 5).</summary>
-        public void OpenShop()
-        {
-            Debug.Log("[GameFlow] Shop not built yet (franchise-flow Phase 5).");
-        }
+        /// <summary>The menu hub's Shop sign.</summary>
+        public void OpenShop() => ShopHub.Show();
 
-        /// <summary>A paid world's badge: the world shop (franchise Phase 5).</summary>
-        public void OpenWorldShop()
-        {
-            Debug.Log("[GameFlow] World shop not built yet (franchise-flow Phase 5).");
-        }
+        /// <summary>A paid world's badge (World Select / Leaderboards): the world shop ($3.99 each).</summary>
+        public void OpenWorldShop() => _worldShop?.Show();
 
         public void ExitGame()
         {
@@ -320,6 +395,15 @@ namespace FarmFury.UI
             // The results wait for LevelComplete/FailedManager's video to finish (they call ShowLevelComplete /
             // ShowLevelFailed); any other state hides them.
             if (state != GameState.LevelComplete && state != GameState.LevelFailed) { Results.Hide(); }
+
+            // Arcade's banner placements: Pause and Level Failed only, and never once Remove Ads is owned.
+            var ads = AdManager.Instance;
+            if (ads != null)
+            {
+                bool banner = (state == GameState.Paused || state == GameState.LevelFailed)
+                    && SaveManager.Instance != null && !SaveManager.Instance.AdsRemoved;
+                if (banner) { ads.ShowBanner(); } else { ads.HideBanner(); }
+            }
 
             if (state == GameState.WorldSelect) { Worlds.Refresh(); }
             if (state == GameState.LevelSelect) { Levels.Show(CurrentWorld); }

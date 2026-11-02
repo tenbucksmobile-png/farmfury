@@ -70,7 +70,14 @@ public class LevelLoader : MonoBehaviour
         return true;
     }
 
-    public event Action OnBirdConsumed;
+    public event Action OnBirdConsumed;   // also raised when a revive adds an animal (HUD queue refresh)
+
+    /// <summary>A revive's extra animal (GameManager.GrantRevive): joins the end of the queue.</summary>
+    public void AddBird(AnimalType type)
+    {
+        _birdQueue.Enqueue(type);
+        OnBirdConsumed?.Invoke();
+    }
     public event Action OnAllRobotsDestroyed;
     public event Action OnBirdsExhausted;
 
@@ -350,6 +357,6 @@ public class LevelLoader : MonoBehaviour
         // the last robot somehow died in the same frame this coroutine's wait elapsed (before its
         // own cancellation could run), don't fail a level that's actually already cleared.
         if (_spawnedRobots.Count == 0) yield break;
-        GameManager.Instance.FailLevel();
+        GameManager.Instance.RequestRevive();   // the revive prompt (+1 animal), or Level Failed
     }
 }

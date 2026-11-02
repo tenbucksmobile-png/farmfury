@@ -128,11 +128,9 @@ namespace FarmFury.Core
             set { SetProtectedBool(AdsRemovedKey, value); PlayerPrefs.Save(); }
         }
 
-        public int LevelsSinceLastInterstitial
-        {
-            get => PlayerPrefs.GetInt(LevelsSinceInterstitialKey, 0);
-            set => PlayerPrefs.SetInt(LevelsSinceInterstitialKey, value);
-        }
+        public int LevelsSinceLastInterstitial => PlayerPrefs.GetInt(LevelsSinceInterstitialKey, 0);
+
+        public void SetLevelsSinceLastInterstitial(int count) => PlayerPrefs.SetInt(LevelsSinceInterstitialKey, count);
 
         // Shop cards on Level Complete (franchise ShopPromos pacing): plain prefs.
         public int LevelsSincePromo

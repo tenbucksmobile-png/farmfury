@@ -829,6 +829,7 @@ public static class SceneSetup
         // Franchise flow (2026-11-02): the end-of-level panels and Quit/Mute moved to GameFlow — only the pause
         // button's art is left on the HUD.
         WireSprite(so, "_pauseButtonSprite",   "Assets/Sprites/UI/Icon/Btn_pause.png");
+        WireSprite(so, "_coinSprite",          FranchiseArt + "/Shop/Coin_UI.png");
 
         so.ApplyModifiedProperties();
 
@@ -1314,6 +1315,9 @@ public static class SceneSetup
         var dm = gm.GetComponent<FarmFury.Core.DataManager>();   // not ?? — Unity's fake-null defeats it
         if (dm == null) dm = gm.gameObject.AddComponent<FarmFury.Core.DataManager>();
         if (gm.GetComponent<FarmFury.Core.SaveManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.SaveManager>();
+        if (gm.GetComponent<FarmFury.Core.IAPManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.IAPManager>();
+        if (gm.GetComponent<FarmFury.Core.AdManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.AdManager>();
+        if (gm.GetComponent<FarmFury.Core.AnalyticsManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.AnalyticsManager>();
         var dso = new SerializedObject(dm);
         var wprop = dso.FindProperty("_worlds");
         wprop.arraySize = worlds.Length;

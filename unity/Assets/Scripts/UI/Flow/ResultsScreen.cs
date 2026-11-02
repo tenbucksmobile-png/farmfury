@@ -16,7 +16,9 @@ namespace FarmFury.UI
     /// when a boss clear opened the next world. Buttons (round, safe area): complete = play (next) + X (Level
     /// Select) bottom-left, home + cog bottom-right; failed = play (retry) + X bottom-left, home bottom-right.
     /// Plain look (no art wired): a dark panel with square stars, the score and text buttons.
-    /// Phase 5 adds Stampede's coin payout, Double Coins and shop card to this screen.
+    /// Monetisation (Stampede's): the coin balance + this clear's payout top-right, the rewarded Double Coins button
+    /// under it (only while an ad is loaded), a shop card bottom-centre on some clears (ShopPromos), and the Shop sign
+    /// beside home on Level Failed.
     /// </summary>
     public class ResultsScreen
     {
@@ -55,9 +57,26 @@ namespace FarmFury.UI
         private const float BottomMargin = 40f;
         private const float ButtonGap = 30f;
 
-        public ResultsScreen(Transform canvas, Action onNext, Action onRetry, Action onQuit, Action onHome, Action onSettings, MenuArt art)
+        private readonly ShopArt _shop;
+        private readonly GameObject _payout;
+        private readonly Text _payoutText;
+        private readonly RectTransform _payoutCoin;
+        private readonly Text _earnedText;
+        private static readonly Color EarnedGreen = new(0.55f, 1f, 0.45f, 1f);
+        private const float PayoutHeight = 80f, PayoutCoinSize = 72f, PayoutGap = 12f;
+        private readonly GameObject _doubleCoins;
+        private const float DoubleCoinsSize = 160f;
+        private const float PromoCardHeight = 200f;
+        private readonly Button _promoCard;
+        private readonly Button _shopSign;
+        private ShopPromo _promo;
+        private LevelRunState _run;
+
+        public ResultsScreen(Transform canvas, Action onNext, Action onRetry, Action onQuit, Action onHome, Action onSettings,
+            Action<ShopPromo> onPromo, Action onShop, MenuArt art, ShopArt shop)
         {
             _art = art ?? new MenuArt();
+            _shop = shop ?? new ShopArt();
             _artLook = _art.levelCompleteBackground != null && _art.levelFailedBackground != null;
 
             var root = UIKit.NewRect("Results", canvas);
@@ -110,11 +129,123 @@ namespace FarmFury.UI
             SettingsButton = RoundButton(safe, "SettingsButton", _art.settingsButton, "SET", onSettings, Vector2.right, new Vector2(-EdgeMargin, BottomMargin));
             HomeButton = RoundButton(safe, "HomeButton", _art.homeButton, "HOME", onHome, Vector2.right, new Vector2(-EdgeMargin, BottomMargin));
 
+            _promoCard = UIKit.MakeButton(safe, "ShopPromoCard", "", Color.white, () => onPromo?.Invoke(_promo));
+            _promoCard.image.preserveAspect = true;
+            UIKit.Place(_promoCard.image.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, BottomMargin),
+                new Vector2(PromoCardHeight * 619f / 246f, PromoCardHeight));
+            _promoCard.gameObject.SetActive(false);
+
+            // Level Failed: in the corner beside home, where Level Complete has its cog; the sign is 666x375.
+            _shopSign = UIKit.MakeButton(safe, "ShopSign", _shop.shopSign != null ? "" : "SHOP", _shop.shopSign != null ? Color.white : UIKit.Accent, () => onShop?.Invoke());
+            if (_shop.shopSign != null)
+            {
+                _shopSign.image.sprite = _shop.shopSign;
+                _shopSign.image.preserveAspect = true;
+            }
+            UIKit.Place(_shopSign.image.rectTransform, Vector2.right, Vector2.right,
+                new Vector2(-EdgeMargin - UIKit.RoundButtonSize - ButtonGap, BottomMargin), new Vector2(UIKit.RoundButtonSize * 666f / 375f, UIKit.RoundButtonSize));
+            _shopSign.gameObject.SetActive(false);
+
+            // Top-right: the coin balance (as on the HUD), the coin, this clear's payout ("+20") in green before it.
+            var top = UIKit.NewRect("TopSafeArea", root);
+            top.gameObject.AddComponent<SafeAreaFitter>();
+            _payout = UIKit.NewRect("CoinPayout", top).gameObject;
+            var payoutRect = (RectTransform)_payout.transform;
+            UIKit.Place(payoutRect, Vector2.one, Vector2.one, new Vector2(-EdgeMargin, -40f), new Vector2(600f, PayoutHeight));
+            var coin = _shop.coinIcon != null ? UIKit.Picture(payoutRect, "CoinIcon", _shop.coinIcon) : UIKit.Panel(payoutRect, "CoinIcon", UIKit.Accent);
+            UIKit.Place(coin.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), Vector2.zero, new Vector2(PayoutCoinSize, PayoutCoinSize));
+            _payoutCoin = coin.rectTransform;
+            _payoutText = UIKit.Label(payoutRect, "Count", "", 52, TextAnchor.MiddleRight, ScoreGold);
+            _payoutText.fontStyle = FontStyle.Bold;
+            _payoutText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var payoutOutline = _payoutText.gameObject.AddComponent<Outline>();
+            payoutOutline.effectColor = ScoreOutline;
+            payoutOutline.effectDistance = new Vector2(3f, -3f);
+            UIKit.Place(_payoutText.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), Vector2.zero, new Vector2(500f, 72f));
+            _earnedText = UIKit.Label(payoutRect, "Earned", "", 40, TextAnchor.MiddleRight, EarnedGreen);
+            _earnedText.fontStyle = FontStyle.Bold;
+            _earnedText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var earnedOutline = _earnedText.gameObject.AddComponent<Outline>();
+            earnedOutline.effectColor = ScoreOutline;
+            earnedOutline.effectDistance = new Vector2(3f, -3f);
+            UIKit.Place(_earnedText.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), Vector2.zero, new Vector2(400f, 72f));
+
+            float watchAdHeight = DoubleCoinsSize * 214f / 512f;
+            _doubleCoins = UIKit.NewRect("DoubleCoinsAdGroup", top).gameObject;
+            UIKit.Place((RectTransform)_doubleCoins.transform, Vector2.one, Vector2.one, new Vector2(-EdgeMargin, -40f - PayoutHeight - 10f),
+                new Vector2(DoubleCoinsSize, DoubleCoinsSize + 6f + watchAdHeight));
+            var doubleButton = UIKit.MakeButton(_doubleCoins.transform, "DoubleCoinsButton", _shop.doubleCoins != null ? "" : "x2",
+                _shop.doubleCoins != null ? Color.white : UIKit.Accent, ClaimDoubleCoins, 48);
+            if (_shop.doubleCoins != null)
+            {
+                doubleButton.image.sprite = _shop.doubleCoins;
+                doubleButton.image.preserveAspect = true;
+            }
+            UIKit.Place(doubleButton.image.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, Vector2.one * DoubleCoinsSize);
+            Graphic watchAd = _shop.watchAd != null
+                ? UIKit.Picture(_doubleCoins.transform, "WatchAdLabel", _shop.watchAd)
+                : UIKit.Label(_doubleCoins.transform, "WatchAdLabel", "Watch Ad", 30);
+            UIKit.Place(watchAd.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -(DoubleCoinsSize + 6f)),
+                new Vector2(DoubleCoinsSize, watchAdHeight));
+            _doubleCoins.SetActive(false);
+
             Root.SetActive(false);
+        }
+
+        /// <summary>Called every frame by GameFlow while shown: Double Coins only while a rewarded ad is loaded.</summary>
+        public void Tick()
+        {
+            var gm = GameManager.Instance;
+            bool show = gm != null && gm.State == GameState.LevelComplete && _run != null && !_run.doubleCoinsClaimed &&
+                _run.coinsEarned > 0 && AdManager.Instance != null && AdManager.Instance.IsRewardedAdReady;
+            if (_doubleCoins.activeSelf != show) { _doubleCoins.SetActive(show); }
+        }
+
+        private void ClaimDoubleCoins()
+        {
+            AdManager.Instance?.ShowRewardedAd("double_coins_level_complete", rewarded =>
+            {
+                if (rewarded && GameManager.Instance != null && GameManager.Instance.ClaimDoubleCoinsViaAd() && _run != null)
+                {
+                    ShowPayout(_run);
+                }
+                Tick();
+            });
+        }
+
+        // The payout is already in the balance (GameManager.CompleteLevel / ClaimDoubleCoinsViaAd add it).
+        private void ShowPayout(LevelRunState run)
+        {
+            int paid = run.coinsEarned * (run.doubleCoinsClaimed ? 2 : 1);
+            int balance = SaveManager.Instance != null ? SaveManager.Instance.CoinBalance : paid;
+            _payoutText.text = balance.ToString();
+            _earnedText.text = paid > 0 ? (run.doubleCoinsClaimed ? $"+{paid} (x2)" : $"+{paid}") : "";
+            float coinX = -(_payoutText.preferredWidth + PayoutGap);
+            _payoutCoin.anchoredPosition = new Vector2(coinX, 0f);
+            _earnedText.rectTransform.anchoredPosition = new Vector2(coinX - PayoutCoinSize - PayoutGap * 1.5f, 0f);
+            _payout.SetActive(true);
+        }
+
+        // The existing category banners are the cards; a card without art isn't shown.
+        private void ShowPromoCard(ShopPromo promo)
+        {
+            Sprite art = promo switch
+            {
+                ShopPromo.Hats => _shop.hatsBanner,
+                ShopPromo.Trails => _shop.trailsBanner,
+                ShopPromo.RemoveAds => _shop.promoNoAds,
+                _ => null,
+            };
+            _promo = promo;
+            _promoCard.image.sprite = art;
+            _promoCard.gameObject.SetActive(art != null);
         }
 
         public void ShowComplete(LevelRunState run, WorldData world)
         {
+            _run = run;
+            ShowPayout(run);
+            ShowPromoCard(ShopPromos.PickForLevelComplete(GameManager.Instance != null ? GameManager.Instance.CurrentLevel : null, run));
             if (_artLook)
             {
                 SetArt(MenuArt.Either(world != null ? world.levelCompleteBackground : null, _art.levelCompleteBackground));
@@ -139,6 +270,10 @@ namespace FarmFury.UI
 
         public void ShowFailed(WorldData world)
         {
+            _run = null;
+            _payout.SetActive(false);
+            _doubleCoins.SetActive(false);
+            ShowPromoCard(ShopPromo.None);
             if (_artLook)
             {
                 SetArt(MenuArt.Either(world != null ? world.levelFailedBackground : null, _art.levelFailedBackground));
@@ -170,6 +305,7 @@ namespace FarmFury.UI
             NextButton.gameObject.SetActive(complete);
             RetryButton.gameObject.SetActive(!complete);
             SettingsButton.gameObject.SetActive(complete);
+            _shopSign.gameObject.SetActive(!complete);
             float homeX = complete ? -EdgeMargin - UIKit.RoundButtonSize - ButtonGap : -EdgeMargin;
             HomeButton.image.rectTransform.anchoredPosition = new Vector2(homeX, BottomMargin);
         }

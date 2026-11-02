@@ -44,7 +44,9 @@ public class HUDController : MonoBehaviour
     private const float BobFreq = 1.8f;  // Hz
 
     [SerializeField] private Sprite _pauseButtonSprite; // Btn_pause.png
+    [SerializeField] private Sprite _coinSprite;        // Franchise/Shop/Coin_UI.png
     private RectTransform  _topRightRoot;
+    private Text           _coinText;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -61,6 +63,11 @@ public class HUDController : MonoBehaviour
     void Start()
     {
         _levelLoader = FindAnyObjectByType<LevelLoader>();
+        if (FarmFury.Core.SaveManager.Instance != null)
+        {
+            FarmFury.Core.SaveManager.Instance.CoinsChanged += RefreshCoins;
+            RefreshCoins(FarmFury.Core.SaveManager.Instance.CoinBalance);
+        }
 
         if (GameManager.Instance != null)
         {
@@ -87,6 +94,13 @@ public class HUDController : MonoBehaviour
         }
         if (_levelLoader != null)
             _levelLoader.OnBirdConsumed -= RefreshBirdIcons;
+        if (FarmFury.Core.SaveManager.Instance != null)
+            FarmFury.Core.SaveManager.Instance.CoinsChanged -= RefreshCoins;
+    }
+
+    void RefreshCoins(int balance)
+    {
+        if (_coinText != null) _coinText.text = balance.ToString("N0");
     }
 
     void Update() => AnimateBirdIcons();
@@ -202,6 +216,26 @@ public class HUDController : MonoBehaviour
         pauseBtn.targetGraphic = pauseImg;
         StyleTopButtonColors(pauseBtn);
         pauseBtn.onClick.AddListener(OnPauseClicked);
+
+        // Coin balance (franchise HUD chip): spinning coin + count, just left of the pause button.
+        const float coinSize = 72f;
+        var coinImg = MakeImage(_topRightRoot, "CoinIcon",
+                          _coinSprite != null ? _coinSprite : _circleSpr,
+                          _coinSprite != null ? Color.white : new Color(0.95f, 0.72f, 0.2f),
+                          anchorMin: new Vector2(0f, 0.5f), anchorMax: new Vector2(0f, 0.5f),
+                          pivot:     new Vector2(0.5f, 0.5f),
+                          pos:       new Vector2(-24f - coinSize * 0.5f, 0f),
+                          size:      new Vector2(coinSize, coinSize));
+        coinImg.raycastTarget = false;
+        coinImg.gameObject.AddComponent<FarmFury.UI.SpinAroundY>();
+        _coinText = FarmFury.UI.UIKit.Label(_topRightRoot, "CoinCount", "0", 52, TextAnchor.MiddleRight, new Color(1f, 0.84f, 0.25f));
+        _coinText.fontStyle = FontStyle.Bold;
+        _coinText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        var outline = _coinText.gameObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0.24f, 0.11f, 0.03f);
+        outline.effectDistance = new Vector2(3f, -3f);
+        FarmFury.UI.UIKit.Place(_coinText.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
+            new Vector2(-24f - coinSize - 12f, 0f), new Vector2(300f, coinSize));
     }
 
     static void StyleTopButtonColors(Button b)

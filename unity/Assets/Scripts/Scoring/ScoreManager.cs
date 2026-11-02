@@ -62,6 +62,9 @@ public class ScoreManager : MonoBehaviour
         OnScoreChanged?.Invoke(Score);
     }
 
+    /// <summary>A revive added an animal to the queue.</summary>
+    public void AddBird() => BirdsRemaining++;
+
     public void OnBirdFired() =>
         BirdsRemaining = Mathf.Max(0, BirdsRemaining - 1);
 
