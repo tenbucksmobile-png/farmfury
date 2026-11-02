@@ -19,11 +19,11 @@ MonoBehaviour:
   launcherName: TBD
   blurb: Bonus world.
   introducedAnimals: 
-  selectBadge: {fileID: 0}
-  levelSelectBackground: {fileID: 0}
-  levelCompleteBackground: {fileID: 0}
-  levelFailedBackground: {fileID: 0}
+  selectBadge: {fileID: 21300000, guid: 6d5e596c2afde7444bb705d899b28ac2, type: 3}
+  levelSelectBackground: {fileID: 21300000, guid: 8b3d30d08c1a9f74594e92793286f25d, type: 3}
+  levelCompleteBackground: {fileID: 21300000, guid: 453c4bdbd6dd11444b9e5b6a55b2cbab, type: 3}
+  levelFailedBackground: {fileID: 21300000, guid: 38474ff19eab38845843b7ec2a3853dd, type: 3}
   pauseBackground: {fileID: 0}
-  newCharacterBackground: {fileID: 0}
-  characterSelectBackground: {fileID: 0}
+  newCharacterBackground: {fileID: 21300000, guid: 0ffb97f57f070f140a32fcf936eb6f9e, type: 3}
+  characterSelectBackground: {fileID: 21300000, guid: e1f6d25562f9fa04baffdba89d674431, type: 3}
   purchaseRequired: 1

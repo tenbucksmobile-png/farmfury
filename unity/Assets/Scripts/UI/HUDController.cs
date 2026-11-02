@@ -136,7 +136,9 @@ public class HUDController : MonoBehaviour
             GameManager.Instance.OnLevelStarted += OnLevelStarted;
             GameManager.Instance.OnStateChanged  += OnStateChanged;
 
-            // CatapultLauncher.Start() may have called ForceStartLevel(0) before us — catch up.
+            // Catch up with the state we start in (MainMenu at boot fires no transition event, so without this
+            // the top bar would sit visible behind the landing screen).
+            OnStateChanged(GameManager.Instance.State);
             if (GameManager.Instance.State == GameState.Playing)
                 RefreshBirdIcons();
         }
@@ -184,11 +186,19 @@ public class HUDController : MonoBehaviour
                 HideLevelCompletePanel();
                 SetTopBarVisible(false);
                 break;
+            case GameState.Playing:
+                HideLevelCompletePanel();
+                HideLevelFailedPanel();
+                SetTopBarVisible(true);
+                break;
+            case GameState.Paused:
+                break;
             default:
+                // A menu screen (GameFlow, franchise flow): nothing of the HUD shows over it.
                 HideLevelCompletePanel();
                 HideLevelFailedPanel();
                 if (_isPaused) SetPaused(false);
-                SetTopBarVisible(true);
+                SetTopBarVisible(false);
                 break;
         }
     }
@@ -681,49 +691,26 @@ public class HUDController : MonoBehaviour
     // WorldMapController.RefreshMarkers/IndicatorRoutine — this already happens automatically
     // once the just-finished level's star result unlocks the next pin, no extra plumbing needed
     // here).
+    // Franchise flow (2026-11-02): navigation goes through GameFlow. A world-transition video (L18 -> Frozen
+    // Tundra) still plays first when one is wired for this level, then the normal "next" step.
     void OnLevelCompletePlayClicked()
     {
         HideLevelCompletePanel();
 
-        // World-ending levels (currently only L18 -> "Frozen Tundra") play a transition video
-        // before landing on the main menu, instead of the normal immediate LoadMenu() below —
-        // see WorldTransitionManager. TryPlayTransition returns false (and starts nothing) for
-        // every other level, so this is a no-op fallback everywhere except L18.
         int levelIndex = GameManager.Instance != null ? GameManager.Instance.CurrentLevelIndex : -1;
         if (WorldTransitionManager.Instance != null &&
-            WorldTransitionManager.Instance.TryPlayTransition(levelIndex, GoToWorldLandingAfterTransition))
+            WorldTransitionManager.Instance.TryPlayTransition(levelIndex, () => FarmFury.UI.GameFlow.Instance?.PlayNextLevel()))
         {
             return;
         }
 
-        GameManager.Instance?.LoadMenu();
+        FarmFury.UI.GameFlow.Instance?.PlayNextLevel();
     }
 
-    // Shared by the transition-video path above. Renamed 2026-07-19 (was
-    // GoToMenuSkippingWorldMap, landed on MainMenuController — World 2 didn't exist yet) — now
-    // lands on World2LandingController's Frozen Tundra interstitial instead, the same "skip
-    // whatever WorldMapController would otherwise auto-show on this Idle transition" pattern
-    // WorldMapController.SkipToMainMenu() uses for the Home/Quit case, just redirected to a
-    // different destination. Since _triggerLevelIndices currently has exactly one entry (L18),
-    // this callback only ever fires for the L18 -> Frozen Tundra transition today; a future
-    // world-ending level with a different destination would need this to branch on levelIndex.
-    void GoToWorldLandingAfterTransition()
-    {
-        GameManager.Instance?.LoadMenu();
-        WorldMapController.Instance?.HideForExternalTransition();
-        World2LandingController.Instance?.Show();
-    }
-
-    // Btn_back (was Btn_home) — 2026-07-16, user request: this button should land on the World 1
-    // map (Sunrise Meadows), not skip past it to the main menu. LoadMenu() alone is enough:
-    // GameManager transitions to GameState.Idle, which WorldMapController already reacts to on
-    // its own by showing itself (see WorldMapController.OnStateChanged) — no SkipToMainMenu()
-    // call here any more (that's still used by Quit/WorldMapController's own Home button, which
-    // intentionally go straight to the main menu instead).
     void OnLevelCompleteHomeClicked()
     {
         HideLevelCompletePanel();
-        GameManager.Instance?.LoadMenu();
+        FarmFury.UI.GameFlow.Instance?.EnterLanding();
     }
 
     // ── Level Failed panel ────────────────────────────────────────────────────
@@ -892,20 +879,13 @@ public class HUDController : MonoBehaviour
     void OnMenuClicked()
     {
         HideLevelFailedPanel();
-        GameManager.Instance?.LoadMenu();
+        FarmFury.UI.GameFlow.Instance?.EnterLanding();
     }
 
-    // Quit now returns to the landing page instead of closing the app (2026-07-06, user
-    // request) — "skip the world map, land directly on the main menu" (see
-    // WorldMapController.SkipToMainMenu). Unlike Level Complete/Failed's Back buttons (which now
-    // land on the World 1 map instead, see OnLevelCompleteHomeClicked/OnMenuClicked), Quit is
-    // still meant to go all the way out to the main menu. Un-pauses first so Time.timeScale
-    // doesn't stay at 0 if Quit is tapped while paused.
     void OnQuitClicked()
     {
         if (_isPaused) SetPaused(false);
-        GameManager.Instance?.LoadMenu();
-        WorldMapController.Instance?.SkipToMainMenu();
+        FarmFury.UI.GameFlow.Instance?.QuitToLevelSelect();
     }
 
     // Top-right mute button (2026-07-26) — one icon toggling BOTH music and SFX together,

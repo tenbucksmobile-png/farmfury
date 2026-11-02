@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 [DefaultExecutionOrder(-100)]
 public class GameManager : MonoBehaviour
@@ -10,50 +9,24 @@ public class GameManager : MonoBehaviour
     [Header("Level Registry")]
     [SerializeField] private LevelData[] _levels;
 
-    [Header("Scene Names")]
-    [SerializeField] private string _menuSceneName = "MainMenu";
-    [SerializeField] private string _gameSceneName = "Game";
-
-    public GameState State { get; private set; } = GameState.Idle;
+    public GameState State { get; private set; } = GameState.MainMenu;
     public int CurrentLevelIndex { get; private set; }
     public int TotalLevels => _levels != null ? _levels.Length : 0;
 
-    // Persisted "which world's map does PLAY open" state — added 2026-08-09 (user report: had to
-    // replay L18 every time to get back into World 2, since nothing remembered the player had
-    // already unlocked it). Previously there was no concept of this anywhere (see the removed
-    // Known Issues entry / World2LandingController's and World2MapController's own header
-    // comments) — World2MapController was reachable ONLY via the one-shot L18-completion video ->
-    // World2LandingController chain, and every other navigation path (Home, Quit, a plain app
-    // boot) always landed on MainMenuController -> WorldMapController (World 1), regardless of
-    // how far the player had actually progressed. World2LandingController.OnPlayClicked() now
-    // calls SetCurrentWorld(2) the first time the player actually enters World 2's map;
-    // MainMenuController.OnPlayClicked() reads it to decide which world's map to open. Defaults
-    // to 1 (World 1) for every player who has never reached World 2 yet.
-    private const string CurrentWorldKey = "ff_current_world";
-    public int CurrentWorld { get; private set; } = 1;
+    /// <summary>The level being played (or last played), or null.</summary>
+    public LevelData CurrentLevel => GetLevelData(CurrentLevelIndex);
 
-    public void SetCurrentWorld(int world)
-    {
-        CurrentWorld = world;
-        PlayerPrefs.SetInt(CurrentWorldKey, world);
-        PlayerPrefs.Save();
-    }
-
-    // One-shot override for the next level's bird queue — added 2026-08-09 for
-    // World2CharacterSelectScreen's "choose your farmhands" grid. LevelData.birds[] stays the
-    // level's own authored default; this lets a player's actual picks replace it for exactly the
-    // next LevelLoader.LoadLevel() call, without ever mutating the shared LevelData asset itself
-    // (which would persist the override across every future play of that level, including for
-    // other players/sessions). LevelLoader.LoadLevel() reads and clears this in the same pass —
-    // see that method for the consuming side.
-    public AnimalType[] BirdQueueOverride;
+    // The animals the player picked in Character Select for this attempt (franchise flow, 2026-11-02 — replaces
+    // the old one-shot BirdQueueOverride). LevelData.birds stays the level's authored default; LevelLoader uses
+    // this instead when it's set. Kept across RestartLevel so a retry uses the same lineup; cleared when a level
+    // is started directly by index (ForceStartLevel from Editor tools).
+    public AnimalType[] CurrentLineup { get; private set; }
 
     public event Action<GameState> OnStateChanged;
     public event Action<LevelData> OnLevelStarted;
 
     void Awake()
     {
-        CurrentWorld = PlayerPrefs.GetInt(CurrentWorldKey, 1);
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -143,24 +116,33 @@ public class GameManager : MonoBehaviour
     public LevelData GetLevelData(int index) =>
         (index >= 0 && index < TotalLevels) ? _levels[index] : null;
 
-    public void StartLevel(int index)
+    /// <summary>
+    /// Starts a level with the lineup picked in Character Select (franchise flow). Single-scene: no scene load,
+    /// the level is swapped in place by LevelLoader via OnLevelStarted.
+    /// </summary>
+    public void StartLevel(LevelData level, AnimalType[] lineup)
     {
-        CurrentLevelIndex = Mathf.Clamp(index, 0, TotalLevels - 1);
-        TransitionTo(GameState.Playing);
-        var data = _levels[CurrentLevelIndex];
-        SceneManager.LoadScene(_gameSceneName);
-        OnLevelStarted?.Invoke(data);
+        int index = Array.IndexOf(_levels, level);
+        if (index < 0)
+        {
+            Debug.LogError($"[GameManager] StartLevel: '{(level != null ? level.levelId : "null")}' is not in the level registry.");
+            return;
+        }
+        CurrentLineup = lineup != null && lineup.Length > 0 ? lineup : null;
+        BeginLevel(index);
     }
 
-    // Uses ForceStartLevel (no scene reload) rather than StartLevel — restarting the exact
-    // same level doesn't need a full scene teardown/rebuild, and this reuses the same
-    // in-place reset path (CatapultLauncher.OnLevelStarted, LevelLoader.ClearLevel +
-    // respawn, ScoreManager.InitLevel) that already runs on every level load, rather than
-    // the SceneManager.LoadScene path, which exists for switching to a *different* level.
-    public void RestartLevel() => ForceStartLevel(CurrentLevelIndex);
+    // Retry/Try Again: same level, same lineup, no scene reload.
+    public void RestartLevel() => BeginLevel(CurrentLevelIndex);
 
-    // Starts a level without reloading the scene — for direct play in Game.unity
+    /// <summary>Starts a level by registry index with its authored bird queue (Editor/debug tools).</summary>
     public void ForceStartLevel(int index)
+    {
+        CurrentLineup = null;
+        BeginLevel(index);
+    }
+
+    void BeginLevel(int index)
     {
         if (_levels == null || _levels.Length == 0)
         {
@@ -174,6 +156,9 @@ public class GameManager : MonoBehaviour
             Debug.LogError($"[GameManager] Level {CurrentLevelIndex} asset is null. Run FarmFury → Generate All Level Data, then Wire Scene References.");
             return;
         }
+        Time.timeScale = 1f;
+        if (FarmFury.Core.SaveManager.Instance != null)
+            FarmFury.Core.SaveManager.Instance.LastPlayedWorld = (int)data.WorldType;
         TransitionTo(GameState.Playing);
         OnLevelStarted?.Invoke(data);
     }
@@ -190,35 +175,35 @@ public class GameManager : MonoBehaviour
         TransitionTo(GameState.LevelFailed);
     }
 
-    public void LoadNextLevel()
+    /// <summary>Pauses a level in progress (timeScale 0) without ending the attempt.</summary>
+    public void PauseGame()
     {
-        int next = CurrentLevelIndex + 1;
-        if (next < TotalLevels)
-            StartLevel(next);
-        else
-            LoadMenu();
+        if (State != GameState.Playing) return;
+        Time.timeScale = 0f;
+        TransitionTo(GameState.Paused);
     }
 
-    public void LoadMenu()
+    public void ResumeGame()
     {
-        TransitionTo(GameState.Idle);
-        // Only load the menu scene if it's registered in Build Settings.
-        // When it isn't (the current setup), WorldMapController/MainMenuController handle
-        // Idle in-scene instead (LevelSelectController used to as well — removed 2026-07-26,
-        // it was racing WorldMapController to show itself on every Idle transition).
-        if (SceneInBuild(_menuSceneName))
-            SceneManager.LoadScene(_menuSceneName);
+        if (State != GameState.Paused) return;
+        Time.timeScale = 1f;
+        TransitionTo(GameState.Playing);
     }
 
-    static bool SceneInBuild(string sceneName)
+    /// <summary>Moves to a menu/selection state (GameFlow's navigation). Always un-freezes time.</summary>
+    public void SetState(GameState state)
     {
-        for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
-        {
-            string path = SceneUtility.GetScenePathByBuildIndex(i);
-            string name = System.IO.Path.GetFileNameWithoutExtension(path);
-            if (name == sceneName) return true;
-        }
-        return false;
+        Time.timeScale = 1f;
+        TransitionTo(state);
+    }
+
+    // Leaving the app (home, a call, the app switcher) flushes the save and pauses a level in progress — iOS and
+    // Android may kill a backgrounded app without OnApplicationQuit (franchise lifecycle rule, Stampede audit).
+    void OnApplicationPause(bool paused)
+    {
+        if (!paused) return;
+        PlayerPrefs.Save();
+        if (State == GameState.Playing && Time.timeScale > 0f) PauseGame();
     }
 
     void TransitionTo(GameState next)
@@ -229,10 +214,15 @@ public class GameManager : MonoBehaviour
     }
 }
 
+/// <summary>App/game flow states (franchise set, matching Stampede/Arcade). GameFlow shows the screen for each.</summary>
 public enum GameState
 {
-    Idle,
+    MainMenu,
+    WorldSelect,
+    LevelSelect,
+    CharacterSelect,
     Playing,
+    Paused,
     LevelComplete,
     LevelFailed,
 }

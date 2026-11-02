@@ -289,160 +289,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &73609875
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 73609877}
-  - component: {fileID: 73609876}
-  m_Layer: 0
-  m_Name: World2Map
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &73609876
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 73609875}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f70e069bae5e0c1428afcc6504a53799, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::World2MapController
-  _backgroundSprite: {fileID: 21300000, guid: 84f0622cb0ef6e64780bede6c8a0d9b1, type: 3}
-  _lockedSprite: {fileID: 21300000, guid: 6f63ce6141321a341bd0936ac1d58560, type: 3}
-  _unlockedSprite: {fileID: 21300000, guid: aea140e692e3f3d41ba03375e5c03e9e, type: 3}
-  _playerPositionSprite: {fileID: 21300000, guid: ad2ecbc417cdc654790158202fb3f397, type: 3}
-  _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
-  _homeButtonSprite: {fileID: 21300000, guid: d4ca48065cb59984b89e8382405d5040, type: 3}
-  _matchUpBackgroundSprite: {fileID: 21300000, guid: d970804c43d871d4c99873f0fcd55445, type: 3}
-  _vsSprite: {fileID: -1787376641466856317, guid: d2da004d6ac8024489d1ccf6651a6474, type: 3}
-  _levelHeaderSprites:
-  - {fileID: 21300000, guid: c9deb4d249df3234ca0f0bec51b1b986, type: 3}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 21300000, guid: c39f38ab59a86834cae5e6f970e67461, type: 3}
-  - {fileID: 21300000, guid: 9eef28cd46b2fcf498e5fddedec929cc, type: 3}
-  - {fileID: 21300000, guid: 751c0e988b9df1b42a6446cf89bda36a, type: 3}
-  - {fileID: 0}
-  _countdown3Sprite: {fileID: 5108555565643142329, guid: 14f7342ce53e4cf439389e194ad7ff11, type: 3}
-  _countdown2Sprite: {fileID: -365934691749387695, guid: 4cc1c4bc788f8bd4d88326659b82aef8, type: 3}
-  _countdown1Sprite: {fileID: 21300000, guid: dff2ddbeb02234148bf6adde0901f6d4, type: 3}
-  _countdownReadySprite: {fileID: 2688860679172727607, guid: 6cc64892b66d8b44584652ff2af752e4, type: 3}
-  _countdownClip: {fileID: 8300000, guid: f1059912e10693442bd249cbe68382af, type: 3}
-  _cluckFlySprite: {fileID: 21300000, guid: 32e79013f72d108419d102d434973265, type: 3}
-  _cluckFallingClip: {fileID: 8300000, guid: 04a9e7d60e4831f4b9ca521caa5b0978, type: 3}
-  _bessieFlySprite: {fileID: 21300000, guid: a5bef4139b5f47346bd3d5988f3f5964, type: 3}
-  _bessieFallingClip: {fileID: 8300000, guid: a29636ae212a2fc4b827eb42d93b60b3, type: 3}
-  _animalCardSprites:
-  - {fileID: 21300000, guid: c3af207aa6c867d4db24a5c85fd611a3, type: 3}
-  - {fileID: 21300000, guid: e1df3a77efa688641a58ec1a679fb833, type: 3}
-  - {fileID: 21300000, guid: 903f098c63d0cd544bc605c7dd5facdb, type: 3}
-  - {fileID: 21300000, guid: af60db056fd68454ab8bd59ec268e62c, type: 3}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  _robotCardSprites:
-  - {fileID: 21300000, guid: d8d8a110d5f4f164f89612cfeabfaddd, type: 3}
-  - {fileID: 21300000, guid: 89aff6ef6b96ed94cb859fa54a71bd62, type: 3}
-  - {fileID: 21300000, guid: b90cc90bac7eef8489ded486646a7f22, type: 3}
-  - {fileID: 0}
-  _eggSprite: {fileID: 21300000, guid: 9e8a89ef2655a1142a454169440affb7, type: 3}
-  _skipButtonSprite: {fileID: 21300000, guid: 5b15c703f286e454286860cf90288a46, type: 3}
-  _percyFlySprite: {fileID: 21300000, guid: 4288d687bd20df74cb75d1c19818d5ee, type: 3}
-  _percyFallingClip: {fileID: 0}
---- !u!4 &73609877
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 73609875}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &80042613
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 80042615}
-  - component: {fileID: 80042614}
-  m_Layer: 0
-  m_Name: MainMenu
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &80042614
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 80042613}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8af151419c276f24d9c797d4794abf8a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MainMenuController
-  _landingSprite: {fileID: -7436237830664669438, guid: 97757046d8bee274ebe2f3f843104b7f, type: 3}
-  _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
-  _settingsButtonSprite: {fileID: 21300000, guid: 70471a128358f6a4ca9554a97b76abfa, type: 3}
-  _scoreboardSprite: {fileID: 21300000, guid: 4b9c61b5ffabce84fa6732409a7d4554, type: 3}
-  _plaqueSprite: {fileID: 21300000, guid: a0a502ca1b9fa5640b3fccb58b1fb743, type: 3}
-  _quitCloseButtonSprite: {fileID: 21300000, guid: b20bea32146aa834f9d2c59640d68c08, type: 3}
-  _toggleOffSprite: {fileID: 21300000, guid: c15efc3f7a1095049ad2faa7eaf93ceb, type: 3}
-  _toggleOnSprite: {fileID: 21300000, guid: f97660301e1fef6408bd4a982df8ddaf, type: 3}
---- !u!4 &80042615
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 80042613}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &86928381
 GameObject:
   m_ObjectHideFlags: 0
@@ -1797,9 +1643,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b36ac3a58754c7849ac6de2283238f88, type: 2}
   - {fileID: 11400000, guid: fac11de7a852479438b4216021827a61, type: 2}
   - {fileID: 11400000, guid: 08f7ec7ec2648544e8d8d3ef815ba51f, type: 2}
-  _menuSceneName: MainMenu
-  _gameSceneName: Game
-  BirdQueueOverride: 
 --- !u!4 &809980729
 Transform:
   m_ObjectHideFlags: 0
@@ -2207,53 +2050,6 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1148615751}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1188522476
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1188522478}
-  - component: {fileID: 1188522477}
-  m_Layer: 0
-  m_Name: World2Landing
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1188522477
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1188522476}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ebc6c7f671d8519429d51ae5abb42756, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::World2LandingController
-  _landingSprite: {fileID: 21300000, guid: 78a2701b5aa7b7647a587da4bfbc735d, type: 3}
-  _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
-  _settingsButtonSprite: {fileID: 21300000, guid: 70471a128358f6a4ca9554a97b76abfa, type: 3}
---- !u!4 &1188522478
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1188522476}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -2808,6 +2604,85 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!1 &1413223962
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1413223964}
+  - component: {fileID: 1413223963}
+  m_Layer: 0
+  m_Name: GameFlow
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1413223963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1413223962}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9fabf4a6e9e5b3419f17c568aab93cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FarmFury.UI.GameFlow
+  _menuArt:
+    landingPoster: {fileID: -7436237830664669438, guid: 97757046d8bee274ebe2f3f843104b7f, type: 3}
+    playButton: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
+    exitButton: {fileID: 21300000, guid: 9aa3a95b16cdd3743937018b2a9b1e24, type: 3}
+    settingsButton: {fileID: 21300000, guid: 70471a128358f6a4ca9554a97b76abfa, type: 3}
+    homeButton: {fileID: 21300000, guid: d4ca48065cb59984b89e8382405d5040, type: 3}
+    backButton: {fileID: 21300000, guid: 073762aa1112557439afd5f686dd3c3b, type: 3}
+    quitButton: {fileID: 21300000, guid: b20bea32146aa834f9d2c59640d68c08, type: 3}
+    pauseButton: {fileID: 21300000, guid: 31a8c674f4922e443a427e353a35d515, type: 3}
+    worldSelectBackground: {fileID: 21300000, guid: 154ddf73372833347add9a3b2e7bac18, type: 3}
+    worldSelectBanner: {fileID: 21300000, guid: d5e2f4cacc7502a41badca56b344af99, type: 3}
+    levelTileLocked: {fileID: 21300000, guid: bc5478f5eed61f84db6917f06ba14e38, type: 3}
+    levelTileNext: {fileID: 21300000, guid: dd389f8c0f7d9334ca791606cf888ea8, type: 3}
+    bossShield: {fileID: 21300000, guid: 57e161d6c241ec047bfa1fa07e7ff7e1, type: 3}
+    oneStarBoard: {fileID: 21300000, guid: 1dcdc7a5a36c8194198e5a65ec5175e1, type: 3}
+    twoStarBoard: {fileID: 21300000, guid: 8620bc7ec1992bb45a73b753169f4b39, type: 3}
+    threeStarBoard: {fileID: 21300000, guid: 1c1204a8c12cc7949b8dd7cc77ebcbe2, type: 3}
+    characterSelectBackground: {fileID: 21300000, guid: e7cb81e4c79ca934d8a5f115d09564a5, type: 3}
+    animalCards:
+    - {fileID: 21300000, guid: 33fa9f506766cc244ae3be6bfb9d4a36, type: 3}
+    - {fileID: 21300000, guid: c85e010e52540f64e8ebf3160028375f, type: 3}
+    - {fileID: 21300000, guid: b371ccd5b77322340adf398414e2e9d5, type: 3}
+    - {fileID: 21300000, guid: 17e46ad903db50445a2929ca9623ffae, type: 3}
+    - {fileID: 21300000, guid: 55fe8b9317996ba47bc92619a4fd8a5d, type: 3}
+    - {fileID: 21300000, guid: 1cfaabd537b0698479b96de5c9ad3ca9, type: 3}
+    - {fileID: 21300000, guid: fdc2f808d41a13a448a7c2008c2a18f6, type: 3}
+    - {fileID: 21300000, guid: 7ac58ec6ed0ab69429d9faa2de604d56, type: 3}
+    pauseBackground: {fileID: 21300000, guid: 0c915cc2fa25b154bb53bbcf12ec13d4, type: 3}
+    levelCompleteBackground: {fileID: 21300000, guid: 9ee46dbd04a965a40b80a67673dc8ec0, type: 3}
+    levelFailedBackground: {fileID: 21300000, guid: 189b5fce170824b4aa2c66950f7b005b, type: 3}
+    levelCompleteStarEmpty: {fileID: 21300000, guid: 6db872d2479e94b4dafb27affb0ac629, type: 3}
+    newCharacterBackground: {fileID: 21300000, guid: ad2e2821d8a1f0f458afbb6e397582c6, type: 3}
+    newCharacterTitle: {fileID: 21300000, guid: b8ea99e1fd2e329418f236281465fbe3, type: 3}
+    newCharacterSign: {fileID: 21300000, guid: aa55b59263914064a90d0b1c64ed943e, type: 3}
+    worldUnlockedSign: {fileID: 21300000, guid: d5e2f4cacc7502a41badca56b344af99, type: 3}
+--- !u!4 &1413223964
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1413223962}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1460790400
 GameObject:
   m_ObjectHideFlags: 0
@@ -3261,104 +3136,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -8.6, z: 0}
   m_LocalScale: {x: 60, y: 4, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1901905599
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1901905601}
-  - component: {fileID: 1901905600}
-  m_Layer: 0
-  m_Name: WorldMap
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1901905600
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1901905599}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d50ab5d1bd21cf4eb507ca4147e7063, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WorldMapController
-  _backgroundSprite: {fileID: 21300000, guid: 5999b5e21e8d097499fa3d90d51b5c89, type: 3}
-  _lockedSprite: {fileID: 21300000, guid: dcab2c7735dab8341b7c3d64cfabc1b1, type: 3}
-  _unlockedSprite: {fileID: 21300000, guid: 51c0026b7d8139f4b9271d3ac87d28d0, type: 3}
-  _playerPositionSprite: {fileID: 21300000, guid: be146f42572afb9498e79d75727957e8, type: 3}
-  _playButtonSprite: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
-  _homeButtonSprite: {fileID: 21300000, guid: d4ca48065cb59984b89e8382405d5040, type: 3}
-  _matchUpBackgroundSprite: {fileID: 21300000, guid: ed2b157a59f220a4d9865c985c16a533, type: 3}
-  _vsSprite: {fileID: 21300000, guid: ab43ef71a08791942945adb080cb3570, type: 3}
-  _levelHeaderSprites:
-  - {fileID: 21300000, guid: c0a1553d7df69e94f9cb11bb5e85ed21, type: 3}
-  - {fileID: 21300000, guid: e6efc6b02f35c764085e1bc8736fb81c, type: 3}
-  - {fileID: 21300000, guid: 6ca6030026363fc4fa1439eeb7eb5907, type: 3}
-  - {fileID: 21300000, guid: 21d6d1702cf3ad14189f811d90cfbe9e, type: 3}
-  - {fileID: 21300000, guid: b89369363dc9c934fa10042a6b6f18ed, type: 3}
-  - {fileID: 21300000, guid: 8d2e43926da54a14caa1db102148e978, type: 3}
-  - {fileID: 21300000, guid: 138d84dc9a873db40bc450ff71bc950f, type: 3}
-  - {fileID: 21300000, guid: 92a44ef7e74be5549ab0ed9e29fd184b, type: 3}
-  - {fileID: 21300000, guid: f9a28814c5ac40449a500463daef199f, type: 3}
-  - {fileID: 21300000, guid: 767fba6e8d15509489350348f82dcdad, type: 3}
-  - {fileID: 21300000, guid: 1b06b3706fab69044afa6bea89aeed72, type: 3}
-  - {fileID: 21300000, guid: b15df7a3563c08346a70573aa7b3fa2e, type: 3}
-  - {fileID: 21300000, guid: e27e82500802a7e46b129e90839cdee6, type: 3}
-  - {fileID: 21300000, guid: 11730987b4699db4aa4ec6469d973cf1, type: 3}
-  - {fileID: 21300000, guid: e12669d195b85664c913a82ee7cd4f88, type: 3}
-  - {fileID: 21300000, guid: a258fd5d37be01e439de3ca913596505, type: 3}
-  - {fileID: 21300000, guid: 3d0459a8d06c82d4d802854d7b288200, type: 3}
-  - {fileID: 21300000, guid: 2b4ae327545b8de4ba05472466cc52f4, type: 3}
-  _countdown3Sprite: {fileID: 21300000, guid: 81663a4a1c4c6ba47883a8fe7742f152, type: 3}
-  _countdown2Sprite: {fileID: 21300000, guid: d08fa34e6909cc542bf331ee837b665a, type: 3}
-  _countdown1Sprite: {fileID: 21300000, guid: dff2ddbeb02234148bf6adde0901f6d4, type: 3}
-  _countdownReadySprite: {fileID: 21300000, guid: 306020828991d0f47ac5cc30275e6693, type: 3}
-  _countdownClip: {fileID: 8300000, guid: f1059912e10693442bd249cbe68382af, type: 3}
-  _cluckFlySprite: {fileID: 21300000, guid: 32e79013f72d108419d102d434973265, type: 3}
-  _cluckFallingClip: {fileID: 8300000, guid: 04a9e7d60e4831f4b9ca521caa5b0978, type: 3}
-  _bessieFlySprite: {fileID: 21300000, guid: a5bef4139b5f47346bd3d5988f3f5964, type: 3}
-  _bessieFallingClip: {fileID: 8300000, guid: a29636ae212a2fc4b827eb42d93b60b3, type: 3}
-  _animalCardSprites:
-  - {fileID: 21300000, guid: c3af207aa6c867d4db24a5c85fd611a3, type: 3}
-  - {fileID: 21300000, guid: e1df3a77efa688641a58ec1a679fb833, type: 3}
-  - {fileID: 21300000, guid: 75dabd66bad7c034fa45e9a0b7db1fa7, type: 3}
-  - {fileID: 21300000, guid: c408c299a1127114b9c9af376f66eab9, type: 3}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  _robotCardSprites:
-  - {fileID: 21300000, guid: baaecddae24a9ed46a23ab282c5db333, type: 3}
-  - {fileID: 21300000, guid: c15e1961fbce02146bc26ac23b612313, type: 3}
-  - {fileID: 21300000, guid: f644409a4a1b63246bf8b01ab33ad7cb, type: 3}
-  - {fileID: 21300000, guid: 27037f9a218d1ea48a2679e059fdd144, type: 3}
-  _eggSprite: {fileID: 21300000, guid: 9e8a89ef2655a1142a454169440affb7, type: 3}
-  _skipButtonSprite: {fileID: 21300000, guid: 5b15c703f286e454286860cf90288a46, type: 3}
-  _percyFlySprite: {fileID: 21300000, guid: 4288d687bd20df74cb75d1c19818d5ee, type: 3}
-  _percyFallingClip: {fileID: 0}
---- !u!4 &1901905601
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1901905599}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -5262,18 +5039,15 @@ SceneRoots:
   - {fileID: 1511578342}
   - {fileID: 322750861}
   - {fileID: 47588538}
-  - {fileID: 80042615}
   - {fileID: 364537116}
   - {fileID: 1887418278}
   - {fileID: 17476937}
-  - {fileID: 1901905601}
   - {fileID: 908990636}
   - {fileID: 1238060524}
   - {fileID: 645401473}
   - {fileID: 1301547465}
   - {fileID: 33297441}
-  - {fileID: 1188522478}
-  - {fileID: 73609877}
   - {fileID: 1013400211}
   - {fileID: 86928382}
   - {fileID: 479295687}
+  - {fileID: 1413223964}

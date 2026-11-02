@@ -227,19 +227,8 @@ public class CatapultLauncher : MonoBehaviour
         EnsureGroundExists();
         RefreshRestPoint();
         SnapCameraToRest();
-
-        // Defer one frame so all Start() methods (including MainMenuController) have run.
-        StartCoroutine(DelayedAutoStart());
-    }
-
-    IEnumerator DelayedAutoStart()
-    {
-        yield return null;
-        // Skip auto-start when the main menu is visible — player navigates via UI.
-        if (MainMenuController.Instance != null && MainMenuController.Instance.IsVisible)
-            yield break;
-        if (GameManager.Instance != null && GameManager.Instance.State == GameState.Idle)
-            GameManager.Instance.ForceStartLevel(0);
+        // No auto-start: the game opens on GameFlow's landing screen and a level starts from Character Select
+        // (franchise flow, 2026-11-02). Editor tools start one directly with GameManager.ForceStartLevel.
     }
 
     // Creates a ground plane at runtime if none exists or if the existing one is stale.

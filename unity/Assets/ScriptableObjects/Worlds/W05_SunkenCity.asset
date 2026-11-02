@@ -19,11 +19,11 @@ MonoBehaviour:
   launcherName: Torpedo Tube
   blurb: Currents, bubbles and lever switches under the waves.
   introducedAnimals: 06000000
-  selectBadge: {fileID: 0}
-  levelSelectBackground: {fileID: 0}
-  levelCompleteBackground: {fileID: 0}
-  levelFailedBackground: {fileID: 0}
+  selectBadge: {fileID: 21300000, guid: 995bfdd519aa7674cb88d30c5b10ec92, type: 3}
+  levelSelectBackground: {fileID: 21300000, guid: 9665ee9ed63ff464db21f3958b6abe14, type: 3}
+  levelCompleteBackground: {fileID: 21300000, guid: a0e1e3f59c2e0c740a9395d6b7e4e429, type: 3}
+  levelFailedBackground: {fileID: 21300000, guid: e8308429704af7749a954a1c8a4d5786, type: 3}
   pauseBackground: {fileID: 0}
-  newCharacterBackground: {fileID: 0}
-  characterSelectBackground: {fileID: 0}
+  newCharacterBackground: {fileID: 21300000, guid: c8a56664c2164d840b7255d0f019de18, type: 3}
+  characterSelectBackground: {fileID: 21300000, guid: e3fc83e707eb34447b5ea6f042263b04, type: 3}
   purchaseRequired: 0

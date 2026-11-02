@@ -15,7 +15,7 @@ public class AudioManager : MonoBehaviour
     [Header("External Clips (wired via FarmFury -> Wire Scene References)")]
     [SerializeField] private AudioClip _musicClip;       // SunriseMeadows_Background.mp3, loops during gameplay
     [SerializeField] private AudioClip _menuMusicClip;   // SunriseMeadows_TransitionMusic.mp3, loops on the landing
-                                                          // page and the Sunrise Meadows world map (GameState.Idle)
+                                                          // page and the Sunrise Meadows world map (any menu GameState)
     [SerializeField] private AudioClip _cannonShotClip;  // CannonShot.mp3, replaces the procedural Launch sound
     [SerializeField] private AudioClip _fallingClip;     // Cluck_falling.mp3, loops while Cluck is airborne
     [SerializeField] private AudioClip _bessieFallingClip; // Bessie_falling.mp3, loops while Bessie is airborne —
@@ -154,7 +154,7 @@ public class AudioManager : MonoBehaviour
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnStateChanged += OnStateChanged;
-            // GameManager.State starts as Idle by default, without ever firing a transition
+            // GameManager.State starts as MainMenu by default, without ever firing a transition
             // event for it (TransitionTo only fires on an actual change) — so on a fresh launch
             // landing on the menu, nothing would otherwise tell us to start the menu music. Sync
             // once against whatever the state already is (mirrors HUDController.Start()'s own
@@ -191,34 +191,15 @@ public class AudioManager : MonoBehaviour
             if (_musicSrc != null && _musicSrc.clip != null && !_musicSrc.isPlaying)
                 _musicSrc.Play();
         }
-        // GameState.Idle covers both the landing page (MainMenuController) and the Sunrise
-        // Meadows world map (WorldMapController) — both react to this same state, so hooking it
-        // once here plays the transition music under either screen without needing to know
-        // which one is actually visible.
-        else if (state == GameState.Idle)
+        // Any menu screen (Landing, World Select, Level Select, Character Select — franchise flow, 2026-11-02)
+        // plays the menu track; it keeps playing as the player moves between them.
+        else if (state == GameState.MainMenu || state == GameState.WorldSelect
+              || state == GameState.LevelSelect || state == GameState.CharacterSelect)
         {
             if (_musicSrc != null && _musicSrc.isPlaying) _musicSrc.Stop();
             if (_menuMusicSrc != null && _menuMusicSrc.clip != null && !_menuMusicSrc.isPlaying)
                 _menuMusicSrc.Play();
         }
-    }
-
-    // ── Menu music pause/resume (match-up/countdown screen) ─────────────────
-    // MatchUpScreen pauses the menu music the instant it appears so only the countdown SFX is
-    // audible, then resumes it if the player ends up back on the map without actually launching
-    // (the level has no data yet — "COMING SOON"). Uses Pause/UnPause rather than Stop/Play so
-    // the track resumes from where it left off instead of restarting. If the level DOES launch,
-    // GameManager's Idle->Playing transition (OnStateChanged above) already Stops this track and
-    // starts gameplay music, so no explicit resume is needed on that path.
-    public static void PauseMenuMusic()
-    {
-        if (Instance?._menuMusicSrc != null && Instance._menuMusicSrc.isPlaying) Instance._menuMusicSrc.Pause();
-    }
-
-    public static void ResumeMenuMusic()
-    {
-        if (Instance?._menuMusicSrc != null && Instance._menuMusicSrc.clip != null && !Instance._menuMusicSrc.isPlaying)
-            Instance._menuMusicSrc.UnPause();
     }
 
     // ── Gameplay music pause/resume (top-right Pause button) ────────────────

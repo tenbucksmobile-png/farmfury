@@ -94,6 +94,13 @@ public class SpriteAutoImporter : AssetPostprocessor
             ConfigureSprite(imp, 100, alphaTransparency: true);
             if (imp.spriteImportMode != SpriteImportMode.Single)
                 imp.spriteImportMode = SpriteImportMode.Single;
+            // Franchise menu art (stand-ins from FarmFury_Stampede, 2026-11-02): full-screen canvases and Level
+            // Select backdrops are ~2800px wide, so allow 4096 like Stampede's menu sprites; no mipmaps for UI.
+            if (assetPath.Contains("Sprites/UI/Franchise/"))
+            {
+                if (imp.maxTextureSize < 4096) imp.maxTextureSize = 4096;
+                if (imp.mipmapEnabled) imp.mipmapEnabled = false;
+            }
         }
         // ── Robot enemy sprites (PPU=1746 → content 1746px = 1u; at scale 0.8 → 0.8u world) ──
         else if (assetPath.Contains("Sprites/Enemies/Robot/"))

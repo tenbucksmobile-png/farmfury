@@ -137,17 +137,11 @@ public class LevelLoader : MonoBehaviour
     {
         ClearLevel();
 
-        // World2CharacterSelectScreen's one-shot bird-queue override (see GameManager's own
-        // comment on the field) — consumed and cleared here, in the one place every level actually
-        // starts, so it can never leak into a level the player didn't just pick a lineup for.
-        AnimalType[] birdsToUse = data.birds;
-        if (GameManager.Instance != null &&
-            GameManager.Instance.BirdQueueOverride != null &&
-            GameManager.Instance.BirdQueueOverride.Length > 0)
-        {
-            birdsToUse = GameManager.Instance.BirdQueueOverride;
-            GameManager.Instance.BirdQueueOverride = null;
-        }
+        // The lineup picked in Character Select (GameManager.CurrentLineup) replaces the level's authored queue;
+        // null when the level was started directly by index (Editor tools), which uses the authored one.
+        AnimalType[] birdsToUse = GameManager.Instance != null && GameManager.Instance.CurrentLineup != null
+            ? GameManager.Instance.CurrentLineup
+            : data.birds;
 
         _birdQueue.Clear();
         foreach (var b in birdsToUse) _birdQueue.Enqueue(b);
@@ -320,6 +314,17 @@ public class LevelLoader : MonoBehaviour
             foreach (var block in _spawnedBlocks)
                 if (block != null && block.Indestructible)
                     robot.AddDestroyOnDeath(block);
+    }
+
+    /// <summary>
+    /// Leaving a level for the menus (GameFlow): removes its blocks/robots and queue and stops the pending
+    /// complete/failed timers, so nothing keeps simulating behind an opaque menu.
+    /// </summary>
+    public void UnloadLevel()
+    {
+        StopAllCoroutines();
+        ClearLevel();
+        _birdQueue.Clear();
     }
 
     void ClearLevel()

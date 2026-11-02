@@ -19,8 +19,8 @@ MonoBehaviour:
   launcherName: Farm Cannon
   blurb: 'Where it all began: drive the Harvest Robots off the old farm.'
   introducedAnimals: 0000000001000000
-  selectBadge: {fileID: 0}
-  levelSelectBackground: {fileID: 0}
+  selectBadge: {fileID: 21300000, guid: b299fa894b2603b4695075b88b6081e5, type: 3}
+  levelSelectBackground: {fileID: 21300000, guid: e708b309d76b12247a0153e832fd877f, type: 3}
   levelCompleteBackground: {fileID: 0}
   levelFailedBackground: {fileID: 0}
   pauseBackground: {fileID: 0}

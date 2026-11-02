@@ -1,87 +1,71 @@
+using FarmFury.Core;
+using FarmFury.UI;
 using UnityEditor;
 using UnityEngine;
 
-// Quick QA helper — added 2026-07-19 so the L18 -> Frozen Tundra transition flow (World2Landing
-// -> World2Map) can be tested without first grinding through L01-L17 on the World 1 map to
-// naturally unlock L18. Only works in Play mode (GameManager.Instance is null otherwise).
-// Jumps straight to L18 loaded and ready to play — you still need to actually clear it (destroy
-// all robots) to trigger the real completion sequence (celebration -> transition video ->
-// World2LandingController), since that's the thing being tested, not skipped.
+// QA shortcuts (Play mode only). Rewritten 2026-11-02 for the franchise flow: the old World 1/World 2 map and
+// World 2 landing previews are gone with those screens; World Select / Level Select now cover both worlds.
 public static class DebugJumpToLevel
 {
+    // Jumps straight to L18 loaded and ready to play — clear it to test the boss clear -> transition video ->
+    // World Select (Frozen Tundra unlocked) path for real.
     [MenuItem("FarmFury/Debug/Jump To Level 18 (test World 2 transition)")]
     public static void JumpToLevel18()
     {
-        if (!Application.isPlaying)
-        {
-            Debug.LogWarning("[FarmFury] Jump To Level 18 only works in Play mode — press Play first.");
-            return;
-        }
-        if (GameManager.Instance == null)
-        {
-            Debug.LogWarning("[FarmFury] GameManager.Instance is null — is the Game scene running?");
-            return;
-        }
+        if (!RequirePlayMode()) return;
         GameManager.Instance.ForceStartLevel(17); // 0-based — L18
         Debug.Log("[FarmFury] Jumped to L18 (Captain's Last Stand). Clear it to test the World 2 transition.");
     }
 
-    // Instant preview of World2LandingController (FarmFury_W2.png) without playing/clearing L18
-    // — skips the transition video entirely, just shows the destination screen directly.
-    [MenuItem("FarmFury/Debug/Show World 2 Landing")]
-    public static void ShowWorld2Landing()
+    [MenuItem("FarmFury/Debug/Open World Select")]
+    public static void OpenWorldSelect()
     {
-        if (!RequirePlayMode()) return;
-        World2LandingController.Instance?.Show();
-        Debug.Log("[FarmFury] Showing World2LandingController directly.");
+        if (!RequirePlayMode() || GameFlow.Instance == null) return;
+        GameFlow.Instance.EnterWorldSelect();
     }
 
-    // Instant preview of World2MapController (FrozenTundra.png + 22 markers) — same shortcut,
-    // one level deeper. Tap marker 1 (the only unlocked one by default) to see the new
-    // Matchup_W2.png background + FrostRobot/GlacierRobot/IceHarvestor/Percy/Woolly cards.
-    [MenuItem("FarmFury/Debug/Show World 2 Map")]
-    public static void ShowWorld2Map()
+    [MenuItem("FarmFury/Debug/Open Level Select: Meadow Ruins")]
+    public static void OpenLevelSelectWorld1()
     {
-        if (!RequirePlayMode()) return;
-        World2MapController.Instance?.Show();
-        Debug.Log("[FarmFury] Showing World2MapController directly — tap marker 1 to preview the match-up screen.");
+        if (!RequirePlayMode() || GameFlow.Instance == null) return;
+        GameFlow.Instance.EnterLevelSelect(WorldType.MeadowRuins);
+    }
+
+    [MenuItem("FarmFury/Debug/Open Level Select: Frozen Tundra")]
+    public static void OpenLevelSelectWorld2()
+    {
+        if (!RequirePlayMode() || GameFlow.Instance == null) return;
+        GameFlow.Instance.EnterLevelSelect(WorldType.FrozenTundra);
+    }
+
+    // Stampede's "Unlock All Levels" switch: every world and level opens without marking anything completed
+    // (SaveManager.DebugAllLevelsOpen; Editor/development builds only). Works in or out of Play mode — it's a pref.
+    const string UnlockAllMenu = "FarmFury/Debug/Unlock All Levels";
+
+    [MenuItem(UnlockAllMenu)]
+    public static void ToggleUnlockAll()
+    {
+        bool on = PlayerPrefs.GetInt(SaveManager.DebugAllLevelsOpenKey, 0) == 1;
+        PlayerPrefs.SetInt(SaveManager.DebugAllLevelsOpenKey, on ? 0 : 1);
+        PlayerPrefs.Save();
+        Debug.Log($"[FarmFury] Unlock All Levels: {(on ? "OFF" : "ON")}.");
+        if (Application.isPlaying && GameFlow.Instance != null) GameFlow.Instance.RefreshCurrentScreen();
+    }
+
+    [MenuItem(UnlockAllMenu, true)]
+    static bool ToggleUnlockAllValidate()
+    {
+        Menu.SetChecked(UnlockAllMenu, PlayerPrefs.GetInt(SaveManager.DebugAllLevelsOpenKey, 0) == 1);
+        return true;
     }
 
     static bool RequirePlayMode()
     {
-        if (!Application.isPlaying)
+        if (!Application.isPlaying || GameManager.Instance == null)
         {
             Debug.LogWarning("[FarmFury] This only works in Play mode — press Play first.");
             return false;
         }
         return true;
-    }
-
-    // Added 2026-08-09 (user request: "build a link so i can jump between worlds to test") — a
-    // one-click swap between World 1's and World 2's maps, for testing without replaying through
-    // L18 every time (see GameManager.CurrentWorld's own comment for why that was ever needed at
-    // all). Explicitly hides whichever map isn't the target and calls SetCurrentWorld() so the
-    // switch is fully consistent with the real navigation state — after using either of these,
-    // PLAY from the main menu (and Level Complete/Failed's "Back" buttons) will keep routing to
-    // whichever world you just switched to, exactly as if you'd reached it the normal way.
-    [MenuItem("FarmFury/Debug/Switch To World 1 Map")]
-    public static void SwitchToWorld1Map()
-    {
-        if (!RequirePlayMode()) return;
-        GameManager.Instance?.SetCurrentWorld(1);
-        World2MapController.Instance?.HideForExternalTransition();
-        World2LandingController.Instance?.Hide();
-        WorldMapController.Instance?.Show();
-        Debug.Log("[FarmFury] Switched to World 1 (Sunrise Meadows) map.");
-    }
-
-    [MenuItem("FarmFury/Debug/Switch To World 2 Map")]
-    public static void SwitchToWorld2Map()
-    {
-        if (!RequirePlayMode()) return;
-        GameManager.Instance?.SetCurrentWorld(2);
-        WorldMapController.Instance?.HideForExternalTransition();
-        World2MapController.Instance?.Show();
-        Debug.Log("[FarmFury] Switched to World 2 (Frozen Tundra) map.");
     }
 }

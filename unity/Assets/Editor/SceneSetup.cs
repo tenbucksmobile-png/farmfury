@@ -54,10 +54,7 @@ public static class SceneSetup
         EnsureEggPrefab();      // Create Egg prefab + wire into CluckAnimal prefab
         EnsureAnimalPrefabs();  // Create Percy/Woolly/Ducky/Horace/Gerald/Billy prefabs
         EnsureHUD();            // HUDController GO (builds Canvas at runtime)
-        EnsureMainMenu();       // MainMenuController GO (Canvas sortingOrder 400)
-        EnsureWorldMap();       // WorldMapController GO (Sunrise Meadows level-map — PLAY's destination)
-        EnsureWorld2Landing();  // World2LandingController GO (Frozen Tundra interstitial — L18 transition's destination)
-        EnsureWorld2Map();      // World2MapController GO (Frozen Tundra level-map)
+        EnsureGameFlow();       // GameFlow GO: franchise menus (Landing/World/Level/Character Select), MenuArt wired
         EnsureAudioManager();   // AudioManager GO wired with music/cannon/falling clips
         EnsureLevelCompleteManager();  // Cluck celebration video + laugh audio
         EnsureLevelFailedManager();    // Robot taunt video + taunt audio
@@ -123,7 +120,7 @@ public static class SceneSetup
         if (staleLevelSelect != null)
         {
             Object.DestroyImmediate(staleLevelSelect);
-            Debug.Log("[FarmFury] Deleted obsolete 'LevelSelect' GameObject (superseded by WorldMapController).");
+            Debug.Log("[FarmFury] Deleted obsolete 'LevelSelect' GameObject (superseded by GameFlow).");
         }
 
         EditorSceneManager.SaveScene(scene);
@@ -863,398 +860,6 @@ public static class SceneSetup
 
     // ── MainMenuController ────────────────────────────────────────────────────────
 
-    static void EnsureMainMenu()
-    {
-        var go = GameObject.Find("MainMenu");
-        if (go == null)
-        {
-            go = new GameObject("MainMenu");
-            Debug.Log("[FarmFury] Created 'MainMenu' GameObject.");
-        }
-        if (go.GetComponent<MainMenuController>() == null)
-            go.AddComponent<MainMenuController>();
-
-        // Wire landing page sprite (1920×1080 full-scene art, no bg removal needed)
-        const string landingPath = "Assets/Sprites/UI/LandingPage.png";
-        if (AssetDatabase.LoadAssetAtPath<Texture2D>(landingPath) != null)
-        {
-            var importer = AssetImporter.GetAtPath(landingPath) as TextureImporter;
-            if (importer != null)
-            {
-                bool changed = false;
-                if (importer.textureType != TextureImporterType.Sprite)
-                { importer.textureType = TextureImporterType.Sprite; changed = true; }
-                if (importer.spritePixelsPerUnit != 100)
-                { importer.spritePixelsPerUnit = 100; changed = true; }
-                if (changed) importer.SaveAndReimport();
-            }
-            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(landingPath);
-            var mc = go.GetComponent<MainMenuController>();
-            var so = new SerializedObject(mc);
-            so.FindProperty("_landingSprite").objectReferenceValue = sprite;
-            so.ApplyModifiedProperties();
-            Debug.Log("[FarmFury] MainMenu: landing page sprite wired.");
-        }
-        else
-        {
-            Debug.LogWarning("[FarmFury] LandingPage.png not found at Assets/Sprites/UI/LandingPage.png.");
-        }
-
-        // Wire the PLAY button sprite (bottom-left corner icon, per the 2026-07-16
-        // LandingPage_New.png mockup). Lives at Assets/Sprites/UI/Icon/ and is already imported
-        // (Single mode, PPU=100) by SpriteAutoImporter's generic "Sprites/UI/" rule — no reimport
-        // step needed, unlike the old Assets/Sprites/UI/Play.png path this replaces (that file
-        // never actually existed, so _playButtonSprite silently fell back to a plain orange
-        // square at runtime — see MainMenuController's fallback color). The SETTINGS icon/popup
-        // was removed 2026-07-07, then re-added 2026-07-10 (both user requests) — Btn_settings.png
-        // already existed on disk the whole time, just unwired while the button was gone.
-        var mainMenu = go.GetComponent<MainMenuController>();
-        var mmSo = new SerializedObject(mainMenu);
-        WireSprite(mmSo, "_playButtonSprite", "Assets/Sprites/UI/Icon/Btn_play.png");
-        WireSprite(mmSo, "_settingsButtonSprite", "Assets/Sprites/UI/Icon/Btn_settings.png");
-        // Settings popup backdrop (2026-07-10) — same Scoreboard.png HUDController's Level
-        // Complete/Failed panels already use.
-        WireSprite(mmSo, "_scoreboardSprite", "Assets/Sprites/UI/MatchUp/Scoreboard.png");
-        // Settings tab "heading" plaque (2026-07-16, user-supplied) — replaces the flat colour
-        // box behind the 7 tab buttons (AUDIO/GAMEPLAY/STATS/SCORES/STORY/ACCOUNT/ABOUT).
-        WireSprite(mmSo, "_plaqueSprite", "Assets/Sprites/UI/Icon/Btn_plaque.png");
-        // Music/SFX enabled toggle icons (2026-07-16, user-supplied) — see MakeStateToggle's
-        // offSprite/onSprite params. Only these two genuine on/off switches use icon mode.
-        WireSprite(mmSo, "_toggleOffSprite", "Assets/Sprites/UI/Icon/Btn_off.png");
-        WireSprite(mmSo, "_toggleOnSprite",  "Assets/Sprites/UI/Icon/Btn_on.png");
-        // Settings popup close icon (2026-07-16) — replaces the old text "SETTINGS"/"X" header.
-        WireSprite(mmSo, "_quitCloseButtonSprite", "Assets/Sprites/UI/Icon/Btn_quit.png");
-        mmSo.ApplyModifiedProperties();
-    }
-
-    // ── WorldMapController (Sunrise Meadows) ──────────────────────────────────
-    // Art lives at Assets/Sprites/UI/LevelCards/World1/ — already imported (Single mode,
-    // PPU=100) by SpriteAutoImporter's existing "Sprites/UI/" rule, so no reimport step needed
-    // here, just AssetDatabase lookups + SerializedObject wiring (same pattern as
-    // EnsureMainMenu above). Also wires the MatchUpScreen art fields that live directly on
-    // WorldMapController (animal/robot cards, VS graphic, matchup background) — NOT on the
-    // nested MatchUpScreen instance itself. That nested object is a child GameObject created
-    // inside BuildUI(), which only runs when Awake() actually fires (Play mode, or immediately
-    // after a fresh AddComponent) — this batch pass opens the scene without entering Play mode,
-    // so GetComponentInChildren<MatchUpScreen>() here would find nothing (confirmed empirically
-    // 2026-07-16 — m_Children: [] on WorldMap's Transform in the saved scene even right after a
-    // fresh AddComponent<WorldMapController>() in this same method — Awake() genuinely does not
-    // fire synchronously in this batch context, unlike normal interactive-Editor AddComponent
-    // calls). The old LevelPreviewCard had this exact same silent gap. Keeping the fields on
-    // WorldMapController (which DOES persist — proven by every other field below already
-    // working) and threading them into MatchUpScreen.Init() at BuildUI() time sidesteps the
-    // whole issue: it doesn't matter whether BuildUI() ran during this edit-time pass, only that
-    // these fields are correctly saved for the NEXT real Awake() (Play mode / the actual game).
-    static void EnsureWorldMap()
-    {
-        const string artFolder  = "Assets/Sprites/UI/LevelCards/World1";
-        const string iconFolder = "Assets/Sprites/UI/Icon";
-
-        var go = GameObject.Find("WorldMap");
-        if (go == null)
-        {
-            go = new GameObject("WorldMap");
-            Debug.Log("[FarmFury] Created 'WorldMap' GameObject.");
-        }
-        if (go.GetComponent<WorldMapController>() == null)
-            go.AddComponent<WorldMapController>();
-
-        var mapSo = new SerializedObject(go.GetComponent<WorldMapController>());
-        WireSprite(mapSo, "_backgroundSprite",      $"{artFolder}/SunriseMeadows.png");
-        WireSprite(mapSo, "_lockedSprite",          $"{artFolder}/LevelMarker_Locked.png");
-        WireSprite(mapSo, "_unlockedSprite",        $"{artFolder}/LevelMarker_tick.png");
-        WireSprite(mapSo, "_playerPositionSprite",  $"{artFolder}/PlayerPosition.png");
-        WireSprite(mapSo, "_playButtonSprite",      $"{iconFolder}/Btn_play.png");
-        WireSprite(mapSo, "_homeButtonSprite",      $"{iconFolder}/Btn_home.png");
-
-        WireMatchUpCards(mapSo);
-
-        mapSo.ApplyModifiedProperties();
-    }
-
-    // MatchUpScreen art — dedicated folder, distinct from the HUD's Assets/Sprites/UI/Cards/
-    // (see CardKeywords above, still used by EnsureHUD). Only Cluck/Bessie (animal) and
-    // Basic/Harvester/SemiHarvester (robot) have art here today, matching what L01-L06 actually
-    // use — other AnimalType slots are left null and MatchUpScreen already tolerates that (hides
-    // the card image rather than crashing).
-    static void WireMatchUpCards(SerializedObject mapSo)
-    {
-        const string matchUpFolder = "Assets/Sprites/UI/MatchUp";
-
-        WireSprite(mapSo, "_matchUpBackgroundSprite", $"{matchUpFolder}/MatchUpBackground.png");
-        WireSprite(mapSo, "_vsSprite",                $"{matchUpFolder}/VS.png");
-
-        // Level header art — index 0 (LevelHeader1.png) is the fallback MatchUpScreen.Show()
-        // uses for any level whose own slot is empty. Levels 2-9 already have their own header
-        // art (different naming, since they were added individually rather than following
-        // LevelHeader1.png's naming pattern) — wired directly by filename. level6.png added
-        // 2026-07-11 (alongside re-supplied level4.png/level5.png — same filenames, so those two
-        // needed no code change, just a re-import to pick up the new content).
-        var headerArr = mapSo.FindProperty("_levelHeaderSprites");
-        headerArr.arraySize = WorldMapController.LevelCount;
-        headerArr.GetArrayElementAtIndex(0).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/LevelHeader1.png");
-        headerArr.GetArrayElementAtIndex(1).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level2.png");
-        headerArr.GetArrayElementAtIndex(2).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level3-removebg-preview.png");
-        headerArr.GetArrayElementAtIndex(3).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level4.png");
-        headerArr.GetArrayElementAtIndex(4).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level5.png");
-        headerArr.GetArrayElementAtIndex(5).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level6.png");
-        headerArr.GetArrayElementAtIndex(6).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level7.png");
-        headerArr.GetArrayElementAtIndex(7).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level8.png");
-        headerArr.GetArrayElementAtIndex(8).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level9.png");
-        // level10.png/level11.png added 2026-07-12 alongside L10's build and the L11 match-up
-        // request ("place level11.png") — both files already existed on disk but were never
-        // wired, so both slots fell back to LevelHeader1.png until now.
-        headerArr.GetArrayElementAtIndex(9).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level10.png");
-        headerArr.GetArrayElementAtIndex(10).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level11.png");
-        // Indices 11-17 (L12-L18) added 2026-07-13, user report: "from level 12 upwards the
-        // matchup scene shows level1, not the correct scene level artwork" — confirmed root cause:
-        // this array was never extended past index 10, so every slot past L11 was still null and
-        // MatchUpScreen.Show() falls back to LevelHeader1.png (index 0) whenever a slot is empty,
-        // exactly matching "shows level1." level12.png/level14.png/level15.png/level16.png/
-        // level18.png already existed on disk under this exact lowercase filename; L13's file is
-        // capitalised on disk as "Level13.png" (inconsistent with the rest, kept as-is rather than
-        // renaming the source asset) — matched exactly since AssetDatabase paths are effectively
-        // case-sensitive on iOS/Android builds even though Windows' filesystem tolerates the
-        // mismatch. level17.png added 2026-07-16 (user-supplied) — previously the only gap in
-        // this range, its slot fell back to LevelHeader1.png until now.
-        headerArr.GetArrayElementAtIndex(11).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level12.png");
-        headerArr.GetArrayElementAtIndex(12).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Level13.png");
-        headerArr.GetArrayElementAtIndex(13).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level14.png");
-        headerArr.GetArrayElementAtIndex(14).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level15.png");
-        headerArr.GetArrayElementAtIndex(15).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level16.png");
-        headerArr.GetArrayElementAtIndex(16).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level17.png");
-        headerArr.GetArrayElementAtIndex(17).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/level18.png");
-
-        WireSprite(mapSo, "_countdown3Sprite",        $"{matchUpFolder}/countdown3.png");
-        WireSprite(mapSo, "_countdown2Sprite",        $"{matchUpFolder}/countdown2.png");
-        WireSprite(mapSo, "_countdown1Sprite",        $"{matchUpFolder}/countdown1.png");
-        WireSprite(mapSo, "_countdownReadySprite",    $"{matchUpFolder}/Countdown_Ready.png");
-        WireAudioClip(mapSo, "_countdownClip",        "Assets/Audio/Countdown.mp3");
-        WireSprite(mapSo, "_cluckFlySprite",           "Assets/Sprites/Characters/Cluck/Cluck_InFlight.png");
-        WireAudioClip(mapSo, "_cluckFallingClip",      "Assets/Audio/Cluck_falling.mp3");
-        WireSprite(mapSo, "_bessieFlySprite",          "Assets/Sprites/Characters/Bessie/Bessie_InFlight.png");
-        WireAudioClip(mapSo, "_bessieFallingClip",     "Assets/Audio/Bessie_falling.mp3");
-        // Wired for symmetry with World2MapController (no World 1 level uses Percy today, so this
-        // never actually fires here — see MatchUpScreen.Show()'s _percyFlyEnabledForLevel check).
-        WireSprite(mapSo, "_percyFlySprite",           "Assets/Sprites/Characters/Percy_Pig/Trigger.png");
-        WireSprite(mapSo, "_eggSprite",                "Assets/Sprites/Characters/Cluck/Egg.png");
-        WireSprite(mapSo, "_skipButtonSprite",         "Assets/Sprites/UI/Icon/Btn_skip.png");
-
-        WireArrayByKeyword(mapSo, "_animalCardSprites", matchUpFolder, CardKeywords, "animal");
-
-        // Robot cards need exact-filename matching, not substring: "Robot.png" (Basic) has no
-        // distinguishing prefix, but "Harvestor_Robot.png"/"Harvestor_Robot1.png" both also
-        // contain "robot" — a naive keyword search (like WireArrayByKeyword uses for animals)
-        // would ambiguously match all three off either keyword.
-        var robotArr = mapSo.FindProperty("_robotCardSprites");
-        robotArr.arraySize = 4;
-        robotArr.GetArrayElementAtIndex(0).objectReferenceValue = // Basic
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Robot.png");
-        // Prefer the newer Harvestor_Robot1.png (revised art, added a day after the original)
-        // over Harvestor_Robot.png if both exist.
-        Sprite harvester = AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Harvestor_Robot1.png")
-                         ?? AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Harvestor_Robot.png");
-        robotArr.GetArrayElementAtIndex(1).objectReferenceValue = harvester; // Harvester
-
-        // SemiHarvester — dedicated framed MatchUp card art (Semi_Harvestor.png, matches
-        // Harvestor_Robot.png's style), replacing the earlier fallback to the plain enemy
-        // sprite (Assets/Sprites/Enemies/Robot/Robot_SemiHarvest.png — 2026-07-09, user-reported
-        // "that's not the right card").
-        robotArr.GetArrayElementAtIndex(2).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Semi_Harvestor.png");
-
-        // Commander (L18 boss) — dedicated framed MatchUp card art added 2026-07-14
-        // (Commander_robot.png, user-supplied). Previously pointed at a nonexistent
-        // "Commander.png" (no such file in this folder — only Assets/Sprites/Enemies/Robot/
-        // Commander.png, the plain in-game sprite, exists elsewhere), so this slot silently
-        // stayed null and MatchUpScreen fell back to its plain "COMMANDER" text-label card.
-        robotArr.GetArrayElementAtIndex(3).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolder}/Commander_robot.png");
-    }
-
-    // ── World2LandingController (Frozen Tundra interstitial) ──────────────────────
-    // Same PLAY/SETTINGS icon assets as EnsureMainMenu — "ensure all icons and navigation are
-    // the same" per the 2026-07-19 spec. Landing art lives at Assets/Sprites/UI/LevelCards/World2/
-    // (already saved there by the user, not generated by this pass).
-    static void EnsureWorld2Landing()
-    {
-        var go = GameObject.Find("World2Landing");
-        if (go == null)
-        {
-            go = new GameObject("World2Landing");
-            Debug.Log("[FarmFury] Created 'World2Landing' GameObject.");
-        }
-        if (go.GetComponent<World2LandingController>() == null)
-            go.AddComponent<World2LandingController>();
-
-        var so = new SerializedObject(go.GetComponent<World2LandingController>());
-        WireSprite(so, "_landingSprite",        "Assets/Sprites/UI/LevelCards/World2/FarmFury_W2.png");
-        WireSprite(so, "_playButtonSprite",     "Assets/Sprites/UI/Icon/Btn_play.png");
-        WireSprite(so, "_settingsButtonSprite", "Assets/Sprites/UI/Icon/Btn_settings.png");
-        so.ApplyModifiedProperties();
-    }
-
-    // ── World2MapController (Frozen Tundra level-map) ──────────────────────────────
-    // Dedicated World 2 marker/player-position art already exists at
-    // Assets/Sprites/UI/LevelCards/World2/ (LevelMarker_Locked.png/LevelMarker_tick.png/
-    // PlayerPosition.png) — found on disk, not assumed; only PLAY/HOME reuse the shared
-    // Assets/Sprites/UI/Icon/ nav icons, same as everywhere else in this project.
-    static void EnsureWorld2Map()
-    {
-        const string bgFolder   = "Assets/Sprites/UI/LevelCards/World2";
-        const string iconFolder = "Assets/Sprites/UI/Icon";
-
-        var go = GameObject.Find("World2Map");
-        if (go == null)
-        {
-            go = new GameObject("World2Map");
-            Debug.Log("[FarmFury] Created 'World2Map' GameObject.");
-        }
-        if (go.GetComponent<World2MapController>() == null)
-            go.AddComponent<World2MapController>();
-
-        var mapSo = new SerializedObject(go.GetComponent<World2MapController>());
-        WireSprite(mapSo, "_backgroundSprite",     $"{bgFolder}/FrozenTundra.png");
-        WireSprite(mapSo, "_lockedSprite",         $"{bgFolder}/LevelMarker_Locked.png");
-        WireSprite(mapSo, "_unlockedSprite",       $"{bgFolder}/LevelMarker_tick.png");
-        WireSprite(mapSo, "_playerPositionSprite", $"{bgFolder}/PlayerPosition.png");
-        WireSprite(mapSo, "_playButtonSprite",     $"{iconFolder}/Btn_play.png");
-        WireSprite(mapSo, "_homeButtonSprite",     $"{iconFolder}/Btn_home.png");
-
-        WireWorld2MatchUpCards(mapSo);
-
-        mapSo.ApplyModifiedProperties();
-    }
-
-    // Smaller sibling of WireMatchUpCards — that method hardcodes
-    // headerArr.arraySize = WorldMapController.LevelCount (18), which would silently truncate
-    // World2MapController's own 22-element _levelHeaderSprites array if reused directly, so this
-    // is a dedicated (if largely duplicate) method rather than a shared one. Only wires index 0
-    // (the fallback MatchUpScreen.Show() already uses for any empty slot) — no dedicated World 2
-    // level header art exists yet (per-level counters to be dropped in later by the user), and no
-    // World 2 LevelData exists yet either, so every marker shows MatchUpScreen's generic "COMING
-    // SOON" branch regardless.
-    //
-    // Background + card art updated 2026-07-19 to the user-supplied World 2 set, then RE-POINTED
-    // 2026-07-26 to a dedicated "Assets/Sprites/UI/Matchup_W2" folder (user: "i have placed the
-    // correct matchup cards and labelling in this folder... re wire the matchup scene
-    // accordingly") — a separate, relabelled set distinct from the original Matchup_W2.png/
-    // *_card.png files that used to live in the shared Assets/Sprites/UI/MatchUp/ folder
-    // alongside World 1's own art. Everything World-2-specific below now sources from
-    // matchUpFolderW2; only the shared, world-agnostic assets (Countdown.mp3, Btn_skip.png,
-    // Cluck/Bessie fly art — World 2 never shows Cluck/Bessie, see below) still come from the
-    // original Assets/Sprites/UI/MatchUp/.
-    //
-    // Robot slot mapping (Basic/Harvester/SemiHarvester/Commander enum order): "IceHarvestor_card.png"
-    // -> Harvester (index 1), user-confirmed 2026-07-26 (this exact mapping was the subject of
-    // "wire the first ice harvestor robot... for level 19"). "FrostRobot_card.png" -> Basic
-    // (index 0) and "GlacierRobot_card.png" -> SemiHarvester (index 2) remain the original
-    // 2026-07-19 naming-precedent guess, still unconfirmed — see CLAUDE.md Known Issues. No
-    // World 2 Commander/boss card exists yet — index 3 stays unwired, same "COMMANDER" text-label
-    // fallback MatchUpScreen already uses when a robot card is null.
-    //
-    // Level header art: this instance's own _levelHeaderSprites array is only ever indexed with
-    // the GLOBAL GameManager level index (MatchUpScreen.Show(GlobalIndexOffset + localIndex) —
-    // see World2MapController.OnMarkerClicked/OnPlayClicked), NOT World 2's own 0-based local
-    // index, even though the array is sized World2MapController.LevelCount (22) — so only global
-    // indices < 22 (i.e. World 2's own local levels 0-3, global "level 19"-"level 22") can ever
-    // get unique header art before running off the end of this array; every level from local
-    // index 4 onward ("level 23"+) will silently fall back to index 0 regardless of any future art
-    // added for it. Flagged, not fixed here — out of scope for this pass, and not yet a real
-    // problem since only 3 real per-level headers (19/20/21.png, indices 18-20) exist today.
-    // Index 0 uses W2_level.png (a generic "LEVEL" banner) as this instance's OWN fallback/
-    // generic slot — distinct from World 1's LevelHeader1.png, which this instance no longer
-    // references at all.
-    static void WireWorld2MatchUpCards(SerializedObject mapSo)
-    {
-        const string matchUpFolder   = "Assets/Sprites/UI/MatchUp";     // shared, world-agnostic assets only
-        const string matchUpFolderW2 = "Assets/Sprites/UI/Matchup_W2";  // dedicated World 2 set, see class comment above
-
-        WireSprite(mapSo, "_matchUpBackgroundSprite", $"{matchUpFolderW2}/Matchup_W2.png");
-        WireSprite(mapSo, "_vsSprite",                $"{matchUpFolderW2}/vs.png");
-
-        var headerArr = mapSo.FindProperty("_levelHeaderSprites");
-        headerArr.arraySize = World2MapController.LevelCount;
-        headerArr.GetArrayElementAtIndex(0).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/W2_level.png");
-        // Per-level headers — global level 19/20/21 land at array indices 18/19/20 (see the
-        // GLOBAL-vs-local indexing note above). MatchUpScreen only ever shows ONE header sprite
-        // (no separate banner+number layers at runtime), so W2_level.png (the "LEVEL" banner) and
-        // NN.png (the number badge) are pre-composited offline into a single LevelNN.png per user
-        // request 2026-07-26 ("match the number under it (middle with slight overlay)") — number
-        // centred under the banner, its top ~18px tucked behind the banner's bottom edge, banner
-        // drawn last so it occludes that overlap band exactly like LevelHeader1.png's own
-        // established "number peeking out from under LEVEL" look. See
-        // tools/compose_w2_level_headers.py for the exact compositing math if a 4th+ level header
-        // is ever needed. No "Level22.png"+ exists yet.
-        headerArr.GetArrayElementAtIndex(18).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/Level19.png");
-        headerArr.GetArrayElementAtIndex(19).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/Level20.png");
-        headerArr.GetArrayElementAtIndex(20).objectReferenceValue =
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/Level21.png");
-
-        WireSprite(mapSo, "_countdown3Sprite",     $"{matchUpFolderW2}/three.png");
-        WireSprite(mapSo, "_countdown2Sprite",     $"{matchUpFolderW2}/two.png");
-        // No "one.png"/countdown-1 art exists in the new World 2 set — falls back to the shared
-        // World 1 asset rather than leaving this slot null (MatchUpScreen would just skip that
-        // numeral's pop entirely otherwise). Swap to a real World-2-themed "1" if one is ever
-        // supplied.
-        WireSprite(mapSo, "_countdown1Sprite",     $"{matchUpFolder}/countdown1.png");
-        WireSprite(mapSo, "_countdownReadySprite", $"{matchUpFolderW2}/ready.png");
-        WireAudioClip(mapSo, "_countdownClip",     "Assets/Audio/Countdown.mp3");
-        // Cluck/Bessie fly art is still wired here even though World 2 never shows either (Percy
-        // REPLACES Cluck's pass whenever he's the level's own animal — see _percyFlySprite below
-        // and MatchUpScreen.Show()) — kept for symmetry/graceful-degradation with WireMatchUpCards,
-        // same reasoning as _cluckFlySprite being wired on WorldMapController despite W1 having no
-        // Percy levels.
-        WireSprite(mapSo, "_cluckFlySprite",       "Assets/Sprites/Characters/Cluck/Cluck_InFlight.png");
-        WireAudioClip(mapSo, "_cluckFallingClip",  "Assets/Audio/Cluck_falling.mp3");
-        WireSprite(mapSo, "_bessieFlySprite",      "Assets/Sprites/Characters/Bessie/Bessie_InFlight.png");
-        WireAudioClip(mapSo, "_bessieFallingClip", "Assets/Audio/Bessie_falling.mp3");
-        // Percy's Bounce Roll ability art doubles as his match-up fly-by pose — see
-        // MatchUpScreen.PercyFlyBy's class comment for why Trigger.png (the curled-ball ability
-        // pose) was chosen over a plain in-flight sprite. No dedicated falling/whoosh clip exists
-        // for Percy yet, so _percyFallingClip stays unwired (null-guarded in MatchUpScreen).
-        WireSprite(mapSo, "_percyFlySprite",       "Assets/Sprites/Characters/Percy_Pig/Trigger.png");
-        WireSprite(mapSo, "_eggSprite",            "Assets/Sprites/Characters/Cluck/Egg.png");
-        WireSprite(mapSo, "_skipButtonSprite",     "Assets/Sprites/UI/Icon/Btn_skip.png");
-
-        WireArrayByKeyword(mapSo, "_animalCardSprites", matchUpFolderW2, CardKeywords, "animal");
-
-        var robotArr = mapSo.FindProperty("_robotCardSprites");
-        robotArr.arraySize = 4;
-        robotArr.GetArrayElementAtIndex(0).objectReferenceValue = // Basic
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/FrostRobot_card.png");
-        robotArr.GetArrayElementAtIndex(1).objectReferenceValue = // Harvester
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/IceHarvestor_card.png");
-        robotArr.GetArrayElementAtIndex(2).objectReferenceValue = // SemiHarvester
-            AssetDatabase.LoadAssetAtPath<Sprite>($"{matchUpFolderW2}/GlacierRobot_card.png");
-        // index 3 (Commander) explicitly cleared, not just left alone — a stale reference here
-        // (e.g. from before this method stopped wiring it) would otherwise silently survive in
-        // Game.unity forever, the same [SerializeField] stale-value trap documented throughout
-        // this file. No World 2 boss card exists yet.
-        robotArr.GetArrayElementAtIndex(3).objectReferenceValue = null;
-    }
-
     // Added 2026-07-24 — a Sunrise Meadows screenshot showed level markers rendering with
     // leftover star-tier art from earlier testing sessions, which looked like a bug at first
     // glance. It isn't one: WorldMapController.IsUnlocked()/ScoreManager.GetBestStars() were
@@ -1282,28 +887,118 @@ public static class SceneSetup
         Debug.Log($"[FarmFury] Cleared progress for {levels.Count} levels — next launch starts from a fresh save (coins/purchases kept).");
     }
 
-    static void WireArrayByKeyword(SerializedObject so, string fieldName, string folder, string[] keywords, string label)
+    // ── GameFlow: franchise menus (2026-11-02) ───────────────────────────────
+    // Replaces the MainMenu / WorldMap / World2Landing / World2Map GameObjects (deleted here if a scene still has
+    // them). GameFlow builds its screens in code at runtime; this only creates the GO and wires MenuArt — FarmFury's
+    // own buttons/poster where they exist, FarmFury_Stampede stand-ins (Assets/Sprites/UI/Franchise/) otherwise —
+    // and each WorldData's badge / Level Select / Character Select art. Re-running re-stamps all of it.
+    const string FranchiseArt = "Assets/Sprites/UI/Franchise";
+
+    static void EnsureGameFlow()
     {
-        var arr = so.FindProperty(fieldName);
-        arr.arraySize = keywords.Length;
-        var guids = AssetDatabase.FindAssets("t:Sprite", new[] { folder });
-        int wired = 0;
-        for (int i = 0; i < keywords.Length; i++)
+        foreach (var legacy in new[] { "MainMenu", "WorldMap", "World2Landing", "World2Map" })
         {
-            string kw = keywords[i].ToLower();
-            if (string.IsNullOrEmpty(kw)) continue;
-            foreach (var g in guids)
+            var old = FindIncludingInactive(legacy);
+            if (old != null)
             {
-                string path = AssetDatabase.GUIDToAssetPath(g);
-                if (!path.ToLower().Contains(kw)) continue;
-                var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-                if (spr == null) continue;
-                arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
-                wired++;
-                break;
+                Object.DestroyImmediate(old);
+                Debug.Log($"[FarmFury] Deleted legacy menu GameObject '{legacy}' (replaced by GameFlow).");
             }
         }
-        Debug.Log($"[FarmFury] WorldMap: wired {wired}/{keywords.Length} {label} card sprites into MatchUpScreen.");
+
+        var go = FindIncludingInactive("GameFlow");
+        if (go == null)
+        {
+            go = new GameObject("GameFlow");
+            Debug.Log("[FarmFury] Created 'GameFlow' GameObject.");
+        }
+        var flow = go.GetComponent<FarmFury.UI.GameFlow>();
+        if (flow == null) flow = go.AddComponent<FarmFury.UI.GameFlow>();
+
+        var so = new SerializedObject(flow);
+        const string icon = "Assets/Sprites/UI/Icon";
+        const string fa = FranchiseArt;
+        WireSprite(so, "_menuArt.landingPoster",   "Assets/Sprites/UI/LandingPage.png");
+        WireSprite(so, "_menuArt.playButton",      icon + "/Btn_play.png");
+        WireSprite(so, "_menuArt.exitButton",      fa + "/Menu/Exit.png");
+        WireSprite(so, "_menuArt.settingsButton",  icon + "/Btn_settings.png");
+        WireSprite(so, "_menuArt.homeButton",      icon + "/Btn_home.png");
+        WireSprite(so, "_menuArt.backButton",      icon + "/Btn_back.png");
+        WireSprite(so, "_menuArt.quitButton",      icon + "/Btn_quit.png");
+        WireSprite(so, "_menuArt.pauseButton",     icon + "/Btn_pause.png");
+        WireSprite(so, "_menuArt.worldSelectBackground",     fa + "/Canvas/Canvas.png");
+        WireSprite(so, "_menuArt.worldSelectBanner",         fa + "/Menu/WorldUnlocked.png");
+        WireSprite(so, "_menuArt.levelTileLocked",           fa + "/Menu/LevelTile_Locked.png");
+        WireSprite(so, "_menuArt.levelTileNext",             fa + "/Menu/LevelTile_question.png");
+        WireSprite(so, "_menuArt.bossShield",                fa + "/Menu/Boss_Shield.png");
+        WireSprite(so, "_menuArt.oneStarBoard",              fa + "/Menu/LevelWin_1.png");
+        WireSprite(so, "_menuArt.twoStarBoard",              fa + "/Menu/LevelComplete_2.png");
+        WireSprite(so, "_menuArt.threeStarBoard",            fa + "/Menu/LevelComplete_3.png");
+        WireSprite(so, "_menuArt.characterSelectBackground", fa + "/Canvas/CharacterCanvas_Wide.png");
+        WireSprite(so, "_menuArt.pauseBackground",           fa + "/Canvas/Pause_Canvas_Wide.png");
+        WireSprite(so, "_menuArt.levelCompleteBackground",   fa + "/Canvas/LevelComplete_Canvas_Wide.png");
+        WireSprite(so, "_menuArt.levelFailedBackground",     fa + "/Canvas/LevelFailed_Canvas_Wide.png");
+        WireSprite(so, "_menuArt.levelCompleteStarEmpty",    fa + "/Menu/LevelComplete_StarEmpty.png");
+        WireSprite(so, "_menuArt.newCharacterBackground",    fa + "/Canvas/NewCharacter_Plain_Wide.png");
+        WireSprite(so, "_menuArt.newCharacterTitle",         fa + "/Menu/NewCharacterTitle.png");
+        WireSprite(so, "_menuArt.newCharacterSign",          fa + "/Menu/NewCharacter.png");
+        WireSprite(so, "_menuArt.worldUnlockedSign",         fa + "/Menu/WorldUnlocked.png");
+
+        // Framed animal cards, indexed by AnimalType (Stampede's file names).
+        var cards = new[] { "Cluck_Chicken", "Bessie_Cow", "Percy_Pig", "Wooly_Sheep", "Ducky_Duck", "Horace_Horse", "Gerald_Turkey", "Billy_Goat" };
+        var cardsProp = so.FindProperty("_menuArt.animalCards");
+        cardsProp.arraySize = cards.Length;
+        for (int i = 0; i < cards.Length; i++)
+            cardsProp.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(fa + "/Cards/" + cards[i] + ".png");
+        so.ApplyModifiedProperties();
+
+        WireWorldMenuArt();
+    }
+
+    // Per-world menu art on each WorldData asset: badge, Level Select backdrop, and (non-Meadow) Stampede's
+    // per-world results / New Character / Character canvases. A slot is only stamped when its file exists.
+    static void WireWorldMenuArt()
+    {
+        var names = new System.Collections.Generic.Dictionary<WorldType, string[]>
+        {
+            // badge file, Level Select backdrop file, per-world canvas prefix (null = use the shared MenuArt ones)
+            { WorldType.MeadowRuins,       new[] { "Badge_Meadowruins",       "MeadowRuins",       null } },
+            { WorldType.FrozenTundra,      new[] { "Badge_FrozenTundra",      "FrozenTundra",      "FT" } },
+            { WorldType.WatermillVillage,  new[] { "Badge_WatermillVillage",  "WatermillVillage",  "WV" } },
+            { WorldType.SkyIslands,        new[] { "Badge_SkyWorld",          "SkyIsland",         "SI" } },
+            { WorldType.SunkenCity,        new[] { "Badge_SunkenCity",        "SunkenCity",        "SC" } },
+            { WorldType.RobotMothership,   new[] { "Badge_Mothership",        "Mothership",        "RM" } },
+            { WorldType.DustbowlCanyon,    new[] { "Badge_DustbowlCanyon",    "DustbowlCanyon",    "DC" } },
+            { WorldType.HarvestFairground, new[] { "Badge_HarvestFairground", "HarvestFairground", "HF" } },
+            { WorldType.CropFactory,       new[] { "Badge_CropFactory",       "CropFactory",       "CF" } },
+        };
+        if (WorldDataGenerator.LoadAll().Length == 0) WorldDataGenerator.GenerateAll();
+        int wired = 0;
+        foreach (var world in WorldDataGenerator.LoadAll())
+        {
+            if (!names.TryGetValue(world.worldType, out var n)) continue;
+            var wso = new SerializedObject(world);
+            SetWorldSprite(wso, "selectBadge",           FranchiseArt + "/Badges/" + n[0] + ".png");
+            SetWorldSprite(wso, "levelSelectBackground", FranchiseArt + "/LevelSelect/" + n[1] + ".png");
+            if (n[2] != null)
+            {
+                SetWorldSprite(wso, "levelCompleteBackground",   FranchiseArt + "/Canvas/" + n[2] + "_LevelComplete_Canvas_Wide.png");
+                SetWorldSprite(wso, "levelFailedBackground",     FranchiseArt + "/Canvas/" + n[2] + "_LevelFailed_Canvas_Wide.png");
+                SetWorldSprite(wso, "newCharacterBackground",    FranchiseArt + "/Canvas/" + n[2] + "_NewCharacter_Canvas_Wide.png");
+                SetWorldSprite(wso, "characterSelectBackground", FranchiseArt + "/Canvas/" + n[2] + "_Character_Canvas_Wide.png");
+            }
+            wso.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(world);
+            wired++;
+        }
+        AssetDatabase.SaveAssets();
+        Debug.Log($"[FarmFury] World menu art wired on {wired} WorldData assets.");
+    }
+
+    static void SetWorldSprite(SerializedObject wso, string field, string path)
+    {
+        var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (spr != null) wso.FindProperty(field).objectReferenceValue = spr;
     }
 
     static void WireSprite(SerializedObject so, string fieldName, string path)
