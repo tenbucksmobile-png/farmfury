@@ -28,6 +28,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
+    flipX: 0
   - type: 2
     position: {x: 6.17, y: -5.63}
     size: {x: 0.977, y: 0.977}
@@ -37,6 +38,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
+    flipX: 0
   - type: 2
     position: {x: 5.8, y: -5.1}
     size: {x: 0.977, y: 0.977}
@@ -46,6 +48,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
+    flipX: 0
   - type: 2
     position: {x: 5.46, y: -5.65}
     size: {x: 0.977, y: 0.977}
@@ -55,6 +58,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
+    flipX: 0
   - type: 0
     position: {x: 7.01, y: -5.63}
     size: {x: 1, y: 1}
@@ -64,6 +68,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 16
     forceStayKinematic: 0
+    flipX: 0
   - type: 0
     position: {x: 7.15, y: -4.94}
     size: {x: 1, y: 1}
@@ -73,6 +78,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 15
     forceStayKinematic: 0
+    flipX: 0
   - type: 0
     position: {x: 7.03, y: -4.4}
     size: {x: 1, y: 0.492}
@@ -82,6 +88,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 2
     forceStayKinematic: 0
+    flipX: 0
   robots:
   - robotType: 2
     position: {x: 7.04, y: -3.9}

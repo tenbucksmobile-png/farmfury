@@ -187,8 +187,6 @@ public class CatapultLauncher : MonoBehaviour
             new GameObject("LevelCompleteManager").AddComponent<LevelCompleteManager>();
         if (FindAnyObjectByType<LevelFailedManager>() == null)
             new GameObject("LevelFailedManager").AddComponent<LevelFailedManager>();
-        if (WorldTransitionManager.Instance == null)
-            new GameObject("WorldTransitionManager").AddComponent<WorldTransitionManager>();
         if (PlayerStatsTracker.Instance == null)
             new GameObject("PlayerStatsTracker").AddComponent<PlayerStatsTracker>();
         if (EnvironmentDepthSystem.Instance == null)

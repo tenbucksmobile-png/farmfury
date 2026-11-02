@@ -34,6 +34,7 @@ namespace FarmFury.UI
         public PauseScreen Pause { get; private set; }
         public ResultsScreen Results { get; private set; }
         public NewCharacterScreen NewCharacter { get; private set; }
+        public WorldClearedScreen WorldCleared { get; private set; }
         public ParentalGate Gate { get; private set; }
         public MenuHubScreen MenuHub { get; private set; }
         public SettingsScreen Settings { get; private set; }
@@ -83,6 +84,7 @@ namespace FarmFury.UI
             if (_shopArt.pageBackground == null) { _shopArt.pageBackground = _leaderboardArt.background; }
             Gate = Add(new ParentalGate(c, _menuArt, _shopArt));
             NewCharacter = Add(new NewCharacterScreen(c, _menuArt, _shopArt));
+            WorldCleared = Add(new WorldClearedScreen(c, _menuArt, _shopArt));
             var legal = Add(new LegalScreen(c, _menuArt, _shopArt, Gate));
             var story = Add(new CharacterStoryScreen(c, _menuArt, _shopArt));
             var worldDetail = Add(new WorldDetailScreen(c, _menuArt, _shopArt, _leaderboardArt));
@@ -291,12 +293,14 @@ namespace FarmFury.UI
         /// Level Complete's play button: back to Level Select, where the next level now shows as the question mark;
         /// after a boss, World Select (which opens centred on the furthest unlocked world).
         /// </summary>
-        /// A world-transition video (L18 -> Frozen Tundra) plays first when one is wired for the level.
+        /// When the boss clear opened the next world, Stampede's World Unlocked page (the new world's badge revealed
+        /// from a silhouette) comes first; it replaced the L18 -> Frozen Tundra transition video (2026-11-02).
         public void PlayNextLevel()
         {
             Results.Hide();
-            if (WorldTransitionManager.Instance != null &&
-                WorldTransitionManager.Instance.TryPlayTransition(_gm.CurrentLevelIndex, ContinueAfterLevel))
+            var level = _gm.CurrentLevel;
+            if (level != null && level.isBossLevel && WorldCleared != null
+                && WorldCleared.ShowFor(level.WorldType, _gm.RunState.worldUnlocked, ContinueAfterLevel))
             {
                 return;
             }
@@ -403,7 +407,7 @@ namespace FarmFury.UI
             Levels.Root.SetActive(state == GameState.LevelSelect);
             if (state != GameState.CharacterSelect) { CharacterSelect.Hide(); }
             if (state == GameState.Paused) { Pause.Show(); } else { Pause.Hide(); }
-            // The results wait for LevelComplete/FailedManager's video to finish (they call ShowLevelComplete /
+            // The results wait for LevelComplete/FailedManager's slow-mo beat to finish (they call ShowLevelComplete /
             // ShowLevelFailed); any other state hides them.
             if (state != GameState.LevelComplete && state != GameState.LevelFailed) { Results.Hide(); }
 

@@ -1,0 +1,267 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1966708deffe45949832dc573867a129, type: 3}
+  m_Name: W09_L07_SiloShed
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelId: W9_L07
+  levelName: Silo Shed
+  parBirds: 3
+  world: 9
+  isBossLevel: 0
+  birds: 000000000000000001000000
+  blocks:
+  - type: 0
+    position: {x: 3.2877338, y: -5.45}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 10
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 3.6077337, y: -5.69}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 10
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 4.237734, y: -5.49}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 10
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 3
+    position: {x: 3.4877338, y: -4.99}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 3
+    position: {x: 4.1877337, y: -4.8}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 2
+    position: {x: 7.2477336, y: -3.26}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 2
+    position: {x: 7.2477336, y: -3.92}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 1
+    healthOverride: 10
+    massOverride: 3
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 4.927734, y: -5.55}
+    size: {x: 1, y: 0.81}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 4.927734, y: -4.41}
+    size: {x: 1, y: 0.81}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 4.947734, y: -3.23}
+    size: {x: 1, y: 0.81}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 4.8977337, y: -5.05}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 12
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 4.8977337, y: -3.91}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 12
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 4.547734, y: -2.69}
+    size: {x: 1, y: 0.618}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 5.3377337, y: -2.69}
+    size: {x: 1, y: 0.618}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 6.1677337, y: -2.71}
+    size: {x: 1, y: 0.618}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 6.9577336, y: -2.69}
+    size: {x: 1, y: 0.618}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 7.737734, y: -2.71}
+    size: {x: 1, y: 0.618}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 7.347734, y: -5.04}
+    size: {x: 1, y: 2.037}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 4.807734, y: -2.14}
+    size: {x: 1.545, y: 1.443}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 13
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 5.9977336, y: -2.14}
+    size: {x: 1.545, y: 1.443}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 13
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 7.217734, y: -2.12}
+    size: {x: 1.545, y: 1.443}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 13
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 5.501734, y: -4.13}
+    size: {x: 1.148, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 6.467734, y: -4.11}
+    size: {x: 1, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  robots:
+  - robotType: 2
+    position: {x: 6.0177336, y: -3.54}
+    scale: {x: 5.894, y: 6.738}
+  - robotType: 0
+    position: {x: 4.927734, y: -1.7}
+    scale: {x: 8.604, y: 10.048}
+  - robotType: 0
+    position: {x: 5.9977336, y: -1.76}
+    scale: {x: 8.604, y: 10.048}
+  - robotType: 0
+    position: {x: 7.1477337, y: -1.72}
+    scale: {x: 8.604, y: 10.048}
+  - robotType: 1
+    position: {x: 6.077734, y: -5.25}
+    scale: {x: 11.991, y: 9.301}

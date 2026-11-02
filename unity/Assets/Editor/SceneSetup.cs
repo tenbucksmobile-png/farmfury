@@ -6,9 +6,8 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.Video;
 
-public static class SceneSetup
+public static partial class SceneSetup
 {
     // GameObject.Find() ONLY searches ACTIVE objects — a real bug found 2026-07-26 (user report:
     // "we have erased the barn and all the scenery from world 1, and nothing has rendered
@@ -56,11 +55,12 @@ public static class SceneSetup
         EnsureHUD();            // HUDController GO (builds Canvas at runtime)
         EnsureGameFlow();       // GameFlow GO: franchise menus (Landing/World/Level/Character Select), MenuArt wired
         EnsureAudioManager();   // AudioManager GO wired with music/cannon/falling clips
-        EnsureLevelCompleteManager();  // Cluck celebration video + laugh audio
-        EnsureLevelFailedManager();    // Robot taunt video + taunt audio
-        EnsureWorldTransitionManager(); // L18 -> Frozen Tundra transition video
-        EnsureCelebrationVideoBackground(); // Sky backdrop behind both of the above (shared overlay)
+        EnsureLevelCompleteManager();  // slow-mo beat before Results (videos removed 2026-11-02)
+        EnsureLevelFailedManager();    // slow-mo beat before Results (videos removed 2026-11-02)
+        RemoveVideoOverlays();  // transition + celebration videos removed 2026-11-02 (World Unlocked page instead)
         WireGameManager();      // _levels array
+        EnsureAppIcon();            // Sprites/AppIcon.png -> default app icon (SceneSetup.Worlds.cs)
+        EnsureWorldRobotPrefabs();  // Worlds 3-9: W<N>_<Tier>Robot prefabs from Stampede art (SceneSetup.Worlds.cs)
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
         WireBessieAudio();      // BessieAnimal.prefab: _earthquakeClip <- Bessie_Earthquake.mp3
         WireLauncher();         // CatapultLauncher + LevelLoader ref + counterweight sprite
@@ -174,6 +174,8 @@ public static class SceneSetup
         WireProp(so, "_sprIcicleSpike", "IceSpire.png",   ice2PropsFolder);
 
         // Level 1 scenery is hand-authored as scene GOs — skip all code-spawning for level 0
+        WireWorldProps(so);       // Worlds 3-9: Stampede props (SceneSetup.Worlds.cs)
+
         so.FindProperty("_useExactPlacement").boolValue = true;
         so.ApplyModifiedProperties();
         Debug.Log("[FarmFury] Scenery: _useExactPlacement = true (Level 1 props are scene-authored, not code-generated).");
@@ -359,6 +361,7 @@ public static class SceneSetup
         // deactivated for World 2, not given art).
         WireParallaxPainting(so, "_sprFarHillsW2",  "ParallaxFarHills_W2.png",   skiesFolder);
         WireParallaxPainting(so, "_sprMidgroundW2", "ParallaxMidGrounds_W2.png", skiesFolder);
+        WireWorldBackdrops(so);   // Worlds 3-9: Stampede paintings (SceneSetup.Worlds.cs)
 
         // ClipAbove defaults are only stamped once, on first creation — same "don't fight the
         // user's own later tuning" convention used everywhere else in this file (see FarmCannon's
@@ -757,34 +760,12 @@ public static class SceneSetup
         Debug.Log($"[FarmFury] Created {path}");
     }
 
-    // ── HUD: create GO + attach HUDController + wire card sprites ────────────
+    // ── HUD: create GO + attach HUDController + wire the animal queue portraits ────────────
 
-    // Filename keywords that uniquely identify each card, indexed by AnimalType.
-    static readonly string[] CardKeywords =
-    {
-        "Cluck",   // 0 Cluck   → Cluck_Chicken.png
-        "Bessie",  // 1 Bessie  → Bessie_Cow.png
-        "Percy",   // 2 Percy   → Percy_Pig.png
-        "Woolly",  // 3 Woolly  → Woolly_Sheep.png
-        "Ducky",   // 4 Ducky   → Ducky_Duck.png
-        "Horace",  // 5 Horace  → Horace_Horse.png
-        "Gerald",  // 6 Gerald  → Gerald_Turkey.png
-        "Goat",    // 7 Billy   → Billy_Goat.png
-    };
-
-    static Sprite FindSpriteByKeyword(string[] guids, string keywordLower)
-    {
-        foreach (var g in guids)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(g);
-            if (path.ToLower().Contains(keywordLower))
-            {
-                var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-                if (spr != null) return spr;
-            }
-        }
-        return null;
-    }
+    // In-game animal queue = Stampede's thumbs-up portraits (2026-11-02, user request: "use these and discard the
+    // cards"), copied to Sprites/UI/Franchise/ThumbsUp/<Animal>.png by tools/import_stampede_worlds.py. Indexed by
+    // AnimalType. The old card art (Sprites/UI/Cards, UI/MatchUp, Franchise/Cards) is no longer used here.
+    static readonly string[] HudPortraits = { "Cluck", "Bessie", "Percy", "Woolly", "Ducky", "Horace", "Gerald", "Billy" };
 
     static void EnsureHUD()
     {
@@ -797,35 +778,20 @@ public static class SceneSetup
         if (go.GetComponent<HUDController>() == null)
             go.AddComponent<HUDController>();
 
-        // Wire card sprites into _cardSprites[]. Primary source is Assets/Sprites/UI/Cards
-        // (populated from assets/FarmCards/*.png by EditorAutoSetup) — but assets/ (the raw art
-        // source) is currently deleted from disk, so that folder is empty for now. Assets/Sprites/UI/
-        // MatchUp/ already has real per-animal art (Cluck_Chicken.png, Bessie_Cow.png, wired for the
-        // pre-match screen) that happens to match the same filename keywords, so it's searched as a
-        // fallback for any animal the Cards folder doesn't cover, rather than leaving the HUD cards
-        // on the plain tinted-square fallback.
-        const string cardsFolder   = "Assets/Sprites/UI/Cards";
-        const string matchUpFolder = "Assets/Sprites/UI/MatchUp";
         var hud = go.GetComponent<HUDController>();
         var so  = new SerializedObject(hud);
         var arr = so.FindProperty("_cardSprites");
-        arr.arraySize = CardKeywords.Length;
-
-        var guids       = AssetDatabase.FindAssets("t:Sprite", new[] { cardsFolder });
-        var matchUpGuids = AssetDatabase.FindAssets("t:Sprite", new[] { matchUpFolder });
-        // Third source (2026-11-02): the franchise animal cards (Stampede stand-ins), which cover all eight.
-        var franchiseGuids = AssetDatabase.FindAssets("t:Sprite", new[] { FranchiseArt + "/Cards" });
+        arr.arraySize = HudPortraits.Length;
         int wired = 0;
-        for (int i = 0; i < CardKeywords.Length; i++)
+        for (int i = 0; i < HudPortraits.Length; i++)
         {
-            string kw = CardKeywords[i].ToLower();
-            Sprite spr = FindSpriteByKeyword(guids, kw) ?? FindSpriteByKeyword(matchUpGuids, kw) ?? FindSpriteByKeyword(franchiseGuids, kw);
-            if (spr != null)
-            {
-                arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
-                wired++;
-            }
+            var spr = AssetDatabase.LoadAssetAtPath<Sprite>($"{FranchiseArt}/ThumbsUp/{HudPortraits[i]}.png");
+            arr.GetArrayElementAtIndex(i).objectReferenceValue = spr;
+            if (spr != null) wired++;
+            else Debug.LogWarning($"[FarmFury] HUD: {FranchiseArt}/ThumbsUp/{HudPortraits[i]}.png missing — run tools/import_stampede_worlds.py.");
         }
+        Debug.Log($"[FarmFury] HUD: wired {wired}/8 thumbs-up portraits.");
+
         // Franchise flow (2026-11-02): the end-of-level panels and Quit/Mute moved to GameFlow — only the pause
         // button's art is left on the HUD.
         WireSprite(so, "_pauseButtonSprite",   "Assets/Sprites/UI/Icon/Btn_pause.png");
@@ -833,12 +799,6 @@ public static class SceneSetup
         WireSprite(so, "_lockerSprite",        FranchiseArt + "/Shop/Locker.png");
 
         so.ApplyModifiedProperties();
-
-        if (wired > 0)
-            Debug.Log($"[FarmFury] HUD: wired {wired}/8 card sprites from {cardsFolder} / {matchUpFolder}.");
-        else
-            Debug.LogWarning($"[FarmFury] HUD: no card sprites found in {cardsFolder} or {matchUpFolder}. " +
-                             "Copy assets/FarmCards/*.png there first.");
     }
 
     // ── MainMenuController ────────────────────────────────────────────────────────
@@ -1113,12 +1073,8 @@ public static class SceneSetup
         Debug.Log($"[FarmFury] AudioManager: wired {fieldName} <- {path}");
     }
 
-    // ── LevelCompleteManager / LevelFailedManager: celebration + taunt clips ──────
-
-    // Both managers otherwise self-bootstrap at runtime (CatapultLauncher.Awake() adds one if
-    // missing — see LevelCompleteManager/LevelFailedManager class comments), but that fallback
-    // can't reach into Assets to assign clips, so Wire Scene References does it here instead,
-    // the same division of labour as EnsureAudioManager()/WireAudioClip() above.
+    // ── LevelCompleteManager / LevelFailedManager: slow-mo beat before the Results screen ──────
+    // (Their Cluck celebration / robot taunt videos were removed 2026-11-02, user request.)
     static void EnsureLevelCompleteManager()
     {
         var go = GameObject.Find("LevelCompleteManager");
@@ -1129,17 +1085,6 @@ public static class SceneSetup
         }
         if (go.GetComponent<LevelCompleteManager>() == null)
             go.AddComponent<LevelCompleteManager>();
-
-        var so = new SerializedObject(go.GetComponent<LevelCompleteManager>());
-        WireArrayElement<VideoClip>(so, "_celebrationClips", (int)AnimalType.Cluck, 8,
-            "Assets/Video/Cluck_Celebration.mp4");
-        WireArrayElement<AudioClip>(so, "_celebrationAudioClips", (int)AnimalType.Cluck, 8,
-            "Assets/Audio/Cluck_CelebratingLaugh.mp3");
-        // 2026-07-08: Cluck_Celebration.mp4 was re-exported with its sky backdrop composited in
-        // at generation time instead of a green screen (see the "future clips skip green screen"
-        // decision in Known Issues) — skip VideoChromaKey's chroma-key shader for it entirely.
-        WireBoolArrayElement(so, "_celebrationPlainRender", (int)AnimalType.Cluck, 8, true);
-        so.ApplyModifiedProperties();
     }
 
     static void EnsureLevelFailedManager()
@@ -1152,137 +1097,22 @@ public static class SceneSetup
         }
         if (go.GetComponent<LevelFailedManager>() == null)
             go.AddComponent<LevelFailedManager>();
-
-        var so = new SerializedObject(go.GetComponent<LevelFailedManager>());
-        // Index 0 = L01 — the only robot taunt clips that exist today; every other level falls
-        // back to index 0 at runtime (see LevelFailedManager.GetTauntClip/GetTauntAudioClip).
-        WireArrayElement<VideoClip>(so, "_robotTauntClips", 0, 1,
-            "Assets/Video/Robot_Celebration.mp4");
-        WireArrayElement<AudioClip>(so, "_robotTauntAudioClips", 0, 1,
-            "Assets/Audio/Robot_CelebrateSound.mp3");
-        so.ApplyModifiedProperties();
     }
 
-    // World-ending transition video (currently only L18 -> "Frozen Tundra", see
-    // WorldTransitionManager) — level index 17 (0-based, L18) -> TransitionVideo_Draft.mp4.
-    static void EnsureWorldTransitionManager()
+    // The win/lose celebration videos and the L18 -> Frozen Tundra transition video were removed 2026-11-02 (a boss
+    // clear now shows the World Unlocked page, WorldClearedScreen). Deletes their GameObjects from a scene saved
+    // before that: the WorldTransitionManager and VideoChromaKey's "CelebrationVideo" overlay canvas.
+    static void RemoveVideoOverlays()
     {
-        var go = GameObject.Find("WorldTransitionManager");
-        if (go == null)
+        foreach (var name in new[] { "WorldTransitionManager", "CelebrationVideo" })
         {
-            go = new GameObject("WorldTransitionManager");
-            Debug.Log("[FarmFury] Created 'WorldTransitionManager' GameObject.");
+            var go = FindIncludingInactive(name);
+            if (go == null) continue;
+            Object.DestroyImmediate(go);
+            Debug.Log($"[FarmFury] Deleted obsolete '{name}' GameObject (videos removed).");
         }
-        if (go.GetComponent<WorldTransitionManager>() == null)
-            go.AddComponent<WorldTransitionManager>();
-
-        var so = new SerializedObject(go.GetComponent<WorldTransitionManager>());
-        WireIntArrayElement(so, "_triggerLevelIndices", 0, 1, 17);
-        WireArrayElement<VideoClip>(so, "_transitionClips", 0, 1,
-            "Assets/Video/TransitionVideo_Draft.mp4");
-        so.ApplyModifiedProperties();
     }
 
-    // The chroma-keyed video's transparent areas used to show whatever the frozen gameplay
-    // camera happened to be rendering behind it (busy level art) — user-reported as making the
-    // character itself look like a translucent "ghost" hidden in the background. A plain sky
-    // backdrop behind the video gives Cluck/the robot a clean, consistent surface to stand on
-    // regardless of which level is paused — same ParallaxFarHills.png `EnsureBackground()` wires
-    // as its own defensive fallback sky (reimported as a Sprite there first).
-    static void EnsureCelebrationVideoBackground()
-    {
-        var vck = VideoChromaKey.FindOrCreate();
-        var so  = new SerializedObject(vck);
-        // Was Background_SkyV1.png until 2026-07-18, when that file turned out to have been
-        // deleted from disk at some point during the same session — see EnsureBackground()'s own
-        // comment for the full explanation. Switched to ParallaxFarHills.png for the same reason.
-        const string skyPath = "Assets/Sprites/Environment/Skies/ParallaxFarHills.png";
-        var sky = AssetDatabase.LoadAssetAtPath<Sprite>(skyPath);
-        if (sky == null)
-        {
-            Debug.LogWarning($"[FarmFury] ParallaxFarHills.png not found at {skyPath} for CelebrationVideo backdrop.");
-            return;
-        }
-        so.FindProperty("_backgroundSprite").objectReferenceValue = sky;
-        // Explicitly re-synced every pass rather than left to the C# field default — `tolerance`
-        // is a public (not [SerializeField]-only-default) field, so a value tweaked once in the
-        // Inspector during earlier debugging would otherwise silently survive in Game.unity
-        // forever regardless of code changes (the project's own documented stale-serialized-value
-        // trap). See the comment on VideoChromaKey.tolerance for why 0.20 was chosen.
-        so.FindProperty("tolerance").floatValue = 0.20f;
-        so.ApplyModifiedProperties();
-
-        // VideoChromaKey.Play()/Stop() explicitly SetActive(false) on both the "Background" and
-        // "RawImage" children at runtime — but that only ever runs once a script actually
-        // executes (Play mode). The Editor-saved scene had both left active-by-default with a
-        // blank Image.sprite, which rendered as a plain white box any time the scene was viewed
-        // without pressing Play (real user report, 2026-07-17 — see EnsureBackground()'s comment
-        // for the related root-cause bug that let BackgroundController attach to this same
-        // object). Force both inactive here too so the saved state already matches what Play mode
-        // would immediately do anyway.
-        foreach (var childName in new[] { "Background", "RawImage" })
-        {
-            var child = vck.transform.Find(childName);
-            if (child != null && child.gameObject.activeSelf)
-            {
-                child.gameObject.SetActive(false);
-                Debug.Log($"[FarmFury] CelebrationVideo: '{childName}' set inactive (idle state, shown only during Play()).");
-            }
-        }
-
-        // One-time cleanup: before EnsureBackground()'s GameObject.Find("Background") ambiguity
-        // fix (2026-07-17), this exact "Background" child could get mistaken for the real world
-        // sky and have a BackgroundController (a SpriteRenderer-cover-scale script — meaningless
-        // on a UI Image) erroneously attached to it. Removes any leftover instance of that mistake
-        // from a scene saved before the fix; harmless no-op once already clean.
-        var celebrationBg = vck.transform.Find("Background");
-        if (celebrationBg != null)
-        {
-            var strayBc = celebrationBg.GetComponent<BackgroundController>();
-            if (strayBc != null)
-            {
-                Object.DestroyImmediate(strayBc);
-                Debug.Log("[FarmFury] CelebrationVideo: removed stray BackgroundController from 'Background' child (leftover from the Find(\"Background\") ambiguity bug).");
-            }
-        }
-
-        Debug.Log("[FarmFury] CelebrationVideo: wired sky backdrop, tolerance=0.20.");
-    }
-
-    // Loads an asset of type T and drops it into arrayField[index], growing the array to
-    // minSize first if it's smaller (SerializedProperty arrays don't auto-grow). Shared by both
-    // Ensure*Manager methods above since they wire the exact same shape (video + audio array,
-    // indexed, Inspector-resizable) for two different components.
-    static void WireArrayElement<T>(SerializedObject so, string arrayField, int index, int minSize, string path)
-        where T : Object
-    {
-        var asset = AssetDatabase.LoadAssetAtPath<T>(path);
-        if (asset == null)
-        {
-            Debug.LogWarning($"[FarmFury] {typeof(T).Name} not found at {path}.");
-            return;
-        }
-        var arr = so.FindProperty(arrayField);
-        if (arr.arraySize < minSize) arr.arraySize = minSize;
-        arr.GetArrayElementAtIndex(index).objectReferenceValue = asset;
-        Debug.Log($"[FarmFury] {so.targetObject.GetType().Name}: wired {arrayField}[{index}] <- {path}");
-    }
-
-    static void WireBoolArrayElement(SerializedObject so, string arrayField, int index, int minSize, bool value)
-    {
-        var arr = so.FindProperty(arrayField);
-        if (arr.arraySize < minSize) arr.arraySize = minSize;
-        arr.GetArrayElementAtIndex(index).boolValue = value;
-        Debug.Log($"[FarmFury] {so.targetObject.GetType().Name}: wired {arrayField}[{index}] <- {value}");
-    }
-
-    static void WireIntArrayElement(SerializedObject so, string arrayField, int index, int minSize, int value)
-    {
-        var arr = so.FindProperty(arrayField);
-        if (arr.arraySize < minSize) arr.arraySize = minSize;
-        arr.GetArrayElementAtIndex(index).intValue = value;
-        Debug.Log($"[FarmFury] {so.targetObject.GetType().Name}: wired {arrayField}[{index}] <- {value}");
-    }
 
     // ── GameManager: wire the levels array ────────────────────────────────────
 
@@ -1359,6 +1189,7 @@ public static class SceneSetup
         SetPrefab(so, "_semiHarvesterPrefabW2", "GlacierHarvestorRobot", "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_haybalePrefab",    "HaybaleBlock",    "Assets/Prefabs/Blocks",  typeof(WoodBlock));
         SetPrefab(so, "_barrelPrefab",     "ExplodingBarrelBlock", "Assets/Prefabs/Blocks", typeof(ExplodingBarrelBlock));
+        WireWorldRobotSets(so);
 
         so.FindProperty("_blockParent").objectReferenceValue =
             GameObject.Find("BlockParent")?.transform;

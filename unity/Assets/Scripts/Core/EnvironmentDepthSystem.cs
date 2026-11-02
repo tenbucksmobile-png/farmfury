@@ -31,6 +31,12 @@ public class EnvironmentDepthSystem : MonoBehaviour
     [SerializeField] Sprite _sprFarHillsW2;
     [SerializeField] Sprite _sprMidgroundW2;
 
+    // Worlds 3-9 (2026-11-02): each is one full-bleed Stampede painting (<XX>_Parallax_Far.png, copied to
+    // Skies/World<N>_Backdrop.png by tools/import_stampede_worlds.py), indexed by LevelData.world. Shown
+    // uncropped on Layer_FarHills with the Midground and Foreground layers hidden — the painting carries
+    // its own ground. An unwired slot falls back to World 1's stack.
+    [SerializeField] Sprite[] _worldBackdrops = new Sprite[10];
+
     // Tunable per-layer reveal bands — the fraction (0-1) of EACH painting's own local UV height
     // that stays visible before the shader clips the rest to transparent. Exposed as live
     // Inspector sliders (not baked into the shared material) specifically so the split point can
@@ -158,8 +164,23 @@ public class EnvironmentDepthSystem : MonoBehaviour
         RescaleToCamera();
     }
 
+    Sprite WorldBackdrop =>
+        _currentWorld >= 3 && _worldBackdrops != null && _currentWorld < _worldBackdrops.Length
+            ? _worldBackdrops[_currentWorld] : null;
+
     void ApplyWorldLayers()
     {
+        Sprite backdrop = WorldBackdrop;
+        if (backdrop != null)
+        {
+            SetLayerSprite(_farHills, backdrop);
+            ApplyClip(_farHills, 1f);
+            if (_midground  != null) _midground.gameObject.SetActive(false);
+            if (_foreground != null) _foreground.gameObject.SetActive(false);
+            return;
+        }
+        if (_midground != null) _midground.gameObject.SetActive(true);
+
         bool isWorld2 = _currentWorld == 2;
 
         Sprite farHillsSprite  = (isWorld2 && _sprFarHillsW2  != null) ? _sprFarHillsW2  : _sprFarHills;
@@ -276,6 +297,7 @@ public class EnvironmentDepthSystem : MonoBehaviour
     // why these three are exposed as sliders in the first place.
     void OnValidate()
     {
+        if (WorldBackdrop != null) return;
         if (_farHills  != null) ApplyClip(_farHills,  _currentWorld == 2 ? _farHillsClipAboveW2  : _farHillsClipAbove);
         if (_midground != null) ApplyClip(_midground, _currentWorld == 2 ? _midgroundClipAboveW2 : _midgroundClipAbove);
         if (_foreground != null) ApplyClip(_foreground, _foregroundClipAbove);

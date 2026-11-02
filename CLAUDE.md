@@ -14,7 +14,8 @@ The repo contains two parallel codebases:
 
 This is the single source of truth for the Unity port. Detailed reasoning behind current values/conventions (root causes, dead ends, superseded fixes) lives in **`docs/HISTORY.md`** — read it when you need the "why," not just the "what." This file only states current truth.
 
-Full GDD: `C:\Users\Personel\Desktop\FarmFury_GDD_v2.docx`
+Full GDD: **`FarmFury_GDD.md`** (v3.0, repo root — the living design doc, franchise format; supersedes the June 2026
+`Other/FarmFuryUniverse/FarmFury_GDD_v2.docx`). Update it alongside this file when the design changes.
 
 ---
 
@@ -48,9 +49,13 @@ needing a live pass before shipping.
   reference-canvas maths; check Landing / World Select / Level Select (8-column grid above 12 levels) / Character
   Select / Results / Pause / Settings / Shop / Locker on a real aspect ratio. Hat placement on animals is an
   approximation (half the body sprite's width at 82% height) — tune `AnimalCosmeticRenderer` after seeing it.
-- **Menu art is Stampede stand-ins** (`Assets/Sprites/UI/Franchise/`, gitignored like all sprites). The Level
-  Complete / Failed / Pause / New Character canvases show a small "Farm Fury Stampede" logo until FarmFury versions
-  exist; the Leaderboard has no logo. Full list in `docs/ART_REQUIREMENTS.md` (Kling checklist for all nine worlds).
+- **Art sources (2026-11-02):** animal poses come from `FarmFury_Technical/FarmFury_Artwork/Rough_Characters` via
+  `tools/import_character_art.py` (all 8 animals; Horace's Trigger/Impact pending two Kling jobs — save them as
+  `Rough_Characters/Horace/Horace_Trigger.png` / `Horace_Impact.png` and re-run the script + Wire Scene References).
+  `Sprites/AppIcon.png` (Cluck thumbs-up + FF_Logo) is set as the default app icon by Wire Scene References.
+- **Menu art is Stampede stand-ins** (`Assets/Sprites/UI/Franchise/`, gitignored like all sprites). The "Farm Fury
+  Stampede" logo was inpainted out of all 28 Level Complete / Failed / Pause / New Character canvases (2026-11-02,
+  OpenCV Telea; clean on sky backdrops, a soft smudge on the busier paid-world ones); the Leaderboard has no logo. Full list in `docs/ART_REQUIREMENTS.md` (Kling checklist for all nine worlds).
 - **Monetisation needs the user's accounts:** create the `farmfury_`-prefixed products (Remove Ads, 4 coin packs,
   3 worlds, 5 hats, 6 trails) in App Store Connect / Play Console; enter FarmFury's LevelPlay app keys and ad unit
   ids on the GameManager's AdManager (ads are inert until then); register the analytics events. No AdMob adapter is
@@ -61,9 +66,12 @@ needing a live pass before shipping.
   the Editor's PlayerPrefs); the home-screen label is set to "Farm Fury" at build time (`FarmFuryAndroidBuild`,
   `FarmFuryIosBuild` — neither compiled yet: batch checks build the Windows target only).
 - **Not ported yet:** Stampede's Boot scene / Android AAB split + store build scripts, the iOS privacy manifest,
-  the Character Story Cosmetics tab, the World Cleared page (the L18 transition video + New Character page cover it).
-- **Three paid worlds have no levels** (WorldData exists, 12 levels each as a placeholder) — buying one opens an
-  empty Level Select.
+  the Character Story Cosmetics tab.
+- **Worlds 2-9 levels (2026-11-02) are generated, not hand-built, and unseen in Play mode.** 141 levels from
+  `WorldLevelGenerator` (see Recent work). Difficulty and solvability are inherited from World 1's towers but untested
+  with the new animals' abilities; the Mothership backdrop has no painted ground (towers stand in space); prop placement
+  (`SceneryBuilder.BuildWorldProps`) is code-placed and may crowd at wide zooms. Ducky/Horace/Gerald/Billy poses are
+  Stampede platformer frames standing in for cannon poses (no Idle/Impact pose).
 
 - **L19 ("Frostbound Watch") was re-dumped 2026-08-09**, replacing its earlier 6-block/3-robot
   layout with a simpler one — 3 `BlockType.Wood` blocks (artVariant `Block`, rendering with the
@@ -112,6 +120,33 @@ needing a live pass before shipping.
   place: this machine's disk — if lost, recovery means restoring `assets/` and re-running the art
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
+
+- **2026-11-02 (later) — UI + art pass** (all user requests, unverified in Play mode): Character Select is Stampede's
+  card carousel (tap the centred card, it flies into the next open lineup slot; slots start empty); the in-game HUD
+  queue shows Stampede's thumbs-up portraits instead of cards; a boss clear goes Level Complete -> World Unlocked
+  page (`WorldClearedScreen`, ported from Stampede) -> World Select, replacing the L18 transition video
+  (`WorldTransitionManager`, `VideoChromaKey`, `ChromaKeyVideo.shader` deleted); real cannon poses for Ducky/Billy/
+  Gerald (+ gaps for Percy/Bessie/Woolly/Horace) imported from FarmFury_Artwork; FarmFury logo on the results/pause/
+  new-character canvases and the Leaderboard; `Sprites/AppIcon.png` set as default icon. `FarmFury_GDD.md` (v3.0)
+  created as the living design doc.
+
+- **2026-11-02 — Worlds 2-9 built from World 1's towers + Stampede art** (user request). `tools/import_stampede_worlds.py`
+  copies Stampede's per-world backdrop (`<XX>_Parallax_Far` -> `Skies/World<N>_Backdrop.png`), props
+  (`Environment/World<N>Props/`), robots (`Enemies/Robot/W<N>/<Tier>_left|right.png`, cropped to FarmFury's 256 px /
+  bosses 447 px convention so World 1 robot scales carry over) and stand-in poses for Ducky/Horace/Gerald/Billy.
+  `WorldLevelGenerator` (run by Generate All Level Data) makes `W<NN>_L<NN>_*.asset` for W2 levels 2-22 and every level of
+  W3-W9 (counts from WorldDataGenerator): each is a World 1 tower L01-L17 in ramp order, mirrored every other level
+  (`BlockSpawnData.flipX`), shifted ±0.35, with a few planks turned to stone and robots tier-upgraded more in later worlds;
+  the last level is L18's fortress with the world's boss (RobotType.Commander). Same blocks everywhere (W2 keeps its ice
+  reskin). Runtime by `LevelData.world`: `EnvironmentDepthSystem._worldBackdrops` (one uncropped painting, Midground/
+  Foreground hidden), `LevelLoader._worldRobots` (prefabs `W<N>_<Tier>Robot`, made by `SceneSetup.Worlds.cs`),
+  `SceneryBuilder._worldProps` (structures / clutter / sky props, seeded per level). `Scenery_World1` now only shows in
+  World 1. Lineups lead with the world's new animal; paid worlds use Cluck/Bessie. World 2's boss uses the Commander.
+
+- **2026-11-02 — Win/lose videos removed** (user request): `LevelCompleteManager`/`LevelFailedManager` now only run the
+  0.5s slow-mo beat, then open Results — no Cluck celebration / robot taunt clip, and SceneSetup no longer wires them.
+  `VideoChromaKey` stays (the L18 `WorldTransitionManager` video still uses it). Sections below describing the
+  celebration sequence are historical.
 
 - **2026-11-02 — Franchise flow: everything outside gameplay now follows FarmFury_Stampede/Arcade** (branch
   `align-franchise-ui`). User decisions: drop the MatchUp VS/countdown screen; keep a pre-level character select
@@ -393,8 +428,8 @@ needs otherwise. New code lives in namespaces `FarmFury.UI` (Scripts/UI/Flow, Sc
 Landing (LandingPage.png poster; Play / Exit (not iOS) / Settings cog)
   -> World Select (badge carousel; 6 story worlds, then 3 paid worlds; paid & unbought -> world shop)
   -> Level Select (world backdrop; padlock / question / 1-2-3 star boards / boss shield; 6 cols, 8 above 12 levels)
-  -> Character Select (8 animal cards; unlocked = its intro world is open; lineup slots = LevelData.birds.Length,
-     pre-filled with the authored animals) -> Playing (HUD) -> Pause (resume / X / home / cog)
+  -> Character Select (Stampede's card carousel; tap the centred card and it flies down into the next open lineup
+     slot; locked = silhouette; slots = LevelData.birds.Length, start empty, tap a slot to clear; Play once all full) -> Playing (HUD) -> Pause (resume / X / home / cog)
   -> revive prompt when the queue runs out -> Results (Level Complete / Failed canvas; payout, Double Coins, promo)
 Settings cog -> Menu hub (SETTINGS / SHOP / Visit Our Store)
   -> Settings (Sound / Leaderboards / Character Story / Policies)   Shop (Coins + Restore / Worlds / Remove Ads / Cosmetics)
@@ -416,7 +451,7 @@ Overlays (OverlayScreen) open on top of any screen; Esc / Android back closes th
   `SceneSetup.EnsureGameFlow` from `Assets/Sprites/UI/Franchise/` (Stampede stand-ins) and FarmFury's own
   `Sprites/UI/Icon` buttons + `LandingPage.png`.
 
-## GDD Summary
+## GDD Summary (see `FarmFury_GDD.md` for the full design)
 
 ### 8 Animals (tap mid-flight to trigger ability)
 | Animal | Ability | World introduced |
@@ -430,9 +465,9 @@ Overlays (OverlayScreen) open on top of any screen; Esc / Android back closes th
 | Gerald (turkey) | Puff Up — inflates 3× on tap, wrecking ball | World 5 |
 | Billy (goat) | Headbutt Through — penetrates first obstacle | World 6 |
 
-Only Cluck and Bessie are used in World 1 so far; the other 6 are fully scripted (`AnimalBase` subclasses) but await their worlds.
+All eight are scripted and art-wired; each leads the lineups of the world that introduces it (Worlds 2-6).
 
-### 6 Worlds, 6 Launchers (126 total levels)
+### 9 Worlds (160 levels: 6 story + 3 paid) — per-world launchers/mechanics below are PLANNED; every world uses the Farm Cannon today
 | World | Launcher | Key mechanic | Levels |
 |---|---|---|---|
 | 1 — Meadow Ruins | Farm Cannon (drag angle+power) | Character weight affects range | 18 |
@@ -441,8 +476,11 @@ Only Cluck and Bessie are used in World 1 so far; the other 6 are fully scripted
 | 4 — Sky Islands | Airdrop Biplane (timing — tap to drop) | Updraft column steering | 24 |
 | 5 — Sunken City | Torpedo Tube (angle + bubble pop) | Current lanes + lever switches | 22 |
 | 6 — Robot Mothership | Gravity Sling (angle + gravity wells) | Zero-G ability modifiers | 16 |
+| 7 — Dustbowl Canyon (paid) | Farm Cannon | — | 12 |
+| 8 — Harvest Fairground (paid) | Farm Cannon | — | 12 |
+| 9 — Crop Factory (paid) | Farm Cannon | — | 12 |
 
-World 1 is fully built. World 2's front-end shell exists as of 2026-07-19 (backdrop, landing/map screens, match-up art, robot-tier reskins — see Current Status); its first real level (L19 / W2_L01, "Frostbound Watch" — Percy vs. a single IceHarvestorRobot) was added 2026-07-26 as a placeholder pending a real `LevelLayoutDumper` pass — see Current Status. Worlds 3–6 are Phase 5, 0% started.
+World 1 is hand-built (L01-L18). World 2's level 1 is L19 (hand-dumped); every other level of Worlds 2-9 is generated from World 1's towers by `WorldLevelGenerator` (2026-11-02, see Recent work), with each world's own robots, boss, backdrop and props. None of it verified in Play mode.
 
 ### Star System
 - 1★ — all robots dead (progress gate)
@@ -461,7 +499,7 @@ Open `unity/` in Unity Hub (Unity 6.5 / 6000.5.0f1). Open `Assets/Scenes/Game.un
 Primary interface for batch Unity operations. Run from the repo root in PowerShell:
 
 ```powershell
-.\Run-Unity.ps1 levels        # Generate/overwrite every LevelData asset (L01-L19) from LevelDataGenerator.cs —
+.\Run-Unity.ps1 levels        # Generate/overwrite every LevelData asset (L01-L19 + Worlds 2-9) from LevelDataGenerator.cs —
                                #   safe: the generator is the source of truth for all of them
 .\Run-Unity.ps1 setup         # Wire all Inspector references in Game.unity (= Wire Scene References)
 .\Run-Unity.ps1 check         # Compile check — exits 1 on error
@@ -837,9 +875,10 @@ unity/Assets/Scripts/
                               then waits out CannonResetDelay=1.80s total. EnsureGroundExists() validates
                               against the launcher's own Y (dynamic, not hardcoded).
   UI/
-    HUDController.cs                 — in-level HUD only (franchise flow, 2026-11-02): the animal-card queue top-left
-                              (animated, damage badges; cards fall back to the franchise cards so all 8 animals
-                              have one), and top-right a round pause button (-> GameFlow.OpenPause), the coin
+    HUDController.cs                 — in-level HUD only (franchise flow, 2026-11-02): the animal queue top-left
+                              (animated, damage badges) shows Stampede's thumbs-up portraits
+                              (Sprites/UI/Franchise/ThumbsUp/<Animal>.png, aspect kept) — the old framed cards are no
+                              longer used in gameplay (Character Select still uses the franchise cards), and top-right a round pause button (-> GameFlow.OpenPause), the coin
                               balance chip left of it (SaveManager.CoinsChanged) and the Locker button under it.
                               Visible only in Playing/Paused. Its old Scoreboard Level Complete/Failed panels,
                               PAUSED toggle and Quit/Mute buttons were removed — results/pause are GameFlow
@@ -968,8 +1007,10 @@ interstitial check (`AdManager.NotifyLevelLoaded`).
 **Level complete:** last robot destroyed -> `DelayedLevelComplete()` (2s) -> `ScoreManager.FinaliseLevel()` (saves through
 SaveManager: stars, records, completion; a boss level clears its world) -> `GameManager.CompleteLevel()` (RunState +
 coin payout) -> LevelComplete -> `LevelCompleteManager` celebration video -> `GameFlow.ShowLevelComplete()` (ResultsScreen,
-then the New Character page when a boss clear opened a world). Play -> next (Level Select; after a boss the L18 transition
-video if wired, the New Worlds promo on a first boss clear, then World Select).
+then the New Character page when a boss clear opened a world). Play -> next (Level Select; after a boss the World Unlocked page
+(`WorldClearedScreen`, ported from Stampede 2026-11-02: the new world's badge revealed from a silhouette over turning
+rays, confetti, "Next stop: …") when the clear opened a world, the New Worlds promo on a first boss clear, then World
+Select). The L18 transition video, `WorldTransitionManager`, `VideoChromaKey` and its shader were removed the same day.
 
 **Level failed:** last animal lands with robots left -> `NotifyBirdsExhausted()` -> `DelayedLevelFailed()` (1.5s) ->
 `GameManager.RequestRevive()` -> revive prompt (+1 animal) or `FailLevel()` -> `LevelFailedManager` taunt video ->
@@ -1121,10 +1162,12 @@ Add `LevelData` ScriptableObject in `Assets/ScriptableObjects/Levels/` with file
 - **Phase 2 — UI/UX Shell:** ✅ done, then **replaced 2026-11-02 by the franchise flow** (FarmFury_Stampede/Arcade's menus, results, settings, shop — see "Franchise flow").
 - **Phase 3 — Character Roster:** ✅ done (all 8 animals scripted and art-wired).
 - **Phase 4 — World 1 Completion:** ✅ done — L01–L18 all exist, no gaps, including a boss level (L18, `RobotType.Commander`). No level validator yet. None of L10-L18 visually verified in Play mode.
-- **Phase 5 — Worlds 2–6:** not started (0%).
+- **Phase 5 — Worlds 2–9:** levels/robots/bosses/backdrops/props built 2026-11-02 (generated from World 1's towers); the per-world launcher mechanics (Ice Cannon ricochet, Water Wheel, Biplane, Torpedo, Gravity Sling) are not built.
 - **Phase 6 — Polish & Release:** monetisation **built 2026-11-02** as part of the franchise flow (Unity IAP, LevelPlay, UGS Analytics, coin economy, revive, Double Coins, shop, cosmetics) — ported from Stampede, so it follows the franchise's actual stack (UGS Analytics, LevelPlay mediation) rather than the July plan's AppLovin MAX/RevenueCat; Supabase backend still not built (no title has it yet). Open: store products/ad units/keys, AdMob app ids, bundle id, Boot scene + AAB split, device testing.
 
-**Practical read:** World 1 (L01–L18) is fully built with no gaps, redesigned 2026-07-19 against the rebuilt parallax backdrop. World 2's front-end shell (backdrop, landing/map screens, match-up art, robot-tier reskins) also exists as of 2026-07-19, but has zero real levels — building L19+ via the same `LevelLayoutDumper` workflow is the natural next step now that the shell exists to receive them. Neither World has been visually verified in Play mode yet (no Play-mode access in this environment). Monetisation is correctly sequenced last.
+**Practical read:** all nine worlds are playable end to end on paper (160 levels, franchise menus, monetisation),
+but nothing has been verified in Play mode. Next: a full play-through of every screen and world, the level validator,
+Horace's two Kling poses, then store setup (bundle id, products, ad keys) and device testing.
 
 ---
 

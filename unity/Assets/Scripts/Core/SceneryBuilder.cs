@@ -53,6 +53,19 @@ public class SceneryBuilder : MonoBehaviour
     [SerializeField] private Sprite _sprPackedSnow;
     [SerializeField] private Sprite _sprIcicleSpike;
 
+    // Worlds 3-9 (2026-11-02): Stampede's per-world props (tools/import_stampede_worlds.py), indexed by
+    // LevelData.world and wired by SceneSetup.EnsureScenery. Structures are big background pieces (cottage,
+    // ferris wheel, silo), clutter is small ground dressing, sky props float above (fish, balloons, ships).
+    [System.Serializable]
+    public class WorldPropSet
+    {
+        public Sprite[] structures;
+        public Sprite[] clutter;
+        public Sprite[] sky;
+    }
+    [Header("Worlds 3-9 - Stampede props (index = LevelData.world)")]
+    [SerializeField] private WorldPropSet[] _worldProps = new WorldPropSet[10];
+
     private readonly List<GameObject> _props = new();
 
     private const float GroundSurface = -6.60f;
@@ -90,7 +103,7 @@ public class SceneryBuilder : MonoBehaviour
     static void ToggleHandAuthoredScenery(int world)
     {
         var w1 = FindIncludingInactive("Scenery_World1");
-        if (w1 != null) w1.SetActive(world != 2);
+        if (w1 != null) w1.SetActive(world == 1);
         var w2 = FindIncludingInactive("Scenery_World2");
         if (w2 != null) w2.SetActive(world == 2);
     }
@@ -120,6 +133,13 @@ public class SceneryBuilder : MonoBehaviour
         if (world == 2)
         {
             BuildIceGroundProps(levelIdx);
+            return;
+        }
+
+        if (world >= 3)
+        {
+            if (_worldProps != null && world < _worldProps.Length && _worldProps[world] != null)
+                BuildWorldProps(levelIdx, _worldProps[world]);
             return;
         }
 
@@ -322,6 +342,60 @@ public class SceneryBuilder : MonoBehaviour
         sr.sprite       = sprite;
         sr.sortingOrder = sortOrder;
 
+        _props.Add(go);
+    }
+
+    // ── Worlds 3-9: Stampede prop dressing ───────────────────────────────────
+    // Every level's towers sit between x≈2.8 and x≈8.4 (World 1's layouts, reused by WorldLevelGenerator),
+    // the cannon at x≈-3.7. Structures stand behind the cannon and beyond the towers (one may sit behind
+    // the towers at sortingOrder 0, under blocks=2/robots=3); clutter dresses the ground between cannon and
+    // towers, below the flight arc; sky props float high. Seeded per level so a replay looks the same.
+    // PropGround is the towers' own visual base (block/robot bottoms ≈ -6.0), not the physics ground at -6.60,
+    // which is mostly below the camera.
+    const float PropGround = -6.1f;
+
+    void BuildWorldProps(int levelIdx, WorldPropSet set)
+    {
+        var rng = new System.Random(levelIdx * 137 + 42);
+
+        PlaceSized(Pick(rng, set.structures), R(rng, -8.2f, -6.4f), PropGround, R(rng, 3.6f, 4.8f), true, 0);
+        PlaceSized(Pick(rng, set.structures), R(rng, 9.4f, 11.2f),  PropGround, R(rng, 3.8f, 5.2f), true, 0);
+        if (rng.NextDouble() < 0.5)
+            PlaceSized(Pick(rng, set.structures), R(rng, 4.5f, 7.0f), PropGround, R(rng, 2.6f, 3.4f), true, 0);
+
+        int clutter = 2 + rng.Next(2);
+        for (int i = 0; i < clutter; i++)
+            PlaceSized(Pick(rng, set.clutter), R(rng, -1.9f, 2.2f), PropGround, R(rng, 0.55f, 0.95f), true, 1);
+        PlaceSized(Pick(rng, set.clutter), R(rng, 8.7f, 10.0f), PropGround, R(rng, 0.6f, 1.0f), true, 1);
+
+        int sky = set.sky != null && set.sky.Length > 0 ? 1 + rng.Next(2) : 0;
+        for (int i = 0; i < sky; i++)
+            PlaceSized(Pick(rng, set.sky), R(rng, -6.5f, 10.5f), R(rng, 0.3f, 2.6f), R(rng, 0.9f, 1.5f), false, 0);
+    }
+
+    static Sprite Pick(System.Random rng, Sprite[] sprites)
+    {
+        if (sprites == null || sprites.Length == 0) return null;
+        return sprites[rng.Next(sprites.Length)];
+    }
+
+    // Scales the sprite to targetHeight world units; bottom-anchored at y when grounded, else centred on y.
+    void PlaceSized(Sprite sprite, float x, float y, float targetHeight, bool grounded, int sortOrder)
+    {
+        if (sprite == null) return;
+        float nativeH = sprite.bounds.size.y;
+        if (nativeH <= 0.0001f) return;
+        float scale = targetHeight / nativeH;
+
+        var go = new GameObject("Prop_" + sprite.name);
+        go.transform.SetParent(transform);
+        go.transform.localScale = new Vector3(scale, scale, 1f);
+        float pivotOffset = (sprite.pivot.y / sprite.pixelsPerUnit) * scale;
+        go.transform.position = new Vector3(x, grounded ? y + pivotOffset : y, 0f);
+
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite       = sprite;
+        sr.sortingOrder = sortOrder;
         _props.Add(go);
     }
 

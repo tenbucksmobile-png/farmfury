@@ -1040,11 +1040,14 @@ public static class LevelDataGenerator
             },
             world: 2);
 
+        // Worlds 2-9 (2026-11-02): built from the World 1 towers above — see WorldLevelGenerator.
+        WorldLevelGenerator.GenerateAll();
+
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         if (!silent)
             EditorUtility.DisplayDialog("FarmFury",
-                "Generated 18 LevelData assets in\nAssets/ScriptableObjects/Levels\n(L01-L18)", "OK");
+                "Generated every LevelData asset in\nAssets/ScriptableObjects/Levels\n(L01-L19 + Worlds 2-9)", "OK");
         Debug.Log("[FarmFury] Level data generation complete.");
     }
 

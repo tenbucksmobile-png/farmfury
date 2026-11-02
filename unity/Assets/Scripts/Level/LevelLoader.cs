@@ -42,6 +42,21 @@ public class LevelLoader : MonoBehaviour
     [SerializeField] private RobotEnemy _harvesterPrefabW2;
     [SerializeField] private RobotEnemy _semiHarvesterPrefabW2;
 
+    // Worlds 3-9: one robot set per world (Stampede's world robots, see tools/import_stampede_worlds.py),
+    // indexed by LevelData.world. Same RobotType tiers as World 2's reskins above; RobotType.Commander
+    // spawns the world's boss. Wired by SceneSetup.WireLevelLoader; any unwired slot falls back to the
+    // World 1 prefab for that tier.
+    [System.Serializable]
+    public class WorldRobotSet
+    {
+        public RobotEnemy basic;
+        public RobotEnemy harvester;
+        public RobotEnemy semiHarvester;
+        public RobotEnemy boss;
+    }
+    [Header("World 3-9 Enemy Prefabs (index = LevelData.world)")]
+    [SerializeField] private WorldRobotSet[] _worldRobots = new WorldRobotSet[10];
+
     [Header("Parents")]
     [SerializeField] private Transform _blockParent;
     [SerializeField] private Transform _robotParent;
@@ -264,6 +279,7 @@ public class LevelLoader : MonoBehaviour
         block.Indestructible = data.indestructible;
         if (data.forceStayKinematic) block.SetStayKinematic(true);
         if (data.passThrough && block is WoodBlock wood) wood._passThrough = true;
+        if (data.flipX && block.TryGetComponent<SpriteRenderer>(out var blockSr)) blockSr.flipX = true;
         _spawnedBlocks.Add(block);
     }
 
@@ -284,7 +300,19 @@ public class LevelLoader : MonoBehaviour
                 _                       => null,
             };
         }
-        prefab ??= data.robotType switch
+        else if (world >= 3 && _worldRobots != null && world < _worldRobots.Length && _worldRobots[world] != null)
+        {
+            var set = _worldRobots[world];
+            prefab = data.robotType switch
+            {
+                RobotType.Harvester     => set.harvester,
+                RobotType.SemiHarvester => set.semiHarvester,
+                RobotType.Commander     => set.boss,
+                _                       => set.basic,
+            };
+        }
+        // `??` would miss Unity's fake-null for a destroyed/missing prefab reference.
+        if (prefab == null) prefab = data.robotType switch
         {
             RobotType.Harvester     when _harvesterPrefab     != null => _harvesterPrefab,
             RobotType.SemiHarvester when _semiHarvesterPrefab != null => _semiHarvesterPrefab,

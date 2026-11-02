@@ -11,6 +11,21 @@ stand-in. No code change needed.
 
 Legend: ✅ have it · ♻️ borrow from Stampede (fine to ship) · 🟡 stand-in only (Stampede-branded, replace) · ❌ NEEDED (make with Kling)
 
+> **Status update 2026-11-02 (later):** much of the list below is superseded — read this box first.
+> - **Worlds 3-9 gameplay art is in** (user decision: same World 1 blocks in every world, Stampede's backdrops,
+>   robots and props per world): `tools/import_stampede_worlds.py`. Section 6's block/parallax/robot rows no
+>   longer apply; World 2 keeps its 5-shape ice reskin. Launchers stay the Farm Cannon (World 2: Ice Cannon).
+> - **Animal poses are in for all eight** (`tools/import_character_art.py`, from
+>   `FarmFury_Technical/FarmFury_Artwork/Rough_Characters`): Ducky/Billy/Gerald full sets, Percy Idle+Impact,
+>   Bessie/Woolly Idle. Horace: Idle/Loaded from his front render, InFlight = Stampede running frame, Trigger
+>   (rear kick) and Impact generated with Kling (kling-image-o1, 1k, 1 credit each).
+> - **FF_Logo** = `FarmFury_Artwork/Rough_Icons/FarmFury_Logo.png` -> `Sprites/UI/Franchise/Menu/FF_Logo.png`
+>   (Leaderboard corner) and stamped onto all 28 Results/Pause/New Character canvases where Stampede's logo was.
+> - **Videos** (section 8): the win/lose celebration videos were removed from the game — not needed.
+> - In-game HUD queue uses Stampede's ThumbsUp portraits (all 8).
+> - Still open: app icon, store screenshots, per-world music, World 2 / Mothership own bosses (W2 uses the
+>   Commander, W6 the Factory Machine), robot damaged frames (white-flash fallback in use).
+
 ---
 
 ## Generation conventions (match the existing art)

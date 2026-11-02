@@ -298,6 +298,9 @@ public class HUDController : MonoBehaviour
             Sprite cardSpr = GetCardSprite(atype);
             cardImg.sprite = cardSpr != null ? cardSpr : _squareSpr;
             cardImg.color  = cardSpr != null ? Color.white : BirdColor(atype);
+            // Thumbs-up portraits (square cut-outs, 2026-11-02) replace the old framed cards — keep their shape
+            // inside the card-sized slot rather than stretching them to it.
+            cardImg.preserveAspect = cardSpr != null;
 
             // Damage badge: top-right corner, orange pill with lightning + number
             BuildDamageBadge(rt, atype, active);

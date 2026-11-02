@@ -62,6 +62,9 @@ public class LevelData : ScriptableObject
         // could be destroyed out from under them and they'd just stay Static, floating, forever.
         // Only L01's specific decorative ground pile actually needs this set true now.
         public bool forceStayKinematic;
+        // Mirror the block's art horizontally. Set by WorldLevelGenerator when it mirrors a World 1
+        // tower for another world, so skewed/diagonal planks still lean the way the structure does.
+        public bool flipX;
     }
 
     [Serializable]

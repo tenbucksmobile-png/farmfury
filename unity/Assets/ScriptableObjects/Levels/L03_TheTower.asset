@@ -28,6 +28,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
+    flipX: 0
   - type: 0
     position: {x: 6.22, y: -5.6}
     size: {x: 1, y: 0.81}
@@ -37,6 +38,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
+    flipX: 0
   - type: 0
     position: {x: 5.68, y: -4.49}
     size: {x: 1, y: 0.81}
@@ -46,6 +48,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
+    flipX: 0
   - type: 0
     position: {x: 7.61, y: -5.52}
     size: {x: 0.977, y: 0.977}
@@ -55,6 +58,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 10
     forceStayKinematic: 0
+    flipX: 0
   - type: 3
     position: {x: 7.61, y: -4.85}
     size: {x: 0.977, y: 0.977}
@@ -64,6 +68,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 0
     forceStayKinematic: 0
+    flipX: 0
   - type: 1
     position: {x: 5.66, y: -5.06}
     size: {x: 1, y: 1}
@@ -73,6 +78,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 11
     forceStayKinematic: 0
+    flipX: 0
   - type: 0
     position: {x: 5.57, y: -3.87}
     size: {x: 1, y: 1.064}
@@ -82,6 +88,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 3
     forceStayKinematic: 0
+    flipX: 0
   - type: 0
     position: {x: 5.89, y: -3.87}
     size: {x: 1, y: 1.064}
@@ -91,6 +98,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 3
     forceStayKinematic: 0
+    flipX: 0
   - type: 0
     position: {x: 5.83, y: -3.11}
     size: {x: 1, y: 1}
@@ -100,6 +108,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 15
     forceStayKinematic: 0
+    flipX: 0
   - type: 0
     position: {x: 5.73, y: -2.53}
     size: {x: 1, y: 0.492}
@@ -109,6 +118,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 2
     forceStayKinematic: 0
+    flipX: 0
   - type: 0
     position: {x: 6.64, y: -2.53}
     size: {x: 1, y: 0.492}
@@ -118,6 +128,7 @@ MonoBehaviour:
     indestructible: 0
     artVariant: 2
     forceStayKinematic: 0
+    flipX: 0
   robots:
   - robotType: 2
     position: {x: 5.75, y: -1.987}
