@@ -67,6 +67,9 @@ namespace FarmFury.UI
             Results = new ResultsScreen(canvas.transform, PlayNextLevel, RestartLevel, QuitToLevelSelect, EnterLanding, OpenMenuHub,
                 OpenPromo, OpenShopFromResults, _menuArt, _shopArt);
             Pause = new PauseScreen(canvas.transform, ResumeFromPause, OpenSettings, RestartLevel, QuitToLevelSelect, EnterLanding, _menuArt);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            gameObject.AddComponent<DebugPanel>();   // F1
+#endif
         }
 
         /// <summary>

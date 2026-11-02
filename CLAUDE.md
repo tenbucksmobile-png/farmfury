@@ -44,25 +44,27 @@ needing a live pass before shipping.
 
 ### Known open issues / flags
 
-- **World 2 match-up robot card mapping**: `FrostRobot_card.png` → Basic, `IceHarvestor_card.png`
-  → Harvester, `GlacierRobot_card.png` → SemiHarvester (see `SceneSetup.WireWorld2MatchUpCards`).
-  The Harvester mapping (IceHarvestorRobot) is now user-confirmed (2026-07-26, L19's matchup);
-  Basic/SemiHarvester are still the original naming-precedent guess, unconfirmed.
-- **`World2MapController._levelHeaderSprites` is indexed by the GLOBAL `GameManager` level index**
-  (`MatchUpScreen.Show(GlobalIndexOffset + localIndex)`), not World 2's own 0-based local index,
-  even though the array is only sized `World2MapController.LevelCount` (22). Only global indices
-  < 22 — World 2's own local levels 0-3, i.e. "level 19"-"level 22" — can ever get unique header
-  art before running off the end of the array; every level from local index 4 onward will
-  silently fall back to index 0 regardless of any future art added for it. Not yet a real problem
-  (only 3 per-level headers exist today, `19.png`/`20.png`/`21.png` at indices 18-20), but will
-  need a real fix (either resize the array to cover the full global range, or switch to indexing
-  by local index) once World 2 levels reach L23+.
-- **World 2's countdown "1" has no ice-themed art.** `three.png`/`two.png`/`ready.png` in
-  `Assets/Sprites/UI/Matchup_W2/` are all ice-styled (blue/frost), but no matching `one.png` was
-  supplied — `_countdown1Sprite` falls back to the old orange/fire-styled
-  `Assets/Sprites/UI/MatchUp/countdown1.png`, which will visibly clash with the other three during
-  World 2's countdown beat. Swap in a real ice-themed "1" once one exists (see
-  `SceneSetup.WireWorld2MatchUpCards`'s `_countdown1Sprite` line).
+- **Franchise flow (2026-11-02) is compiled and wired but never seen in Play mode.** Every screen layout is from
+  reference-canvas maths; check Landing / World Select / Level Select (8-column grid above 12 levels) / Character
+  Select / Results / Pause / Settings / Shop / Locker on a real aspect ratio. Hat placement on animals is an
+  approximation (half the body sprite's width at 82% height) — tune `AnimalCosmeticRenderer` after seeing it.
+- **Menu art is Stampede stand-ins** (`Assets/Sprites/UI/Franchise/`, gitignored like all sprites). The Level
+  Complete / Failed / Pause / New Character canvases show a small "Farm Fury Stampede" logo until FarmFury versions
+  exist; the Leaderboard has no logo. Full list in `docs/ART_REQUIREMENTS.md` (Kling checklist for all nine worlds).
+- **Monetisation needs the user's accounts:** create the `farmfury_`-prefixed products (Remove Ads, 4 coin packs,
+  3 worlds, 5 hats, 6 trails) in App Store Connect / Play Console; enter FarmFury's LevelPlay app keys and ad unit
+  ids on the GameManager's AdManager (ads are inert until then); register the analytics events. No AdMob adapter is
+  included until FarmFury has its own AdMob app id (the adapter crashes Android at launch without one; the id would
+  go in the Android manifest and `FarmFuryIosBuild`).
+- **Identity not set:** bundle id is still `com.DefaultCompany.2D-URP`, company `DefaultCompany`. The other titles
+  use `com.farmfury.<game>` / "Tenbucks Mobile" — the user's call. productName stays "FarmFury" (changing it moves
+  the Editor's PlayerPrefs); the home-screen label is set to "Farm Fury" at build time (`FarmFuryAndroidBuild`,
+  `FarmFuryIosBuild` — neither compiled yet: batch checks build the Windows target only).
+- **Not ported yet:** Stampede's Boot scene / Android AAB split + store build scripts, the iOS privacy manifest,
+  the Character Story Cosmetics tab, the World Cleared page (the L18 transition video + New Character page cover it).
+- **Three paid worlds have no levels** (WorldData exists, 12 levels each as a placeholder) — buying one opens an
+  empty Level Select.
+
 - **L19 ("Frostbound Watch") was re-dumped 2026-08-09**, replacing its earlier 6-block/3-robot
   layout with a simpler one — 3 `BlockType.Wood` blocks (artVariant `Block`, rendering with the
   World 2 ice reskin) + 3 IceHarvestorRobot instances (all detected as `RobotType.Harvester`, no
@@ -103,25 +105,23 @@ needing a live pass before shipping.
 - **`WildFlowers` sortingOrder=10** on L1's scene props — past the documented "decorative ≤1"
   rule, rendering in front of the cannon/animals. Not reverted since it may be deliberate
   (foreground depth); confirm intent before touching.
-- **No "Perfect" star tier** (GDD's 4th tier: 3★ + all blocks destroyed) — `ScoreManager` only
-  implements 1/2/3★.
 - **No level validator** (GDD calls for a physics-sim stability/solvability check before a level
   ships) — none exists.
 - **`assets/` (raw Kling AI source art) is permanently removed from this repo**, relocated to the
   Desktop. `unity/Assets/Sprites/` (processed game art) is gitignored and exists in exactly one
   place: this machine's disk — if lost, recovery means restoring `assets/` and re-running the art
   pipeline.
-- **Settings popup gaps**: Scores/Account tabs are still "Coming Soon" placeholders; Language
-  cycling has no real localization behind it (all strings are hardcoded English); Left/Right-
-  Handed toggle persists a preference but doesn't actually mirror any gameplay/aim logic.
-  **Restore Purchases is a genuine Apple App Store submission blocker** — no IAP system exists at
-  all yet (Phase 6, 0% built), and Apple requires a working Restore Purchases flow for any app
-  with IAP.
-- **Monetisation/backend: 0% built** (`Scripts/Monetisation/` is empty) — correctly sequenced
-  last per the Phase 6 plan (see `docs/HISTORY.md`'s monetisation-planning entry for the
-  Supabase-over-Firebase reasoning).
-
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
+
+- **2026-11-02 — Franchise flow: everything outside gameplay now follows FarmFury_Stampede/Arcade** (branch
+  `align-franchise-ui`). User decisions: drop the MatchUp VS/countdown screen; keep a pre-level character select
+  that offers animals as their worlds unlock; revive = +1 animal (5 coins / ad); Stampede art as stand-ins plus a
+  Kling list (`docs/ART_REQUIREMENTS.md`); full monetisation; add the three paid worlds. Phases, one commit each:
+  (1) save/data foundation, (2) GameFlow + Landing/World/Level/Character Select, (3) Pause/Results/New Character,
+  (4) Settings family, (5a) store/ads/analytics/coins/revive/shop, (5b) hats/trails/Locker, (6) home-screen name,
+  F1 debug panel, docs. Removed: MainMenuController, WorldMapController, World2MapController,
+  World2LandingController, LevelMarker, MatchUpScreen, World2CharacterSelectScreen, GameplaySettings, and the HUD's
+  result panels/Quit/Mute. Existing World 1 progress migrates once from `ff_stars_N` to levelId keys.
 
 - **2026-08-09** — Large difficulty/stability session: a `[SerializeField]`-staleness audit,
   damage/explosion rebalance, several real bug fixes, World 1↔2 navigation, and a new World 2
@@ -377,6 +377,40 @@ needing a live pass before shipping.
   `WoodArtVariant` sprite-shape system, and the block/robot damage-factor model (`RobotEnemy`'s
   `DirectHitDamageFraction`/`ExplosionDamageFraction`/`EggDamageFraction`/`FallDamageFraction`)
   still in use today.
+## Franchise flow (outside gameplay) — current truth as of 2026-11-02
+
+Ported from `C:\Users\Personel\Desktop\FarmFury_Stampede` (code-built uGUI, itself ported from FarmFury_Arcade).
+When changing any menu, save or shop behaviour, match Stampede's behaviour and numbers unless FarmFury's gameplay
+needs otherwise. New code lives in namespaces `FarmFury.UI` (Scripts/UI/Flow, Scripts/UI/Kit), `FarmFury.Core`
+(SaveManager, DataManager, monetisation) and `FarmFury.Utilities`; the older gameplay code stays global.
+
+```
+Landing (LandingPage.png poster; Play / Exit (not iOS) / Settings cog)
+  -> World Select (badge carousel; 6 story worlds, then 3 paid worlds; paid & unbought -> world shop)
+  -> Level Select (world backdrop; padlock / question / 1-2-3 star boards / boss shield; 6 cols, 8 above 12 levels)
+  -> Character Select (8 animal cards; unlocked = its intro world is open; lineup slots = LevelData.birds.Length,
+     pre-filled with the authored animals) -> Playing (HUD) -> Pause (resume / X / home / cog)
+  -> revive prompt when the queue runs out -> Results (Level Complete / Failed canvas; payout, Double Coins, promo)
+Settings cog -> Menu hub (SETTINGS / SHOP / Visit Our Store)
+  -> Settings (Sound / Leaderboards / Character Story / Policies)   Shop (Coins + Restore / Worlds / Remove Ads / Cosmetics)
+Overlays (OverlayScreen) open on top of any screen; Esc / Android back closes the top one, else steps back.
+```
+
+- **Save** (`SaveManager`, `FF_` keys): stars/completion/records by `levelId`; a world unlocks when the previous
+  world's boss level (`LevelData.isBossLevel`, L18 for World 1) is cleared, a paid world by purchase; levels unlock
+  in order, the boss after all others. Animals: `AnimalRoster.IntroWorld` (Cluck/Bessie W1, Percy/Woolly W2,
+  Ducky W3, Horace W4, Gerald W5, Billy W6) — unlocked with their world, nothing stored. Coins, Remove Ads, worlds
+  and cosmetics are checksum-protected (Stampede's FNV salt scheme).
+- **Worlds**: 9 `WorldData` assets (`WorldDataGenerator`); `LevelData.world` (1-based int) maps to `WorldType`.
+- **Monetisation**: `farmfury_` store ids (`StoreProducts`); Arcade prices (Remove Ads $4.99 +100 coins; coins
+  100/500/5000/15000 at $0.99/$3.99/$9.99/$19.99; worlds $3.99; hats/trails $1.99 or 2500 coins). Hats and trails
+  are shared by every animal (no per-character variants, no machines). Ads: rewarded (revive, Double Coins),
+  interstitial every 6 level loads, banner on Pause / Level Failed — none with Remove Ads; inert without keys.
+  Purchases and external links go through `ParentalGate`.
+- **Art**: `MenuArt` / `ShopArt` / `LeaderboardArt` on GameFlow and per-world fields on `WorldData`, all wired by
+  `SceneSetup.EnsureGameFlow` from `Assets/Sprites/UI/Franchise/` (Stampede stand-ins) and FarmFury's own
+  `Sprites/UI/Icon` buttons + `LandingPage.png`.
+
 ## GDD Summary
 
 ### 8 Animals (tap mid-flight to trigger ability)
@@ -441,7 +475,9 @@ Logs written to `unity/Logs/batch_<command>.log`. Filtered output is printed to 
 | **FarmFury → Generate All Level Data** | Recreate the L01/L02 LevelData assets (overwrites existing) and delete any stale `.asset` for a level whose `Make(...)` call was removed (see `DeleteStaleAsset`). L01 is kept in sync — safe to run. Run Wire Scene References after. |
 | **FarmFury → Wire Sprites** | After adding new character art to `Assets/Sprites/Characters/`. Sets PPU and wires pose sprites into all 8 animal prefabs. |
 | **FarmFury → Reimport Sprites** | Force-reimport all sprites in Launchers/, Characters/, and Enemies/ folders. Run if sprites look stale after the art pipeline. |
-| **FarmFury → Reset World Map Progress** | Clears `ff_score_N`/`ff_stars_N` PlayerPrefs for all 18 levels — standalone from Wire Scene References since it's runtime save data, not scene/asset wiring. Run when leftover test progress (e.g. a level showing 3-star art from earlier testing) makes the world map's lock/star state confusing to read. |
+| **FarmFury → Reset Progress** | Clears all progress keys (SaveManager's `FF_` keys by levelId, plus the pre-port `ff_*_N` keys) — coins and purchases are kept. |
+| **FarmFury → Generate World Data** | Creates/updates the 9 WorldData assets in `Assets/ScriptableObjects/Worlds` (identity fields only; art is wired by Wire Scene References). Run automatically by Wire Scene References when none exist. |
+| **FarmFury → Debug → Open World Select / Open Level Select: … / Jump To Level 18 / Unlock All Levels** | Play-mode QA shortcuts (DebugJumpToLevel.cs). Unlock All Levels is a pref toggle (Editor/dev builds only). In Play mode **F1** opens the runtime DebugPanel (coins, unlocks, world/boss/Remove Ads/paid-world toggles, reset). |
 | **FarmFury → Debug → Dump Level Layout To Log** | Preferred level-authoring workflow as of 2026-07-09 (see `LevelLayoutDumper.cs`). Drag real block/robot prefabs anywhere in the Scene view, or raw sprites under an empty GameObject named exactly `LevelScratch`, then run this — it writes ready-to-paste `B()`/`R()` code to `unity/Logs/level_layout_dump.txt` from the objects' actual transforms. **Delete the `LevelScratch` GameObject after dumping** — left in place it renders on top of every level regardless of which is loaded. |
 
 ### Art pipeline
@@ -505,20 +541,23 @@ X convention: Launcher (abstract) at X=−2.327. Place structures to the right o
 ```
 unity/Assets/Scripts/
   Core/
-    GameManager.cs          — singleton (DontDestroyOnLoad); states: Idle/Playing/LevelComplete/LevelFailed
-                              ForceStartLevel(int) boots a level without LoadScene (used for direct Editor play
-                              and for Replay/Restart — see Runtime Event Flow below)
-                              TryAutoLoadLevels() auto-discovers LevelData assets in Editor builds
-                              BuildFallbackLevel() creates a hardcoded procedural level when no assets found
-                              LoadMenu() is scene-optional: only loads MainMenu if it's in Build Settings
-                              CurrentWorld (int, persisted via PlayerPrefs, 2026-08-09) — which world's
-                              map PLAY opens; set by World2LandingController.OnPlayClicked() the moment
-                              a player actually enters World 2, read by MainMenuController's PLAY button
-                              and both WorldMapController/World2MapController's auto-show-on-Idle gating.
-                              BirdQueueOverride (AnimalType[], 2026-08-09) — one-shot override consumed
-                              and cleared by LevelLoader.LoadLevel(), set by World2CharacterSelectScreen
-                              so a player's chosen lineup becomes the level's real bird queue without
-                              ever mutating the shared LevelData asset.
+    GameManager.cs          — singleton (DontDestroyOnLoad); GameState = MainMenu/WorldSelect/LevelSelect/
+                              CharacterSelect/Playing/Paused/LevelComplete/LevelFailed (franchise set, 2026-11-02).
+                              StartLevel(LevelData, AnimalType[] lineup) (Character Select), RestartLevel() (same
+                              lineup), ForceStartLevel(int) (Editor tools, authored queue), SetState (GameFlow
+                              navigation), PauseGame/ResumeGame, app-background pause. CurrentLineup replaces the
+                              old BirdQueueOverride; RunState (LevelRunState) holds the attempt's result. Owns the
+                              economy (LevelPayout: 10 + 5/star on a first clear, 3 + 5 per new star on replays;
+                              ClaimDoubleCoinsViaAd) and the revive (RequestRevive from LevelLoader when the queue
+                              runs out with robots left -> ReviveOffered -> AcceptRevive 5 coins once / AcceptFreeRevive
+                              Remove Ads once / AcceptReviveViaAd unlimited -> +1 of the last-fired animal), the
+                              interstitial on level load and analytics calls. Single scene: no scene loads.
+                              Awake adds DataManager/SaveManager/IAPManager/AdManager/AnalyticsManager to its own GO
+                              if missing (Wire Scene References adds them too). TryAutoLoadLevels()/
+                              BuildFallbackLevel() unchanged.
+    DataManager.cs / SaveManager.cs / LevelRunState.cs / AnimalRoster.cs (namespace FarmFury.Core) — franchise
+                              save/data layer, see "Franchise flow" below.
+    IAPManager.cs / Store.cs / AdManager.cs / AnalyticsManager.cs (FarmFury.Core) — franchise monetisation, see below.
     BackgroundController.cs — sortingOrder=−100; cover-scale in Start(); LateUpdate() follows camera
     AudioManager.cs          — 7 DSP-generated SFX clips + 3 external MP3 clips (Assets/Audio/*.mp3):
                               _musicClip (loops from first GameState.Playing, never restarts across levels),
@@ -541,7 +580,7 @@ unity/Assets/Scripts/
                               **Menu music added 2026-07-07**: a second _menuMusicClip
                               (SunriseMeadows_TransitionMusic.mp3) + dedicated _menuMusicSrc AudioSource,
                               independent of the gameplay loop above. OnStateChanged starts/stops the two
-                              tracks so exactly one plays at a time: GameState.Idle (covers both the landing
+                              tracks so exactly one plays at a time: any menu state (MainMenu/WorldSelect/LevelSelect/CharacterSelect — franchise flow; was Idle) (covers both the landing
                               page and the Sunrise Meadows world map — both react to that same state, so
                               hooking it once here plays under either screen without needing to know which
                               is visible) starts menu music and stops gameplay music; GameState.Playing does
@@ -556,7 +595,7 @@ unity/Assets/Scripts/
                               immediately. New flow: Time.timeScale=0.2 for 0.5s (WaitForSecondsRealtime) ->
                               Time.timeScale=0 (hard freeze) -> CatapultLauncher.LastAnimalUsed's celebration
                               VideoClip + AudioClip play via the shared VideoChromaKey overlay (see below) ->
-                              holds 4s -> fades 0.3s -> Time.timeScale=1 -> HUDController.ShowLevelCompletePanel()
+                              holds 4s -> fades 0.3s -> Time.timeScale=1 -> GameFlow.ShowLevelComplete() (was HUDController.ShowLevelCompletePanel)
                               (now public — HUDController's own OnStateChanged no longer calls it directly,
                               this class is the only caller). _celebrationClips[]/_celebrationAudioClips[] are
                               both indexed by AnimalType (8 slots) with an empty-slot fallback to index
@@ -570,7 +609,7 @@ unity/Assets/Scripts/
                               off GameManager.CurrentLevelIndex (which robot the player is up against) rather
                               than which animal was last fired: Time.timeScale=0.3 for 0.5s -> freeze -> the
                               current level's robot taunt VideoClip + AudioClip play -> hold 4s -> fade 0.3s
-                              -> HUDController.ShowLevelFailedPanel() (now public, same decoupling as above).
+                              -> GameFlow.ShowLevelFailed() (franchise ResultsScreen; same decoupling as above).
                               _robotTauntClips[]/_robotTauntAudioClips[] are indexed by level number
                               (0-based), any level past the array's end or an empty slot falls back to index
                               0 — wired via SceneSetup.EnsureLevelFailedManager() from Robot_Celebration.mp4 +
@@ -794,229 +833,23 @@ unity/Assets/Scripts/
                               then waits out CannonResetDelay=1.80s total. EnsureGroundExists() validates
                               against the launcher's own Y (dynamic, not hardcoded).
   UI/
-    HUDController.cs                 — Canvas built at runtime; card widgets anchored top-left (anchorMin
-                              0.02,1); orange N damage badge (enlarged + restyled with StyleAsGameNumber()
-                              2026-07-26, enlarged again 2026-07-06 — user reported it was still too small
-                              to read, especially on the smaller queued cards; badge now 92x44/text 34f on
-                              the active card, 74x36/text 26f on queued cards, up from 72x34/24f and
-                              56x28/18f. Leading "⚡" dropped the same day — LiberationSans SDF (the only
-                              font asset this project ships) has no glyph for U+26A1, rendering it as a
-                              tofu box that read as "a square before the numbers"; same class of bug as
-                              the missing ★ glyph fixed in MatchUpScreen (docs/HISTORY.md Round 14) — same
-                              bold/black-outline/gold-orange-gradient treatment as the
-                              Level Complete/Failed score numbers, per user request to "match the game
-                              font"); Level Complete/Failed/Pause panels; SafeArea RectTransform wrapper
-                              (Screen.safeArea-driven) for the bird queue.
-                              **Top-centre score readout ("0" box) REMOVED 2026-07-26** (user request — read
-                              as an unstyled placeholder rectangle over the sky art); `BuildScoreDisplay()`
-                              and its fields are gone entirely, not hidden. Score is still shown on the Level
-                              Complete/Failed panels via their own score text.
-                              **Top-right button row (`BuildTopRightButtons`, added later the same day)**
-                              replaces the single plain-grey-circle pause button that briefly got removed in
-                              the same pass as the score readout above. Three real icon buttons, top-right
-                              corner, 150x150 each (enlarged from 64x64 2026-07-06 — user-reported too small;
-                              now matches MainMenuController's PLAY/SETTINGS button size) with a 14px gap,
-                              order left-to-right Quit/Mute/Pause (Pause flush in the screen corner). **Quit
-                              is sized up to 187.5x187.5 (`quitBtnSize = btnSize / 0.80f`), not the shared
-                              150x150** (2026-07-06, user-reported the three icons "don't look like they're
-                              the same size") — `Btn_quite.png`'s drawn button only fills ~87%x80% of its
-                              own 256x256 canvas (pixel-measured content bbox 222x205), unlike
-                              `Btn_pause.png`, whose art fills its canvas edge-to-edge (256x256), so
-                              rendering both into an identical box left QUIT visibly smaller; the position
-                              math (`pos`) still uses the shared `btnSize+gap` grid since QUIT's right-edge
-                              anchor doesn't move, it only grows further left, away from Mute:
-                              **Pause** (`Btn_pause.png` <-> `Btn_play.png`, swapped not tinted) calls
-                              `OnPauseClicked()` -> `SetPaused()`, which just flips `Time.timeScale` 0/1 and
-                              re-derives its own icon via `RefreshTopPauseIcon()` — no popup opens (the old
-                              PAUSED panel was removed entirely 2026-07-06, see below). **Mute**
-                              (`Btn_music.png` <-> `NoSound.png`, sprite-swapped) toggles BOTH
-                              `AudioManager.MusicEnabled` and `SfxEnabled` together via
-                              `OnTopMuteToggleClicked()`; `RefreshTopMuteIcon()` re-derives which sprite to
-                              show from actual AudioManager state (not a locally-tracked flag) so it stays
-                              correct even if the Main Menu SETTINGS popup's separate toggles are used
-                              instead. **Quit** (`_quitButtonSprite`) no longer closes the app — since
-                              2026-07-06 (user request) `OnQuitClicked()` un-pauses if needed and calls
-                              `GameManager.LoadMenu()` + `WorldMapController.SkipToMainMenu()`, the same
-                              "land directly on the main menu, skip the world map flash" pattern the Level
-                              Complete/Failed Home buttons use. The whole row (`_topRightRoot`) hides via
-                              `SetTopBarVisible` alongside the bird queue whenever a full-screen end-of-level
-                              panel is up, same as the old score readout used to. `_birdQueueRoot` was
-                              actually missing from that toggle until earlier the same day (user-reported
-                              leftover animal cards
-                              still visible top-left behind the Level Complete panel) — `_topRightRoot` was
-                              added to it from the start, so it doesn't repeat that bug.
-                              **Level Complete/Failed panels (2026-07-25 redesign, Level Complete
-                              restructured again 2026-07-26)** both use Scoreboard.png
-                              (Assets/Sprites/UI/MatchUp/) as the whole backdrop instead of a plain coloured
-                              box (Level Complete's box enlarged 620x363 -> 680x398 2026-07-26, same 653:382
-                              native aspect, to give the star row more headroom inside the board's parchment
-                              area), with LevelComplete.png/LevelFailed.png as a sign-topper title
-                              overlapping the board's top edge. Falls back to the old plain box/text-button
-                              look if any sprite is unwired, so neither panel ever renders blank. Score
-                              number uses StyleAsGameNumber() — bold + black outline + gold-to-orange vertex
-                              gradient on the default TMP font, the closest approximation of the game's own
-                              bubble-lettering achievable without importing a new font asset (this project
-                              ships only LiberationSans SDF). Level Complete shows 3 real ScoreStars.png
-                              images (dropped from 4 2026-07-26) — all three are now the actual star rating,
-                              no forced always-pops slot. The old 4th "always pops, reveals a LEVEL UP! text
-                              label" slot and the separate Btn_play icon were both removed in the same pass;
-                              Btn_play's bottom-left slot is now a single _levelUpStarSprite (Levelup.png —
-                              "LEVEL UP" baked into the art, no text label needed) that pulses continuously
-                              (LevelUpStarPulse(), scale 1<->1.12 sine wave, starts in ShowLevelCompletePanel/
-                              stops in HideLevelCompletePanel) and fires the exact same handler Btn_play used
-                              to (OnLevelCompletePlayClicked -> GameManager.LoadMenu()) — it's now the
-                              panel's one obvious, animated tap target back to the world map, rather than a
-                              static icon next to a separate forced-star/text reveal. Btn_home is unchanged
-                              (bottom-right, mirrors the level-up star's position/size). Level Complete's
-                              level-up star calls GameManager.LoadMenu() and relies on WorldMapController's
-                              own OnStateChanged listener to show itself and slide the position indicator to
-                              the newly-unlocked next level (no extra plumbing needed — see WorldMapController
-                              below); its Btn_home and Level Failed's Btn_home both call the new
-                              WorldMapController.SkipToMainMenu() so tapping Home lands directly on the main
-                              menu instead of flashing the world map first.
-                              **PAUSED popup REMOVED ENTIRELY 2026-07-06** (user request — a separate
-                              RESUME/RESTART/MENU/QUIT/MUSIC/SFX card popping up over the game was more
-                              friction than it was worth once Quit and Mute already had their own dedicated
-                              top-right buttons, below). `BuildPausePanel()`/`ShowPausePanel()`/
-                              `HidePausePanel()`/`MakePanelButton()` and the panel's own
-                              Resume/Restart/Menu/Music/SFX click handlers are all gone, not hidden. Tapping
-                              the top-right Pause button now pauses/resumes directly (`SetPaused()` still
-                              just flips `Time.timeScale` 0/1) and swaps its own icon between
-                              `Btn_pause.png` and `Btn_play.png` (reusing `_playButtonSprite`, the same
-                              sprite the Level Failed panel's Try Again button uses) via
-                              `RefreshTopPauseIcon()`, so the icon itself always shows the next tap's
-                              action instead of opening a menu. Restart/return-to-menu are still reachable
-                              via the Level Failed panel's Try Again/Home buttons — only in-pause access to
-                              them was removed, not the underlying `GameManager.RestartLevel()`/`LoadMenu()`
-                              calls, which both panels still use.
-                              **Panel triggers decoupled from OnStateChanged 2026-07-07**:
-                              `ShowLevelCompletePanel()`/`ShowLevelFailedPanel()` are now `public` and no
-                              longer called from this class's own `OnStateChanged` on the LevelComplete/
-                              LevelFailed transitions — `LevelCompleteManager`/`LevelFailedManager` (see
-                              Core/) call them directly once their slow-motion -> freeze -> celebration/taunt
-                              video -> fade sequence finishes, so the panel is always the reward/defeat
-                              beat's *second* step, never the first. `OnStateChanged` still handles
-                              `HideLevelFailedPanel()`/`HideLevelCompletePanel()`/`SetTopBarVisible(false)`
-                              on those same transitions, just not the show calls.
-                              **Score count-up added 2026-07-07**: `ShowLevelCompletePanel()` now animates
-                              the score text 0 -> final over `ScoreCountUpDuration` (1.6s, unscaled time),
-                              timed to land right as the last star pop finishes (staggered 0.3/0.75/1.2s + a
-                              0.38s pop each, see `AnimateStars`/`PopStar` above) — previously the score text
-                              was set instantly.
-                              **RETRY button pulse added 2026-07-07**: `ShowLevelFailedPanel()` now starts
-                              `RetryButtonPulse()` on the Try Again button (`_lfTryAgainRT`) — scale eases
-                              `1.0 -> 1.05 -> 1.0` on an 0.8s loop via `1 + 0.025*(1-cos(2πt))`, deliberately
-                              *never* dipping below 1.0 (unlike the Level Complete level-up star's symmetric
-                              ±0.12 `LevelUpStarPulse`) — meant to read as an inviting nudge ("come on, you
-                              can beat that robot"), not a wobble. Stops and resets to scale 1 in
-                              `HideLevelFailedPanel()`.
-    MainMenuController.cs             — LandingPage.png background (title/character art baked in); PLAY
-                              (bottom-left) and SETTINGS (bottom-right), both corner-anchored; PLAY opens
-                              WorldMapController. SETTINGS opens a 7-tab popup (Audio/Gameplay/Stats/
-                              Scores/Story/Account/About — see the 2026-07-13 Current Status entry for
-                              full detail on each tab's real vs. placeholder content), REPLACING the old
-                              flat 5-heading list. Audio's Music/SFX toggles + volume sliders still share
-                              AudioManager's persisted state with the top-right Mute toggle
-                              (HUDController's `OnTopMuteToggleClicked`) — same state, no separate
-                              pause-menu toggle exists any more. New data files backing the tabs:
-                              GameplaySettings.cs (Language/LeftHanded prefs), PlayerStatsTracker.cs
-                              (lifetime cannonballs-fired/robots-destroyed/time-played counters,
-                              self-bootstraps via CatapultLauncher.Awake()), StoryContent.cs (lore text,
-                              also shared by About's Credits row via the same reader popup)
-    WorldMapController.cs              — Sunrise Meadows (World 1) level map; ScreenSpaceOverlay Canvas,
-                              sortingOrder 300; 18 LevelMarker instances positioned via PathPositions —
-                              hand-traced against the full visible S-curve (pond -> up past the windmill/
-                              ruins bend -> back down -> tail to the fortress), not just a graph-shortest-
-                              path between the two ends. Every earlier automated trace (BFS-bin, skeleton
-                              shortest-path) independently found the upper bend to be a topological dead-
-                              end and excluded it — defensible by pure connectivity, but wrong for this
-                              purpose: it rendered as markers bunched in a flat row hugging the bottom,
-                              confirmed by rendering the old points back onto the source art and matching a
-                              reported screenshot exactly (see docs/HISTORY.md Round 14). Unlock rule
-                              (level 1 always unlocked, level N needs level N-1 >=1 star) reuses
-                              ScoreManager.GetBestStars(); position indicator (90x90) slides then bobs to
-                              the newest unlocked pin, hover offset +100 above the marker (single
-                              IndicatorRoutine coroutine). NEXT LEVEL (600x150) and Home (150x150, matches
-                              the landing page's PLAY/SETTINGS icon scale) both live inside a
-                              Screen.safeArea-driven SafeArea child (same ApplySafeArea pattern as
-                              HUDController/MatchUpScreen), corner-anchored with a small fixed inset —
-                              real rendered sprites, not baked into the background. Owns MatchUpScreen's
-                              art fields directly (see note below on why). Public SkipToMainMenu()
-                              (2026-07-25) — called by HUDController's Level Complete/Failed Home buttons:
-                              HidePanel() then MainMenuController.Show(). Needed because LoadMenu() always
-                              transitions GameState to Idle, which this class's own OnStateChanged reacts to
-                              by showing itself (it's the PLAY destination) — SkipToMainMenu() runs
-                              immediately after in the same call stack, hiding the map again before a frame
-                              ever renders it, so "Home" lands on the main menu instead of flashing the map.
-                              **OnStateChanged now gated on GameManager.CurrentWorld != 2 (2026-08-09)**
-                              — previously showed itself unconditionally on every Idle transition,
-                              which would bounce a player who'd already reached World 2 back onto
-                              World 1's map (e.g. via Level Complete/Failed's "Back" buttons, which
-                              rely on this auto-show rather than an explicit navigation call). See
-                              World2MapController's own symmetric gating (CurrentWorld == 2) below.
-    World2MapController.cs             — Frozen Tundra (World 2) level map, same ScreenSpaceOverlay/
-                              LevelMarker pattern as WorldMapController above, sortingOrder 301.
-                              OnStateChanged mirrors WorldMapController's own (added 2026-08-09,
-                              gated on CurrentWorld == 2) — also unconditionally hides on every
-                              non-Idle state, fixing a real solid-black-screen bug: this class
-                              previously only ever hid via its own Back button, so MatchUpScreen's
-                              fade-to-black overlay (a child of this canvas) stayed on screen forever
-                              once a level actually started. OnMarkerTapped/OnPlayClicked now route
-                              through ShowMatchUpFlow(), which shows World2CharacterSelectScreen for
-                              a level with real LevelData, or falls straight to MatchUpScreen's
-                              existing "COMING SOON" handling otherwise.
-    World2CharacterSelectScreen.cs     — "choose your farmhands" roster grid (2026-08-09), shown by
-                              World2MapController before MatchUpScreen's own VS-slam/countdown
-                              sequence. Reuses World2MapController's existing _animalCardSprites/
-                              _robotCardSprites arrays (passed via Init(), same arrays MatchUpScreen
-                              already reads) rather than duplicating art fields — a card is tappable
-                              iff that AnimalType slot already has real match-up art, so Percy/
-                              Woolly/Cluck/Bessie are selectable and Ducky/Horace/Gerald/Billy show
-                              locked automatically, no hardcoded list to keep in sync. Tapping fills
-                              a lineup queue sized to the level's own birds[].Length (generalises to
-                              any future World 2 level's bird count); tapping a filled queue slot
-                              removes that pick. Launch only interactable once the queue is full;
-                              confirming sets GameManager.BirdQueueOverride then hands off to
-                              MatchUpScreen's existing sequence unchanged. Robots are always a plain
-                              Image, never a Button — displayed, not selectable, per spec.
-    LevelMarker.cs                     — UI Image+Button (not SpriteRenderer — Button needs uGUI) + level
-                              number TMP label; MarkerSize=80x120 (2:3 aspect, matches the 256x384 source
-                              art). Refresh(unlocked,stars,...) picks locked/unlocked/star1/2/3 art (falls
-                              back to 3-star art — no dedicated 2-star asset yet). LevelMarker_Unlocked.png
-                              /LevelMarker_3stars.png have a static "1"/"3" baked into their own art (not a
-                              dynamic level-index number) — a level showing the "3" badge means it was
-                              previously 3-starred (real save data, e.g. leftover test progress), not a bug;
-                              see FarmFury -> Reset World Map Progress above.
-    MatchUpScreen.cs                    — full-screen animal-vs-robot transition, entirely non-interactive
-                              (no tap-to-continue, no close button — removed 2026-07-21). Scripted sequence:
-                              MatchUpBackground.png backdrop -> LevelHeader1.png pops in (top-anchored inside
-                              its own SafeArea, level 1 only — no LevelHeader2/3/... exist, a known accepted
-                              gap) -> animal/robot cards (560x560, tilted ±10° outward) slide in from both
-                              edges while VS.png (220x220) slams in between them, timed to land exactly as
-                              the cards arrive -> 2s hold -> countdown 3/2/1 (each ~2s: pop in, hold, pop
-                              out) -> READY! -> fades to opaque black (NOT the whole panel to transparent —
-                              see below) -> GameManager.ForceStartLevel(). Cards read fresh from
-                              GameManager.GetLevelData(index).birds[0] / .robots[0].robotType on every Show()
-                              — different levels show different matchups, not a static splash. Shows
-                              "COMING SOON" and returns to the map (no launch) when the level has no
-                              LevelData yet. Art sourced from Assets/Sprites/UI/MatchUp/ (dedicated folder,
-                              distinct from the HUD's Assets/Sprites/UI/Cards/) — only Cluck/Bessie/Basic/
-                              Harvester have art there today, matching L01-L06. **Fade-to-black, not fade-
-                              to-transparent:** the screen used to fade its whole CanvasGroup to alpha 0
-                              before launching, which revealed the World Map's own background/pins
-                              underneath for the fade's duration (it's a sibling inside the same canvas) —
-                              looked like "the game navigates back to the map before gameplay loads." Fixed
-                              by fading an opaque black Image overlay IN instead; GameManager.ForceStartLevel()
-                              then triggers WorldMapController.HidePanel(), which deactivates the whole map
-                              canvas (MatchUpScreen included, since it's a child) atomically in one frame —
-                              the last thing rendered before that cut is solid black, never stale map/card
-                              content (see docs/HISTORY.md Round 15). Art fields are NOT [SerializeField]
-                              here — passed into Init() by WorldMapController instead, because nested
-                              runtime-built child components never get their Awake() re-fired by the batch
-                              "Wire Scene References" editor pass, so any [SerializeField] living directly on
-                              them silently never saves (see docs/HISTORY.md Round 11) — put art fields on
-                              the top-level persisted component and thread down via Init() for any future
-                              nested UI component.
+    HUDController.cs                 — in-level HUD only (franchise flow, 2026-11-02): the animal-card queue top-left
+                              (animated, damage badges; cards fall back to the franchise cards so all 8 animals
+                              have one), and top-right a round pause button (-> GameFlow.OpenPause), the coin
+                              balance chip left of it (SaveManager.CoinsChanged) and the Locker button under it.
+                              Visible only in Playing/Paused. Its old Scoreboard Level Complete/Failed panels,
+                              PAUSED toggle and Quit/Mute buttons were removed — results/pause are GameFlow
+                              screens, mute is Settings' Sound icon. Pause stays top-right (not bottom like
+                              Stampede's HUD): the cannon and the aiming drag own the bottom-left.
+    StoryContent.cs                   — FarmFury's lore text (Story/Characters/Robots/Worlds/Credits), read by
+                              Settings -> Character Story.
+    Kit/                              — franchise uGUI helpers copied from FarmFury_Stampede (namespace FarmFury.UI):
+                              UIKit (code-built screens, 1920x1080 reference canvas, RoundButtonSize 160;
+                              EventSystem uses InputSystemUIInputModule — FarmFury is Input-System-only),
+                              SafeAreaFitter, FitContent, ZoomedCover, CardCarouselController, ConfettiBurst,
+                              HoldButton, HangingSignDrop, HoldThenFade, SpinAroundY.
+    Flow/                             — every screen outside gameplay, ported from FarmFury_Stampede (itself from
+                              Arcade) so all Farm Fury titles share one flow. See "Franchise flow" below.
     VideoChromaKey.cs                    — added 2026-07-07. Drives a `VideoPlayer` through the
                               `FarmFury/ChromaKeyVideo` shader onto a full-screen `RawImage`, so a green-
                               screen character/robot clip can play over the frozen game scene with the
@@ -1120,16 +953,25 @@ unity/Assets/Editor/
 
 ### Runtime Event Flow
 
-**Level start:**
-`GameManager.ForceStartLevel(idx)` (Editor play, and Replay/Restart) or `GameManager.StartLevel(idx)` (menu, full scene load) → `TransitionTo(Playing)` → fires `OnLevelStarted` → `LevelLoader.HandleLevelStarted(data)` → `LoadLevel()` spawns blocks/robots/birds → `ScoreManager.InitLevel()` resets counters → `CatapultLauncher` loads the first bird → `SnapCameraToRest()`.
+**App start:** `GameFlow.Start()` shows Landing (GameState.MainMenu). No level is loaded until one is picked;
+going back to any menu calls `LevelLoader.UnloadLevel()`.
 
-**Level complete:**
-All robots destroyed → `LevelLoader.NotifyRobotDestroyed()` → `_spawnedRobots.Count == 0` → `DelayedLevelComplete()` (2s wait) → `ScoreManager.FinaliseLevel()` → `GameManager.CompleteLevel()` → `TransitionTo(LevelComplete)` → `LevelCompleteManager.HandleStateChanged` runs the celebration sequence (slow-motion → freeze → `CatapultLauncher.LastAnimalUsed`'s video+audio via the shared `VideoChromaKey` → fade) → only then calls `HUDController.ShowLevelCompletePanel()`. `HUDController`'s own `OnStateChanged` no longer shows the panel directly on this transition (see HUDController.cs above).
+**Level start:** Landing -> World Select -> Level Select -> Character Select (lineup) -> `GameManager.StartLevel(level,
+lineup)` -> `BeginLevel` -> `TransitionTo(Playing)` -> `OnLevelStarted` -> `LevelLoader.LoadLevel()` (uses
+`CurrentLineup`, else `LevelData.birds`) -> `ScoreManager.InitLevel()` -> `CatapultLauncher` loads the first animal ->
+interstitial check (`AdManager.NotifyLevelLoaded`).
 
-**Level failed:**
-`CatapultLauncher` detects no more birds and calls `LevelLoader.NotifyBirdsExhausted()` → `DelayedLevelFailed()` (1.5s wait) → `GameManager.FailLevel()` → `TransitionTo(LevelFailed)` → `LevelFailedManager.HandleStateChanged` runs the taunt sequence (slow-motion → freeze → the current level's robot taunt video+audio via the same shared `VideoChromaKey` → fade) → only then calls `HUDController.ShowLevelFailedPanel()` (same decoupling as above).
+**Level complete:** last robot destroyed -> `DelayedLevelComplete()` (2s) -> `ScoreManager.FinaliseLevel()` (saves through
+SaveManager: stars, records, completion; a boss level clears its world) -> `GameManager.CompleteLevel()` (RunState +
+coin payout) -> LevelComplete -> `LevelCompleteManager` celebration video -> `GameFlow.ShowLevelComplete()` (ResultsScreen,
+then the New Character page when a boss clear opened a world). Play -> next (Level Select; after a boss the L18 transition
+video if wired, the New Worlds promo on a first boss clear, then World Select).
 
-**Replay / Try Again / Restart:** all route through `GameManager.RestartLevel()` → `ForceStartLevel(CurrentLevelIndex)` — the same no-reload path Editor play uses, not a full `SceneManager.LoadScene()`.
+**Level failed:** last animal lands with robots left -> `NotifyBirdsExhausted()` -> `DelayedLevelFailed()` (1.5s) ->
+`GameManager.RequestRevive()` -> revive prompt (+1 animal) or `FailLevel()` -> `LevelFailedManager` taunt video ->
+`GameFlow.ShowLevelFailed()`.
+
+**Replay / Retry / Restart:** `GameManager.RestartLevel()` -> same level, same lineup, no reload.
 
 ### Video Chroma Key / Celebration System (added 2026-07-07)
 
@@ -1165,7 +1007,7 @@ paused level environment rather than on a plain title card.
   actual sequence per state transition: brief slow-motion (`Time.timeScale` 0.2/0.3 for 0.5s
   real-time) → hard freeze (`Time.timeScale = 0`) → `VideoChromaKey.Play(...)` with the
   animal's/level's clip → hold 4s → `FadeOut(0.3s)` → `Time.timeScale = 1` →
-  `HUDController.ShowLevelCompletePanel()`/`ShowLevelFailedPanel()`. Both self-bootstrap onto their
+  `GameFlow.ShowLevelComplete()`/`ShowLevelFailed()` (franchise ResultsScreen). Both self-bootstrap onto their
   own scene GO via `CatapultLauncher.Awake()` if missing (same pattern as `AudioManager`), and both
   have their video/audio clip arrays wired by `SceneSetup` (`EnsureLevelCompleteManager()`/
   `EnsureLevelFailedManager()`) from `Assets/Video/` (clips) and `Assets/Audio/` (accompanying
@@ -1200,7 +1042,8 @@ Physics2D Gravity Y: −20. Layers: Ground=6, Animal=7, Block=8, Robot=9, Egg=10
 ```
 Main Camera           (0, −2, −10; orthoSize=4.5)
 Global Light 2D
-GameManager           (DontDestroyOnLoad)
+GameManager           (DontDestroyOnLoad; + DataManager, SaveManager, IAPManager, AdManager, AnalyticsManager)
+GameFlow              (GameFlow.cs: builds every menu/results/overlay screen in code, MenuCanvas sortingOrder 400)
 LevelLoader
 ScoreManager
 HUD
@@ -1271,11 +1114,11 @@ Add `LevelData` ScriptableObject in `Assets/ScriptableObjects/Levels/` with file
 ## Development Roadmap (6 Phases)
 
 - **Phase 1 — Core Feel:** ✅ done (slingshot→cannon aim, trajectory arc, destruction feedback, audio, camera follow).
-- **Phase 2 — UI/UX Shell:** ✅ done (HUD, Level Complete/Failed panels, pause/resume toggle, Sunrise Meadows world map, main menu).
+- **Phase 2 — UI/UX Shell:** ✅ done, then **replaced 2026-11-02 by the franchise flow** (FarmFury_Stampede/Arcade's menus, results, settings, shop — see "Franchise flow").
 - **Phase 3 — Character Roster:** ✅ done (all 8 animals scripted and art-wired).
 - **Phase 4 — World 1 Completion:** ✅ done — L01–L18 all exist, no gaps, including a boss level (L18, `RobotType.Commander`). No level validator yet. None of L10-L18 visually verified in Play mode.
 - **Phase 5 — Worlds 2–6:** not started (0%).
-- **Phase 6 — Polish & Release:** not started. 7 revenue streams per GDD §05 (Rewarded Ads/Starter Pack/Season Pass/Coin Shop/Power-Ups/Cosmetic Shop/Ad Removal). Infra stack **adjusted from the GDD's original §06 plan** as of 2026-07-16 (planning only, nothing built yet — see the Current Status entry above and `monetisation_plan.md` in this project's memory): Supabase (Postgres/Auth/Edge Functions/Storage) in place of Firebase for the economy/data layer, Firebase Crashlytics kept standalone for crash reporting, AdMob + AppLovin MAX + Unity IAP + RevenueCat unchanged from the GDD. Guardrails: no ads in first 20 levels, no pay-to-win, no energy system, cosmetics never randomised. Recommended sequencing: economy/auth foundation first (while save data is still small), then ads, then core IAP + server-side validation together, then season pass/cosmetics, then liveops/leaderboards last.
+- **Phase 6 — Polish & Release:** monetisation **built 2026-11-02** as part of the franchise flow (Unity IAP, LevelPlay, UGS Analytics, coin economy, revive, Double Coins, shop, cosmetics) — ported from Stampede, so it follows the franchise's actual stack (UGS Analytics, LevelPlay mediation) rather than the July plan's AppLovin MAX/RevenueCat; Supabase backend still not built (no title has it yet). Open: store products/ad units/keys, AdMob app ids, bundle id, Boot scene + AAB split, device testing.
 
 **Practical read:** World 1 (L01–L18) is fully built with no gaps, redesigned 2026-07-19 against the rebuilt parallax backdrop. World 2's front-end shell (backdrop, landing/map screens, match-up art, robot-tier reskins) also exists as of 2026-07-19, but has zero real levels — building L19+ via the same `LevelLayoutDumper` workflow is the natural next step now that the shell exists to receive them. Neither World has been visually verified in Play mode yet (no Play-mode access in this environment). Monetisation is correctly sequenced last.
 
