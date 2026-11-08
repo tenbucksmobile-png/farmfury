@@ -894,6 +894,8 @@ public static partial class SceneSetup
         cardsProp.arraySize = cards.Length;
         for (int i = 0; i < cards.Length; i++)
             cardsProp.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(fa + "/Cards/" + cards[i] + ".png");
+        // Ability badges for the Character Select cards (tools/import_cornfield_art.py copies them in), AnimalType order.
+        WireSpriteArray(so, "_menuArt.abilityBadges", fa + "/Abilities/", new[] { "Cluck", "Bessie", "Percy", "Woolly", "Ducky", "Horace", "Gerald", "Billy" });
         so.ApplyModifiedProperties();
 
         // Robots tab of Character Story: FarmFury's own robot sprites, RobotType order.

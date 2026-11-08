@@ -151,6 +151,12 @@ needing a live pass before shipping.
   width). NOT applied to unframed levels: their hand-dumped layouts rely on the padded rects touching —
   `tools/check_block_support.py` shows 109 levels would get blocks over a gap that `SettleIfUnsupported` drops at
   level start. Run that tool before turning on `referenceFraming` for any level (L01 passes).
+  Later the same day (UI polish, user requests): Results score kept inside its box (best fit now wraps/truncates)
+  and Play/Quit use the same edge inset as Home/Settings; Character Select carousel lowered/tightened
+  (CarouselY -20, height 360, spacing 0.82), Play bottom-left / Back bottom-right, gold "PICK 3 ANIMALS" header
+  above the lineup slots, white level name removed, and an ability badge (dark disc, bottom-right) on every card
+  and filled slot from `MenuArt.abilityBadges` (`Sprites/UI/Franchise/Abilities/<Animal>.png`, made by
+  `tools/import_ability_badges.py`: 5 reused effect sprites + 3 Kling icons for Woolly/Ducky/Billy).
 
 - **2026-11-08 — Reference framework + L01 reframing** (user request: "not anything like angry birds"). Arcade's
   scrcpy/logcat recorder ported as `tools/review/` (record/import/analyze/compare in screen units) + dev-build

@@ -29,7 +29,6 @@ namespace FarmFury.UI
         private readonly Action<LevelData, AnimalType[]> _onLaunch;
         private readonly Action _onBack;
         private readonly Image _backdrop;
-        private readonly Text _levelTitle;
         private readonly RectTransform _rootRect;
         private readonly RectTransform _lineupRow;
         private readonly Button _playButton;
@@ -37,12 +36,17 @@ namespace FarmFury.UI
         private readonly List<RectTransform> _items = new();
         private readonly List<Button> _cardButtons = new();
         private readonly List<Image> _slotImages = new();
+        private readonly List<Image> _slotBadges = new();
+        private readonly Text _pickHeader;
         private readonly List<AnimalType?> _lineup = new();
         private readonly HashSet<int> _landing = new();   // slots whose card is still in flight
         private readonly Driver _driver;
 
-        // The carousel band sits below the backdrop's "Character" lettering and above the lineup row.
-        private const float CarouselY = 40f, CarouselHeight = 400f;
+        // The carousel band sits below the backdrop's "Character" lettering and above the lineup row. Lowered and
+        // tightened 2026-11-08 (user: the centre card touched the header, cards too far apart).
+        private const float CarouselY = -20f, CarouselHeight = 360f, CarouselSpacing = 0.82f;
+        private const float BadgeFraction = 0.34f;        // ability badge size, fraction of the card
+        private const float HeaderHeight = 58f;
         private const float SlotSize = 160f, SlotGap = 22f, LineupBottom = 36f;
         private const float EdgeMargin = 16f;
         private const float FlightSeconds = 0.5f, ArcHeight = 140f, LandBounceSeconds = 0.22f, LandBounce = 0.18f;
@@ -65,17 +69,15 @@ namespace FarmFury.UI
             var safe = UIKit.NewRect("SafeArea", root);
             safe.gameObject.AddComponent<SafeAreaFitter>();
 
-            // Level name, small, top-right (the backdrop's own "Character" lettering is the header).
-            _levelTitle = UIKit.Label(safe, "LevelName", "", 40, TextAnchor.UpperRight, Color.white);
-            _levelTitle.fontStyle = FontStyle.Bold;
-            _levelTitle.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
-            UIKit.Place(_levelTitle.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-30f, -24f), new Vector2(700f, 60f));
+            // No level-name text: the backdrop's own "Character" lettering is the only header (white level name removed
+            // 2026-11-08, user request).
 
             // Carousel: the container's invisible raycast Image catches drags that start between cards.
             var cards = UIKit.NewRect("Cards", safe);
             UIKit.Place(cards, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, CarouselY), new Vector2(1920f, CarouselHeight));
             cards.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
             _carousel = cards.gameObject.AddComponent<CardCarouselController>();
+            _carousel.spacingFactor = CarouselSpacing;
             foreach (var animal in AnimalRoster.All)
             {
                 var item = UIKit.NewRect($"Item_{animal}", cards);
@@ -84,6 +86,7 @@ namespace FarmFury.UI
                 var button = UIKit.MakeButton(item, "Card", sprite != null ? "" : animal.ToString(), sprite != null ? Color.white : UIKit.Card, null, 36);
                 if (sprite != null) { button.image.sprite = sprite; button.image.preserveAspect = true; }
                 UIKit.Stretch(button.image.rectTransform);
+                AddBadge(button.image.rectTransform, _art.AbilityBadge(animal));
                 _items.Add(item);
                 _cardButtons.Add(button);
             }
@@ -91,15 +94,25 @@ namespace FarmFury.UI
             _lineupRow = UIKit.NewRect("Lineup", safe);
             UIKit.Place(_lineupRow, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, LineupBottom), new Vector2(10f, SlotSize));
 
+            // Tells the player what the empty slots are for ("PICK 3 ANIMALS" -> "PICK 1 MORE" -> "READY! TAP PLAY").
+            _pickHeader = UIKit.Label(safe, "PickHeader", "", 46, TextAnchor.MiddleCenter, new Color(1f, 0.84f, 0.25f, 1f));
+            _pickHeader.fontStyle = FontStyle.Bold;
+            var headerOutline = _pickHeader.gameObject.AddComponent<Outline>();
+            headerOutline.effectColor = new Color(0.24f, 0.11f, 0.03f, 1f);
+            headerOutline.effectDistance = new Vector2(3f, -3f);
+            UIKit.Place(_pickHeader.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f),
+                new Vector2(0f, LineupBottom + SlotSize + 8f + HeaderHeight * 0.5f), new Vector2(1100f, HeaderHeight));
+
             _playButton = UIKit.MakeButton(safe, "PlayButton", _art.playButton != null ? "" : "PLAY", _art.playButton != null ? Color.white : UIKit.Good, Launch, 40);
             if (_art.playButton != null) { _playButton.image.sprite = _art.playButton; _playButton.image.preserveAspect = true; }
-            UIKit.Place(_playButton.image.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-EdgeMargin, EdgeMargin),
+            // Play bottom-left, Back bottom-right (swapped 2026-11-08, user request).
+            UIKit.Place(_playButton.image.rectTransform, Vector2.zero, Vector2.zero, new Vector2(EdgeMargin, EdgeMargin),
                 new Vector2(UIKit.RoundButtonSize, UIKit.RoundButtonSize));
 
             var back = UIKit.MakeButton(safe, "BackButton", _art.backButton != null ? "" : "<", _art.backButton != null ? Color.white : new Color(0.62f, 0.38f, 0.17f, 1f),
                 () => _onBack?.Invoke(), 72);
             if (_art.backButton != null) { back.image.sprite = _art.backButton; back.image.preserveAspect = true; }
-            UIKit.Place(back.image.rectTransform, Vector2.zero, Vector2.zero, new Vector2(EdgeMargin, EdgeMargin),
+            UIKit.Place(back.image.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-EdgeMargin, EdgeMargin),
                 new Vector2(UIKit.RoundButtonSize, UIKit.RoundButtonSize));
 
             _driver = Root.AddComponent<Driver>();
@@ -112,7 +125,6 @@ namespace FarmFury.UI
             var save = SaveManager.Instance;
             var world = DataManager.Instance != null ? DataManager.Instance.GetWorldData(level.WorldType) : null;
             UIKit.SetBackdrop(_backdrop, MenuArt.Either(world != null ? world.characterSelectBackground : null, _art.characterSelectBackground));
-            _levelTitle.text = level.levelName;
 
             // Centre on the level's lead animal (the world's new animal), else the first unlocked one.
             int start = 0;
@@ -151,6 +163,7 @@ namespace FarmFury.UI
         {
             foreach (var image in _slotImages) { UnityEngine.Object.Destroy(image.gameObject); }
             _slotImages.Clear();
+            _slotBadges.Clear();
 
             float width = _lineup.Count * SlotSize + (_lineup.Count - 1) * SlotGap;
             _lineupRow.sizeDelta = new Vector2(width, SlotSize);
@@ -163,6 +176,7 @@ namespace FarmFury.UI
                 UIKit.Place(slot.image.rectTransform, new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f),
                     new Vector2(i * (SlotSize + SlotGap) + SlotSize * 0.5f, 0f), new Vector2(SlotSize, SlotSize));
                 _slotImages.Add(slot.image);
+                _slotBadges.Add(AddBadge(slot.image.rectTransform, null));
             }
         }
 
@@ -245,7 +259,14 @@ namespace FarmFury.UI
                 image.color = pick.HasValue ? (card != null ? Color.white : UIKit.Card) : EmptySlot;
                 var label = image.GetComponentInChildren<Text>();
                 label.text = pick.HasValue && card == null ? pick.Value.ToString() : "";
+                var badge = _slotBadges[i];
+                badge.sprite = pick.HasValue ? _art.AbilityBadge(pick.Value) : null;
+                badge.transform.parent.gameObject.SetActive(badge.sprite != null);
             }
+            int open = _lineup.Count(a => !a.HasValue);
+            _pickHeader.text = open == _lineup.Count ? $"PICK {_lineup.Count} ANIMALS"
+                             : open > 0 ? $"PICK {open} MORE"
+                             : "READY! TAP PLAY";
             _playButton.interactable = _landing.Count == 0 && _lineup.All(a => a.HasValue);
         }
 
@@ -256,6 +277,52 @@ namespace FarmFury.UI
             if (SaveManager.Instance != null) { SaveManager.Instance.LastLineup = lineup.ToList(); }
             Hide();
             _onLaunch?.Invoke(PendingLevel, lineup);
+        }
+
+        // Ability badge in a card's bottom-right corner: a dark disc with the ability icon on it (Cluck's egg,
+        // Bessie's slam...). Returns the icon Image; its parent disc is hidden while there is no sprite.
+        private static Sprite _disc;
+
+        private static Image AddBadge(RectTransform card, Sprite icon)
+        {
+            if (_disc == null) { _disc = MakeDisc(); }
+            var disc = UIKit.Picture(card, "AbilityBadge", _disc);
+            disc.color = new Color(0.16f, 0.09f, 0.03f, 0.85f);
+            disc.raycastTarget = false;
+            var r = disc.rectTransform;
+            r.anchorMin = new Vector2(1f - BadgeFraction, 0f);
+            r.anchorMax = new Vector2(1f, BadgeFraction);
+            r.offsetMin = r.offsetMax = Vector2.zero;
+            var outline = disc.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 0.84f, 0.25f, 0.9f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            var img = UIKit.Picture(disc.rectTransform, "Icon", icon);
+            img.preserveAspect = true;
+            img.raycastTarget = false;
+            var ir = img.rectTransform;
+            ir.anchorMin = new Vector2(0.14f, 0.14f);
+            ir.anchorMax = new Vector2(0.86f, 0.86f);
+            ir.offsetMin = ir.offsetMax = Vector2.zero;
+            disc.gameObject.SetActive(icon != null);
+            return img;
+        }
+
+        private static Sprite MakeDisc()
+        {
+            const int n = 64;
+            var tex = new Texture2D(n, n, TextureFormat.ARGB32, false) { wrapMode = TextureWrapMode.Clamp };
+            var px = new Color[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float dx = x + 0.5f - n * 0.5f, dy = y + 0.5f - n * 0.5f;
+                    float a = Mathf.Clamp01(n * 0.5f - Mathf.Sqrt(dx * dx + dy * dy));   // 1 px soft edge
+                    px[y * n + x] = new Color(1f, 1f, 1f, a);
+                }
+            tex.SetPixels(px);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f);
         }
 
         // Hosts the flight coroutines (this screen is a plain class); unscaled time throughout.

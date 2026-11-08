@@ -47,6 +47,8 @@ namespace FarmFury.UI
         public Sprite characterSelectBackground;
         [Tooltip("Framed animal cards (name baked in), indexed by AnimalType.")]
         public Sprite[] animalCards = new Sprite[8];
+        [Tooltip("Small ability icons (egg, slam, roll, clone, skip, horseshoe, puff, horns), indexed by AnimalType — shown as a badge on each card's bottom-right.")]
+        public Sprite[] abilityBadges = new Sprite[8];
 
         [Header("Character Story")]
         [Tooltip("Robot sprites for the Robots tab, in RobotType order (Pawn, Harvester, Semi-Harvester, Commander).")]
@@ -70,6 +72,9 @@ namespace FarmFury.UI
             1 => oneStarBoard,
             _ => null,
         };
+
+        public Sprite AbilityBadge(AnimalType animal) =>
+            abilityBadges != null && (int)animal < abilityBadges.Length ? abilityBadges[(int)animal] : null;
 
         public Sprite AnimalCard(AnimalType animal) =>
             animalCards != null && (int)animal < animalCards.Length ? animalCards[(int)animal] : null;
