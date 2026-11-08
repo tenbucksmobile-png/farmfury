@@ -293,7 +293,7 @@ public class RobotEnemy : MonoBehaviour
     // rotation from then on) or is destroyed.
     IEnumerator IdleLookAroundRoutine()
     {
-        bool IsIdle() => !IsDestroyed && _rb.bodyType == RigidbodyType2D.Static && Health >= _maxHealth;
+        bool IsIdle() => !IsDestroyed && !SuppressIdleMotion && _rb.bodyType == RigidbodyType2D.Static && Health >= _maxHealth;
 
         while (IsIdle())
         {
@@ -342,7 +342,7 @@ public class RobotEnemy : MonoBehaviour
     // BlockBase.OnCollisionEnter2D — which would misclassify a Kinematic robot).
     IEnumerator IdlePatrolRoutine()
     {
-        bool IsIdle() => !IsDestroyed && _rb.bodyType == RigidbodyType2D.Static && Health >= _maxHealth;
+        bool IsIdle() => !IsDestroyed && !SuppressIdleMotion && _rb.bodyType == RigidbodyType2D.Static && Health >= _maxHealth;
 
         float centerX = transform.localPosition.x;
         float y       = transform.localPosition.y;
@@ -418,6 +418,14 @@ public class RobotEnemy : MonoBehaviour
     const float CrushImpulse = 2.5f, SmashImpulse = 6f;   // half / all of its health
     bool _live;
 
+    public void Freeze()
+    {
+        if (!_live || IsDestroyed || _rb == null || _rb.bodyType != RigidbodyType2D.Dynamic) return;
+        _rb.linearVelocity = Vector2.zero;
+        _rb.angularVelocity = 0f;
+        _rb.Sleep();
+    }
+
     public void GoLive()
     {
         if (IsDestroyed || _rb == null) return;
@@ -429,6 +437,11 @@ public class RobotEnemy : MonoBehaviour
         _rb.Sleep();
         _invincibleUntil = Time.time + 0.5f;
     }
+
+    // Set by LevelLoader on live-physics levels: the idle patrol / look-around move and turn the (static) robot's
+    // body, which shoved the live blocks around it until the structure pushed itself apart (2026-11-08 report:
+    // "the structures demolish by themselves"). Sprite-only animation (the Commander's taunt loop) still runs.
+    public static bool SuppressIdleMotion;
 
     public void MakeDynamicFromSupportLoss()
     {

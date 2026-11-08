@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: L09_StoneBastion
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelId: W1_L09
-  levelName: Stone Bastion
+  levelName: Downhill Demolition
   parBirds: 3
   world: 1
   isBossLevel: 0
@@ -21,9 +21,29 @@ MonoBehaviour:
   trimColliders: 0
   birds: 00000000000000000000000000000000
   blocks:
+  - type: 3
+    position: {x: 4.311, y: -2.408}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 3
+    position: {x: 5.011, y: -2.408}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
   - type: 1
-    position: {x: 8.725, y: -3.811}
-    size: {x: 1.114, y: 1.258}
+    position: {x: 9.661, y: -5.185}
+    size: {x: 1.189, y: 1.342}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
@@ -32,8 +52,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 1
-    position: {x: 8.725, y: -3.061}
-    size: {x: 1.114, y: 1.258}
+    position: {x: 9.661, y: -4.385}
+    size: {x: 1.189, y: 1.342}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
@@ -42,8 +62,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 1
-    position: {x: 12.425, y: -3.811}
-    size: {x: 1.114, y: 1.258}
+    position: {x: 12.461, y: -5.185}
+    size: {x: 1.189, y: 1.342}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
@@ -52,8 +72,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 1
-    position: {x: 12.425, y: -3.061}
-    size: {x: 1.114, y: 1.258}
+    position: {x: 12.461, y: -4.385}
+    size: {x: 1.189, y: 1.342}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
@@ -62,8 +82,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 1
-    position: {x: 10.44, y: -2.584}
-    size: {x: 6.259, y: 0.578}
+    position: {x: 10.96, y: -3.884}
+    size: {x: 5.034, y: 0.578}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
@@ -71,68 +91,54 @@ MonoBehaviour:
     artVariant: 12
     forceStayKinematic: 0
     flipX: 0
-  - type: 3
-    position: {x: 9.553, y: -3.778}
-    size: {x: 0.977, y: 0.977}
+  - type: 0
+    position: {x: 10.374, y: -3.142}
+    size: {x: 1, y: 1.301}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 0
+    artVariant: 3
     forceStayKinematic: 0
     flipX: 0
-  - type: 3
-    position: {x: 11.653, y: -3.778}
-    size: {x: 0.977, y: 0.977}
+  - type: 0
+    position: {x: 11.894, y: -3.142}
+    size: {x: 1, y: 1.301}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 0
+    artVariant: 3
     forceStayKinematic: 0
     flipX: 0
-  - type: 2
-    position: {x: 6.1, y: -5.147}
-    size: {x: 0.977, y: 0.977}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
+  - type: 0
+    position: {x: 11.032, y: -2.391}
+    size: {x: 2.009, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
     indestructible: 0
-    artVariant: 0
-    forceStayKinematic: 0
-    flipX: 0
-  - type: 2
-    position: {x: 7.05, y: -5.147}
-    size: {x: 0.977, y: 0.977}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
-    indestructible: 0
-    artVariant: 0
-    forceStayKinematic: 0
-    flipX: 0
-  - type: 2
-    position: {x: 6.575, y: -4.368}
-    size: {x: 0.977, y: 0.977}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
-    indestructible: 0
-    artVariant: 0
+    artVariant: 2
     forceStayKinematic: 0
     flipX: 0
   robots:
   - robotType: 1
-    position: {x: 10.6, y: -3.65}
+    position: {x: 11.088, y: -5.05}
     scale: {x: 7.5, y: 7.5}
   - robotType: 0
-    position: {x: 10.6, y: -1.95}
+    position: {x: 11.088, y: -3.25}
     scale: {x: 5.5, y: 5.5}
   - robotType: 2
-    position: {x: 6.575, y: -3.553}
+    position: {x: 11.088, y: -1.85}
     scale: {x: 5.5, y: 5.5}
   platforms:
-  - x: 10.6
-    surfaceY: -4.2
+  - x: 6.2
+    surfaceY: -3.363
     width: 5.6
-    variant: 1
+    variant: 6
+    rolling: 0
+  - x: 4.353
+    surfaceY: -2.83
+    width: 2.4
+    variant: 5
+    rolling: 1

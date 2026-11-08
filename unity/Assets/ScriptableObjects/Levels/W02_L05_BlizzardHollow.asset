@@ -22,43 +22,103 @@ MonoBehaviour:
   birds: 030000000200000003000000
   blocks:
   - type: 0
-    position: {x: 8.4, y: -6.267}
-    size: {x: 0.946, y: 0.797}
+    position: {x: 8.4, y: -6.09}
+    size: {x: 1, y: 1.188}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 4
+    artVariant: 3
     forceStayKinematic: 0
     flipX: 1
   - type: 0
-    position: {x: 6.3999996, y: -6.267}
-    size: {x: 0.946, y: 0.797}
+    position: {x: 7.4799995, y: -6.09}
+    size: {x: 1, y: 1.188}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 4
+    artVariant: 3
     forceStayKinematic: 0
     flipX: 1
   - type: 0
-    position: {x: 4.3999996, y: -6.267}
-    size: {x: 0.946, y: 0.797}
+    position: {x: 8.022999, y: -5.391}
+    size: {x: 1.339, y: 0.496}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 4
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 1
+  - type: 0
+    position: {x: 6.3999996, y: -6.09}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 1
+  - type: 0
+    position: {x: 5.4799995, y: -6.09}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 1
+  - type: 0
+    position: {x: 6.023, y: -5.391}
+    size: {x: 1.339, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 1
+  - type: 0
+    position: {x: 4.3999996, y: -6.09}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 1
+  - type: 1
+    position: {x: 3.4799995, y: -6.09}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 1
+  - type: 0
+    position: {x: 4.023, y: -5.391}
+    size: {x: 1.339, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
     forceStayKinematic: 0
     flipX: 1
   robots:
   - robotType: 0
-    position: {x: 7.6569996, y: -6.1499996}
+    position: {x: 7.985999, y: -6.1499996}
     scale: {x: 5.5, y: 5.5}
   - robotType: 0
-    position: {x: 5.6569996, y: -6.1499996}
+    position: {x: 5.985999, y: -6.1499996}
     scale: {x: 5.5, y: 5.5}
   - robotType: 0
-    position: {x: 3.6569996, y: -6.1499996}
+    position: {x: 3.985999, y: -6.1499996}
     scale: {x: 5.5, y: 5.5}
   platforms: []

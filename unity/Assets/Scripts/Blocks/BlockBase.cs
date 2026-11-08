@@ -124,6 +124,15 @@ public abstract class BlockBase : MonoBehaviour
         _graceUntil = Time.time + LiveGraceSeconds;
     }
 
+    /// <summary>Zeroes any settling motion and puts the (live) body back to sleep.</summary>
+    public void Freeze()
+    {
+        if (!IsLive || IsDestroyed || _rb == null || _rb.bodyType != RigidbodyType2D.Dynamic) return;
+        _rb.linearVelocity = Vector2.zero;
+        _rb.angularVelocity = 0f;
+        _rb.Sleep();
+    }
+
     // Wakes everything resting on or against this block (a destroyed body doesn't reliably wake its neighbours).
     void WakeNeighbours()
     {

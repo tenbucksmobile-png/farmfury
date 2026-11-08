@@ -170,6 +170,7 @@ public class LevelLoader : MonoBehaviour
 
         if (data.platforms != null)
             foreach (var p in data.platforms) SpawnPlatform(p);
+        RobotEnemy.SuppressIdleMotion = ReferenceFraming.Active(data);   // live physics: robots mustn't shove blocks
         foreach (var b in data.blocks) SpawnBlock(b, data.world, ReferenceFraming.Active(data) || data.trimColliders);
         foreach (var r in data.robots) SpawnRobot(r, data.world);
 
@@ -187,11 +188,24 @@ public class LevelLoader : MonoBehaviour
     // reveal only toggles their renderers); robots wait until their pop-in scale animation has finished.
     IEnumerator GoLiveAfterReveal()
     {
+        // More solver iterations: tall thin stacks stay put instead of creeping apart.
+        Physics2D.velocityIterations = Mathf.Max(Physics2D.velocityIterations, 12);
+        Physics2D.positionIterations = Mathf.Max(Physics2D.positionIterations, 8);
         yield return new WaitForFixedUpdate();
         foreach (var block in _spawnedBlocks) if (block != null) block.GoLive();
+        // Going Dynamic creates the stack's contacts, and a new contact wakes both bodies — so a structure that
+        // became live was immediately awake and free to creep. Put everything back to sleep once the contacts
+        // exist (two steps later): it then stays perfectly still until something actually hits it.
+        yield return new WaitForFixedUpdate();
+        yield return new WaitForFixedUpdate();
+        foreach (var block in _spawnedBlocks) if (block != null) block.Freeze();
         yield return null;
         while (LevelReveal.IsRevealing) yield return null;
         foreach (var robot in _spawnedRobots) if (robot != null) robot.GoLive();
+        yield return new WaitForFixedUpdate();
+        yield return new WaitForFixedUpdate();
+        foreach (var block in _spawnedBlocks) if (block != null) block.Freeze();
+        foreach (var robot in _spawnedRobots) if (robot != null) robot.Freeze();
     }
 
     // Wakes any spawned block that has zero real support beneath it (see
