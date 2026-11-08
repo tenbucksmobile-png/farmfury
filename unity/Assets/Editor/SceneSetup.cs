@@ -62,6 +62,7 @@ public static partial class SceneSetup
         EnsureAppIcon();            // Sprites/AppIcon.png -> default app icon (SceneSetup.Worlds.cs)
         EnsureWorldRobotPrefabs();  // Worlds 3-9: W<N>_<Tier>Robot prefabs from Stampede art (SceneSetup.Worlds.cs)
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
+        WireAbilityProjectiles(); // Gerald/Woolly/Billy thrown-ability art (SceneSetup.Cornfield.cs)
         WireBessieAudio();      // BessieAnimal.prefab: _earthquakeClip <- Bessie_Earthquake.mp3
         WireLauncher();         // CatapultLauncher + LevelLoader ref + counterweight sprite
         WireRobotSprite();                // Robot_Idle.png → Robot prefab SpriteRenderer

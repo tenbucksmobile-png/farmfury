@@ -40,16 +40,16 @@ This is Farm Fury: not a war between armies, but a farmyard's answer to being to
 @"Sunrise Meadows' gentlest resident and, when she finally lands, its heaviest argument. Bessie spent years just chewing cud and watching the sunset — until the Robots paved over her favorite grazing hill. Now when she hits the ground, she means it, and the whole structure around her feels it too."),
         new Entry("Percy the Pig — Bounce Roll",
 @"Percy never met an obstacle he didn't want to roll straight through. Mischievous, a little vain about his snout, and allergic to slowing down, Percy discovered mid-battle that curling into a ball and picking up speed on the bounce works just as well on Robots as it used to work on hay bales back home."),
-        new Entry("Woolly the Sheep — Triple Clone",
-@"Nobody's ever sure which Woolly is the real one, including — allegedly — Woolly. Quiet, a bit of a copycat by nature, Woolly turned that habit into a weapon: split into three mid-air, and suddenly one sheep is a small flock, hitting from three angles at once."),
+        new Entry("Woolly the Sheep — Wool Balls",
+@"Woolly has been growing the thickest fleece on the farm for years, and finally found a use for it. Quiet and endlessly patient, Woolly rolls tight balls of wool between battles; mid-air, three of them go flying ahead, bouncing through Robot walls and knocking over anything they touch on the way."),
         new Entry("Ducky the Duck — Skip Shot",
 @"Ducky grew up skipping stones across the farm pond for fun, and it turns out that same flat, low, skimming flight works even better on a Robot patrol line. Cheerful, a little smug about her aim, and always first to volunteer for a tricky shot."),
         new Entry("Horace the Horse — Rear Kick",
 @"Big, proud, and a little old-fashioned, Horace was the farm's workhorse long before the Robots showed up — plowing fields, hauling carts, never one to complain. He brought that same stubborn work ethic to the fight: on impact, he kicks back, sending debris flying into whatever's still standing behind him."),
-        new Entry("Gerald the Turkey — Puff Up",
-@"Gerald has always had main character energy and a temper to match. Easily offended, endlessly dramatic, and secretly a little insecure about being ""just a turkey,"" Gerald found his calling mid-battle: puff up bigger and bigger until he's less bird, more wrecking ball."),
-        new Entry("Billy the Goat — Headbutt Through",
-@"Billy headbutts things. Fence posts, barn doors, the occasional unsuspecting Robot patrol unit — it's less a combat technique and more just who Billy is as a creature. Blunt, stubborn, and utterly fearless, Billy doesn't go around obstacles. He goes through them."),
+        new Entry("Gerald the Turkey — Feather Bombs",
+@"Gerald has always had main character energy and a temper to match. Easily offended, endlessly dramatic, and secretly a little insecure about being ""just a turkey,"" Gerald found his calling mid-battle: shake loose a volley of feather bombs that rain down on the Robots and burst in a storm of plumage."),
+        new Entry("Billy the Goat — Mud Throw",
+@"Billy has never met a mud puddle he didn't roll in. Blunt, stubborn, and utterly fearless, he keeps a big ball of the farm's finest mud ready for any Robot that wanders too close — one throw and it splats across everything nearby."),
     };
 
     public static readonly Entry[] Robots =

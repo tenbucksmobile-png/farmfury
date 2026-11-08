@@ -18,6 +18,7 @@ MonoBehaviour:
   world: 7
   isBossLevel: 0
   referenceFraming: 0
+  trimColliders: 1
   birds: 000000000000000000000000
   blocks:
   - type: 1

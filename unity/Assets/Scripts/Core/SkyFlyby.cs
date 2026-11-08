@@ -10,11 +10,15 @@ using UnityEngine;
 /// </summary>
 public class SkyFlyby : MonoBehaviour
 {
-    const int   SortingOrder   = -31;            // haze veil -35 < mist -32 < fly-bys < mid corn -30
-    const float PlaneHeightSh  = 0.075f;         // plane drawn this tall (fraction of screen height)
-    const float DroneHeightSh  = 0.05f;
-    const float PlaneCrossSec  = 11f;            // time to cross the screen
-    const float DroneCrossSec  = 15f;
+    // Far away (user request 2026-11-08: "flies in the distance, with a bit of fade so it looks far"): drawn BEHIND
+    // EnvironmentDepthSystem's haze veil (-35) so the golden haze washes over it like the far hills, small, and
+    // slightly see-through.
+    const int   SortingOrder   = -37;            // far painting -40 < fly-bys < haze veil -35
+    const float PlaneHeightSh  = 0.04f;          // plane drawn this tall (fraction of screen height)
+    const float DroneHeightSh  = 0.03f;
+    static readonly Color DistanceTint = new Color(0.86f, 0.84f, 0.80f, 0.78f);
+    const float PlaneCrossSec  = 16f;            // slow: distant things cross the screen slowly
+    const float DroneCrossSec  = 20f;
     const float FirstDelay     = 2.5f;           // first fly-by shortly after the level appears
     const float MinGap = 9f, MaxGap = 18f;       // pause between fly-bys
     const float DroneChance    = 0.3f;
@@ -35,6 +39,7 @@ public class SkyFlyby : MonoBehaviour
     {
         _cam = cam; _plane = plane; _drone = drone;
         _flyer = NewRenderer("Flyer");
+        _flyer.color = DistanceTint;
         _flyer.enabled = false;
         _puff = MakePuffSprite();
     }
@@ -101,7 +106,7 @@ public class SkyFlyby : MonoBehaviour
             float size = p.size * (1f + 1.2f * k);
             p.sr.transform.position = new Vector3(c.x + p.screenOffset.x, c.y + p.screenOffset.y + k * 0.01f * camH, 0f);
             p.sr.transform.localScale = new Vector3(size, size, 1f);
-            p.sr.color = new Color(1f, 1f, 1f, 0.55f * (1f - k));
+            p.sr.color = new Color(1f, 1f, 1f, 0.40f * (1f - k));
             _puffs[i] = p;
         }
     }
@@ -116,7 +121,7 @@ public class SkyFlyby : MonoBehaviour
         _flying = true;
         _t = 0f;
         _crossSec = _isDrone ? DroneCrossSec : PlaneCrossSec;
-        _ySh = _isDrone ? Random.Range(0.62f, 0.72f) : Random.Range(0.72f, 0.84f);   // well clear of the HUD row
+        _ySh = _isDrone ? Random.Range(0.60f, 0.68f) : Random.Range(0.64f, 0.76f);   // over the far hills, clear of the HUD
         _phase = Random.Range(0f, 10f);
         _puffTimer = 0f;
     }

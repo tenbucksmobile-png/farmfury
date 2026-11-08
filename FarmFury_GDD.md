@@ -57,11 +57,11 @@ Each animal has one ability, triggered by a tap in flight. Animals unlock with t
 | **Cluck** (chicken) | **Cluster Bomb** — lays a spread of eggs that scatter | Chickens lay eggs | Wood, spread-out targets; punches through hay | World 1 |
 | **Bessie** (cow) | **Ground Slam** — radial shockwave on landing | Cows are huge and heavy | Stone, tall unstable towers | World 1 |
 | **Percy** (pig) | **Bounce Roll** — curls up, bounces 3×, gaining speed | Pigs are round | Low, spread-out defences | World 2 |
-| **Woolly** (sheep) | **Triple Clone** — splits into three at 15° spread | Shearing — three for one | Wide targets, ice | World 2 |
+| **Woolly** (sheep) | **Wool Balls** — throws three bouncy wool balls that each hit up to three times | Shearing — fleece as ammo | Wide targets, ice | World 2 |
 | **Ducky** (duck) | **Skip Shot** — skips flat surfaces 3× | Ducks on water | Low flat structures | World 3 |
 | **Horace** (horse) | **Rear Kick** — kicks debris backward on impact | Horses kick | Targets behind the main structure | World 4 |
-| **Gerald** (turkey) | **Puff Up** — inflates 3×, wrecking ball | Turkeys puff up | Stone, brute force | World 5 |
-| **Billy** (goat) | **Headbutt Through** — penetrates the first obstacle | Goats headbutt everything | Layered / shelled structures | World 6 |
+| **Gerald** (turkey) | **Feather Bombs** — drops three bombs that burst in a small radius | Ruffled feathers | Clustered robots, wood | World 5 |
+| **Billy** (goat) | **Mud Throw** — one mud ball that splats over a wide radius | Goats love mud | Spread-out structures | World 6 |
 
 Personalities (from v2): Cluck anxious then delighted; Bessie slow and dignified, devastating on impact; Percy
 gleeful chaos; Woolly bewildered by its clones; Ducky smug; Horace noble until the kick; Gerald self-important;

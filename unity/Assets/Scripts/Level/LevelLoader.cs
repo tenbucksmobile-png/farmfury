@@ -170,7 +170,7 @@ public class LevelLoader : MonoBehaviour
 
         if (data.platforms != null)
             foreach (var p in data.platforms) SpawnPlatform(p);
-        foreach (var b in data.blocks) SpawnBlock(b, data.world, ReferenceFraming.Active(data));
+        foreach (var b in data.blocks) SpawnBlock(b, data.world, ReferenceFraming.Active(data) || data.trimColliders);
         foreach (var r in data.robots) SpawnRobot(r, data.world);
 
         ScoreManager.Instance.InitLevel(

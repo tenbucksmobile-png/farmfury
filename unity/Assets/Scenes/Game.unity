@@ -680,7 +680,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
+  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -957,7 +957,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
+  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -2238,7 +2238,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
+  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -2681,6 +2681,15 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 1cfaabd537b0698479b96de5c9ad3ca9, type: 3}
     - {fileID: 21300000, guid: fdc2f808d41a13a448a7c2008c2a18f6, type: 3}
     - {fileID: 21300000, guid: 7ac58ec6ed0ab69429d9faa2de604d56, type: 3}
+    abilityBadges:
+    - {fileID: 21300000, guid: ca5438ad4cf578f48a9a43305d6b5809, type: 3}
+    - {fileID: 21300000, guid: c2982e000807a454d9ba2661d7880ee4, type: 3}
+    - {fileID: 21300000, guid: 603ce4a1f258241459cfe65aff68d2f9, type: 3}
+    - {fileID: 21300000, guid: 4a7853c1c17b50b47b241642b3315149, type: 3}
+    - {fileID: 21300000, guid: 4bc36bfb0ddf7914ca4adb139a9ef645, type: 3}
+    - {fileID: 21300000, guid: e114b67421f87cf4fbc8444fee29a458, type: 3}
+    - {fileID: 21300000, guid: 563f193763f74dd4cba2a549f6172ef7, type: 3}
+    - {fileID: 21300000, guid: a01894f31a094ad4d887f1a1ed3f5af6, type: 3}
     robotPortraits:
     - {fileID: 21300000, guid: 0c334c6f665217f4abb2ec6c28ec34b2, type: 3}
     - {fileID: 21300000, guid: 07886339befb9504eb55ae959d3e12c4, type: 3}

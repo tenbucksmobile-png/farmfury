@@ -197,6 +197,9 @@ public static class WorldLevelGenerator
         asset.robots      = robots;
         asset.world       = spec.world;
         asset.isBossLevel = boss;
+        // Framed templates are laid out by the blocks' visible edges: keep the colliders trimmed to the art. Not World 2,
+        // whose ice reskin has different padding (its blocks would sit over gaps and drop at load).
+        asset.trimColliders = template.referenceFraming && spec.world != 2;
         AssetDatabase.CreateAsset(asset, $"{Folder}/{file}.asset");
     }
 

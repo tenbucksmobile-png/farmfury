@@ -25,6 +25,10 @@ public class LevelData : ScriptableObject
     // scenery and the painted meadow. Off = the older content-fitting auto-zoom. Added 2026-11-08, L01 first.
     public bool referenceFraming;
 
+    // Trim block colliders to their visible art without the reference framing: set by WorldLevelGenerator on levels
+    // built from a framed World 1 template (their layouts are by visible edges). Framed levels always trim.
+    public bool trimColliders;
+
     /// <summary>The franchise WorldType for the 1-based <see cref="world"/> int.</summary>
     public global::WorldType WorldType => (global::WorldType)Mathf.Clamp(world - 1, 0, (int)global::WorldType.CropFactory);
 

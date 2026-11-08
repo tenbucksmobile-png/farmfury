@@ -121,6 +121,19 @@ needing a live pass before shipping.
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
+- **2026-11-08 (evening) — World 1 rebuilt + new thrown abilities** (user requests, unverified in Play mode).
+  L02-L18 redesigned Angry-Birds style in `tools/design_world1.py` (pieces described by visible edges: posts,
+  planks, stone boxes/pillars/slabs, hay, barrels, raised islands, robot perches; it writes
+  `Editor/LevelDataGenerator.World1.cs`, checks support + reach, and renders previews with `--render DIR`). All framed,
+  difficulty ramps from a lean-to (L02) through towers, island huts, a stone bunker, a staircase, twin towers to the
+  Commander's keep (L18). Edit the designs there, then Generate All Level Data. `LevelData.trimColliders` (set by
+  WorldLevelGenerator for Worlds 3-9 built from these framed templates) keeps their colliders trimmed too.
+  Abilities changed: Gerald = Feather Bombs, Woolly = Wool Balls, Billy = Mud Throw, all on the new runtime
+  `AbilityProjectile` (burst-in-radius or bounce-and-hit; robots take egg-tier hits). Art in `Sprites/Abilities/`
+  (Kling + Stampede FeatherBurst, via `tools/import_ability_badges.py`), wired onto the prefabs by
+  `SceneSetup.WireAbilityProjectiles`; badges and Character Story text updated. SkyFlyby moved into the distance
+  (behind the haze veil, smaller, slower, slightly transparent).
+
 - **2026-11-08 (later) — World 1 cornfield backdrop + raised islands** (user request, framed World 1 levels only =
   L01 today). Existing art reused first: `Rough_Canvas/DistantBarn.png` is the far layer (sky, hazy hills, barn,
   windmill, silos). Only 8 Kling images were generated (16 credits, kling-image-v3_0_omni i2i at 2 credits/image,
@@ -514,11 +527,11 @@ Overlays (OverlayScreen) open on top of any screen; Esc / Android back closes th
 | Cluck (chicken) | Cluster Bomb — 5 eggs scatter on tap | World 1 |
 | Bessie (cow) | Ground Slam — radial shockwave on landing | World 1 |
 | Percy (pig) | Bounce Roll — curls, bounces 3× gaining speed | World 2 |
-| Woolly (sheep) | Triple Clone — splits into 3 at 15° spread | World 2 |
+| Woolly (sheep) | Wool Balls — throws 3 bouncy wool balls ahead (each hits up to 3 times) | World 2 |
 | Ducky (duck) | Skip Shot — skips flat surfaces 3× | World 3 |
 | Horace (horse) | Rear Kick — kicks debris backward on impact | World 4 |
-| Gerald (turkey) | Puff Up — inflates 3× on tap, wrecking ball | World 5 |
-| Billy (goat) | Headbutt Through — penetrates first obstacle | World 6 |
+| Gerald (turkey) | Feather Bombs — drops 3 bombs that burst in a small radius | World 5 |
+| Billy (goat) | Mud Throw — hurls a mud ball that splats over a wide radius | World 6 |
 
 All eight are scripted and art-wired; each leads the lineups of the world that introduces it (Worlds 2-6).
 
@@ -753,7 +766,7 @@ unity/Assets/Scripts/
                               through blocks now always die in exactly one hit, any contact.
     BessieAnimal.cs            — vy-18 slam; shockwave 3.6u radius on Ground-tagged landing
     PercyAnimal / WoollyAnimal / DuckyAnimal / HoraceAnimal / GeraldAnimal / BillyAnimal
-                              — Bounce Roll / Triple Clone / Skip Shot / Rear Kick / Puff Up / Headbutt
+                              — Bounce Roll / Wool Balls / Skip Shot / Rear Kick / Feather Bombs / Mud Throw (the three thrown abilities use AbilityProjectile)
                               Through respectively; scripted and ready, not yet used in any shipped level
     EggProjectile.cs           — layer 10; flat _damage=15 on first contact only
   Blocks/

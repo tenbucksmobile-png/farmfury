@@ -31,6 +31,42 @@ public static partial class SceneSetup
             arr.GetArrayElementAtIndex(i).objectReferenceValue = LoadCornfieldSprite(files[i], opaque: false);
     }
 
+    // Thrown-ability art (AbilityProjectile, 2026-11-08): Gerald's feather bombs, Woolly's wool balls, Billy's mud.
+    // Sprites are made by tools/import_ability_badges.py into Assets/Sprites/Abilities.
+    static void WireAbilityProjectiles()
+    {
+        const string art = "Assets/Sprites/Abilities/";
+        WireAnimalSprites("GeraldAnimal", typeof(GeraldAnimal), ("_bombSprite", art + "FeatherBomb.png"), ("_burstSprite", art + "FeatherBurst.png"));
+        WireAnimalSprites("WoollyAnimal", typeof(WoollyAnimal), ("_woolBallSprite", art + "WoolBall.png"));
+        WireAnimalSprites("BillyAnimal",  typeof(BillyAnimal),  ("_mudBallSprite", art + "MudBall.png"), ("_mudSplatSprite", art + "MudSplat.png"));
+    }
+
+    static void WireAnimalSprites(string prefabName, System.Type type, params (string field, string path)[] sprites)
+    {
+        string prefabPath = $"Assets/Prefabs/Animals/{prefabName}.prefab";
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null) { Debug.LogWarning($"[FarmFury] {prefabPath} missing"); return; }
+        var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+        try
+        {
+            var comp = contents.GetComponent(type);
+            if (comp == null) return;
+            var so = new SerializedObject(comp);
+            int found = 0;
+            foreach (var (field, path) in sprites)
+            {
+                var sp = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                var prop = so.FindProperty(field);
+                if (prop == null) continue;
+                prop.objectReferenceValue = sp;
+                if (sp != null) found++;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+            PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+            Debug.Log($"[FarmFury] {prefabName}: ability art {found}/{sprites.Length} wired.");
+        }
+        finally { PrefabUtility.UnloadPrefabContents(contents); }
+    }
+
     static void WireCornfieldSprite(SerializedObject so, string field, string file, bool opaque)
     {
         var sp = LoadCornfieldSprite(file, opaque);
