@@ -14,7 +14,7 @@ The repo contains two parallel codebases:
 
 This is the single source of truth for the Unity port. Detailed reasoning behind current values/conventions (root causes, dead ends, superseded fixes) lives in **`docs/HISTORY.md`** — read it when you need the "why," not just the "what." This file only states current truth.
 
-Full GDD: **`FarmFury_GDD.md`** (v3.0, repo root — the living design doc, franchise format; supersedes the June 2026
+Full GDD: **`FarmFury_GDD.md`** (v3.1, repo root — the living design doc, franchise format; supersedes the June 2026
 `Other/FarmFuryUniverse/FarmFury_GDD_v2.docx`). Update it alongside this file when the design changes.
 
 ---
@@ -47,8 +47,8 @@ needing a live pass before shipping.
 
 - **Franchise flow (2026-11-02) is compiled and wired but never seen in Play mode.** Every screen layout is from
   reference-canvas maths; check Landing / World Select / Level Select (8-column grid above 12 levels) / Character
-  Select / Results / Pause / Settings / Shop / Locker on a real aspect ratio. Hat placement on animals is an
-  approximation (half the body sprite's width at 82% height) — tune `AnimalCosmeticRenderer` after seeing it.
+  Select / Results / Pause / Settings / Shop / Locker on a real aspect ratio. (Hats were removed 2026-11-08 —
+  cosmetics are now cannon skins, trails and impact effects.)
 - **Art sources (2026-11-02):** animal poses come from `FarmFury_Technical/FarmFury_Artwork/Rough_Characters` via
   `tools/import_character_art.py` (all 8 animals; Horace's Trigger/Impact pending two Kling jobs — save them as
   `Rough_Characters/Horace/Horace_Trigger.png` / `Horace_Impact.png` and re-run the script + Wire Scene References).

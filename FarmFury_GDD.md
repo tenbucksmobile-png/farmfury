@@ -1,6 +1,6 @@
 # FARM FURY — Game Design Document
 
-**v3.0** (2 November 2026) · "Physics Destruction · Nine Worlds · One Farm to Save" · A Farm Fury Universe Game
+**v3.1** (8 November 2026) · "Physics Destruction · Nine Worlds · One Farm to Save" · A Farm Fury Universe Game
 Physics Puzzle · Casual · Free-to-Play · iOS & Android · Unity 6.5
 
 This Markdown file replaces `FarmFury_GDD_v2.docx` (June 2026, concept phase) as the living design document, in the
@@ -44,7 +44,9 @@ level rewards the player who spots the clever shot.
 3. **Aim and fire the Farm Cannon:** drag back from the cannon — drag *direction* sets the launch angle (20°–80°),
    drag *distance* sets the power. A dotted arc previews the shot (fades on later levels).
 4. **Tap mid-flight** to trigger the animal's ability (from World 1 level 4 on).
-5. Destroy every robot. Blocks fall under real physics; explosive props (hay bales, dynamite barrels) chain.
+5. Destroy every robot. Structures stand still until something hits them, then topple storey by storey under
+   live physics (slowed gravity so the collapse reads); robots get crushed by falling pieces; explosive props
+   (hay bales, dynamite barrels) chain; parked wagons roll off ramps and ledges into the structures below.
 6. Run out of animals with robots left → **revive** offer (+1 animal) or Level Failed.
 7. **Results:** stars, coin payout, Double Coins (rewarded ad), then on to the next level.
 
@@ -69,7 +71,12 @@ Billy furious and unstoppable.
 
 **Art:** each animal has cannon-game poses — Idle, Loaded, In-flight, Impact, Trigger (ability) — plus a framed
 select card and a thumbs-up portrait used in the in-game queue. Horace's ability and impact poses are pending
-(Kling AI). **Physics:** heavier animals (Bessie mass 28 vs Cluck 8) hit harder; slow, loopy arcs (gravity scale 0.18).
+(Kling AI). **Physics:** heavier animals (Bessie mass 28 vs Cluck 8) hit harder. World 1 uses Angry-Birds-measured
+framing: the camera is fixed per level, gravity and launch speed are set in screen terms, and typical flights
+last 1–1.5 s.
+
+**Thrown abilities:** Gerald (Feather Bombs), Woolly (Wool Balls) and Billy (Mud Throw) throw projectiles that
+burst in a radius or bounce and hit; robots take egg-strength damage from them.
 
 ## 4. Enemies — the Harvest Robots (Built)
 
@@ -82,9 +89,10 @@ Three robot tiers plus a boss in every world; each world has its own look for ea
 | Semi-Harvester | 26 | Most common guard |
 | Boss | 90 | One per world, resists direct hits (structural collapse hurts it most) |
 
-**Damage model:** every source is a fixed fraction of a robot's health — direct animal hit (~2 hits to kill),
-egg (~6–7), falling when its support is destroyed (~7). Exploding blocks never damage robots directly. Robots
-patrol a little on their perch and flash when hit.
+**Damage model (Angry Birds feel, Nov 2026):** a direct animal hit kills any regular robot (bosses still resist);
+an egg or thrown-ability hit takes 40% of its health; falling when its support is destroyed takes 60%; being
+crushed by a falling piece takes half (heavy impact) or all of it (very heavy). Exploding blocks never damage robots
+directly. Robots stand still on live-physics levels (patrolling would shove the structure) and flash when hit.
 
 | World | Basic | Harvester | Semi-Harvester | Boss |
 |---|---|---|---|---|
@@ -127,8 +135,18 @@ gravity wells + zero-G ability variants (W6). Character weight affecting range (
 **Level anatomy:** cannon and animal queue on the left; open space for the arc; robot fortress on the right
 (x ≈ 3–8.4 world units); world backdrop and props behind.
 
-**World 1** is hand-built — every tower placed in the Unity Scene view and exported by the Level Layout Dumper.
-Cluck alone for levels 1–9, Bessie joins from level 10; level 18 is the Commander's fortress (boss).
+**World 1** (rebuilt Nov 2026, Angry Birds style) is designed in `tools/design_world1.py`, which checks every
+piece is supported and every target reachable, and renders previews. The structures:
+- multi-storey towers (up to five tapering storeys) that topple and break on the way down;
+- balancing beams (see-saws carrying a robot against a barrel);
+- **mounts** at near, middle and far distances: floating islands, a tall rock mesa, a scaffold, a wagon bed and a
+  ramp;
+- **rolling wagons:** a wagon parked on a ramp, a mesa edge or a high island, loaded with robots or dynamite — hit
+  it and it rolls or tips down into the bigger structure below (L05, L07, L09, L11, L12, L13, L17);
+- level 1 is a simple shelter; level 18 is the Commander's keep (boss).
+
+All layouts sit between x 5.5 and 13.5 so nothing is too far apart. A headless physics probe confirms every World 1
+structure stands untouched until hit.
 
 **Worlds 2–9** are generated from World 1's towers (`WorldLevelGenerator`), so the physics is the already-tuned
 physics:
@@ -151,7 +169,8 @@ physics:
 **Level design rules (from v2, still the goal):** completable with one fewer animal than given; at least one clever
 alternative solution; weak points telegraphed; no accidental one-shot clears; stable before the first shot; bosses
 are showpieces. **Planned:** a level validator (physics-sim stability/solvability check) — none exists yet, and
-the generated levels are untested in play.
+the generated levels are untested in play. The physics probe (Editor tool) checks stability only, not
+solvability.
 
 ## 7. Progression (Built)
 
@@ -189,7 +208,7 @@ loot boxes, every level completable without spending. The model now matches the 
 | Remove Ads (+100 coins) | $4.99 |
 | Coin packs: 100 / 500 / 5,000 / 15,000 | $0.99 / $3.99 / $9.99 / $19.99 |
 | Paid worlds (Dustbowl, Fairground, Crop Factory) | $3.99 each |
-| Hats and trails (shared by every animal) | $1.99 or 2,500 coins |
+| Cosmetics: cannon skins (Golden, Pumpkin, Corncob, Milk Churn, Tractor), flight trails, impact effects (Confetti, Popcorn, Fireworks, Feathers, Egg Splat) — shared by every animal | $1.99 or 2,500 coins |
 
 - **Ads:** rewarded (revive, Double Coins); interstitial every 6 level loads; banner on Pause / Level Failed —
   none with Remove Ads. Inert until FarmFury's LevelPlay keys are entered.
@@ -235,7 +254,7 @@ holds the character, only for genuinely missing pieces); **Suno** for music. Art
 | 1 Core feel (cannon, arc, destruction, audio, camera) | Done |
 | 2 UI/UX shell | Done — replaced by the franchise flow (Nov 2026) |
 | 3 Character roster (8 animals) | Done (Horace's ability/impact art pending) |
-| 4 World 1 (18 levels + boss) | Done |
+| 4 World 1 (18 levels + boss) | Done — rebuilt Nov 2026: tall live-physics towers, mounts, rolling wagons |
 | 5 Worlds 2–9 | Levels, robots, bosses, backdrops, props built (Nov 2026); per-world launcher mechanics planned |
 | 6 Polish & release | Monetisation built; next: Play-mode verification of everything, level validator, store setup, device testing, soft launch |
 
@@ -247,6 +266,7 @@ leaderboards on the "Perfect" goal, seasonal cosmetics.
 | Risk | Impact | Mitigation |
 |---|---|---|
 | Generated levels too easy / hard / unsolvable | High | Built from tuned World 1 towers; play-test each world; add the level validator |
+| Tall towers fragile once woken (L03, L05, L11) | Medium | Probe stress mode flags them; widen posts if play feels twitchy |
 | Nothing verified in Play mode | High | Full play-through of every screen and world before store submission |
 | Art style drift between AI sessions | Medium | Image-to-image from existing art; reuse franchise art |
 | Per-world mechanics never land | Medium | Worlds are fully playable with the cannon; mechanics are additive |
@@ -255,4 +275,4 @@ leaderboards on the "Perfect" goal, seasonal cosmetics.
 
 ---
 
-*Farm Fury — Game Design Document v3.0. Built by one developer, powered by AI. One farm to save.*
+*Farm Fury — Game Design Document v3.1. Built by one developer, powered by AI. One farm to save.*
