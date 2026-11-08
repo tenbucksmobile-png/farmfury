@@ -123,7 +123,8 @@ namespace FarmFury.UI
             var safe = UIKit.NewRect("SafeArea", root);
             safe.gameObject.AddComponent<SafeAreaFitter>();
             float size = UIKit.RoundButtonSize;
-            float left = EdgeMargin + 60f, second = left + size + ButtonGap;
+            // Same inset as Home/Settings on the right (was EdgeMargin + 60, user request 2026-11-08).
+            float left = EdgeMargin, second = left + size + ButtonGap;
             NextButton = RoundButton(safe, "NextButton", _art.playButton, ">", onNext, Vector2.zero, new Vector2(left, BottomMargin));
             RetryButton = RoundButton(safe, "RetryButton", _art.playButton, ">", onRetry, Vector2.zero, new Vector2(left, BottomMargin));
             QuitButton = RoundButton(safe, "QuitButton", _art.quitButton, "X", onQuit, Vector2.zero, new Vector2(second, BottomMargin));
