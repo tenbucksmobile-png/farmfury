@@ -54,6 +54,7 @@ public static partial class SceneSetup
             int found = 0;
             foreach (var (field, path) in sprites)
             {
+                EnsureSingleSprite(path);
                 var sp = AssetDatabase.LoadAssetAtPath<Sprite>(path);
                 var prop = so.FindProperty(field);
                 if (prop == null) continue;
@@ -65,6 +66,18 @@ public static partial class SceneSetup
             Debug.Log($"[FarmFury] {prefabName}: ability art {found}/{sprites.Length} wired.");
         }
         finally { PrefabUtility.UnloadPrefabContents(contents); }
+    }
+
+    // Single sprite mode (Multiple mode auto-slices the art and LoadAssetAtPath<Sprite> returns a fragment — see
+    // CLAUDE.md's Auto-Compile Pipeline note).
+    static void EnsureSingleSprite(string path)
+    {
+        if (!(AssetImporter.GetAtPath(path) is TextureImporter imp)) return;
+        bool dirty = false;
+        if (imp.textureType != TextureImporterType.Sprite)   { imp.textureType = TextureImporterType.Sprite; dirty = true; }
+        if (imp.spriteImportMode != SpriteImportMode.Single) { imp.spriteImportMode = SpriteImportMode.Single; dirty = true; }
+        if (!imp.alphaIsTransparency)                        { imp.alphaIsTransparency = true; dirty = true; }
+        if (dirty) imp.SaveAndReimport();
     }
 
     static void WireCornfieldSprite(SerializedObject so, string field, string file, bool opaque)

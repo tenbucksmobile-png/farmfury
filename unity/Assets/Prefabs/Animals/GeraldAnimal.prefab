@@ -180,5 +180,5 @@ MonoBehaviour:
   _sprAbility: {fileID: 21300000, guid: caadb3c9fdbdca542801cf98cccf39a7, type: 3}
   _sprImpactStars: {fileID: 21300000, guid: 29a3399c4bd78ea41a2903fd9d1809b5, type: 3}
   _contactTimeout: 0.45
-  _bombSprite: {fileID: -2150927255010441010, guid: ae3142e499616134ba024dd424ada982, type: 3}
-  _burstSprite: {fileID: 1451751047535594506, guid: b8fc7195799339d4fb867936ccc044cb, type: 3}
+  _bombSprite: {fileID: 21300000, guid: ae3142e499616134ba024dd424ada982, type: 3}
+  _burstSprite: {fileID: 21300000, guid: b8fc7195799339d4fb867936ccc044cb, type: 3}

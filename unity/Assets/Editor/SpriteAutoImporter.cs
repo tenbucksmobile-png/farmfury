@@ -79,6 +79,13 @@ public class SpriteAutoImporter : AssetPostprocessor
             if (imp.spriteImportMode != SpriteImportMode.Single)
                 imp.spriteImportMode = SpriteImportMode.Single;
         }
+        // ── Thrown-ability projectiles (AbilityProjectile, 2026-11-08) ──
+        else if (assetPath.Contains("Sprites/Abilities/"))
+        {
+            ConfigureSprite(imp, 100, alphaTransparency: true);
+            if (imp.spriteImportMode != SpriteImportMode.Single)
+                imp.spriteImportMode = SpriteImportMode.Single;
+        }
         // ── HUD animal cards + level select world cards (UI sprites, PPU=100) ──
         else if (assetPath.Contains("Sprites/UI/Cards/") ||
                  assetPath.Contains("Sprites/UI/LevelCards/"))
