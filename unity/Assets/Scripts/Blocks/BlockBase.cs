@@ -108,6 +108,9 @@ public abstract class BlockBase : MonoBehaviour
     // touches it, then the touched part wakes, leans, topples and breaks on impact like an Angry Birds structure.
     // Lower gravity makes topples slower and more readable. Settling contacts in the first moments are ignored.
     public const float LiveGravityScale = 0.6f;
+    // No bounce: bouncy contacts made an awake stack jiggle and creep until it toppled (PhysicsProbe, 2026-11-08).
+    static PhysicsMaterial2D _liveMaterial;
+    static PhysicsMaterial2D LiveMaterial => _liveMaterial ??= new PhysicsMaterial2D("LiveBlock") { friction = 0.9f, bounciness = 0f };
     const float LiveGraceSeconds = 0.6f;
     float _graceUntil;
     public bool IsLive { get; private set; }
@@ -120,6 +123,9 @@ public abstract class BlockBase : MonoBehaviour
         _rb.gravityScale = LiveGravityScale;
         _rb.linearVelocity = Vector2.zero;
         _rb.angularVelocity = 0f;
+        _rb.linearDamping = 0.1f;
+        _rb.angularDamping = 0.6f;
+        if (_col != null) _col.sharedMaterial = LiveMaterial;
         _rb.Sleep();
         _graceUntil = Time.time + LiveGraceSeconds;
     }
@@ -394,6 +400,7 @@ public abstract class BlockBase : MonoBehaviour
     }
 
     bool _trimCollider;
+    const float TrimInset = 0.04f;   // world units taken off each trimmed collider dimension
 
     void TrimColliderToArt()
     {
@@ -414,6 +421,10 @@ public abstract class BlockBase : MonoBehaviour
         }
         Vector2 centre = (min + max) * 0.5f;
         if (_sr.flipX) centre.x = -centre.x;
+        // The tight mesh sits ~0.02 u outside the visible pixels on each side, so stacked blocks overlapped by ~0.04
+        // and pushed apart when woken (PhysicsProbe). Shrink by that much (world units -> local).
+        Vector3 ls = transform.localScale;
+        size -= new Vector2(TrimInset / Mathf.Max(0.0001f, Mathf.Abs(ls.x)), TrimInset / Mathf.Max(0.0001f, Mathf.Abs(ls.y)));
         _col.size   = new Vector2(Mathf.Max(size.x, full.x * 0.05f), Mathf.Max(size.y, full.y * 0.05f));
         _col.offset = centre;
     }
@@ -440,9 +451,15 @@ public abstract class BlockBase : MonoBehaviour
     // code path that could desync from normal block death (VFX/SFX/scoring all still fire).
     public void ForceDestroy() => DestroyBlock();
 
+    /// <summary>Editor physics probe (Editor/PhysicsProbe.cs): log every hit with its caller.</summary>
+    public static bool ProbeLog;
+
     public void TakeDamage(float amount)
     {
         if (IsDestroyed || Indestructible) return;
+        if (ProbeLog)
+            Debug.Log($"[Probe] DAMAGE {name}@{transform.position} amount={amount:F2} health={Health:F2} t={Time.time:F2} " +
+                      $"awake={(_rb != null && _rb.IsAwake())} via {new System.Diagnostics.StackTrace(1, false).ToString().Replace(System.Environment.NewLine, " | ")}");
         // Only THIS block wakes on its own hit — see the removed WakeAllStaticBlocks() note
         // below for why a level-wide wake was wrong. _stayKinematic blocks (e.g. HaybaleBlock)
         // never wake at all, same as before.
@@ -498,6 +515,8 @@ public abstract class BlockBase : MonoBehaviour
         float effMass = CalculateEffectiveMass(col.rigidbody);
         float impulse = col.relativeVelocity.magnitude * effMass;
         if (impulse < minDamageImpulse) return;
+        if (ProbeLog) Debug.Log($"[Probe] HIT {name}@{transform.position} by {col.gameObject.name}@{col.transform.position} " +
+                                $"relVel={col.relativeVelocity.magnitude:F2} otherType={(col.rigidbody != null ? col.rigidbody.bodyType.ToString() : "none")}");
         TakeDamage(impulse * impulseDamageMultiplier);
     }
 

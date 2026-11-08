@@ -430,6 +430,7 @@ public class RobotEnemy : MonoBehaviour
     {
         if (IsDestroyed || _rb == null) return;
         _live = true;
+        foreach (var c in GetComponentsInChildren<Collider2D>(true)) c.enabled = true;   // off during the reveal pop
         _rb.bodyType = RigidbodyType2D.Dynamic;
         _rb.mass = LiveMass;
         _rb.gravityScale = BlockBase.LiveGravityScale;

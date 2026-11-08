@@ -189,8 +189,8 @@ public class LevelLoader : MonoBehaviour
     IEnumerator GoLiveAfterReveal()
     {
         // More solver iterations: tall thin stacks stay put instead of creeping apart.
-        Physics2D.velocityIterations = Mathf.Max(Physics2D.velocityIterations, 12);
-        Physics2D.positionIterations = Mathf.Max(Physics2D.positionIterations, 8);
+        Physics2D.velocityIterations = Mathf.Max(Physics2D.velocityIterations, 24);
+        Physics2D.positionIterations = Mathf.Max(Physics2D.positionIterations, 12);
         yield return new WaitForFixedUpdate();
         foreach (var block in _spawnedBlocks) if (block != null) block.GoLive();
         // Going Dynamic creates the stack's contacts, and a new contact wakes both bodies — so a structure that
@@ -364,7 +364,20 @@ public class LevelLoader : MonoBehaviour
             // physics separation. Re-derive collider size so the world-space hitbox stays
             // pinned to the default 0.6×0.9 regardless of visual scale.
             if (robot.TryGetComponent<BoxCollider2D>(out var col))
+            {
                 col.size = new Vector2(0.6f / data.scale.x, 0.9f / data.scale.y);
+                // Live physics (framed levels): sit the collider's bottom on the art's bottom. Designs place robots by
+                // their art, and a big robot's art (Harvester, Commander) is taller than the 0.9 collider, so the
+                // collider floated above its perch and the robot dropped onto it when it went live — a hit on the
+                // plank and on itself before the player fired (2026-11-08 "structures breaking by themselves").
+                if (ReferenceFraming.Active(GameManager.Instance != null ? GameManager.Instance.CurrentLevel : null)
+                    && robot.TryGetComponent<SpriteRenderer>(out var rsr) && rsr.sprite != null)
+                {
+                    float artBottom = float.MaxValue;
+                    foreach (var v in rsr.sprite.vertices) artBottom = Mathf.Min(artBottom, v.y);   // local units
+                    col.offset = new Vector2(col.offset.x, artBottom + col.size.y * 0.5f);
+                }
+            }
         }
         robot.Initialise(this);
         _spawnedRobots.Add(robot);

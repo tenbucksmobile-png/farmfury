@@ -52,7 +52,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 2
-    position: {x: 10.85, y: -5.1115}
+    position: {x: 10.7, y: -5.1115}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
@@ -62,7 +62,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 2
-    position: {x: 11.5, y: -5.1115}
+    position: {x: 11.7, y: -5.1115}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
@@ -72,7 +72,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 2
-    position: {x: 11.175, y: -4.33}
+    position: {x: 11.2, y: -4.31}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10

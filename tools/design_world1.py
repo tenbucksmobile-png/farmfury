@@ -301,11 +301,11 @@ L.box(dl + 0.35, deck, 0.5, stone=False); L.robot(dl + 1.0, deck, "pawn")
 L = level("L13_TenStrong", "W1_L13", "Hay Ride", 3, [C, C, B, C], """
 A hay wagon with a robot riding on top waits on the ramp; below it stands a four-storey tower on haybale stilts.""")
 deck, dl, dr, end = ramp_wagon(L, 6.0)
-t = L.hay(dl + 0.55, deck - 0.03); L.robot(dl + 1.3, deck, "pawn")
+t = L.hay(dl + 0.55, deck); L.robot(dl + 1.3, deck, "pawn")
 x0 = end + 1.6
 for x in (x0 - 0.95, x0, x0 + 0.95):
     t = L.hay(x, G)
-f = L.plank(x0 - 1.5, x0 + 1.5, t - 0.04)
+f = L.plank(x0 - 1.5, x0 + 1.5, t)
 tower(L, x0, f, 4, width=2.2, robots=["semi", "pawn", "semi", None], top="pawn")
 
 L = level("L14_StoneAndPawns", "W1_L14", "Stone And Pawns", 3, [C, C, B, B], """

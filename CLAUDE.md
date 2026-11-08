@@ -121,6 +121,17 @@ needing a live pass before shipping.
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
+- **2026-11-08 (newest) — Self-collapse fixed, verified headless** (user: "they still breaking by themselves").
+  New `Editor/PhysicsProbe.cs` (menu FarmFury → Debug → Physics Probe, or batch `-executeMethod PhysicsProbe.Run`
+  with env `FF_PROBE_LEVELS=first,last`, `FF_PROBE_WAKE=1` for a wake-everything stress mode) plays levels with no
+  input and logs `[Probe]` timelines / overlaps / results. Root causes: the robot reveal pop scaled live colliders
+  into the structure (colliders now stay off from the pop until `RobotEnemy.GoLive`, which LevelLoader follows with a
+  Freeze); trimmed colliders overlapped stacked neighbours by ~0.04 (`BlockBase.TrimInset`); L01's bales overlapped
+  0.3 u; the designer's deliberate tucks. Also: live blocks use a no-bounce material + damping, solver iterations
+  24/12, robot collider bottom aligned to the art. Probe: all 18 World 1 levels 100% intact, 0 awake, 0 movement.
+  Still open: in stress mode L05 (and marginally L03/L11) towers fall once everything is awake — they stand, but
+  fragile once hit; widen posts there if they feel too twitchy.
+
 - **2026-11-08 (latest) — Live physics + tall Angry Birds structures + rolling wagons** (user: structures must be
   multi-storey and "slowly topple over and break down on the way down... balancing beams... a wagon on a mount that
   rolls down into a bigger structure... too far apart"). Framed levels now run LIVE physics: `BlockBase.GoLive()`

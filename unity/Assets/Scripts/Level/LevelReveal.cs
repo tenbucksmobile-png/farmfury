@@ -129,6 +129,19 @@ public class LevelReveal : MonoBehaviour
     // 0 -> 1.15 -> 1 of the robot's own (per-level) scale.
     static IEnumerator Pop(Transform t)
     {
+        // The pop scales the whole robot, collider included: a growing (and overshooting) collider shoved the live
+        // blocks around it and knocked the structure down before the player fired (found 2026-11-08 with
+        // Editor/PhysicsProbe). The colliders sit out the pop.
+        var cols = t.GetComponentsInChildren<Collider2D>();
+        foreach (var c in cols) c.enabled = false;
+        try { yield return PopScale(t); }
+        // Live-physics levels: leave them off — RobotEnemy.GoLive switches them on together with the live body, and
+        // LevelLoader re-sleeps the structure right after (each collider coming back during the reveal woke it).
+        finally { if (!RobotEnemy.SuppressIdleMotion) foreach (var c in cols) if (c != null) c.enabled = true; }
+    }
+
+    static IEnumerator PopScale(Transform t)
+    {
         Vector3 baseScale = t.localScale;
         float e = 0f;
         while (e < RobotPopTime && t != null)

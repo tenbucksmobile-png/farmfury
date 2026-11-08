@@ -125,9 +125,9 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 8.2f,   postY, 1.0f,  postH, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 9.8f,   postY, 1.0f,  postH, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 8.927f, roofY, 2.44f, roofH, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Haybale, 10.85f, -5.1115f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 11.50f, -5.1115f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 11.175f, -4.33f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 10.70f, -5.1115f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 11.70f, -5.1115f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 11.20f, -4.31f,   0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
             },
             robots: new[]
             {
