@@ -7,10 +7,11 @@
 #   build           Windows 64-bit build  -> unity/Builds/Windows/
 #   build-webgl     WebGL build           -> unity/Builds/WebGL/
 #   build-android   Android APK           -> unity/Builds/Android/
+#   build-android-dev  Development APK with review markers -> unity/Builds/Android/FarmFury_dev.apk
 
 param(
     [Parameter(Mandatory=$true, Position=0)]
-    [ValidateSet("levels","setup","check","build","build-webgl","build-android")]
+    [ValidateSet("levels","setup","check","build","build-webgl","build-android","build-android-dev")]
     [string]$Command
 )
 
@@ -25,6 +26,7 @@ $MethodMap = @{
     "build"         = "BuildScript.BuildWindows"
     "build-webgl"   = "BuildScript.BuildWebGL"
     "build-android" = "BuildScript.BuildAndroid"
+    "build-android-dev" = "BuildScript.BuildAndroidDev"
 }
 
 $Method = $MethodMap[$Command]

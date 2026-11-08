@@ -121,6 +121,24 @@ needing a live pass before shipping.
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
+- **2026-11-08 — Reference framework + L01 reframing** (user request: "not anything like angry birds"). Arcade's
+  scrcpy/logcat recorder ported as `tools/review/` (record/import/analyze/compare in screen units) + dev-build
+  telemetry `HighlightMarkers.cs`; `.\Run-Unity.ps1 build-android-dev`. An Angry Birds 2 session was measured into
+  `docs/REFERENCE_FRAMEWORK.md`. Finding: World 1 sprites are in proportion with each other — the zoom was ~1.6x too
+  close, and the physics ground (-6.6) sat a full unit below where every hand-placed prop/cannon stands (-5.6).
+  `LevelData.referenceFraming` (L01 only so far) -> `ReferenceFraming.cs`: fixed ortho 8.0 (animal 0.045 sh),
+  cannon at 0.26 sw, ground at 0.12 sh; `CatapultLauncher.SetGroundTop` moves the physics ground to -5.6 and
+  `EnvironmentDepthSystem` pins the painted meadow (UV 0.19 of ParallaxForeground.png) to it. L01's bales/robot
+  moved onto -5.6; `WorldLevelGenerator` shifts framed templates back to -6.6 (W3-W9 level 1 piles now rest on
+  their ground, 0.43-0.66 lower than before). `CatapultLauncher.RobotNativePixelSize` still assumes 500 px robot
+  art (files are 256 px) — only affects the old auto-zoom. Unverified in Play mode.
+  Same day, step 2 + reveal (framed levels only): flight/aim come from `ReferenceFraming` screen-height targets —
+  projectile gravity 0.5 sh/s² (gravityScale 0.40, passed through `AnimalBase.Launch(velocity, gravityScale)`;
+  Woolly clones inherit it), launch speed 5.6-13.6 u/s, full pull 4.0 u, grab radius 2.0 u, preview dots scaled;
+  the trajectory preview reads the same gravity. L01: 57 angle/power combos reach the pile, typical flight 1.0-1.5 s.
+  New `Scripts/Level/LevelReveal.cs` (self-creating): AB2-style level intro — empty beat 0.35 s, all blocks appear at
+  once in dust puffs, robots pop in top-first (0->1.15->1, 0.14 s apart), aiming locked via `LevelReveal.IsRevealing`.
+
 - **2026-11-02 (later) — UI + art pass** (all user requests, unverified in Play mode): Character Select is Stampede's
   card carousel (tap the centred card, it flies into the next open lineup slot; slots start empty); the in-game HUD
   queue shows Stampede's thumbs-up portraits instead of cards; a boss clear goes Level Complete -> World Unlocked

@@ -146,11 +146,15 @@ public static class WorldLevelGenerator
         shift = Mathf.Clamp(shift, MinX - minX, MaxX - maxX);
 
         float MapX(float x) => (mirror ? 2f * centre - x : x) + shift;
+        // A template framed by ReferenceFraming stands on World 1's shared ground line (y=-5.6); these worlds
+        // still use the original physics ground (-6.6, the Launcher anchor), so drop it back onto that.
+        float dy = template.referenceFraming ? -6.6f - ReferenceFraming.World1GroundY : 0f;
 
         for (int i = 0; i < blocks.Length; i++)
         {
             var b = blocks[i];
             b.position.x = MapX(b.position.x);
+            b.position.y += dy;
             b.flipX = mirror;
             if (!boss && b.type == BlockType.Wood && StoneHasShape(b.artVariant) && rng.NextDouble() < stoneChance)
                 b.type = BlockType.Stone;
@@ -160,6 +164,7 @@ public static class WorldLevelGenerator
         {
             var r = robots[i];
             r.position.x = MapX(r.position.x);
+            r.position.y += dy;
             if (!boss && rng.NextDouble() < tierChance)
                 r.robotType = r.robotType switch
                 {

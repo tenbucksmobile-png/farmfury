@@ -17,6 +17,7 @@ MonoBehaviour:
   parBirds: 3
   world: 5
   isBossLevel: 1
+  referenceFraming: 0
   birds: 06000000060000000500000004000000
   blocks:
   - type: 1

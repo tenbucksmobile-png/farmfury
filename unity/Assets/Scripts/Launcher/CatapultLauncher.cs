@@ -297,13 +297,14 @@ public class CatapultLauncher : MonoBehaviour
                     && _readyBird   != null
                     && _levelLoader != null
                     && _levelLoader.HasBirdsRemaining
+                    && !LevelReveal.IsRevealing   // structure still appearing (framed levels)
                     && GameManager.Instance?.State == GameState.Playing;
 
         // ── Press: must click/tap ON the bird (loaded in the cannon barrel) ──
         if (ptr.press.wasPressedThisFrame && canFire && !_isDragging)
         {
             Vector3 world = ScreenToWorld(ptr.position.ReadValue());
-            if (Vector3.Distance(world, _readyBird.transform.position) < BirdClickRadius)
+            if (Vector3.Distance(world, _readyBird.transform.position) < _grabRadiusNow)
             {
                 _isDragging   = true;
                 _dragAngle    = _armRestAngle;
@@ -320,7 +321,7 @@ public class CatapultLauncher : MonoBehaviour
 
             // Power tracks pull distance continuously from the first frame — no deadzone here,
             // unlike the angle below, since a plain magnitude has no small-vector instability.
-            _pullDistance = Mathf.Clamp(toPointer.magnitude, 0f, _maxDragDistance);
+            _pullDistance = Mathf.Clamp(toPointer.magnitude, 0f, _maxDragNow);
 
             // The loaded bird sits only ~0.055 world units from the pivot (measured 2026-07-18),
             // so the very start of every drag is an angle computed from a near-zero-length
@@ -329,7 +330,7 @@ public class CatapultLauncher : MonoBehaviour
             // touchscreen, where contact-point noise is larger than a mouse's. Freezing the angle
             // until the pointer has moved MinAimRadius away from the pivot gives the drag a
             // stable direction before it starts steering.
-            if (toPointer.magnitude >= MinAimRadius)
+            if (toPointer.magnitude >= _aimDeadzoneNow)
             {
                 float angle = Mathf.Atan2(toPointer.y, toPointer.x) * Mathf.Rad2Deg;
                 if (angle < 0f) angle += 360f;
@@ -397,7 +398,9 @@ public class CatapultLauncher : MonoBehaviour
         ApplyBirdScale(_activeAnimal);
         _activeAnimal.OnAnimalDestroyed += OnAnimalLanded;
         _activeAnimal.OnAnimalImpact    += HandleAnimalImpact;
-        _activeAnimal.Launch(velocity);
+        _activeAnimal.Launch(velocity, _gravityScaleNow);
+        FarmFury.Core.HighlightMarkers.Shot(_activeAnimal, birdType, velocity,
+            Mathf.InverseLerp(_minSpeedNow, _maxSpeedNow, velocity.magnitude));
         AudioManager.Play(AudioManager.Sound.Launch);
         if (birdType == AnimalType.Cluck || birdType == AnimalType.Bessie)
             AudioManager.Instance?.PlayFalling(birdType);
@@ -451,7 +454,14 @@ public class CatapultLauncher : MonoBehaviour
         if (_cannonSR != null)
             _cannonSR.sprite = (data != null && data.world == 2 && _cannonSpriteW2 != null)
                 ? _cannonSpriteW2 : _cannonSprite;
-        if (_camera != null) _camera.orthographicSize = ComputeOrthoSizeForLevel(data);
+        _framed = ReferenceFraming.Active(data);
+        if (_camera != null)
+            _camera.orthographicSize = _framed ? ReferenceFraming.OrthoSize : ComputeOrthoSizeForLevel(data);
+        // Framed levels share one ground line with the scenery (ReferenceFraming.World1GroundY); every other
+        // level keeps the original physics ground at the Launcher anchor's Y.
+        _groundY = _framed ? ReferenceFraming.GroundY(data) : transform.position.y;
+        SetGroundTop(_groundY);
+        ApplyFlightTuning();
         RefreshRestPoint();
         // Restart/Replay now reuses this same handler (GameManager.RestartLevel ->
         // ForceStartLevel, no scene reload — see GameManager.cs), so a leftover mid-pan-back
@@ -711,7 +721,7 @@ public class CatapultLauncher : MonoBehaviour
         Vector2 vel = LaunchVelocity();
         if (vel.magnitude < 0.1f) { HideTrajDots(); return; }
 
-        float   grav    = Physics2D.gravity.y * 0.18f; // bird uses gravityScale=0.18 (see AnimalBase.Launch)
+        float   grav    = Physics2D.gravity.y * _gravityScaleNow; // must match what Fire() passes to AnimalBase.Launch
         float   fa      = NextBirdFA();
         float   dt      = Time.fixedDeltaTime;
         float   visible = TrajectoryVisibleFraction();
@@ -777,10 +787,7 @@ public class CatapultLauncher : MonoBehaviour
         yield return new WaitForSeconds(_returnDelay);
         _cameraFollowing = false;
 
-        Vector3 rest = new Vector3(
-            transform.position.x + _cameraRestOffset.x,
-            transform.position.y + _cameraRestOffset.y,
-            _camera.transform.position.z);
+        Vector3 rest = RestCameraPosition();
 
         // SmoothStep pan: ease-in/out over _cameraReturnDuration seconds
         Vector3 from    = _camera.transform.position;
@@ -795,12 +802,70 @@ public class CatapultLauncher : MonoBehaviour
         _camera.transform.position = rest;
     }
 
-    void SnapCameraToRest()
+    void SnapCameraToRest() => _camera.transform.position = RestCameraPosition();
+
+    // Where the camera parks between shots. Framed levels (ReferenceFraming) place it from the cannon and the
+    // ground line; the rest use the fixed offset from the Launcher anchor.
+    bool  _framed;
+    float _groundY;
+
+    // Flight and aim values for the current level. Framed levels take them from ReferenceFraming (screen-height
+    // targets measured from the reference, converted at the framed zoom); others keep the original tuning.
+    float _gravityScaleNow  = AnimalBase.DefaultGravityScale;
+    float _minSpeedNow      = 3.8f;
+    float _maxSpeedNow      = 9.3f;
+    float _maxDragNow       = 2.4f;
+    float _aimDeadzoneNow   = MinAimRadius;
+    float _grabRadiusNow    = BirdClickRadius;
+
+    void ApplyFlightTuning()
     {
-        _camera.transform.position = new Vector3(
-            transform.position.x + _cameraRestOffset.x,
-            transform.position.y + _cameraRestOffset.y,
-            _camera.transform.position.z);
+        if (_framed)
+        {
+            _gravityScaleNow = ReferenceFraming.ProjectileGravityScale;
+            _minSpeedNow     = ReferenceFraming.ToWorld(ReferenceFraming.MinLaunchSpeedSh);
+            _maxSpeedNow     = ReferenceFraming.ToWorld(ReferenceFraming.MaxLaunchSpeedSh);
+            _maxDragNow      = ReferenceFraming.ToWorld(ReferenceFraming.MaxDragSh);
+            _aimDeadzoneNow  = ReferenceFraming.ToWorld(ReferenceFraming.AimDeadzoneSh);
+            _grabRadiusNow   = ReferenceFraming.ToWorld(ReferenceFraming.GrabRadiusSh);
+        }
+        else
+        {
+            _gravityScaleNow = AnimalBase.DefaultGravityScale;
+            _minSpeedNow     = _minLaunchSpeed;
+            _maxSpeedNow     = _maxLaunchSpeed;
+            _maxDragNow      = _maxDragDistance;
+            _aimDeadzoneNow  = MinAimRadius;
+            _grabRadiusNow   = BirdClickRadius;
+        }
+        float dot = _framed ? ReferenceFraming.ToWorld(ReferenceFraming.TrajectoryDotSh) : _trajectoryDotRadius * 2f;
+        if (_trajDotRenderers != null)
+            foreach (var sr in _trajDotRenderers)
+                if (sr != null) sr.transform.localScale = new Vector3(dot, dot, 1f);
+    }
+
+    Vector3 RestCameraPosition()
+    {
+        float z = _camera.transform.position.z;
+        if (_framed)
+        {
+            float cannonX = _cannonGO != null ? _cannonRestPos.x : transform.position.x;
+            float aspect  = _camera.aspect > 0f ? _camera.aspect : 16f / 9f;
+            Vector2 c = ReferenceFraming.CameraCentre(cannonX, _groundY, aspect);
+            return new Vector3(c.x, c.y, z);
+        }
+        return new Vector3(transform.position.x + _cameraRestOffset.x, transform.position.y + _cameraRestOffset.y, z);
+    }
+
+    // Moves the physics ground so its top edge sits at y (keeps its width/thickness).
+    static void SetGroundTop(float y)
+    {
+        var ground = GameObject.Find("Ground");
+        if (ground == null || !ground.TryGetComponent<BoxCollider2D>(out var col)) return;
+        float delta = y - col.bounds.max.y;
+        if (Mathf.Abs(delta) < 0.001f) return;
+        ground.transform.position += new Vector3(0f, delta, 0f);
+        Physics2D.SyncTransforms();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -833,7 +898,7 @@ public class CatapultLauncher : MonoBehaviour
         // _maxDragDistance) — independent of angle. Replaces the old scheme where a single
         // "how far into the clamped angle range" fraction drove both speed AND angle together,
         // which is why direction never used to matter (see class comment).
-        float powerFrac = Mathf.Clamp01(_pullDistance / _maxDragDistance);
+        float powerFrac = Mathf.Clamp01(_pullDistance / _maxDragNow);
         if (powerFrac < 0.05f) return Vector2.zero;
 
         // Direction: the pull angle mirrored through the pivot (-180°) gives the launch angle.
@@ -845,7 +910,7 @@ public class CatapultLauncher : MonoBehaviour
         // comfortably clear the tallest/farthest structures seen so far (L08/L09's stacked
         // towers, obstacles up to ~X 8 and several units above launch height) at a real angle/
         // power combination, not just barely reach that far at ground level.
-        float speed    = Mathf.Lerp(_minLaunchSpeed, _maxLaunchSpeed, powerFrac);
+        float speed    = Mathf.Lerp(_minSpeedNow, _maxSpeedNow, powerFrac);
         float angleDeg = _dragAngle - 180f;
         float rad      = angleDeg * Mathf.Deg2Rad;
         return new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)) * speed;

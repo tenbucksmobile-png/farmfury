@@ -17,10 +17,11 @@ MonoBehaviour:
   parBirds: 2
   world: 7
   isBossLevel: 0
+  referenceFraming: 0
   birds: 000000000000000000000000
   blocks:
   - type: 2
-    position: {x: 5.5381074, y: -5.55}
+    position: {x: 5.5381074, y: -5.9815}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
@@ -30,7 +31,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 2
-    position: {x: 5.968107, y: -5.68}
+    position: {x: 5.968107, y: -6.1115}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
@@ -40,7 +41,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 2
-    position: {x: 5.8381076, y: -5.06}
+    position: {x: 5.8381076, y: -5.4915}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
@@ -50,7 +51,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 2
-    position: {x: 6.6681075, y: -5.66}
+    position: {x: 6.6681075, y: -6.0915}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
@@ -61,5 +62,5 @@ MonoBehaviour:
     flipX: 0
   robots:
   - robotType: 1
-    position: {x: 7.4661074, y: -5.492}
+    position: {x: 7.4661074, y: -6.15}
     scale: {x: 6.001, y: 6.153}

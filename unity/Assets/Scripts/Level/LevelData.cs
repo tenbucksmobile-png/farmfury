@@ -20,6 +20,11 @@ public class LevelData : ScriptableObject
     // in the world is complete. Added 2026-11-02 with the franchise-flow port.
     public bool isBossLevel;
 
+    // Frame this level by the Angry Birds 2 reference (ReferenceFraming.cs, docs/REFERENCE_FRAMEWORK.md): fixed
+    // zoom from the animal's on-screen size, launcher at 0.26 of the screen width, one shared ground line with the
+    // scenery and the painted meadow. Off = the older content-fitting auto-zoom. Added 2026-11-08, L01 first.
+    public bool referenceFraming;
+
     /// <summary>The franchise WorldType for the 1-based <see cref="world"/> int.</summary>
     public global::WorldType WorldType => (global::WorldType)Mathf.Clamp(world - 1, 0, (int)global::WorldType.CropFactory);
 

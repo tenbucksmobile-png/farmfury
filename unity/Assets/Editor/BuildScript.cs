@@ -56,6 +56,16 @@ public static class BuildScript
               Path.Combine(ProjectRoot, "Builds", "Android", "FarmFury.apk"));
     }
 
+    // Development APK for the video review pipeline (tools/review): keeps HighlightMarkers' log lines,
+    // which are compiled out of release builds. Install with `adb install -r`.
+    public static void BuildAndroidDev()
+    {
+        GenerateLevels();
+        Build(BuildTarget.Android,
+              Path.Combine(ProjectRoot, "Builds", "Android", "FarmFury_dev.apk"),
+              BuildOptions.Development);
+    }
+
     // Compile check only — exits with code 1 on error
     public static void CompileCheck()
     {
@@ -64,7 +74,7 @@ public static class BuildScript
 
     // ── Core build helper ─────────────────────────────────────────────────────
 
-    static void Build(BuildTarget target, string outputPath)
+    static void Build(BuildTarget target, string outputPath, BuildOptions options = BuildOptions.None)
     {
         Log($"Building {target} → {outputPath}");
 
@@ -75,7 +85,7 @@ public static class BuildScript
             scenes           = GetScenes(),
             locationPathName = outputPath,
             target           = target,
-            options          = BuildOptions.None,
+            options          = options,
         });
 
         if (report.summary.result == BuildResult.Succeeded)

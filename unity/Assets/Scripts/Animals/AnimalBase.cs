@@ -204,13 +204,19 @@ public abstract class AnimalBase : MonoBehaviour
         else if (_sprIdle != null) _sr.sprite = _sprIdle;
     }
 
-    public void Launch(Vector2 velocity)
+    /// <summary>Flight gravityScale for levels without ReferenceFraming (see Launch).</summary>
+    public const float DefaultGravityScale = 0.18f;
+
+    public void Launch(Vector2 velocity) => Launch(velocity, DefaultGravityScale);
+
+    // gravityScale: CatapultLauncher passes ReferenceFraming.ProjectileGravityScale on framed levels.
+    public void Launch(Vector2 velocity, float gravityScale)
     {
         _rb.bodyType       = RigidbodyType2D.Dynamic;
         // 2026-07-14: dropped from 0.4 to 0.18 (~55% weaker fall) per request to slow the
         // flight considerably and loop higher — paired with CatapultLauncher's higher
         // angle/lower speed and DrawTrajectory()'s matching grav constant.
-        _rb.gravityScale   = 0.18f;
+        _rb.gravityScale   = gravityScale;
         _rb.linearVelocity = velocity;
         IsLaunched         = true;
         IsInFlight         = true;

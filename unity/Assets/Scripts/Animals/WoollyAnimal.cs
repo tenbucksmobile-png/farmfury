@@ -41,7 +41,7 @@ public class WoollyAnimal : AnimalBase
 
             var clone = Instantiate(this, transform.position, Quaternion.identity);
             clone.SetAsClone();
-            clone.Launch(cloneVel);
+            clone.Launch(cloneVel, _rb.gravityScale);
         }
     }
 

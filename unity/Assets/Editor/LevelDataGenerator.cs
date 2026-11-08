@@ -98,20 +98,26 @@ public static class LevelDataGenerator
         // slightly taller stack) + 1 SemiHarvester, same composition shape as the previous layout,
         // no wood/fence blocks in this dump so no decorative-prop-collision exclusion was needed
         // this time. Not visually re-verified (no Play-mode access here).
+        // 2026-11-08 reference-framework pass (docs/REFERENCE_FRAMEWORK.md): L01 is the first level framed by
+        // ReferenceFraming (fixed zoom from the animal's size, launcher at 0.26 sw, ground at 0.12 sh). The pile
+        // and robot moved onto World 1's shared ground line y=-5.6 (where the barn/fences/cannon stand): all four
+        // bales +0.5685 so the lowest bale's collider bottom touches -5.6 (pile shape unchanged); the robot's
+        // 0.90-tall body now stands on it (centre -5.15; it was 0.34 above the bales' line).
         Make(folder, "L01_FirstContact",
             id: "W1_L01", name: "First Contact", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 5.73f, -5.55f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 6.16f, -5.68f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 6.03f, -5.06f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 6.86f, -5.66f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 5.73f, -4.9815f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 6.16f, -5.1115f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 6.03f, -4.4915f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Haybale, 6.86f, -5.0915f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
             },
             robots: new[]
             {
-                R(7.658f, -5.492f, 6.001f, 6.153f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
-            });
+                R(7.658f, -5.15f, 6.001f, 6.153f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+            },
+            referenceFraming: true);
 
         // ── W1_L02  Harvest Yard ──────────────────────────────────────────────
         // Redesigned AGAIN 2026-07-18, second dump the same day — user request: "see new dump -
@@ -1071,7 +1077,8 @@ public static class LevelDataGenerator
         LevelData.BlockSpawnData[] blocks,
         LevelData.RobotSpawnData[] robots,
         int world = 1,
-        bool isBoss = false)
+        bool isBoss = false,
+        bool referenceFraming = false)
     {
         string path = $"{folder}/{filename}.asset";
         if (AssetDatabase.LoadAssetAtPath<LevelData>(path) != null)
@@ -1086,6 +1093,7 @@ public static class LevelDataGenerator
         asset.robots      = robots;
         asset.world       = world;
         asset.isBossLevel = isBoss;
+        asset.referenceFraming = referenceFraming;
 
         AssetDatabase.CreateAsset(asset, path);
         Debug.Log($"[FarmFury] Created {path}");

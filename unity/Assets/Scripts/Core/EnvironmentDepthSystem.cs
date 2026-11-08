@@ -141,6 +141,10 @@ public class EnvironmentDepthSystem : MonoBehaviour
     void HandleLevelStarted(LevelData data)
     {
         _currentWorld = data != null ? data.world : 1;
+        // Framed World 1 levels pin the painted meadow to the shared ground line (ReferenceFraming) instead of
+        // centring the paintings on the camera, so the scenery, blocks and painted grass all meet at one line.
+        _groundAnchored = ReferenceFraming.Active(data) && _currentWorld == 1;
+        _groundAnchorY  = _groundAnchored ? ReferenceFraming.GroundY(data) : 0f;
         ApplyWorldLayers();
         RescaleToCamera();
     }
@@ -160,6 +164,7 @@ public class EnvironmentDepthSystem : MonoBehaviour
     public void PreviewWorld(int world)
     {
         _currentWorld = world;
+        _groundAnchored = false;
         ApplyWorldLayers();
         RescaleToCamera();
     }
@@ -220,11 +225,16 @@ public class EnvironmentDepthSystem : MonoBehaviour
     // an accepted tradeoff for a single static painting (not a seamless tile), not a bug, unless
     // it visibly softens.
     float _lastOrthoSize = -1f;
+    Vector2 _lastCamPos;
+    bool  _groundAnchored;
+    float _groundAnchorY;
 
     void LateUpdate()
     {
         if (_cam == null) return;
-        if (!Mathf.Approximately(_cam.orthographicSize, _lastOrthoSize))
+        // Also refit when the camera moves: framed levels set its position after this class's level-start handler.
+        if (!Mathf.Approximately(_cam.orthographicSize, _lastOrthoSize) ||
+            ((Vector2)_cam.transform.position - _lastCamPos).sqrMagnitude > 1e-6f)
             RescaleToCamera();
     }
 
@@ -232,9 +242,93 @@ public class EnvironmentDepthSystem : MonoBehaviour
     {
         if (_cam == null) return;
         _lastOrthoSize = _cam.orthographicSize;
+        _lastCamPos    = _cam.transform.position;
         CoverFit(_farHills);
         CoverFit(_midground);
         CoverFit(_foreground);
+        UpdateDepthFx();
+    }
+
+    // ── Atmospheric depth (framed World 1 levels, 2026-11-08) ───────────────────────────────────────────────
+    // The reference keeps distant scenery lighter, softer and tinted toward the sky (atmospheric perspective),
+    // with mist where far land meets near land. With the current paintings that is done here, in code: a
+    // translucent haze veil drawn between the far layer and the nearer ones (so only what is far gets hazed), and
+    // a soft mist band along the seam where the far hills meet the foreground meadow.
+    static readonly Color HazeColour = new Color(1f, 0.87f, 0.74f);   // golden-hour haze
+    const float HazeVeilAlpha  = 0.26f;
+    const float MistAlpha      = 0.55f;
+    const float MistHeightSh   = 0.11f;   // mist band height, fraction of the screen height
+    const int   HazeVeilOrder  = -35;     // FarHills -40 < veil < Midground -30 < Foreground -20
+    const int   MistOrder      = -19;     // in front of the foreground meadow, straddling its hard top edge
+
+    SpriteRenderer _hazeVeil, _mistBand;
+
+    void UpdateDepthFx()
+    {
+        bool on = _groundAnchored && _foreground != null && _foreground.gameObject.activeSelf;
+        if (!on)
+        {
+            if (_hazeVeil != null) _hazeVeil.enabled = false;
+            if (_mistBand != null) _mistBand.enabled = false;
+            return;
+        }
+        _hazeVeil ??= MakeFxRenderer("DepthHazeVeil", MakeSolidSprite(), HazeVeilOrder);
+        _mistBand ??= MakeFxRenderer("DepthMistBand", MakeMistSprite(), MistOrder);
+
+        float camH = _cam.orthographicSize * 2f, camW = camH * _cam.aspect;
+        Vector3 c = _cam.transform.position;
+
+        _hazeVeil.enabled = true;
+        _hazeVeil.color = new Color(HazeColour.r, HazeColour.g, HazeColour.b, HazeVeilAlpha);
+        _hazeVeil.transform.position = new Vector3(c.x, c.y, 0f);
+        _hazeVeil.transform.localScale = new Vector3(camW * 1.05f, camH * 1.05f, 1f);
+
+        // Seam = top of the foreground meadow's visible band.
+        var fsr = _foreground.GetComponent<SpriteRenderer>();
+        float bandTop = fsr.bounds.min.y + fsr.bounds.size.y * _foregroundClipAbove;
+        float h = MistHeightSh * camH;
+        _mistBand.enabled = true;
+        _mistBand.color = new Color(HazeColour.r, HazeColour.g, HazeColour.b, MistAlpha);
+        _mistBand.transform.position = new Vector3(c.x, bandTop + h * 0.08f, 0f);   // densest just under the seam
+        _mistBand.transform.localScale = new Vector3(camW * 1.05f, h, 1f);
+    }
+
+    SpriteRenderer MakeFxRenderer(string name, Sprite sprite, int order)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(transform, false);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.sortingOrder = order;
+        return sr;
+    }
+
+    // 1x1 unit white sprite (scaled to the camera).
+    static Sprite MakeSolidSprite()
+    {
+        var tex = new Texture2D(4, 4, TextureFormat.ARGB32, false);
+        var px = new Color[16];
+        for (int i = 0; i < 16; i++) px[i] = Color.white;
+        tex.SetPixels(px);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4);
+    }
+
+    // 1-unit-tall vertical soft bump: transparent at both edges, densest just below the middle.
+    static Sprite MakeMistSprite()
+    {
+        const int H = 64;
+        var tex = new Texture2D(4, H, TextureFormat.ARGB32, false) { wrapMode = TextureWrapMode.Clamp };
+        var px = new Color[4 * H];
+        for (int y = 0; y < H; y++)
+        {
+            float v = (y + 0.5f) / H;
+            float a = Mathf.Exp(-Mathf.Pow((v - 0.42f) / 0.22f, 2f));
+            for (int x = 0; x < 4; x++) px[y * 4 + x] = new Color(1f, 1f, 1f, a);
+        }
+        tex.SetPixels(px);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, 4, H), new Vector2(0.5f, 0.5f), H);
     }
 
     void CoverFit(Transform layer)
@@ -250,7 +344,18 @@ public class EnvironmentDepthSystem : MonoBehaviour
 
         float scale = Mathf.Max(camW / native.x, camH / native.y);
         Vector3 camPos = _cam.transform.position;
-        layer.position   = new Vector3(camPos.x, camPos.y, layer.position.z);
+        float centreY = camPos.y;
+        if (_groundAnchored)
+        {
+            // Smallest scale that still covers the screen with the painted ground line held at _groundAnchorY.
+            float g = ReferenceFraming.World1PaintedGroundUV;
+            float camBottom = camPos.y - camH * 0.5f, camTop = camPos.y + camH * 0.5f;
+            scale = Mathf.Max(scale,
+                (_groundAnchorY - camBottom) / (g * native.y),
+                (camTop - _groundAnchorY) / ((1f - g) * native.y));
+            centreY = _groundAnchorY + (0.5f - g) * scale * native.y;
+        }
+        layer.position   = new Vector3(camPos.x, centreY, layer.position.z);
         layer.localScale = new Vector3(scale, scale, 1f);
     }
 

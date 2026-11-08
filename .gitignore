@@ -1,0 +1,6 @@
+
+# Video review pipeline (tools/review): recordings and portable binaries stay local
+tools/review/sessions/
+tools/review/bin/
+tools/review/comparison.md
+__pycache__/

@@ -86,8 +86,14 @@ public class SceneryBuilder : MonoBehaviour
     {
         int world = data != null ? data.world : 1;
         BuildForLevel(GameManager.Instance?.CurrentLevelIndex ?? 0, world);
-        ToggleHandAuthoredScenery(world);
+        ToggleHandAuthoredScenery(world, ReferenceFraming.Active(data));
     }
+
+    // Big hand-placed World 1 set pieces hidden on framed levels (ReferenceFraming, 2026-11-08). At the reference
+    // zoom they read as mid-sized clutter on the play line, competing with the structures; the reference keeps
+    // the play line clear and puts the "world" in hazy layers behind it. The barn/windmill return as distant art
+    // in the planned cornfield depth layers. Small ground details (fences, rocks, grass, flowers) stay.
+    static readonly string[] FramedHiddenProps = { "OldBarn", "OakTree", "Windmill", "WoodenBarrel", "GnarledTree" };
 
     // Both worlds' permanent hand-authored/scripted background structures (Scenery_World1's
     // barn/tree/fence, Scenery_World2's igloo/ice-tree/etc — see SceneSetup.EnsureWorld2Scenery)
@@ -100,10 +106,16 @@ public class SceneryBuilder : MonoBehaviour
     // was ever left inactive (e.g. a scene saved mid-Editor-preview) a real level load using plain
     // GameObject.Find could never find it again to turn it back on. No-ops safely if a group
     // doesn't exist yet.
-    static void ToggleHandAuthoredScenery(int world)
+    static void ToggleHandAuthoredScenery(int world, bool framed = false)
     {
         var w1 = FindIncludingInactive("Scenery_World1");
-        if (w1 != null) w1.SetActive(world == 1);
+        if (w1 != null)
+        {
+            w1.SetActive(world == 1);
+            foreach (Transform child in w1.transform)
+                foreach (var prefix in FramedHiddenProps)
+                    if (child.name.StartsWith(prefix)) { child.gameObject.SetActive(!framed); break; }
+        }
         var w2 = FindIncludingInactive("Scenery_World2");
         if (w2 != null) w2.SetActive(world == 2);
     }

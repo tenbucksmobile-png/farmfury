@@ -449,6 +449,7 @@ public abstract class BlockBase : MonoBehaviour
     {
         if (IsDestroyed) return;
         IsDestroyed = true;
+        FarmFury.Core.HighlightMarkers.BlockDestroyed(GetType().Name);
         // 2026-08-09 (user report: wood/stone left hanging mid-air, "unaffected by gravity" on
         // some levels). Re-run here unconditionally rather than relying on TakeDamage() to have
         // already done it: TakeDamage() calls this cascade on every hit (lethal or not) BEFORE
