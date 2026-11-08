@@ -47,8 +47,9 @@ namespace FarmFury.UI
         public const int ArtPad = 160;   // the *_Wide.png copies add this many mirrored columns each side
         private static readonly float[] StarCentresX = { 551.5f, 639.5f, 727.5f };
         private const float StarCentreY = 369.5f, StarBox = 76f;
-        private static readonly Rect ScoreTextBox = new(470f, 432f, 340f, 68f);
-        private static readonly Rect BestTextBox = new(470f, 500f, 340f, 40f);
+        // Sized to sit under the three stars (2026-11-08: the score was drawing far larger than this box, see GoldText).
+        private static readonly Rect ScoreTextBox = new(520f, 420f, 240f, 46f);
+        private static readonly Rect BestTextBox = new(520f, 468f, 240f, 26f);
         private static readonly Rect WorldUnlockedSignBox = new(820f, 410f, 240f, 80f);
         private static readonly Color ScoreGold = new(1f, 0.84f, 0.25f, 1f);
         private static readonly Color ScoreOutline = new(0.24f, 0.11f, 0.03f, 1f);
@@ -317,7 +318,10 @@ namespace FarmFury.UI
             text.resizeTextForBestFit = true;
             text.resizeTextMinSize = 8;
             text.resizeTextMaxSize = maxSize;
-            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            // Best fit only shrinks text to fit edges that clip: with Overflow it sized to the box height alone and a
+            // long score ("2,300") ran far outside the box, over the stars. Wrap + Truncate makes it fit both ways.
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
             var outline = text.gameObject.AddComponent<Outline>();
             outline.effectColor = ScoreOutline;
             outline.effectDistance = new Vector2(3f, -3f);
