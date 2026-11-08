@@ -111,26 +111,6 @@ MonoBehaviour:
     artVariant: 2
     forceStayKinematic: 0
     flipX: 1
-  - type: 1
-    position: {x: 0.12999916, y: -6.207}
-    size: {x: 0.463, y: 1.236}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-    indestructible: 0
-    artVariant: 3
-    forceStayKinematic: 0
-    flipX: 1
-  - type: 1
-    position: {x: 0.22099972, y: -5.584}
-    size: {x: 1.361, y: 0.578}
-    passThrough: 0
-    healthOverride: 0
-    massOverride: 0
-    indestructible: 0
-    artVariant: 12
-    forceStayKinematic: 0
-    flipX: 1
   robots:
   - robotType: 2
     position: {x: 7.6859994, y: -6.15}
@@ -142,6 +122,6 @@ MonoBehaviour:
     position: {x: 4.0859995, y: -4.7}
     scale: {x: 5.5, y: 5.5}
   - robotType: 0
-    position: {x: 0.18599987, y: -4.95}
+    position: {x: 0.1079998, y: -6.1499996}
     scale: {x: 5.5, y: 5.5}
   platforms: []

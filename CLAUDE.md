@@ -121,6 +121,16 @@ needing a live pass before shipping.
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
+- **2026-11-08 (night) — Angry Birds difficulty + mounts** (user request: "too hard requiring multiple hits"; structures
+  on various mounts near and far). Robots: a direct animal hit kills (DirectHitDamageFraction 1.0; bosses keep their
+  _damageResistance), falls 0.6, eggs 0.4. Stone base health 220 -> 70. Trimmed blocks take health/mass from their
+  VISIBLE area (a post's padded rect was ~4x its wood). Platforms became a mount table (`LevelLoader.Mounts`,
+  `LevelData.PlatformSpawnData.variant`): 0/1 floating islands, 2 Hill (art came out as an island — unused), 3 Mesa
+  (tall rock), 4 Scaffold (deck only, shots pass the legs), 5 Wagon (bed only); each with measured surface + collider
+  boxes generated into `Scripts/Level/MountMeasurements.cs` and `tools/mounts.json` by tools/import_cornfield_art.py
+  (Kling art in MeadowRuins/Cornfield/Mount_*.png). design_world1.py gained `mount(kind, x, width)`; World 1 levels
+  now spread targets near/mid/far on wagons, scaffolds, mesas and islands (L16: bridged twin towers on scaffolds).
+
 - **2026-11-08 (evening) — World 1 rebuilt + new thrown abilities** (user requests, unverified in Play mode).
   L02-L18 redesigned Angry-Birds style in `tools/design_world1.py` (pieces described by visible edges: posts,
   planks, stone boxes/pillars/slabs, hay, barrels, raised islands, robot perches; it writes

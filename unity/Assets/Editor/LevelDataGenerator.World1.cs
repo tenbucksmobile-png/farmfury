@@ -7,7 +7,7 @@ public static partial class LevelDataGenerator
     static void MakeWorld1Rebuilt(string folder)
     {
         // ── W1_L02  Harvest Yard ────────────────────────────────────────────────
-        // Easy: a wooden lean-to with a robot sheltering inside, and a robot perched on a haybale mound.
+        // Easy: a wooden lean-to with a robot sheltering inside, and a robot hiding between crates on a hay wagon.
         Make(folder, "L02_StoneWall",
             id: "W1_L02", name: "Harvest Yard", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
@@ -16,19 +16,23 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 6.086f, -4.969f, 1.000f, 1.471f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 7.606f, -4.969f, 1.000f, 1.471f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 6.744f, -4.141f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Haybale, 10.200f, -5.147f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 11.150f, -5.147f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 10.675f, -4.368f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Wood, 10.999f, -4.274f, 0.946f, 0.797f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 12.599f, -4.274f, 0.946f, 0.797f, artVariant: WoodArtVariant.Short),
             },
             robots: new[]
             {
                 R(6.800f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.675f, -3.553f, 5.500f, 5.500f, RobotType.Basic),
+                R(11.792f, -4.157f, 5.500f, 5.500f, RobotType.Basic),
+            },
+            platforms: new[]
+            {
+                P(11.400f, -4.607f, 4.400f, variant: 5),
             },
             referenceFraming: true);
 
         // ── W1_L03  The Tower ───────────────────────────────────────────────────
-        // A two-storey wooden tower: one robot on each floor. Knock the bottom posts out and it all comes down.
+        // A three-storey wooden tower with a robot on every floor and one on the roof. Knock the bottom posts out and
+        // the whole thing comes down on them.
         Make(folder, "L03_TheTower",
             id: "W1_L03", name: "The Tower", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
@@ -40,6 +44,9 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 8.386f, -3.468f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 9.506f, -3.468f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 8.856f, -2.691f, 1.563f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 8.536f, -2.066f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.356f, -2.066f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.866f, -1.341f, 1.228f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Haybale, 7.200f, -5.147f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
             },
             robots: new[]
@@ -47,6 +54,7 @@ public static partial class LevelDataGenerator
                 R(8.900f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(8.900f, -3.600f, 5.500f, 5.500f, RobotType.Basic),
                 R(8.900f, -2.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(8.900f, -0.800f, 5.500f, 5.500f, RobotType.Basic),
             },
             referenceFraming: true);
 
@@ -74,7 +82,7 @@ public static partial class LevelDataGenerator
             referenceFraming: true);
 
         // ── W1_L05  The Gauntlet ────────────────────────────────────────────────
-        // Three targets at rising distance and height: a ground hut, a hut on a low island, a robot on a high stone perch.
+        // Three targets at rising distance and height: a ground hut, a hut up on a timber scaffold, a robot on a rock mesa.
         Make(folder, "L05_TheGauntlet",
             id: "W1_L05", name: "The Gauntlet", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
@@ -83,21 +91,20 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 5.486f, -4.993f, 1.000f, 1.414f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 7.006f, -4.993f, 1.000f, 1.414f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 6.144f, -4.191f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.286f, -3.418f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.806f, -3.418f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.944f, -2.641f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Stone, 13.877f, -1.837f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Wood, 9.536f, -2.901f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.856f, -2.901f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.100f, -2.150f, 1.786f, 0.496f, artVariant: WoodArtVariant.Horizontal),
             },
             robots: new[]
             {
                 R(6.200f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.000f, -3.550f, 5.500f, 5.500f, RobotType.Basic),
-                R(13.900f, -1.050f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(10.150f, -3.009f, 5.500f, 5.500f, RobotType.Basic),
+                R(14.178f, -1.703f, 5.500f, 5.500f, RobotType.SemiHarvester),
             },
             platforms: new[]
             {
-                P(10.000f, -4.000f, 3.400f, variant: 1),
-                P(13.900f, -2.200f, 2.600f, variant: 0),
+                P(10.200f, -3.459f, 2.600f, variant: 4),
+                P(14.200f, -2.153f, 2.600f, variant: 3),
             },
             referenceFraming: true);
 
@@ -115,12 +122,18 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 9.856f, -4.041f, 2.277f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Barrel, 8.453f, -5.178f, 0.977f, 0.977f),
                 B(BlockType.Barrel, 9.403f, -5.178f, 0.977f, 0.977f),
+                B(BlockType.Wood, 13.339f, -3.319f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
             },
             robots: new[]
             {
                 R(7.600f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(10.250f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(8.900f, -3.500f, 5.500f, 5.500f, RobotType.Basic),
+                R(14.133f, -3.174f, 5.500f, 5.500f, RobotType.Basic),
+            },
+            platforms: new[]
+            {
+                P(14.000f, -3.624f, 2.400f, variant: 4),
             },
             referenceFraming: true);
 
@@ -173,6 +186,11 @@ public static partial class LevelDataGenerator
                 R(10.900f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(10.000f, -3.450f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.000f, -2.000f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(14.380f, -1.968f, 5.500f, 5.500f, RobotType.Basic),
+            },
+            platforms: new[]
+            {
+                P(14.400f, -2.418f, 2.400f, variant: 3),
             },
             referenceFraming: true);
 
@@ -221,18 +239,24 @@ public static partial class LevelDataGenerator
                 B(BlockType.Stone, 9.773f, -4.385f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
                 B(BlockType.Stone, 9.373f, -3.585f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
                 B(BlockType.Haybale, 6.700f, -5.147f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
-                B(BlockType.Haybale, 12.200f, -5.147f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Stone, 14.193f, -4.380f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
             },
             robots: new[]
             {
                 R(9.400f, -2.750f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(7.500f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
                 R(11.400f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
+                R(14.216f, -3.593f, 5.500f, 5.500f, RobotType.Basic),
+                R(15.216f, -4.293f, 5.500f, 5.500f, RobotType.SemiHarvester),
+            },
+            platforms: new[]
+            {
+                P(14.400f, -4.743f, 3.800f, variant: 5),
             },
             referenceFraming: true);
 
         // ── W1_L11  Full Roster ─────────────────────────────────────────────────
-        // Three tiers: a ground hut, a two-storey tower on a low island, and a lookout on a high stone pillar.
+        // Three tiers: a ground hut, a two-storey tower on a low island, and a lookout on a high rock mesa.
         Make(folder, "L11_FullRoster",
             id: "W1_L11", name: "Full Roster", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie, AnimalType.Cluck },
@@ -247,20 +271,18 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 9.386f, -2.016f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.706f, -2.016f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 9.950f, -1.291f, 1.786f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Stone, 13.956f, -2.207f, 0.463f, 1.236f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Stone, 13.865f, -1.584f, 1.361f, 0.578f, artVariant: WoodArtVariant.Block),
             },
             robots: new[]
             {
                 R(6.400f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(10.000f, -3.550f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.000f, -2.100f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(13.900f, -0.950f, 5.500f, 5.500f, RobotType.Basic),
+                R(13.978f, -1.703f, 5.500f, 5.500f, RobotType.Basic),
             },
             platforms: new[]
             {
                 P(10.000f, -4.000f, 3.200f, variant: 0),
-                P(13.900f, -2.600f, 2.400f, variant: 1),
+                P(14.000f, -2.153f, 2.600f, variant: 3),
             },
             referenceFraming: true);
 
@@ -309,6 +331,7 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 8.386f, -1.213f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.706f, -1.213f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 9.419f, -0.462f, 2.902f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 14.441f, -3.346f, 0.789f, 0.664f, artVariant: WoodArtVariant.Short),
             },
             robots: new[]
             {
@@ -316,6 +339,11 @@ public static partial class LevelDataGenerator
                 R(9.500f, -2.721f, 5.500f, 5.500f, RobotType.Basic),
                 R(9.500f, -1.321f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(9.500f, 0.079f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(13.559f, -3.174f, 5.500f, 5.500f, RobotType.Basic),
+            },
+            platforms: new[]
+            {
+                P(13.800f, -3.624f, 2.400f, variant: 4),
             },
             referenceFraming: true);
 
@@ -369,51 +397,55 @@ public static partial class LevelDataGenerator
                 B(BlockType.Stone, 13.256f, -2.563f, 0.463f, 1.374f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Stone, 10.024f, -1.884f, 2.993f, 0.578f, artVariant: WoodArtVariant.Block),
                 B(BlockType.Stone, 12.224f, -1.884f, 2.993f, 0.578f, artVariant: WoodArtVariant.Block),
+                B(BlockType.Wood, 6.063f, -4.482f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
             },
             robots: new[]
             {
                 R(10.100f, -1.250f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(12.300f, -1.250f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(8.300f, -2.450f, 7.500f, 7.500f, RobotType.Harvester),
+                R(5.257f, -4.338f, 5.500f, 5.500f, RobotType.SemiHarvester),
             },
             platforms: new[]
             {
                 P(11.000f, -3.000f, 7.200f, variant: 0),
+                P(5.000f, -4.788f, 3.600f, variant: 5),
             },
             referenceFraming: true);
 
         // ── W1_L16  Twin Towers ─────────────────────────────────────────────────
-        // Two timber towers on islands at different heights, a robot on each floor and on each roof.
+        // Two timber towers on scaffolds joined by a plank bridge at the top, a robot on every floor and one on the bridge.
         Make(folder, "L16_TwinTowers",
             id: "W1_L16", name: "Twin Towers", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood, 7.836f, -3.818f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.456f, -3.818f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.541f, -3.041f, 2.121f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 7.986f, -2.416f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.306f, -2.416f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.550f, -1.691f, 1.786f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 12.236f, -2.818f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 13.856f, -2.818f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.941f, -2.041f, 2.121f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 12.386f, -1.416f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 13.706f, -1.416f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.950f, -0.691f, 1.786f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 7.645f, -3.066f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.165f, -3.066f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.303f, -2.315f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 7.795f, -1.714f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.015f, -1.714f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.312f, -1.015f, 1.674f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 12.045f, -3.066f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 13.565f, -3.066f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.703f, -2.315f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 12.195f, -1.714f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 13.415f, -1.714f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.712f, -1.015f, 1.674f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 10.455f, -0.765f, 3.906f, 0.496f, artVariant: WoodArtVariant.Horizontal),
             },
             robots: new[]
             {
-                R(8.600f, -3.950f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(8.600f, -2.500f, 5.500f, 5.500f, RobotType.Basic),
-                R(8.600f, -1.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(13.000f, -2.950f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(13.000f, -1.500f, 5.500f, 5.500f, RobotType.Basic),
+                R(8.359f, -3.174f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(8.359f, -1.774f, 5.500f, 5.500f, RobotType.Basic),
+                R(12.759f, -3.174f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(12.759f, -1.774f, 5.500f, 5.500f, RobotType.Basic),
+                R(10.600f, -0.224f, 5.500f, 5.500f, RobotType.SemiHarvester),
             },
             platforms: new[]
             {
-                P(8.600f, -4.400f, 2.600f, variant: 0),
-                P(13.000f, -3.400f, 2.600f, variant: 1),
+                P(8.400f, -3.624f, 2.400f, variant: 4),
+                P(12.800f, -3.624f, 2.400f, variant: 4),
             },
             referenceFraming: true);
 

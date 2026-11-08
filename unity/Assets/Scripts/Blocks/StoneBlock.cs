@@ -4,7 +4,9 @@ public class StoneBlock : BlockBase
 {
     protected override void Awake()
     {
-        baseMaxHealth = 220f;
+        // 220 -> 70 (2026-11-08, user: "the game is too hard requiring multiple hits"): stone is the tough material,
+        // as in Angry Birds, but a Cluck now cracks a stone box in ~2 hits and Bessie smashes it in one.
+        baseMaxHealth = 70f;
         baseMass      = 8f;
         bounciness    = 0.1f;
         // Self-healing — 2026-08-09, same pattern as the fields above. An audit found this

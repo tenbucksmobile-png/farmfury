@@ -41,6 +41,9 @@ CS = {  # piece -> (BlockType, WoodArtVariant or None, extra C# args)
 ROBOT = {"pawn": ("Basic", 5.5, 0.806, 0.0), "semi": ("SemiHarvester", 5.5, 0.806, 0.0),
          "harv": ("Harvester", 7.5, 1.099, 0.0), "boss": ("Commander", 7.0, 2.004, 0.06)}
 ISLAND = [(0.754, 2874 / 863), (0.699, 3003 / 1182)]   # (surface UV from bottom, width/height) per variant
+import json as _json
+MOUNTS = _json.load(open(os.path.join(HERE, "mounts.json")))   # written by tools/import_cornfield_art.py
+MOUNT_VARIANT = {"Hill": 2, "Mesa": 3, "Scaffold": 4, "Wagon": 5}
 WOOD_T, STONE_T = 0.25, 0.30                            # visible plank / slab thickness
 
 
@@ -82,8 +85,19 @@ class Level:
         return self.plank(xa, xb, top, stone if roof_stone is None else roof_stone)
 
     def island(self, x, surface, width, variant=0):
-        self.islands.append(dict(x=x, s=surface, w=width, v=variant))
+        self.islands.append(dict(x=x, s=surface, w=width, v=variant, solids=[(0.04, 0.96, 0.17, ISLAND[variant][0])],
+                                 h=width / ISLAND[variant][1], uv=ISLAND[variant][0]))
         return surface
+
+    def mount(self, kind, x, width):
+        """A ground-standing mount (Hill/Mesa/Scaffold/Wagon). Returns (surface y, usable left x, usable right x)."""
+        m = MOUNTS[kind]
+        h = width / m["aspect"]
+        surface = G + m["uv"] * h
+        self.islands.append(dict(x=x, s=surface, w=width, v=MOUNT_VARIANT[kind], solids=m["boxes"], h=h, uv=m["uv"], kind=kind))
+        l = x - width / 2 + m["flat"][0] * width
+        r = x - width / 2 + m["flat"][1] * width
+        return surface, l, r
 
     def robot(self, x, surface, kind="semi"):
         t, sc, vis, pad = ROBOT[kind]
@@ -129,18 +143,18 @@ def level(*a, **k):
 
 
 L = level("L02_StoneWall", "W1_L02", "Harvest Yard", 2, [C, C, C], """
-Easy: a wooden lean-to with a robot sheltering inside, and a robot perched on a haybale mound.""")
+Easy: a wooden lean-to with a robot sheltering inside, and a robot hiding between crates on a hay wagon.""")
 L.hut(5.9, 7.7, G, 1.3); L.robot(6.8, G, "semi")
-t = L.hay(10.2, G); L.hay(11.15, G); t = L.hay(10.675, t - 0.04)
-L.robot(10.675, t, "pawn")
+s, l, r = L.mount("Wagon", 11.4, 4.4)
+L.box(l + 0.5, s, 0.6, stone=False); L.robot(l + 1.3, s, "pawn"); L.box(l + 2.1, s, 0.6, stone=False)
 
 L = level("L03_TheTower", "W1_L03", "The Tower", 2, [C, C, C], """
-A two-storey wooden tower: one robot on each floor. Knock the bottom posts out and it all comes down.""")
-r1 = L.hut(8.0, 9.8, G, 1.3)
-L.robot(8.9, G, "semi")
-r2 = L.hut(8.2, 9.6, r1, 1.2)
-L.robot(8.9, r1, "pawn")
-L.robot(8.9, r2, "semi")
+A three-storey wooden tower with a robot on every floor and one on the roof. Knock the bottom posts out and
+the whole thing comes down on them.""")
+r1 = L.hut(8.0, 9.8, G, 1.3); L.robot(8.9, G, "semi")
+r2 = L.hut(8.2, 9.6, r1, 1.2); L.robot(8.9, r1, "pawn")
+r3 = L.hut(8.35, 9.45, r2, 1.1); L.robot(8.9, r2, "semi")
+L.robot(8.9, r3, "pawn")
 L.hay(7.2, G)
 
 L = level("L04_EggPractice", "W1_L04", "Egg Practice", 2, [C, C, C], """
@@ -151,12 +165,12 @@ for x in (8.0, 10.0, 12.0):
     L.robot(x, s, "pawn")
 
 L = level("L05_TheGauntlet", "W1_L05", "The Gauntlet", 2, [C, C, C], """
-Three targets at rising distance and height: a ground hut, a hut on a low island, a robot on a high stone perch.""")
+Three targets at rising distance and height: a ground hut, a hut up on a timber scaffold, a robot on a rock mesa.""")
 L.robot(6.2, G, "semi"); L.hut(5.3, 7.1, G, 1.25)
-s = L.island(10.0, G + 1.6, 3.4, 1)
-L.robot(10.0, s, "pawn"); L.hut(9.1, 10.9, s, 1.2)
-s = L.island(13.9, G + 3.4, 2.6, 0)
-L.robot(13.9, L.box(13.9, s, 0.7), "semi")
+s, l, r = L.mount("Scaffold", 10.2, 2.6)
+L.robot(10.15, s, "pawn"); L.hut(9.35, 10.95, s, 1.15)
+s, l, r = L.mount("Mesa", 14.2, 2.6)
+L.robot((l + r) / 2, s, "semi")
 
 L = level("L06_DoubleBarrel", "W1_L06", "Double Barrel", 2, [C, C, C], """
 A two-room farmhouse with a dynamite barrel beside each robot, and a third robot on the roof.""")
@@ -167,6 +181,8 @@ L.plank(6.86, 8.9, top); r = L.plank(8.9, 10.94, top)
 L.robot(7.6, G, "semi"); L.barrel(8.45, G)
 L.robot(10.25, G, "semi"); L.barrel(9.4, G)
 L.robot(8.9, r, "pawn")
+s, l, r = L.mount("Scaffold", 14.0, 2.4)
+L.box(l + 0.4, s, 0.55, stone=False); L.robot(l + 1.2, s, "pawn")
 
 L = level("L07_BarrelRow", "W1_L07", "Barrel Row", 2, [C, C, C], """
 A stone-pillar bridge over a row of dynamite on an island: two robots on the bridge, one guarding the far end.""")
@@ -186,6 +202,8 @@ L.plank(8.025, 10.0, top, stone=True); f1 = L.plank(10.0, 11.975, top, stone=Tru
 L.robot(9.1, G, "semi"); L.robot(10.9, G, "semi")
 r = L.hut(8.5, 11.5, f1, 1.2)
 L.robot(10.0, f1, "pawn"); L.robot(10.0, r, "semi")
+s, l, r = L.mount("Mesa", 14.4, 2.4)
+L.robot((l + r) / 2, s, "pawn")
 
 L = level("L09_StoneBastion", "W1_L09", "Stone Bastion", 3, [C, C, C, C], """
 A stone bunker on an island hides a Harvester between two barrels; a lookout stands on the roof and a robot
@@ -207,17 +225,18 @@ for row, n in enumerate((3, 2, 1)):
         top = L.box(9.4 + (k - (n - 1) / 2) * 0.8, b, 0.8)
 L.robot(9.4, top, "semi")
 L.robot(7.5, G, "pawn"); L.hay(6.7, G)
-L.robot(11.4, G, "pawn"); L.hay(12.2, G)
+L.robot(11.4, G, "pawn")
+s, l, r = L.mount("Wagon", 14.4, 3.8)
+t = L.box(l + 0.6, s, 0.7); L.robot(l + 0.6, t, "pawn"); L.robot(l + 1.6, s, "semi")
 
 L = level("L11_FullRoster", "W1_L11", "Full Roster", 3, [C, C, B, C], """
-Three tiers: a ground hut, a two-storey tower on a low island, and a lookout on a high stone pillar.""")
+Three tiers: a ground hut, a two-storey tower on a low island, and a lookout on a high rock mesa.""")
 L.robot(6.4, G, "semi"); L.hut(5.5, 7.3, G, 1.25)
 s = L.island(10.0, G + 1.6, 3.2, 0)
 r1 = L.hut(9.0, 11.0, s, 1.2); L.robot(10.0, s, "pawn")
 L.hut(9.2, 10.8, r1, 1.1); L.robot(10.0, r1, "semi")
-s = L.island(13.9, G + 3.0, 2.4, 1)
-t = L.post(13.9, s, 0.9, stone=True); t = L.plank(13.4, 14.4, t, stone=True)
-L.robot(13.9, t, "pawn")
+s, l, r = L.mount("Mesa", 14.0, 2.6)
+L.robot((l + r) / 2, s, "pawn")
 
 L = level("L12_HeavyGuard", "W1_L12", "Heavy Guard", 2, [C, C, B], """
 A Harvester behind stone walls with a barrel at the door; pawns stand guard on the roof and on a high ledge.""")
@@ -238,6 +257,8 @@ for storey in range(3):
     L.robot(9.5, f, "pawn" if storey % 2 else "semi")
     f = L.hut(8.2, 10.8, f, 1.15)
 L.robot(9.5, f, "semi")
+s, l, r = L.mount("Scaffold", 13.8, 2.4)
+L.robot((l + r) / 2 - 0.2, s, "pawn"); L.box(r - 0.35, s, 0.5, stone=False)
 
 L = level("L14_StoneAndPawns", "W1_L14", "Stone And Pawns", 3, [C, C, B, B], """
 A stone staircase on a low island with a pawn on every step.""")
@@ -256,14 +277,18 @@ for x in (9.2, 10.2, 11.2, 12.2, 13.2):
 L.plank(9.0, 11.2, top, stone=True); r = L.plank(11.2, 13.4, top, stone=True)
 L.robot(10.1, r, "semi"); L.robot(12.3, r, "semi")
 L.robot(8.3, s, "harv")
+s, l, r = L.mount("Wagon", 5.0, 3.6)
+L.robot(l + 1.0, s, "semi"); L.box(l + 1.8, s, 0.55, stone=False)
 
 L = level("L16_TwinTowers", "W1_L16", "Twin Towers", 3, [C, C, B, C], """
-Two timber towers on islands at different heights, a robot on each floor and on each roof.""")
-for xc, sy in ((8.6, G + 1.2), (13.0, G + 2.2)):
-    s = L.island(xc, sy, 2.6, 0 if xc < 10 else 1)
-    r1 = L.hut(xc - 0.95, xc + 0.95, s, 1.2); L.robot(xc, s, "semi")
-    r2 = L.hut(xc - 0.8, xc + 0.8, r1, 1.1); L.robot(xc, r1, "pawn")
-    L.robot(xc, r2, "semi") if xc < 10 else None
+Two timber towers on scaffolds joined by a plank bridge at the top, a robot on every floor and one on the bridge.""")
+for xc in (8.4, 12.8):
+    s_, l, r = L.mount("Scaffold", xc, 2.4)
+    c = (l + r) / 2
+    r1 = L.hut(c - 0.9, c + 0.9, s_, 1.15); L.robot(c, s_, "semi")
+    r2 = L.hut(c - 0.75, c + 0.75, r1, 1.05); L.robot(c, r1, "pawn")
+br = L.plank(8.364 + 0.45, 12.764 - 0.45, r2)   # overlaps each roof by 0.3 (support probe is the middle 90%)
+L.robot(10.6, br, "semi")
 
 L = level("L17_EightStrong", "W1_L17", "Eight Strong", 3, [C, C, B, C], """
 A farmstead fortress: a stone wall with barrels, a ground hut, and a two-storey keep on an island behind.""")
@@ -300,8 +325,11 @@ def check(L):
         cx, hw = (l + r) / 2, (r - l) * 0.45
         ok = bot <= G + 0.08
         for isl in L.islands:
-            iw = isl["w"] * 0.46
-            if abs(cx - isl["x"]) < iw + hw and isl["s"] - 0.6 < bot <= isl["s"] + 0.08: ok = True
+            base = isl["s"] - isl["uv"] * isl["h"]
+            for (x0, x1, y0, y1) in isl["solids"]:
+                sl, sr = isl["x"] - isl["w"] / 2 + x0 * isl["w"], isl["x"] - isl["w"] / 2 + x1 * isl["w"]
+                st = base + y1 * isl["h"]
+                if sl < cx + hw and sr > cx - hw and st - 0.6 < bot <= st + 0.08: ok = True
         for j, o in enumerate(L.blocks):
             if j != i:
                 l2, r2, b2, t2 = o["vis"]
@@ -385,8 +413,9 @@ def render(outdir):
     for L in LEVELS:
         c = base.copy()
         for isl in L.islands:
-            im = load(f"Environment/Cornfield/PlatformWide_{'AB'[isl['v']]}.png"); uv, asp_i = ISLAND[isl["v"]]
-            h = isl["w"] / asp_i; put(c, im, isl["x"], isl["s"] - uv * h + h / 2, isl["w"], h)
+            name = f"PlatformWide_{'AB'[isl['v']]}" if isl["v"] < 2 else f"Mount_{isl['kind']}"
+            im = load(f"Environment/Cornfield/{name}.png"); h = isl["h"]
+            put(c, im, isl["x"], isl["s"] - isl["uv"] * h + h / 2, isl["w"], h)
         for b in L.blocks:
             put(c, load("Environment/World1Props/" + SPRITE[b["kind"]] + ".png"), b["x"], b["y"], b["w"], b["h"])
         for r in L.robots:

@@ -42,12 +42,15 @@ public class RobotEnemy : MonoBehaviour
     // Stone, Haybale, ExplodingBarrelBlock) damages a robot any more. A robot standing on a block
     // that gets destroyed is still affected, but purely via TakeFallDamage() below (structural
     // collapse), not a blast.
-    private const float DirectHitDamageFraction    = 0.55f;
+    // Angry Birds pass (2026-11-08, user: "the game is too hard requiring multiple hits"): as with AB's pigs, one
+    // direct hit from an animal pops a robot (bosses keep their _damageResistance), a fall from a collapsing
+    // structure usually finishes it (0.6 + the landing impact), and three of Cluck's eggs do it.
+    private const float DirectHitDamageFraction    = 1.0f;
     // Raised 0.12 -> 0.16 (2026-07-12, user request: "give the eggs slightly stronger damage") —
     // still deliberately the weakest per-hit category (a Cluster Bomb supplement, not a solo-kill
     // weapon), just a bit more impactful now (~6-7 connecting eggs to kill instead of ~9).
-    private const float EggDamageFraction          = 0.16f;
-    private const float FallDamageFraction         = 0.15f;
+    private const float EggDamageFraction          = 0.4f;
+    private const float FallDamageFraction         = 0.6f;
     [SerializeField] private float _robotContactDamage      = 18f;
 
     // Every Take*Damage() wrapper below computes its hit as `_maxHealth * fraction` — a

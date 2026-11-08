@@ -325,7 +325,12 @@ public abstract class BlockBase : MonoBehaviour
         _trimCollider = trimCollider;
         if (_trimCollider) TrimColliderToArt();
 
-        float area  = width * height;
+        // Trimmed blocks size their health and mass from the VISIBLE art, not the padded rect (2026-11-08, Angry
+        // Birds pass: a post's rect is ~4x its visible wood, which made it ~4x too tough and too heavy to topple).
+        Vector2 visible = _trimCollider && _col != null
+            ? Vector2.Scale(_col.size, new Vector2(Mathf.Abs(transform.localScale.x), Mathf.Abs(transform.localScale.y)))
+            : new Vector2(width, height);
+        float area  = Mathf.Max(0.05f, visible.x * visible.y);
         float ratio = area / StdArea;
 
         MaxHealth = baseMaxHealth * ratio;

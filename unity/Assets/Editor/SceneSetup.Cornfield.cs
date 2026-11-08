@@ -25,7 +25,8 @@ public static partial class SceneSetup
     {
         var arr = loader.FindProperty("_platformSprites");
         if (arr == null) return;
-        string[] files = { "PlatformWide_A.png", "PlatformWide_B.png" };
+        // LevelLoader mount kinds, in order: IslandA, IslandB, Hill, Mesa, Scaffold, Wagon.
+        string[] files = { "PlatformWide_A.png", "PlatformWide_B.png", "Mount_Hill.png", "Mount_Mesa.png", "Mount_Scaffold.png", "Mount_Wagon.png" };
         arr.arraySize = files.Length;
         for (int i = 0; i < files.Length; i++)
             arr.GetArrayElementAtIndex(i).objectReferenceValue = LoadCornfieldSprite(files[i], opaque: false);

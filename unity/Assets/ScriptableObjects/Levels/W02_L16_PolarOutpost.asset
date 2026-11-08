@@ -22,7 +22,7 @@ MonoBehaviour:
   birds: 02000000030000000000000003000000
   blocks:
   - type: 2
-    position: {x: 6.2439995, y: -6.147}
+    position: {x: 2.5089998, y: -6.147}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
@@ -32,7 +32,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 2
-    position: {x: 7.1939993, y: -6.147}
+    position: {x: 3.4589996, y: -6.147}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
@@ -42,7 +42,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 2
-    position: {x: 8.143999, y: -6.147}
+    position: {x: 4.4089994, y: -6.147}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
     healthOverride: 10
@@ -52,7 +52,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 7.0999994, y: -5.662}
+    position: {x: 3.3649998, y: -5.662}
     size: {x: 3.348, y: 0.496}
     passThrough: 0
     healthOverride: 0
@@ -62,7 +62,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 6.079999, y: -5.013}
+    position: {x: 2.3449993, y: -5.013}
     size: {x: 1, y: 1.301}
     passThrough: 0
     healthOverride: 0
@@ -72,7 +72,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 8.4, y: -5.013}
+    position: {x: 4.665, y: -5.013}
     size: {x: 1, y: 1.301}
     passThrough: 0
     healthOverride: 0
@@ -82,7 +82,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 7.112999, y: -4.262}
+    position: {x: 3.3779993, y: -4.262}
     size: {x: 2.902, y: 0.496}
     passThrough: 0
     healthOverride: 0
@@ -92,7 +92,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 6.079999, y: -3.613}
+    position: {x: 2.3449993, y: -3.613}
     size: {x: 1, y: 1.301}
     passThrough: 0
     healthOverride: 0
@@ -102,7 +102,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 8.4, y: -3.613}
+    position: {x: 4.665, y: -3.613}
     size: {x: 1, y: 1.301}
     passThrough: 0
     healthOverride: 0
@@ -112,7 +112,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 7.112999, y: -2.862}
+    position: {x: 3.3779993, y: -2.862}
     size: {x: 2.902, y: 0.496}
     passThrough: 0
     healthOverride: 0
@@ -122,7 +122,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 6.079999, y: -2.213}
+    position: {x: 2.3449993, y: -2.213}
     size: {x: 1, y: 1.301}
     passThrough: 0
     healthOverride: 0
@@ -132,7 +132,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 8.4, y: -2.213}
+    position: {x: 4.665, y: -2.213}
     size: {x: 1, y: 1.301}
     passThrough: 0
     healthOverride: 0
@@ -142,26 +142,39 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 7.112999, y: -1.462}
+    position: {x: 3.3779993, y: -1.462}
     size: {x: 2.902, y: 0.496}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
     artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 8.4, y: -6.3219995}
+    size: {x: 0.789, y: 0.664}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 4
     forceStayKinematic: 0
     flipX: 0
   robots:
   - robotType: 2
-    position: {x: 7.1939993, y: -5.121}
+    position: {x: 3.4589996, y: -5.121}
     scale: {x: 5.5, y: 5.5}
   - robotType: 0
-    position: {x: 7.1939993, y: -3.721}
+    position: {x: 3.4589996, y: -3.721}
     scale: {x: 5.5, y: 5.5}
   - robotType: 2
-    position: {x: 7.1939993, y: -2.321}
+    position: {x: 3.4589996, y: -2.321}
     scale: {x: 5.5, y: 5.5}
   - robotType: 2
-    position: {x: 7.1939993, y: -0.921}
+    position: {x: 3.4589996, y: -0.921}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 7.5179996, y: -6.1499996}
     scale: {x: 5.5, y: 5.5}
   platforms: []

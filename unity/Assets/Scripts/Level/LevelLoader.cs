@@ -370,50 +370,69 @@ public class LevelLoader : MonoBehaviour
     // ── Platforms (raised earth islands, 2026-11-08) ─────────────────────────────────────────────────────────
     // Art: Sprites/Environment/Cornfield/PlatformWide_A/B.png (tools/import_cornfield_art.py), wired by SceneSetup.
     // The surface UVs are measured by that script: the grass top's height from the bottom of the trimmed sprite.
-    [SerializeField] private Sprite[] _platformSprites = new Sprite[2];
-    static readonly float[] PlatformSurfaceUV = { 0.754f, 0.699f };
+    [SerializeField] private Sprite[] _platformSprites = new Sprite[MountCount];
     const int PlatformSortingOrder = 1;   // decorative band (<= 1): behind blocks (2) and robots (3)
+
+    // Mount kinds (LevelData.PlatformSpawnData.variant), 2026-11-08. surfaceUV = the walkable top's height from the
+    // bottom of the trimmed sprite; solids = collider boxes in the sprite's own unit space (x0, x1, y0, y1; x across
+    // the width, y up from the bottom). Measured by tools/import_cornfield_art.py; keep in sync with
+    // tools/design_world1.py's MOUNT table.
+    //   0 IslandA / 1 IslandB  floating earth islands (slab under the grass; roots stay non-solid)
+    //   2 Hill                 grassy hill on the ground (flat top + wider base)
+    //   3 Mesa                 tall rock pillar on the ground (solid)
+    //   4 Scaffold             timber deck on legs (deck only; shots pass between the legs)
+    //   5 Wagon                hay-wagon flatbed (bed only)
+    public const int MountCount = 6;
+    struct MountSpec { public float surfaceUV; public Vector4[] solids; }
+    static readonly MountSpec[] Mounts =
+    {
+        new() { surfaceUV = 0.754f, solids = new[] { new Vector4(0.04f, 0.96f, 0.19f, 0.754f) } },
+        new() { surfaceUV = 0.699f, solids = new[] { new Vector4(0.04f, 0.96f, 0.17f, 0.699f) } },
+        new() { surfaceUV = MountMeasurements.MountHillUV,     solids = MountMeasurements.MountHillSolids },
+        new() { surfaceUV = MountMeasurements.MountMesaUV,     solids = MountMeasurements.MountMesaSolids },
+        new() { surfaceUV = MountMeasurements.MountScaffoldUV, solids = MountMeasurements.MountScaffoldSolids },
+        new() { surfaceUV = MountMeasurements.MountWagonUV,    solids = MountMeasurements.MountWagonSolids },
+    };
 
     readonly List<GameObject> _spawnedPlatforms = new();
 
     void SpawnPlatform(LevelData.PlatformSpawnData data)
     {
-        int v = Mathf.Clamp(data.variant, 0, PlatformSurfaceUV.Length - 1);
+        int v = Mathf.Clamp(data.variant, 0, Mounts.Length - 1);
+        var spec = Mounts[v];
         Sprite sprite = _platformSprites != null && v < _platformSprites.Length ? _platformSprites[v] : null;
-        var go = new GameObject($"Platform_{_spawnedPlatforms.Count}");
+        var go = new GameObject($"Mount_{_spawnedPlatforms.Count}");
         go.transform.SetParent(_blockParent, false);
         go.layer = 6;                 // Ground: blocks' support checks and the animals' ground logic see it
         go.tag   = "Ground";
 
         float width = Mathf.Max(0.5f, data.width);
-        float height, surfaceFromBottom;
+        float height;
         if (sprite != null)
         {
             Vector2 native = sprite.bounds.size;
             float s = width / native.x;
             height = native.y * s;
-            surfaceFromBottom = height * PlatformSurfaceUV[v];
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
             sr.sortingOrder = PlatformSortingOrder;
             go.transform.localScale = new Vector3(s, s, 1f);
         }
-        else
-        {
-            height = width * 0.3f;
-            surfaceFromBottom = height * 0.75f;
-        }
-        // Centre-pivot sprite: the transform sits at the sprite's middle.
-        float centreY = data.surfaceY - surfaceFromBottom + height * 0.5f;
-        go.transform.position = new Vector3(data.x, centreY, 0f);
+        else height = width * 0.3f;
 
-        // Solid slab from the grass surface down through most of the earth (the rounded ends and the hanging
-        // roots stay non-solid). Collider sizes are in local units, so divide by the scale.
-        var col = go.AddComponent<BoxCollider2D>();
-        float sc = go.transform.localScale.x;
-        float slabH = surfaceFromBottom * 0.75f;
-        col.size   = new Vector2(width * 0.92f / sc, slabH / sc);
-        col.offset = new Vector2(0f, (data.surfaceY - slabH * 0.5f - centreY) / sc);
+        // Centre-pivot sprite: the transform sits at the sprite's middle; the surface line lands on surfaceY.
+        float bottom = data.surfaceY - height * spec.surfaceUV;
+        go.transform.position = new Vector3(data.x, bottom + height * 0.5f, 0f);
+
+        float sc = Mathf.Max(0.0001f, go.transform.localScale.x);
+        foreach (var b in spec.solids)
+        {
+            var col = go.AddComponent<BoxCollider2D>();
+            float w = (b.y - b.x) * width, h = (b.w - b.z) * height;
+            float cx = ((b.x + b.y) * 0.5f - 0.5f) * width, cy = ((b.z + b.w) * 0.5f - 0.5f) * height;
+            col.size   = new Vector2(w / sc, h / sc);
+            col.offset = new Vector2(cx / sc, cy / sc);
+        }
         _spawnedPlatforms.Add(go);
     }
 

@@ -22,7 +22,7 @@ MonoBehaviour:
   birds: 050000000500000005000000
   blocks:
   - type: 1
-    position: {x: 3.336, y: -5.969}
+    position: {x: 1.8869996, y: -5.969}
     size: {x: 1, y: 1.471}
     passThrough: 0
     healthOverride: 0
@@ -32,7 +32,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 4.856, y: -5.969}
+    position: {x: 3.4069996, y: -5.969}
     size: {x: 1, y: 1.471}
     passThrough: 0
     healthOverride: 0
@@ -42,7 +42,7 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 3.994, y: -5.141}
+    position: {x: 2.5449996, y: -5.141}
     size: {x: 2.009, y: 0.496}
     passThrough: 0
     healthOverride: 0
@@ -51,41 +51,31 @@ MonoBehaviour:
     artVariant: 2
     forceStayKinematic: 0
     flipX: 0
-  - type: 2
-    position: {x: 7.45, y: -6.147}
-    size: {x: 0.977, y: 0.977}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
+  - type: 0
+    position: {x: 6.799999, y: -6.267}
+    size: {x: 0.946, y: 0.797}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
     indestructible: 0
-    artVariant: 0
+    artVariant: 4
     forceStayKinematic: 0
     flipX: 0
-  - type: 2
-    position: {x: 8.4, y: -6.147}
-    size: {x: 0.977, y: 0.977}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
+  - type: 0
+    position: {x: 8.4, y: -6.267}
+    size: {x: 0.946, y: 0.797}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
     indestructible: 0
-    artVariant: 0
-    forceStayKinematic: 0
-    flipX: 0
-  - type: 2
-    position: {x: 7.925, y: -5.368}
-    size: {x: 0.977, y: 0.977}
-    passThrough: 1
-    healthOverride: 10
-    massOverride: 3
-    indestructible: 0
-    artVariant: 0
+    artVariant: 4
     forceStayKinematic: 0
     flipX: 0
   robots:
   - robotType: 1
-    position: {x: 4.05, y: -6.15}
+    position: {x: 2.6009998, y: -6.15}
     scale: {x: 5.5, y: 5.5}
   - robotType: 0
-    position: {x: 7.925, y: -4.553}
+    position: {x: 7.5929995, y: -6.15}
     scale: {x: 5.5, y: 5.5}
   platforms: []
