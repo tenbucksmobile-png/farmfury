@@ -233,8 +233,9 @@ namespace FarmFury.UI
         {
             Sprite art = promo switch
             {
-                ShopPromo.Hats => _shop.hatsBanner,
+                ShopPromo.Cannons => _shop.cannonsBanner,
                 ShopPromo.Trails => _shop.trailsBanner,
+                ShopPromo.Impacts => _shop.impactsBanner,
                 ShopPromo.RemoveAds => _shop.promoNoAds,
                 _ => null,
             };

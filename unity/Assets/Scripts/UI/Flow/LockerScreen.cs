@@ -15,21 +15,25 @@ namespace FarmFury.UI
     /// </summary>
     public class LockerScreen : OverlayScreen
     {
-        private const float Tile = 170f, Gap = 24f;
+        private const float Tile = 150f, Gap = 22f;
         private static readonly Color Unowned = new(0.45f, 0.45f, 0.48f, 1f);
 
-        private readonly Action _onHats, _onTrails;
-        private readonly Image[] _hatTiles, _trailTiles;
-        private readonly Image[] _hatBadges, _trailBadges;
+        private readonly Action _onCannons, _onTrails, _onImpacts;
+        private readonly Image[] _cannonTiles, _trailTiles, _impactTiles;
+        private readonly Image[] _cannonBadges, _trailBadges, _impactBadges;
         private bool _froze;
 
-        public LockerScreen(Transform canvas, MenuArt art, ShopArt shop, Action onHats, Action onTrails) : base(canvas, "Locker", art, shop)
+        public LockerScreen(Transform canvas, MenuArt art, ShopArt shop, Action onCannons, Action onTrails, Action onImpacts)
+            : base(canvas, "Locker", art, shop)
         {
-            _onHats = onHats;
+            _onCannons = onCannons;
             _onTrails = onTrails;
+            _onImpacts = onImpacts;
             HeaderSign(Shop.lockerBanner, "LOCKER");
-            (_hatTiles, _hatBadges) = BuildRow("Hats", StoreProducts.Hats, 0, 60f);
-            (_trailTiles, _trailBadges) = BuildRow("Trails", StoreProducts.Trails, StoreProducts.Hats.Length, -180f);
+            int trailsFirst = StoreProducts.Cannons.Length, impactsFirst = trailsFirst + StoreProducts.Trails.Length;
+            (_cannonTiles, _cannonBadges) = BuildRow("Cannons", StoreProducts.Cannons, 0, 110f);
+            (_trailTiles, _trailBadges) = BuildRow("Trails", StoreProducts.Trails, trailsFirst, -75f);
+            (_impactTiles, _impactBadges) = BuildRow("Impacts", StoreProducts.Impacts, impactsFirst, -260f);
         }
 
         // Tile 0 = "None"; tile i+1 = product i, its art the shop's cosmetic icon.
@@ -60,15 +64,13 @@ namespace FarmFury.UI
         {
             var save = SaveManager.Instance;
             if (save == null) { return; }
-            bool hats = products == StoreProducts.Hats;
             string id = index == 0 ? string.Empty : products[index - 1];
             if (index > 0 && !save.IsCosmeticOwned(id))
             {
-                (hats ? _onHats : _onTrails)?.Invoke();
+                (products == StoreProducts.Cannons ? _onCannons : products == StoreProducts.Impacts ? _onImpacts : _onTrails)?.Invoke();
                 return;
             }
-            if (hats) { foreach (var animal in AnimalRoster.All) { save.SetEquippedHat(animal, id); } }
-            else { save.SetEquippedTrail(id); }
+            save.SetEquipped(products, id);
             save.SaveProgress();
             Refresh();
         }
@@ -96,8 +98,9 @@ namespace FarmFury.UI
         {
             var save = SaveManager.Instance;
             if (save == null) { return; }
-            RefreshRow(StoreProducts.Hats, _hatTiles, _hatBadges, save.GetEquippedHat(AnimalType.Cluck), save);
+            RefreshRow(StoreProducts.Cannons, _cannonTiles, _cannonBadges, save.GetEquippedCannon(), save);
             RefreshRow(StoreProducts.Trails, _trailTiles, _trailBadges, save.GetEquippedTrail(), save);
+            RefreshRow(StoreProducts.Impacts, _impactTiles, _impactBadges, save.GetEquippedImpact(), save);
         }
 
         private static void RefreshRow(string[] products, Image[] tiles, Image[] badges, string equipped, SaveManager save)

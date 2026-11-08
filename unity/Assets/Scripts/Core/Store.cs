@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace FarmFury.Core
 {
@@ -23,28 +24,41 @@ namespace FarmFury.Core
 
         public static readonly string[] CoinPacks = { "coins_100", "coins_500", "coins_5000", "coins_15000" };
 
-        public static readonly string[] Hats =
-            { "hat_sombrero", "hat_baseball_cap", "hat_cowboy_hat", "hat_chef_hat", "hat_crown" };
+        // Cosmetics (2026-11-08, user decision): cannon skins, trails and impact effects. Hats were dropped (too small
+        // to read at the launcher game's zoom and hard to fit on eight body shapes). All shared by every animal.
+        public static readonly string[] Cannons =
+            { "cannon_golden", "cannon_pumpkin", "cannon_corncob", "cannon_milkchurn", "cannon_tractor" };
 
         public static readonly string[] Trails =
             { "trail_rainbowribbon", "trail_sparkledust", "trail_cornhusk", "trail_ember", "trail_confetti", "trail_bubbles" };
 
+        public static readonly string[] Impacts =
+            { "impact_confetti", "impact_popcorn", "impact_fireworks", "impact_feathers", "impact_eggsplat" };
+
+        /// <summary>Every cosmetic, in StoreProducts.Cosmetics / ShopArt.cosmeticIcons order.</summary>
+        public static string[] AllCosmetics => Cannons.Concat(Trails).Concat(Impacts).ToArray();
+
         public static string World(WorldType world) => "world_" + world.ToString().ToLowerInvariant();
 
-        /// <summary>Character Story's Cosmetics tab: every hat, trail and machine, in ShopArt.cosmeticIcons order.</summary>
+        /// <summary>Names and blurbs: cannons, then trails, then impacts (ShopArt.cosmeticIcons order).</summary>
         public static readonly (string name, string blurb)[] Cosmetics =
         {
-            ("Sombrero", "Ole! A wide, sun-shading hat with a ton of farm-fiesta flair."),
-            ("Baseball Cap", "Sporty and snug - every animal's got a favourite colour."),
-            ("Cowboy Hat", "Yeehaw! Perfect for rounding up robots instead of cattle."),
-            ("Chef Hat", "A crisp toque fit for a top chef - bring farm-fresh flavour to the kitchen."),
-            ("Crown", "Fit for royalty - every animal deserves to feel like king (or queen) of the farm."),
+            ("Golden Cannon", "Polished gold and a gem or two - fire your farmyard in style."),
+            ("Pumpkin Cannon", "A carved jack-o-lantern barrel on a vine carriage. Spooky season, all season."),
+            ("Corn Cob Cannon", "A giant golden cob for a barrel - the farm's favourite crop fights back."),
+            ("Milk Churn Cannon", "An old dairy churn with cow spots. Fresh from the milking shed."),
+            ("Tractor Cannon", "Big tyres, a chrome exhaust stack and a puff of smoke on every shot."),
             ("Rainbow Ribbon", "A trail of shimmering rainbow colour follows every flight."),
             ("Sparkle Dust", "Leaves a shimmering trail of magic sparkles behind you."),
             ("Corn Husk Trail", "A rustling trail of golden corn husks, straight off the stalk."),
             ("Ember Trail", "A trail of glowing embers - warm, cozy, and a little bit fiery."),
             ("Confetti Trail", "A burst of colourful confetti all the way to the target - instant party!"),
             ("Bubbles Trail", "Leaves a trail of soft, shimmering bubbles floating behind you."),
+            ("Confetti Pop", "Every robot you knock out goes out in a shower of party confetti."),
+            ("Popcorn Burst", "Pop! Robots burst into a cloud of buttery popcorn."),
+            ("Fireworks", "Send every robot off with a bang and a sky full of sparks."),
+            ("Feather Poof", "A flurry of farmyard feathers for every robot you topple."),
+            ("Egg Splat", "Splat! Robots go down in a big messy egg splash."),
         };
     }
 
@@ -103,7 +117,7 @@ namespace FarmFury.Core
             iap.PurchaseProduct(productId);
         }
 
-        /// <summary>A hat or trail bought with coins (Arcade: 2500), no store involved.</summary>
+        /// <summary>A cosmetic bought with coins (Arcade: 2500), no store involved.</summary>
         public static bool PurchaseWithCoins(string productId) =>
             IAPManager.Instance != null && IAPManager.Instance.PurchaseProductWithCoins(productId);
 

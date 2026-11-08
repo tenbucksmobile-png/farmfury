@@ -71,10 +71,11 @@ public static partial class SceneSetup
 
     // Single sprite mode (Multiple mode auto-slices the art and LoadAssetAtPath<Sprite> returns a fragment — see
     // CLAUDE.md's Auto-Compile Pipeline note).
-    static void EnsureSingleSprite(string path)
+    static void EnsureSingleSprite(string path, int ppu = 0)
     {
         if (!(AssetImporter.GetAtPath(path) is TextureImporter imp)) return;
         bool dirty = false;
+        if (ppu > 0 && !Mathf.Approximately(imp.spritePixelsPerUnit, ppu)) { imp.spritePixelsPerUnit = ppu; dirty = true; }
         if (imp.textureType != TextureImporterType.Sprite)   { imp.textureType = TextureImporterType.Sprite; dirty = true; }
         if (imp.spriteImportMode != SpriteImportMode.Single) { imp.spriteImportMode = SpriteImportMode.Single; dirty = true; }
         if (!imp.alphaIsTransparency)                        { imp.alphaIsTransparency = true; dirty = true; }

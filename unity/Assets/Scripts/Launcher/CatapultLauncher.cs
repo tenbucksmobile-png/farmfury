@@ -453,6 +453,9 @@ public class CatapultLauncher : MonoBehaviour
         if (_cannonSR != null)
             _cannonSR.sprite = (data != null && data.world == 2 && _cannonSpriteW2 != null)
                 ? _cannonSpriteW2 : _cannonSprite;
+        // Equipped cannon skin (cosmetic, 2026-11-08): same pose and canvas as Cannon.png, so it swaps in place.
+        var skin = FarmFury.Core.CosmeticEffects.CannonSkin();
+        if (_cannonSR != null && skin != null) _cannonSR.sprite = skin;
         _framed = ReferenceFraming.Active(data);
         if (_camera != null)
             _camera.orthographicSize = _framed ? ReferenceFraming.OrthoSize : ComputeOrthoSizeForLevel(data);

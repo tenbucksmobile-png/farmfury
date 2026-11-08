@@ -106,20 +106,22 @@ namespace FarmFury.UI
                 then?.Invoke();
             };
             var itemCell = new Vector2(OverlayScreen.ItemWidth, OverlayScreen.ItemHeight);
-            int trailsFirst = StoreProducts.Hats.Length;
-            _hatsPage = Add(new ItemPurchaseScreen(c, "CosmeticsHats", _menuArt, _shopArt, Gate, useCoins, _shopArt.hatsBanner, null, "HATS & CAPS",
-                Items(StoreProducts.Hats, _shopArt.hatItems, 0), itemCell, 77f));
+            int trailsFirst = StoreProducts.Cannons.Length, impactsFirst = trailsFirst + StoreProducts.Trails.Length;
+            _cannonsPage = Add(new ItemPurchaseScreen(c, "CosmeticsCannons", _menuArt, _shopArt, Gate, useCoins, _shopArt.cannonsBanner, null, "CANNONS",
+                Items(StoreProducts.Cannons, _shopArt.cannonItems, 0), itemCell, 77f));
             _trailsPage = Add(new ItemPurchaseScreen(c, "CosmeticsTrails", _menuArt, _shopArt, Gate, useCoins, _shopArt.trailsBanner, null, "TRAILS",
                 Items(StoreProducts.Trails, _shopArt.trailItems, trailsFirst), itemCell, 50f));
-            var chooser = Add(new CosmeticsChooserScreen(c, _menuArt, _shopArt, _hatsPage.Show, _trailsPage.Show));
-            Locker = Add(new LockerScreen(c, _menuArt, _shopArt, _hatsPage.Show, _trailsPage.Show));
+            _impactsPage = Add(new ItemPurchaseScreen(c, "CosmeticsImpacts", _menuArt, _shopArt, Gate, useCoins, _shopArt.impactsBanner, null, "IMPACTS",
+                Items(StoreProducts.Impacts, _shopArt.impactItems, impactsFirst), itemCell, 77f));
+            var chooser = Add(new CosmeticsChooserScreen(c, _menuArt, _shopArt, _cannonsPage.Show, _trailsPage.Show, _impactsPage.Show));
+            Locker = Add(new LockerScreen(c, _menuArt, _shopArt, _cannonsPage.Show, _trailsPage.Show, _impactsPage.Show));
             var coins = Add(new CoinPurchaseScreen(c, _menuArt, _shopArt, Gate));
             ShopHub = Add(new ShopScreen(c, _menuArt, _shopArt, Gate, coins.Show, _worldShop.Show, chooser.Show));
 
             MenuHub = Add(new MenuHubScreen(c, _menuArt, _shopArt, Gate, Settings.Show, OpenShop));
         }
 
-        private ItemPurchaseScreen _worldShop, _worldPromo, _hatsPage, _trailsPage;
+        private ItemPurchaseScreen _worldShop, _worldPromo, _cannonsPage, _trailsPage, _impactsPage;
         private System.Action _afterWorldPromo;
 
         // A price plaque per product; the label (shown only without art) is the cosmetic's name.
@@ -141,8 +143,9 @@ namespace FarmFury.UI
             AnalyticsManager.Instance?.LogPromoTapped(ShopPromos.Id(promo));
             switch (promo)
             {
-                case ShopPromo.Hats: _hatsPage?.Show(); break;
+                case ShopPromo.Cannons: _cannonsPage?.Show(); break;
                 case ShopPromo.Trails: _trailsPage?.Show(); break;
+                case ShopPromo.Impacts: _impactsPage?.Show(); break;
                 case ShopPromo.RemoveAds: ShopHub?.Show(); break;
             }
         }

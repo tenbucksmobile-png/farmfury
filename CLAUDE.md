@@ -57,7 +57,7 @@ needing a live pass before shipping.
   Stampede" logo was inpainted out of all 28 Level Complete / Failed / Pause / New Character canvases (2026-11-02,
   OpenCV Telea; clean on sky backdrops, a soft smudge on the busier paid-world ones); the Leaderboard has no logo. Full list in `docs/ART_REQUIREMENTS.md` (Kling checklist for all nine worlds).
 - **Monetisation needs the user's accounts:** create the `farmfury_`-prefixed products (Remove Ads, 4 coin packs,
-  3 worlds, 5 hats, 6 trails) in App Store Connect / Play Console; enter FarmFury's LevelPlay app keys and ad unit
+  3 worlds, 5 cannon skins, 6 trails, 5 impact effects) in App Store Connect / Play Console; enter FarmFury's LevelPlay app keys and ad unit
   ids on the GameManager's AdManager (ads are inert until then); register the analytics events. No AdMob adapter is
   included until FarmFury has its own AdMob app id (the adapter crashes Android at launch without one; the id would
   go in the Android manifest and `FarmFuryIosBuild`).
@@ -120,6 +120,16 @@ needing a live pass before shipping.
   place: this machine's disk — if lost, recovery means restoring `assets/` and re-running the art
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
+
+- **2026-11-08 (late) — Cosmetics: cannon skins, trails, impact effects** (user decision; hats removed). StoreProducts
+  `Cannons` (golden, pumpkin, corncob, milkchurn, tractor) / `Trails` / `Impacts` (confetti, popcorn, fireworks,
+  feathers, eggsplat); SaveManager `Get/SetEquippedCannon/Impact` + `GetEquipped(category)`; shop chooser, pages and
+  Locker have three categories; ShopPromos rotates all three. In game: `CosmeticEffects.CannonSkin()` swaps the
+  FarmCannon sprite on level start (skins sit on Cannon.png's 566x512 canvas at PPU 384, so offsets still fit);
+  `CosmeticEffects.SpawnImpact` pops the burst when a robot dies (`ImpactBurst`). Art: Kling (5 skins, 3 bursts, a
+  blank price card, 2 banners) + reused FeatherBurst/EggSplat, built by `tools/import_cosmetics.py` into
+  `Sprites/Cosmetics/` and shop cards/icons in `Sprites/UI/Franchise/Shop/`. Store products to create: farmfury_cannon_*
+  and farmfury_impact_* (hat products no longer exist). Unverified in Play mode.
 
 - **2026-11-08 (night) — Angry Birds difficulty + mounts** (user request: "too hard requiring multiple hits"; structures
   on various mounts near and far). Robots: a direct animal hit kills (DirectHitDamageFraction 1.0; bosses keep their
@@ -521,8 +531,8 @@ Overlays (OverlayScreen) open on top of any screen; Esc / Android back closes th
   and cosmetics are checksum-protected (Stampede's FNV salt scheme).
 - **Worlds**: 9 `WorldData` assets (`WorldDataGenerator`); `LevelData.world` (1-based int) maps to `WorldType`.
 - **Monetisation**: `farmfury_` store ids (`StoreProducts`); Arcade prices (Remove Ads $4.99 +100 coins; coins
-  100/500/5000/15000 at $0.99/$3.99/$9.99/$19.99; worlds $3.99; hats/trails $1.99 or 2500 coins). Hats and trails
-  are shared by every animal (no per-character variants, no machines). Ads: rewarded (revive, Double Coins),
+  100/500/5000/15000 at $0.99/$3.99/$9.99/$19.99; worlds $3.99; cosmetics $1.99 or 2500 coins). Cosmetics (2026-11-08, hats dropped): cannon skins, trails,
+  impact effects — all shared by every animal (no per-character variants, no machines). Ads: rewarded (revive, Double Coins),
   interstitial every 6 level loads, banner on Pause / Level Failed — none with Remove Ads; inert without keys.
   Purchases and external links go through `ParentalGate`.
 - **Art**: `MenuArt` / `ShopArt` / `LeaderboardArt` on GameFlow and per-world fields on `WorldData`, all wired by

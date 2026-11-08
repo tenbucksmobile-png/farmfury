@@ -917,8 +917,8 @@ public static partial class SceneSetup
             { "musicIcon", "Btn_music-remove" }, { "leaderboardIcon", "Btn_LeaderBoard" },
             { "characterStoryIcon", "Btn_CharacterStory" }, { "policiesIcon", "Policies" },
             { "cashIcon", "Shop" }, { "worldsIcon", "WorldMaze" }, { "removeAdsIcon", "Ads" }, { "cosmeticsIcon", "Cosmetics_Icon" },
-            { "plaque", "Btn_plaque" }, { "worldPrice", "3.99" }, { "hatsBanner", "Hats&Caps" }, { "trailsBanner", "Trails" },
-            { "machinesBanner", "machine" }, { "ownedBadge", "EquippedBadge_Icon" }, { "purchaseComplete", "PurchaseComplete" },
+            { "plaque", "Btn_plaque" }, { "worldPrice", "3.99" }, { "cannonsBanner", "Cannons_Banner" }, { "trailsBanner", "Trails" },
+            { "impactsBanner", "Impacts_Banner" }, { "ownedBadge", "EquippedBadge_Icon" }, { "purchaseComplete", "PurchaseComplete" },
             { "coinIcon", "Coin_UI" }, { "yesButton", "Yes" }, { "noButton", "No" }, { "revivePanel", "Revive Prompt panel background" },
             { "watchAd", "WatchAd" }, { "doubleCoins", "DoubleCoins" }, { "useCoinsSign", "UseCoins" },
             { "lockerIcon", "Locker" }, { "lockerBanner", "LockerBanner" }, { "lockerSuggestion", "LockerAd" },
@@ -927,13 +927,25 @@ public static partial class SceneSetup
         foreach (var kv in shopFields)
             WireSprite(so, "_shopArt." + kv.Key, shop + kv.Value + ".png");
         WireSpriteArray(so, "_shopArt.coinPacks", shop, new[] { "100", "500", "5000", "15000" });
-        WireSpriteArray(so, "_shopArt.hatItems", shop, new[] { "sombrero_price", "baseball_price", "cowboy_price", "ChefHat_price", "Crown_price" });
+        // Cosmetics (2026-11-08): cannon skins, trails, impact effects — cards made by tools/import_cosmetics.py.
+        string[] cannons = { "Golden", "Pumpkin", "CornCob", "MilkChurn", "Tractor" };
+        string[] impacts = { "Confetti", "Popcorn", "Fireworks", "Feathers", "EggSplat" };
+        WireSpriteArray(so, "_shopArt.cannonItems", shop, System.Array.ConvertAll(cannons, n => "Cannon" + n + "_price"));
+        WireSpriteArray(so, "_shopArt.impactItems", shop, System.Array.ConvertAll(impacts, n => "Impact" + n + "_price"));
         WireSpriteArray(so, "_shopArt.trailItems", shop, new[] { "RainbowRibbon_price", "SparkleDust_Price", "CornHusk_price", "EmberTrail_price", "Confetti_price", "Bubble_price" });
-        WireSpriteArray(so, "_shopArt.machineItems", shop, new[] { "Price_Clucky_truck", "Price_Bessie_truck", "Price_Horace_truck" });
         WireSpriteArray(so, "_shopArt.abilityIcons", shop, new[] { "Cluck_ability", "Bessie_ability", "Percy_ability", "Woolly_ability", "Ducky_ability", "Horace_ability", "Gerald_ability", "Billy_ability" });
-        WireSpriteArray(so, "_shopArt.cosmeticIcons", shop, new[] { "Sombrero", "BaseballHat", "CowboyHat", "ChefHat", "CrownHat", "Ribbon", "SparkleDust", "CornHusk", "Ember", "Confetti", "bubbles", "CluckyTruck", "BessieTruck", "HoraceTruck" });
+        var icons = new System.Collections.Generic.List<string>();
+        icons.AddRange(System.Array.ConvertAll(cannons, n => "Cannon" + n));
+        icons.AddRange(new[] { "Ribbon", "SparkleDust", "CornHusk", "Ember", "Confetti", "bubbles" });
+        icons.AddRange(System.Array.ConvertAll(impacts, n => "Impact" + n));
+        WireSpriteArray(so, "_shopArt.cosmeticIcons", shop, icons.ToArray());
 
-        WireSpriteArray(so, "_shopArt.hatArt", fa + "/Cosmetics/", new[] { "Sombrero_1", "Baseball_Clucky", "Cowboy_Clucky", "ChefHat", "Crown" });
+        // In-game art: skins on Cannon.png's canvas at its PPU (384) so FarmCannon's scale fits; impact bursts at 100.
+        const string cos = "Assets/Sprites/Cosmetics/";
+        foreach (var n in cannons) EnsureSingleSprite(cos + "Cannon_" + n + ".png", 384);
+        foreach (var n in impacts) EnsureSingleSprite(cos + "Impact_" + n + ".png", 100);
+        WireSpriteArray(so, "_shopArt.cannonArt", cos, System.Array.ConvertAll(cannons, n => "Cannon_" + n));
+        WireSpriteArray(so, "_shopArt.impactArt", cos, System.Array.ConvertAll(impacts, n => "Impact_" + n));
         WireSpriteArray(so, "_shopArt.trailArt", fa + "/Cosmetics/", new[] { "RainbowRibbon", "SparkleDust", "CornHuskTrail", "EmberTrail", "ConfettiTrail", "BubblesTrail" });
 
         WireSprite(so, "_leaderboardArt.background",       fa + "/Canvas/Settings_Canvas_Wide.png");

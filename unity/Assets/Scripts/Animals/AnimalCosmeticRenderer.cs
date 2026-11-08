@@ -5,7 +5,7 @@ using UnityEngine;
 /// Draws an animal's equipped cosmetics (franchise Phase 5b, adapted from Stampede's CharacterCosmeticRenderer for
 /// a launcher game). Added by LevelLoader.CreateNextAnimal to every animal it spawns (the one sitting in the cannon
 /// and the one in flight).
-///  - Hat (SaveManager.GetEquippedHat): a child sprite on top of the body, half the body sprite's width, its centre at
+///  - (Hats removed 2026-11-08: cannon skins and impact effects replaced them.) Former hat: a child sprite on top of the body, half the body sprite's width, its centre at
 ///    82% of the sprite's height, measured from the body SpriteRenderer's current sprite each frame (so it follows
 ///    pose swaps). An approximation — FarmFury has no per-pose head points yet; tune HatTop/HatWidth after seeing it.
 ///  - Trail (SaveManager.GetEquippedTrail, shared by all animals): fading ghost stamps of the trail art behind the
@@ -34,16 +34,6 @@ public class AnimalCosmeticRenderer : MonoBehaviour
         var save = SaveManager.Instance;
         var shop = FarmFury.UI.GameFlow.Instance != null ? FarmFury.UI.GameFlow.Instance.Shop : null;
         if (save == null || shop == null) { enabled = false; return; }
-
-        int hat = System.Array.IndexOf(StoreProducts.Hats, save.GetEquippedHat(animal));
-        var hatSprite = hat >= 0 && save.IsCosmeticOwned(StoreProducts.Hats[hat]) ? FarmFury.UI.ShopArt.At(shop.hatArt, hat) : null;
-        if (hatSprite != null)
-        {
-            var go = new GameObject("Hat");
-            go.transform.SetParent(transform, false);
-            _hat = go.AddComponent<SpriteRenderer>();
-            _hat.sprite = hatSprite;
-        }
 
         int trail = System.Array.IndexOf(StoreProducts.Trails, save.GetEquippedTrail());
         _trail = trail >= 0 && save.IsCosmeticOwned(StoreProducts.Trails[trail]) ? FarmFury.UI.ShopArt.At(shop.trailArt, trail) : null;

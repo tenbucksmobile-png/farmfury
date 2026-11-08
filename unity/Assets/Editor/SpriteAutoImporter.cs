@@ -79,6 +79,13 @@ public class SpriteAutoImporter : AssetPostprocessor
             if (imp.spriteImportMode != SpriteImportMode.Single)
                 imp.spriteImportMode = SpriteImportMode.Single;
         }
+        // ── Cosmetics (2026-11-08): cannon skins share Cannon.png's PPU (384), impact bursts 100 ──
+        else if (assetPath.Contains("Sprites/Cosmetics/"))
+        {
+            ConfigureSprite(imp, System.IO.Path.GetFileName(assetPath).StartsWith("Cannon_") ? 384 : 100, alphaTransparency: true);
+            if (imp.spriteImportMode != SpriteImportMode.Single)
+                imp.spriteImportMode = SpriteImportMode.Single;
+        }
         // ── Thrown-ability projectiles (AbilityProjectile, 2026-11-08) ──
         else if (assetPath.Contains("Sprites/Abilities/"))
         {

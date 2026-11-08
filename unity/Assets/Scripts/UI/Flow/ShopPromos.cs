@@ -5,8 +5,9 @@ namespace FarmFury.UI
     public enum ShopPromo
     {
         None,
-        Hats,
+        Cannons,
         Trails,
+        Impacts,
         RemoveAds,
     }
 
@@ -52,7 +53,7 @@ namespace FarmFury.UI
         private static ShopPromo Choose(SaveManager save, LevelRunState run, bool newCharacter)
         {
             // FarmFury: hats and trails are shared by every animal, so "unowned" doesn't depend on who's playing.
-            if (newCharacter && AnyUnowned(save, StoreProducts.Hats)) { return ShopPromo.Hats; }
+            if (newCharacter && AnyUnowned(save, StoreProducts.Cannons)) { return ShopPromo.Cannons; }
 
             if (!save.AdsRemoved && save.InterstitialsSinceAdsCard >= InterstitialsBeforeAdsCard)
             {
@@ -61,11 +62,12 @@ namespace FarmFury.UI
             }
 
             // Next category in turn that still has something to sell.
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 3; i++)
             {
-                int turn = save.PromoTurn++ % 2;
-                if (turn == 0 && AnyUnowned(save, StoreProducts.Hats)) { return ShopPromo.Hats; }
+                int turn = save.PromoTurn++ % 3;
+                if (turn == 0 && AnyUnowned(save, StoreProducts.Cannons)) { return ShopPromo.Cannons; }
                 if (turn == 1 && AnyUnowned(save, StoreProducts.Trails)) { return ShopPromo.Trails; }
+                if (turn == 2 && AnyUnowned(save, StoreProducts.Impacts)) { return ShopPromo.Impacts; }
             }
             return ShopPromo.None;
         }

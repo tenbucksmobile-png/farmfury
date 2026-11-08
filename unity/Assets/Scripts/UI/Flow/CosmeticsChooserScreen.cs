@@ -12,13 +12,15 @@ namespace FarmFury.UI
     {
         private const float BannerGap = 30f;
 
-        public CosmeticsChooserScreen(Transform canvas, MenuArt art, ShopArt shop, Action onHats, Action onTrails)
+        public CosmeticsChooserScreen(Transform canvas, MenuArt art, ShopArt shop, Action onCannons, Action onTrails, Action onImpacts)
             : base(canvas, "CosmeticsChooser", art, shop)
         {
-            var size = ItemPurchaseScreen.BannerSize;
+            // Three banners: slightly smaller than a page header so all three fit under the top edge.
+            var size = ItemPurchaseScreen.BannerSize * 0.82f;
             float step = size.y + BannerGap;
-            BannerButton("HatsBannerButton", Shop.hatsBanner, "HATS & CAPS", size, HeaderTop, onHats);
+            BannerButton("CannonsBannerButton", Shop.cannonsBanner, "CANNONS", size, HeaderTop, onCannons);
             BannerButton("TrailsBannerButton", Shop.trailsBanner, "TRAILS", size, HeaderTop - step, onTrails);
+            BannerButton("ImpactsBannerButton", Shop.impactsBanner, "IMPACTS", size, HeaderTop - 2f * step, onImpacts);
         }
     }
 }

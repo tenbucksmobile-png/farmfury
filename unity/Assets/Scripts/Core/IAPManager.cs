@@ -35,7 +35,7 @@ namespace FarmFury.Core
         // Hats and trails can also be bought with coins (Arcade: 2500 each). Worlds are IAP only.
         public static bool TryGetCoinCost(string productId, out int coinCost)
         {
-            bool coinBuyable = StoreProducts.Hats.Contains(productId) || StoreProducts.Trails.Contains(productId);
+            bool coinBuyable = StoreProducts.AllCosmetics.Contains(productId);
             coinCost = coinBuyable ? CosmeticCoinCost : 0;
             return coinBuyable;
         }
@@ -53,7 +53,7 @@ namespace FarmFury.Core
                 { StoreProducts.CoinPacks[2], "$9.99" },
                 { StoreProducts.CoinPacks[3], "$19.99" },
             };
-            foreach (string id in StoreProducts.Hats.Concat(StoreProducts.Trails)) { prices[id] = "$1.99"; }
+            foreach (string id in StoreProducts.AllCosmetics) { prices[id] = "$1.99"; }
             foreach (WorldType world in Enum.GetValues(typeof(WorldType))) { prices[StoreProducts.World(world)] = "$3.99"; }
             return prices;
         }
@@ -127,8 +127,7 @@ namespace FarmFury.Core
             static ProductDefinition Define(string id, ProductType type) => new(id, StoreProducts.StoreId(id), type);
             var definitions = new List<ProductDefinition> { Define(StoreProducts.RemoveAds, ProductType.NonConsumable) };
             definitions.AddRange(StoreProducts.CoinPacks.Select(id => Define(id, ProductType.Consumable)));
-            definitions.AddRange(StoreProducts.Hats.Concat(StoreProducts.Trails)
-                .Select(id => Define(id, ProductType.NonConsumable)));
+            definitions.AddRange(StoreProducts.AllCosmetics.Select(id => Define(id, ProductType.NonConsumable)));
             definitions.AddRange(PurchasableWorlds().Select(w => Define(StoreProducts.World(w), ProductType.NonConsumable)));
             _storeController.FetchProducts(definitions);
         }
@@ -223,7 +222,7 @@ namespace FarmFury.Core
                 save.SetWorldPurchased(world);
                 return true;
             }
-            if (!StoreProducts.Hats.Concat(StoreProducts.Trails).Contains(productId)) { return false; }
+            if (!StoreProducts.AllCosmetics.Contains(productId)) { return false; }
             if (save.IsCosmeticOwned(productId)) { return false; }
             save.SetCosmeticOwned(productId);
             return true;
@@ -401,21 +400,15 @@ namespace FarmFury.Core
         {
             var save = SaveManager.Instance;
             if (save == null) { return false; }
-            if (StoreProducts.Hats.Contains(productId))
+            // Buying a cosmetic owns it and puts it on (cannon skin, trail or impact effect).
+            foreach (var category in new[] { StoreProducts.Cannons, StoreProducts.Trails, StoreProducts.Impacts })
             {
+                if (!category.Contains(productId)) continue;
                 save.SetCosmeticOwned(productId);
-                foreach (var animal in AnimalRoster.All) { save.SetEquippedHat(animal, productId); }
+                save.SetEquipped(category, productId);
+                return true;
             }
-            else if (StoreProducts.Trails.Contains(productId))
-            {
-                save.SetCosmeticOwned(productId);
-                save.SetEquippedTrail(productId);
-            }
-            else
-            {
-                return false;
-            }
-            return true;
+            return false;
         }
 
         private void HandlePurchaseFailed(FailedOrder order)

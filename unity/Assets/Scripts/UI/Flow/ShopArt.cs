@@ -47,13 +47,13 @@ namespace FarmFury.UI
         public Sprite[] coinPacks = new Sprite[0];
         [Tooltip("World purchase price sign. (Shop/3.99.png)")]
         public Sprite worldPrice;
-        public Sprite hatsBanner;
+        public Sprite cannonsBanner;
         public Sprite trailsBanner;
-        public Sprite machinesBanner;
-        [Tooltip("Price plaques, in StoreProducts.Hats / Trails / Machines order.")]
-        public Sprite[] hatItems = new Sprite[0];
+        public Sprite impactsBanner;
+        [Tooltip("Price cards, in StoreProducts.Cannons / Trails / Impacts order.")]
+        public Sprite[] cannonItems = new Sprite[0];
         public Sprite[] trailItems = new Sprite[0];
-        public Sprite[] machineItems = new Sprite[0];
+        public Sprite[] impactItems = new Sprite[0];
         [Tooltip("Tick badge over an owned item. (Shop/EquippedBadge_Icon.png)")]
         public Sprite ownedBadge;
         [Tooltip("Banner that fades in after a purchase. (PurchaseComplete.png)")]
@@ -102,8 +102,10 @@ namespace FarmFury.UI
         public Sprite[] cosmeticIcons = new Sprite[0];
 
         [Header("Cosmetics drawn on the animals (StoreProducts order)")]
-        [Tooltip("Hat art worn in play, in StoreProducts.Hats order (Franchise/Cosmetics; caps/cowboy use Cluck's versions).")]
-        public Sprite[] hatArt = new Sprite[0];
+        [Tooltip("Cannon skins (same pose and size as Cannon.png), in StoreProducts.Cannons order.")]
+        public Sprite[] cannonArt = new Sprite[0];
+        [Tooltip("Robot-defeat burst art, in StoreProducts.Impacts order.")]
+        public Sprite[] impactArt = new Sprite[0];
         [Tooltip("Trail art stamped behind a flying animal, in StoreProducts.Trails order.")]
         public Sprite[] trailArt = new Sprite[0];
 

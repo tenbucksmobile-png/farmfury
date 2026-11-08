@@ -550,6 +550,7 @@ public class RobotEnemy : MonoBehaviour
     void Die()
     {
         IsDestroyed = true;
+        FarmFury.Core.CosmeticEffects.SpawnImpact(transform.position);   // equipped impact effect (cosmetic)
         FarmFury.Core.HighlightMarkers.Mark("robot_defeated", $"robot={name}");
         // Taunt-loop robots (CommanderRobot) show their own dedicated explosion art on their own
         // body as they die, not just the separate SpawnDeathExplosion() burst overlay every robot

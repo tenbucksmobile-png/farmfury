@@ -33,7 +33,8 @@ namespace FarmFury.Core
         private const string AdsRemovedKey = "FF_AdsRemoved";
         private const string LevelsSinceInterstitialKey = "FF_LevelsSinceInterstitial";
         private const string CosmeticOwnedKeyPrefix = "FF_CosmeticOwned_";
-        private const string EquippedHatKeyPrefix = "FF_EquippedHat_";
+        private const string EquippedCannonKey = "FF_EquippedCannon";
+        private const string EquippedImpactKey = "FF_EquippedImpact";
         private const string EquippedTrailKey = "FF_EquippedTrail";
         private const string WorldPurchasedKeyPrefix = "FF_WorldPurchased_";
         private const string BestScoreKeyPrefix = "FF_BestScore_";
@@ -161,11 +162,27 @@ namespace FarmFury.Core
             PlayerPrefs.Save();
         }
 
-        /// <summary>The hat an animal wears (empty = none). Hats are per animal.</summary>
-        public string GetEquippedHat(AnimalType animal) => PlayerPrefs.GetString(EquippedHatKeyPrefix + animal, string.Empty);
+        /// <summary>The cannon skin (empty = the standard cannon).</summary>
+        public string GetEquippedCannon() => PlayerPrefs.GetString(EquippedCannonKey, string.Empty);
 
-        public void SetEquippedHat(AnimalType animal, string cosmeticId) =>
-            PlayerPrefs.SetString(EquippedHatKeyPrefix + animal, cosmeticId ?? string.Empty);
+        public void SetEquippedCannon(string cosmeticId) => PlayerPrefs.SetString(EquippedCannonKey, cosmeticId ?? string.Empty);
+
+        /// <summary>The robot-defeat impact effect (empty = none, just the standard explosion).</summary>
+        public string GetEquippedImpact() => PlayerPrefs.GetString(EquippedImpactKey, string.Empty);
+
+        public void SetEquippedImpact(string cosmeticId) => PlayerPrefs.SetString(EquippedImpactKey, cosmeticId ?? string.Empty);
+
+        /// <summary>The equipped id for a category (one of StoreProducts.Cannons / Trails / Impacts).</summary>
+        public string GetEquipped(string[] category) =>
+            category == StoreProducts.Cannons ? GetEquippedCannon()
+            : category == StoreProducts.Impacts ? GetEquippedImpact() : GetEquippedTrail();
+
+        public void SetEquipped(string[] category, string cosmeticId)
+        {
+            if (category == StoreProducts.Cannons) SetEquippedCannon(cosmeticId);
+            else if (category == StoreProducts.Impacts) SetEquippedImpact(cosmeticId);
+            else SetEquippedTrail(cosmeticId);
+        }
 
         /// <summary>The trail is shared by every animal.</summary>
         public string GetEquippedTrail() => PlayerPrefs.GetString(EquippedTrailKey, string.Empty);

@@ -2725,15 +2725,15 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 277478f7245b98a47a6a96eb1beb9ba7, type: 3}
     - {fileID: 21300000, guid: 208d5340901752d47a99b087f7ddee5a, type: 3}
     worldPrice: {fileID: 21300000, guid: 38cf681b7457f3240939fe26dd85fffe, type: 3}
-    hatsBanner: {fileID: 21300000, guid: 4ef74562294ae4a43b73f67300278dc3, type: 3}
+    cannonsBanner: {fileID: 21300000, guid: 19de823a1fc718946bc1a110213e987f, type: 3}
     trailsBanner: {fileID: 21300000, guid: 6ee7067394a92f64588477c85b381167, type: 3}
-    machinesBanner: {fileID: 21300000, guid: 70328034571d61c4c95f4d7ee9fed31f, type: 3}
-    hatItems:
-    - {fileID: 21300000, guid: bf865a3941925cc45a243d3db9befe37, type: 3}
-    - {fileID: 21300000, guid: 5d3504566381edc44a26ee8d8f2a510d, type: 3}
-    - {fileID: 21300000, guid: fe20d3d02150c844ba4db6797376f46b, type: 3}
-    - {fileID: 21300000, guid: 6848e32e0398ff343bd182b84174a103, type: 3}
-    - {fileID: 21300000, guid: 82a989bec1bded842be61e7d2ccf885e, type: 3}
+    impactsBanner: {fileID: 21300000, guid: 5c63963943f1ba046bf122606db16948, type: 3}
+    cannonItems:
+    - {fileID: 21300000, guid: 40264fa0add771b4cb2a56e89b4c75d5, type: 3}
+    - {fileID: 21300000, guid: af80edda45e89664bb7ff963c34c6d59, type: 3}
+    - {fileID: 21300000, guid: 734f7231a0b6b9a42ab749a7953fa86d, type: 3}
+    - {fileID: 21300000, guid: a6030d854e3860c4baa283618a5e7cb0, type: 3}
+    - {fileID: 21300000, guid: 96ef84d1a4cacc0468df210d25e7adaf, type: 3}
     trailItems:
     - {fileID: 21300000, guid: ce223dba768242f43b9cebff2cf35c3d, type: 3}
     - {fileID: 21300000, guid: 07aaabe13bda69e40b8d27d8b5d76029, type: 3}
@@ -2741,10 +2741,12 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 02dcbee60d56d0043b9738b1d5a80333, type: 3}
     - {fileID: 21300000, guid: f19dfeec21918054f870600e02edf787, type: 3}
     - {fileID: 21300000, guid: d5c66f3e9ae71d9408795c47b26b40a9, type: 3}
-    machineItems:
-    - {fileID: 21300000, guid: ac027faeea8e7c94ca0b288655172e76, type: 3}
-    - {fileID: 21300000, guid: b6d9154bf697f824cbfeccddf33bd9b8, type: 3}
-    - {fileID: 21300000, guid: 2cebc613f051b6c43ac041f0cf8788c7, type: 3}
+    impactItems:
+    - {fileID: 21300000, guid: ac2e35bbf80ddb24eaf670d9eb9d20f5, type: 3}
+    - {fileID: 21300000, guid: 9eb580d6e789fc9438b8e420abd860a2, type: 3}
+    - {fileID: 21300000, guid: 3dbb4923b6be14a44b58ad9eb1c73bac, type: 3}
+    - {fileID: 21300000, guid: a6ce5eee63b05714b8ac64ad2a8eb3cb, type: 3}
+    - {fileID: 21300000, guid: ab0cdda8237baf24aac2d10dcf85b357, type: 3}
     ownedBadge: {fileID: 21300000, guid: b6585d85573de464c861e48c6cd110bf, type: 3}
     purchaseComplete: {fileID: 21300000, guid: 296a95b51ff662c488477e15951673a0, type: 3}
     coinIcon: {fileID: 21300000, guid: 321509b04823b5d418efce3cce145b48, type: 3}
@@ -2773,26 +2775,34 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 85c0180c288cef841a91f98640bb9075, type: 3}
     - {fileID: 21300000, guid: 534972f80ceddf74e8a622f13a4ac8b2, type: 3}
     cosmeticIcons:
-    - {fileID: 21300000, guid: 4608a4ed2c24a8941be0a63efe97b460, type: 3}
-    - {fileID: 21300000, guid: a8381f94c4623154eaca01c8e4cd26c7, type: 3}
-    - {fileID: 21300000, guid: 4d4de20c5f05fed438142b666ad2895c, type: 3}
-    - {fileID: 21300000, guid: 6d6c2c98e30fc24429abb7a018f9d2a0, type: 3}
-    - {fileID: 21300000, guid: 51fc22e103a818448a78cc5998734bd3, type: 3}
+    - {fileID: 21300000, guid: 035227875a682154d9ba5569b73e89b4, type: 3}
+    - {fileID: 21300000, guid: cdbf6adf4d0f49a45979fc829153d8bb, type: 3}
+    - {fileID: 21300000, guid: 277e701c22ee829458dc0d6570755390, type: 3}
+    - {fileID: 21300000, guid: 5d0f0acbcb431fd4186a5a22a01b5923, type: 3}
+    - {fileID: 21300000, guid: caedf37808873e446a0beebd40020eb8, type: 3}
     - {fileID: 21300000, guid: 483ea64550ae07e49863ccdb71b27c77, type: 3}
     - {fileID: 21300000, guid: 4da83b12fee26fa45b8ed26180236256, type: 3}
     - {fileID: 21300000, guid: 74afd0659cb28474a8d672cbdcd84b06, type: 3}
     - {fileID: 21300000, guid: 335838cacf0b29f42bef377356326810, type: 3}
     - {fileID: 21300000, guid: 6b1d2e2c76bfd52408d9b22a8bd507f2, type: 3}
     - {fileID: 21300000, guid: d6cb2bed56aed2942adc54abe9a47bf0, type: 3}
-    - {fileID: 21300000, guid: f3b68ce29369fee4b95cb7b912d5bfe8, type: 3}
-    - {fileID: 21300000, guid: 2060e36e1ee108946acc27c390d08f80, type: 3}
-    - {fileID: 21300000, guid: 46f0ec7d23cae88458cb20e7c362cb81, type: 3}
-    hatArt:
-    - {fileID: 21300000, guid: 474faabf4a6c3f54ea273e7fbdcf1207, type: 3}
-    - {fileID: 21300000, guid: dc813ccaed3bc194bb820b3b8310696a, type: 3}
-    - {fileID: 21300000, guid: b08e1d854aae7424e8243a9b1320e811, type: 3}
-    - {fileID: 21300000, guid: fd86fb751edec1f4a814da882b499045, type: 3}
-    - {fileID: 21300000, guid: 35879ef103d72644c84f1006cf4b359b, type: 3}
+    - {fileID: 21300000, guid: 68ec476f2fb3df841aa3860d0d2e6976, type: 3}
+    - {fileID: 21300000, guid: cd72099d9bf93ed4db3880ac917bc152, type: 3}
+    - {fileID: 21300000, guid: 52b78ae7287ff0f49b6c8d31f3728eb3, type: 3}
+    - {fileID: 21300000, guid: 094c4a31746728041a3606f7f2183d30, type: 3}
+    - {fileID: 21300000, guid: d92d43d2d981a34439ce816451501bf0, type: 3}
+    cannonArt:
+    - {fileID: 21300000, guid: bb830ae11b8a7074c9adba4ebfd29817, type: 3}
+    - {fileID: 21300000, guid: a00d6d5d4b210394fa3fde4a545d5ae9, type: 3}
+    - {fileID: 21300000, guid: 6163a48d3d06eb54ebc46228c9dc02d6, type: 3}
+    - {fileID: 21300000, guid: 61ff83ac295c10a4e9741b8f0a7a4bed, type: 3}
+    - {fileID: 21300000, guid: 10075c7031913af46ae29388cc61c5c9, type: 3}
+    impactArt:
+    - {fileID: 21300000, guid: 2f231d19d28b9c94ea43d4fdf9e52554, type: 3}
+    - {fileID: 21300000, guid: 02b332b3a15c80f4bb6dbd14c6e510ab, type: 3}
+    - {fileID: 21300000, guid: 67f5d051919fccc418f65e2eda0cba06, type: 3}
+    - {fileID: 21300000, guid: adc8090d86a70c948aedd8a13947a188, type: 3}
+    - {fileID: 21300000, guid: 7350a5df8991bba4583d634683822241, type: 3}
     trailArt:
     - {fileID: 21300000, guid: 9d1f3f7d76392e04895ba6b40dc22f6a, type: 3}
     - {fileID: 21300000, guid: 7575ff31bec310d41a95a8307ac66c43, type: 3}
