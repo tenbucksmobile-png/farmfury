@@ -111,7 +111,9 @@ public class SceneryBuilder : MonoBehaviour
         var w1 = FindIncludingInactive("Scenery_World1");
         if (w1 != null)
         {
-            w1.SetActive(world == 1);
+            // Framed levels draw World 1 entirely from the cornfield layers (EnvironmentDepthSystem): every
+            // hand-placed prop goes, small ones too (rocks, flowers, fences, tufts — user request 2026-11-08).
+            w1.SetActive(world == 1 && !framed);
             foreach (Transform child in w1.transform)
                 foreach (var prefix in FramedHiddenProps)
                     if (child.name.StartsWith(prefix)) { child.gameObject.SetActive(!framed); break; }

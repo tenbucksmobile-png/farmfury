@@ -231,7 +231,8 @@ public abstract class BlockBase : MonoBehaviour
         _crackSR2 = MakeCrackOverlay("CrackH", _crackSprite2, sortingOrder: 4);
     }
 
-    public void Initialise(float width, float height, WoodArtVariant artVariant = WoodArtVariant.Auto, int world = 1)
+    public void Initialise(float width, float height, WoodArtVariant artVariant = WoodArtVariant.Auto, int world = 1,
+                           bool trimCollider = false)
     {
         _baseColor = _sr.color; // subclass Awake has already set the material colour
 
@@ -312,6 +313,17 @@ public abstract class BlockBase : MonoBehaviour
         // world-space collider exactly on (width, height) regardless of the chosen sprite's own
         // native aspect.
         if (_col != null) _col.size = native;
+        Footprint = new Vector2(width, height);
+        // Trim the collider to the art (2026-11-08, user-approved): the block sprites carry transparent padding
+        // (Plank_Horizontal's wood is only the middle 48% of its height, the vertical post 27% of its width), so a
+        // full-rect collider let woken blocks rest on and collide with empty space. The sprite's tight mesh hugs the
+        // visible pixels; its vertex bounds are in the same local units as `native`. Full-rect sprites (or none)
+        // keep the full footprint. Health and mass still come from the footprint, so balance is unchanged.
+        // Only on levels laid out by visible edges (ReferenceFraming): the older hand-dumped layouts rely on the
+        // padded colliders to touch — trimming them leaves blocks over gaps in 109 levels
+        // (tools/check_block_support.py), so they keep full-rect colliders until they're re-laid out.
+        _trimCollider = trimCollider;
+        if (_trimCollider) TrimColliderToArt();
 
         float area  = width * height;
         float ratio = area / StdArea;
@@ -323,6 +335,41 @@ public abstract class BlockBase : MonoBehaviour
         var mat = new PhysicsMaterial2D("BlockMat") { bounciness = bounciness, friction = 0.8f };
         _col.sharedMaterial = mat;
         _rb.bodyType = RigidbodyType2D.Static;
+    }
+
+    /// <summary>The authored (width, height) from LevelData — the art's full rect, padding included.</summary>
+    public Vector2 Footprint { get; private set; } = Vector2.one;
+
+    /// <summary>Mirror the art (WorldLevelGenerator's mirrored towers) and keep the trimmed collider on it.</summary>
+    public void SetFlipX(bool flip)
+    {
+        if (_sr != null) _sr.flipX = flip;
+        TrimColliderToArt();
+    }
+
+    bool _trimCollider;
+
+    void TrimColliderToArt()
+    {
+        if (!_trimCollider) return;
+        if (_col == null || _sr == null || _sr.sprite == null) return;
+        Sprite sp = _sr.sprite;
+        Vector2[] v = sp.vertices;
+        if (v == null || v.Length < 3) return;
+        Vector2 min = v[0], max = v[0];
+        for (int i = 1; i < v.Length; i++) { min = Vector2.Min(min, v[i]); max = Vector2.Max(max, v[i]); }
+        Vector2 size = max - min;
+        Vector2 full = sp.bounds.size;
+        if (size.x >= full.x * 0.98f && size.y >= full.y * 0.98f)
+        {
+            _col.size = full;            // full-rect mesh or no padding: nothing to trim
+            _col.offset = Vector2.zero;
+            return;
+        }
+        Vector2 centre = (min + max) * 0.5f;
+        if (_sr.flipX) centre.x = -centre.x;
+        _col.size   = new Vector2(Mathf.Max(size.x, full.x * 0.05f), Mathf.Max(size.y, full.y * 0.05f));
+        _col.offset = centre;
     }
 
     // Applies per-instance LevelData overrides after Initialise(). 0 = keep the
@@ -640,7 +687,7 @@ public abstract class BlockBase : MonoBehaviour
         sr.sprite       = _sprExplode;
         sr.sortingOrder = 10;
         go.transform.position   = transform.position;
-        float sz = Mathf.Max(_col.bounds.size.x, _col.bounds.size.y) * _explodeSizeMultiplier; // bigger than the block itself
+        float sz = Mathf.Max(Footprint.x, Footprint.y) * _explodeSizeMultiplier; // bigger than the block itself
         go.transform.localScale = new Vector3(sz, sz, 1f);
         go.AddComponent<FragmentFader>();
     }

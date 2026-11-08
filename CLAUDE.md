@@ -121,6 +121,37 @@ needing a live pass before shipping.
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
+- **2026-11-08 (later) — World 1 cornfield backdrop + raised islands** (user request, framed World 1 levels only =
+  L01 today). Existing art reused first: `Rough_Canvas/DistantBarn.png` is the far layer (sky, hazy hills, barn,
+  windmill, silos). Only 8 Kling images were generated (16 credits, kling-image-v3_0_omni i2i at 2 credits/image,
+  DistantBarn as style ref), saved in `FarmFury_Technical/FarmFury_Artwork/MeadowRuins/Cornfield/`; picks: MidCornfield_B,
+  CornWall_A, PlatformWide_A/B. `tools/import_cornfield_art.py` cuts the white backgrounds, splits the corn wall into
+  corn + soil strip, bakes the dark corner silhouettes and prints the measured anchors (soil grass line UV 0.837,
+  island surface UV 0.754/0.699, barn base UV 0.052) into `Sprites/Environment/Cornfield/`. `EnvironmentDepthSystem`
+  cornfield mode (`CornfieldActive`): far painting cover-fit with its barn base just behind the mid corn; tiled,
+  mirror-every-other-tile strips with real parallax (mid corn follows the camera 0.55, corn wall + soil world-fixed,
+  soil grass line on the physics ground, flat soil underfill when the camera dips); haze veil + mist at the corn
+  tops; silhouettes order 40 in the corners. New `LevelData.platforms` (`PlatformSpawnData`: x, surfaceY, width,
+  variant) spawned by `LevelLoader.SpawnPlatform` — layer Ground, tag "Ground", static box collider from the grass
+  surface down, sortingOrder 1. L01's pile + robot stand on a 4.4 u island 1.6 u up (0.22 sh); `WorldLevelGenerator`
+  drops anything on a template island back to the ground, so Worlds 3-9 are unchanged. Wired by
+  `SceneSetup.Cornfield.cs`. Checked only against an offline mock-up render — unverified in Play mode.
+  Follow-up the same day after the user's first device render: framed levels hide ALL of `Scenery_World1`
+  (rocks, flowers, fences, tufts too); the cannon stands on a 3+2 haybale mount (`CatapultLauncher.ApplyMount`,
+  framed only — lifts `_cannonRestPos`, so aim/fire/loaded animal all move with it; Haybail.png wired as
+  `_mountBaleSprite`); L01 rebuilt on the ground as a shelter (2 posts + roof plank, placed by the planks' visible
+  edges) with one SemiHarvester inside and one on the roof, plus a 3-bale stack — the island was dropped from L01
+  (the platform feature stays for later levels); new `SkyFlyby.cs` (cornfield only): a biplane (MeadowRuins/Plane.png)
+  crosses every 9-18 s with a smoke-puff trail, 30% of the time a Stampede scout drone instead; HUD lives queue
+  halved (`HUDController` CardActive 104x135, CardQueue 78x101, smaller damage badge).
+  **Block colliders trimmed to the art on framed levels** (`BlockBase.TrimColliderToArt`, from the sprite's tight-mesh
+  vertex bounds; `Initialise(..., trimCollider)` passed `ReferenceFraming.Active(level)` by `LevelLoader`;
+  `BlockBase.SetFlipX` mirrors the offset; health/mass/blast radius/explosion size still use `Footprint`). The sprites
+  carry transparent padding (Plank_Horizontal's wood is the middle 48% of its height, the vertical post 27% of its
+  width). NOT applied to unframed levels: their hand-dumped layouts rely on the padded rects touching —
+  `tools/check_block_support.py` shows 109 levels would get blocks over a gap that `SettleIfUnsupported` drops at
+  level start. Run that tool before turning on `referenceFraming` for any level (L01 passes).
+
 - **2026-11-08 — Reference framework + L01 reframing** (user request: "not anything like angry birds"). Arcade's
   scrcpy/logcat recorder ported as `tools/review/` (record/import/analyze/compare in screen units) + dev-build
   telemetry `HighlightMarkers.cs`; `.\Run-Unity.ps1 build-android-dev`. An Angry Birds 2 session was measured into

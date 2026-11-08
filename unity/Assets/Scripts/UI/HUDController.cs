@@ -34,11 +34,13 @@ public class HUDController : MonoBehaviour
     [SerializeField] private Sprite[] _cardSprites = new Sprite[8];
 
     // Card layout constants — Angry Birds style: big active card, overlapping queue cards
-    private const float CardActiveW  = 200f;
-    private const float CardActiveH  = 260f;
-    private const float CardQueueW   = 155f;
-    private const float CardQueueH   = 202f;
-    private const float CardGap      = -55f;  // negative = cards overlap each other
+    // Halved 2026-11-08 (user request: "make the top left character lives smaller") — at the reference framing
+    // the old 200x260 portrait covered a big slice of the sky the shots fly through.
+    private const float CardActiveW  = 104f;
+    private const float CardActiveH  = 135f;
+    private const float CardQueueW   = 78f;
+    private const float CardQueueH   = 101f;
+    private const float CardGap      = -26f;  // negative = cards overlap each other
 
     private const float BobAmp  = 3.5f;  // pixels
     private const float BobFreq = 1.8f;  // Hz
@@ -187,7 +189,7 @@ public class HUDController : MonoBehaviour
                              anchorMax: new Vector2(0.02f, 1f),
                              pivot:     new Vector2(0f, 1f),    // top-left corner anchors to top-left of screen
                              pos:       new Vector2(0f, -12f),  // 12px inset from top edge
-                             size:      new Vector2(700f, 280f));
+                             size:      new Vector2(400f, 150f));
         _birdQueueRoot = rt;
     }
 
@@ -330,8 +332,8 @@ public class HUDController : MonoBehaviour
     // missing ★ glyph fixed in MatchUpScreen's stars display — see docs/HISTORY.md Round 14).
     void BuildDamageBadge(RectTransform parent, AnimalType type, bool large)
     {
-        float bw = large ? 92f : 74f;
-        float bh = large ? 44f : 36f;
+        float bw = large ? 50f : 40f;
+        float bh = large ? 24f : 20f;
 
         var badge = MakeImage(parent, "DamageBadge", _squareSpr,
                         new Color(0.96f, 0.56f, 0.07f, 0.93f),
@@ -341,7 +343,7 @@ public class HUDController : MonoBehaviour
                         size: new Vector2(bw, bh));
 
         var dmgText = MakeStretchText(badge.transform, "DmgText",
-            fontSize: large ? 34f : 26f,
+            fontSize: large ? 19f : 15f,
             text: $"{GetDamage(type)}",
             color: Color.white,
             align: TextAlignmentOptions.Center);

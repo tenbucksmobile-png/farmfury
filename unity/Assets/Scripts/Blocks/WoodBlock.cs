@@ -37,8 +37,10 @@ public class WoodBlock : BlockBase
     // Radius of this block's blast, derived from its own actual world-space size (not a flat
     // constant) — see the class comment above. Falls back to a plain 1u footprint if the
     // collider somehow isn't ready yet.
+    // Uses the authored footprint, not the collider: colliders are trimmed to the visible art (2026-11-08) and the
+    // blast balance was tuned against the full footprint.
     protected float EffectiveBlastRadius =>
-        (_col != null ? Mathf.Max(_col.bounds.size.x, _col.bounds.size.y) : 1f) * ExplosiveForceScale;
+        Mathf.Max(Footprint.x, Footprint.y) * ExplosiveForceScale;
 
     protected override void Awake()
     {

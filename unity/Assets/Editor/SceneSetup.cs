@@ -362,6 +362,7 @@ public static partial class SceneSetup
         WireParallaxPainting(so, "_sprFarHillsW2",  "ParallaxFarHills_W2.png",   skiesFolder);
         WireParallaxPainting(so, "_sprMidgroundW2", "ParallaxMidGrounds_W2.png", skiesFolder);
         WireWorldBackdrops(so);   // Worlds 3-9: Stampede paintings (SceneSetup.Worlds.cs)
+        WireCornfield(so);        // World 1 framed levels: cornfield stack (SceneSetup.Cornfield.cs)
 
         // ClipAbove defaults are only stamped once, on first creation — same "don't fight the
         // user's own later tuning" convention used everywhere else in this file (see FarmCannon's
@@ -1190,6 +1191,7 @@ public static partial class SceneSetup
         SetPrefab(so, "_haybalePrefab",    "HaybaleBlock",    "Assets/Prefabs/Blocks",  typeof(WoodBlock));
         SetPrefab(so, "_barrelPrefab",     "ExplodingBarrelBlock", "Assets/Prefabs/Blocks", typeof(ExplodingBarrelBlock));
         WireWorldRobotSets(so);
+        WirePlatformSprites(so);   // raised islands (SceneSetup.Cornfield.cs)
 
         so.FindProperty("_blockParent").objectReferenceValue =
             GameObject.Find("BlockParent")?.transform;
@@ -1310,6 +1312,10 @@ public static partial class SceneSetup
         }
         else
             Debug.LogWarning("[FarmFury] IceCannon.png not found at " + iceCannonPath);
+
+        // Framed levels' haybale cannon mount (CatapultLauncher.ApplyMount).
+        var bale = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Environment/World1Props/Haybail.png");
+        if (bale != null) so.FindProperty("_mountBaleSprite").objectReferenceValue = bale;
 
         so.FindProperty("_cannonGO").objectReferenceValue = cannonGO;
 

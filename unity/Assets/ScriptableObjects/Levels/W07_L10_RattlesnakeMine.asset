@@ -302,3 +302,4 @@ MonoBehaviour:
   - robotType: 2
     position: {x: 3.2600002, y: -5.36}
     scale: {x: 5.416, y: 6.861}
+  platforms: []

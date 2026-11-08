@@ -405,3 +405,4 @@ MonoBehaviour:
   - robotType: 0
     position: {x: 7.098391, y: -2.27}
     scale: {x: 9.029, y: 8.225}
+  platforms: []

@@ -448,7 +448,6 @@ public class CatapultLauncher : MonoBehaviour
         _rubberBandLine.positionCount = 0;
         if (_returnRoutine != null) StopCoroutine(_returnRoutine);
         if (_fireRoutine   != null) StopCoroutine(_fireRoutine);
-        if (_cannonGO != null) _cannonGO.transform.position = _cannonRestPos;
         // World 2 reskin — falls back to the World 1 sprite whenever the W2 art isn't wired or
         // this isn't a World 2 level, so an unwired _cannonSpriteW2 never renders a blank cannon.
         if (_cannonSR != null)
@@ -461,6 +460,7 @@ public class CatapultLauncher : MonoBehaviour
         // level keeps the original physics ground at the Launcher anchor's Y.
         _groundY = _framed ? ReferenceFraming.GroundY(data) : transform.position.y;
         SetGroundTop(_groundY);
+        ApplyMount(_framed, _groundY);   // also resets the cannon to its scene position (was done above)
         ApplyFlightTuning();
         RefreshRestPoint();
         // Restart/Replay now reuses this same handler (GameManager.RestartLevel ->
@@ -589,7 +589,71 @@ public class CatapultLauncher : MonoBehaviour
         if (_cannonSprite != null) _cannonSR.sprite = _cannonSprite;
         _cannonSR.sortingOrder = 4; // explicit order wins over Z-depth ties
 
-        _cannonRestPos = _cannonGO.transform.position;
+        _cannonRestPos  = _cannonGO.transform.position;
+        _cannonScenePos = _cannonRestPos;
+    }
+
+    // ── Haybale mount (framed levels, 2026-11-08) ───────────────────────────────────────────────────────────
+    // The reference puts the launcher up on a mound (framework A5), so framed levels sit the cannon on a stack of
+    // hay bales: 3 on the ground, 2 on top. Visual only — shots start above it and nothing needs to rest on it.
+    // Everything that aims or fires reads _cannonRestPos, so lifting it moves the whole launcher.
+    [SerializeField] private Sprite _mountBaleSprite;   // Haybail.png, wired by SceneSetup.WireLauncher
+    const float MountBaleSize   = 1.15f;   // world units per bale (sprite is square)
+    const float MountBaleBottom = 19f / 500f;   // transparent rows under the bale in Haybail.png
+    const float MountBaleTop    = 63f / 500f;   // transparent rows above it
+    const float MountRowStep    = 0.80f;   // second row sits this far above the first (bales nest)
+    const float MountSpacing    = 0.95f;   // bale centres within a row (they overlap a little)
+    const float MountSink       = 0.06f;   // the cannon's wheels settle into the top bales
+    const float CannonWheelOffsetX = -0.15f;   // Cannon.png's wheels sit left of the sprite centre
+    const int   MountSortingOrder  = 3;    // behind the cannon (4)
+
+    Vector3    _cannonScenePos;   // the hand-placed FarmCannon position in Game.unity (ground level)
+    GameObject _mount;
+
+    // Height the mount lifts the cannon by, with the cannon's wheels (visual bottom) on top of the stack.
+    float MountLift(float groundY)
+    {
+        if (_cannonSR == null || _cannonSR.sprite == null) return 0f;
+        float topOfStack = groundY + MountBaleSize * (1f - MountBaleBottom) + MountRowStep - MountBaleSize * MountBaleTop;
+        // Visual bottom of the wheels at the scene position (Cannon.png has 21 of 512 rows transparent below them).
+        float cannonBottom = _cannonSR.bounds.min.y + _cannonSR.bounds.size.y * (21f / 512f);
+        return topOfStack - MountSink - cannonBottom;
+    }
+
+    void ApplyMount(bool on, float groundY)
+    {
+        if (_cannonGO != null) _cannonGO.transform.position = _cannonScenePos;
+        _cannonRestPos = _cannonScenePos;
+        if (!on || _mountBaleSprite == null)
+        {
+            if (_mount != null) _mount.SetActive(false);
+            return;
+        }
+        _cannonRestPos = _cannonScenePos + new Vector3(0f, MountLift(groundY), 0f);
+        if (_cannonGO != null) _cannonGO.transform.position = _cannonRestPos;
+
+        if (_mount == null)
+        {
+            _mount = new GameObject("CannonMount");
+            float scale = MountBaleSize / _mountBaleSprite.bounds.size.x;
+            int i = 0;
+            for (int row = 0; row < 2; row++)
+                for (int k = 0; k < 3 - row; k++)
+                {
+                    var bale = new GameObject($"Bale{i++}");
+                    bale.transform.SetParent(_mount.transform, false);
+                    float x = (k - (2 - row) * 0.5f) * MountSpacing;
+                    float y = MountBaleSize * (0.5f - MountBaleBottom) + row * MountRowStep;
+                    bale.transform.localPosition = new Vector3(x, y, 0f);
+                    bale.transform.localScale = new Vector3(scale, scale, 1f);
+                    var sr = bale.AddComponent<SpriteRenderer>();
+                    sr.sprite = _mountBaleSprite;
+                    sr.sortingOrder = MountSortingOrder;
+                    sr.flipX = (i & 1) == 0;   // vary the straw pattern
+                }
+        }
+        _mount.SetActive(true);
+        _mount.transform.position = new Vector3(_cannonScenePos.x + CannonWheelOffsetX, groundY, 0f);
     }
 
     // Procedural smoke-puff particle system: cone burst, fades out, drifts slightly upward.

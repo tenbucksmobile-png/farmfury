@@ -103,19 +103,36 @@ public static class LevelDataGenerator
         // and robot moved onto World 1's shared ground line y=-5.6 (where the barn/fences/cannon stand): all four
         // bales +0.5685 so the lowest bale's collider bottom touches -5.6 (pile shape unchanged); the robot's
         // 0.90-tall body now stands on it (centre -5.15; it was 0.34 above the bales' line).
+        // 2026-11-08 cornfield pass (user: "the robot on a ledge doesn't seem right"): rebuilt as a first
+        // Angry-Birds-style lesson on the ground — a wooden shelter (two posts and a roof plank) with one robot
+        // sheltering inside and one standing on the roof, plus a haybale stack beside it. Placed by the planks'
+        // VISIBLE edges (the sprites carry transparent padding that their colliders include):
+        //   2D_Block_Wood_Vertical: art spans x 0.32-0.59, y 0.05-0.92 (from the top) of the footprint
+        //   Plank_Horizontal:       art spans x 0.08-0.98, y 0.33-0.81
+        // Posts 1.4 u tall (visible), roof top 1.65 u above the ground; 12-13 u from the cannon (~0.45 sw).
+        const float g = ReferenceFraming.World1GroundY;          // -5.6
+        const float postH = 1.61f;                               // footprint -> 1.40 visible
+        const float postY = g - 0.08f * postH + postH * 0.5f;    // visible bottom on the ground
+        const float postTop = g + 0.87f * postH;                 // visible top
+        const float roofH = 0.52f;                               // footprint -> 0.25 visible
+        const float roofY = postTop - 0.19f * roofH + roofH * 0.5f;
+        const float roofTop = postTop + 0.48f * roofH;
         Make(folder, "L01_FirstContact",
             id: "W1_L01", name: "First Contact", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Haybale, 5.73f, -4.9815f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 6.16f, -5.1115f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 6.03f, -4.4915f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
-                B(BlockType.Haybale, 6.86f, -5.0915f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f), // sprite 'Haybail'
+                B(BlockType.Wood, 8.2f,   postY, 1.0f,  postH, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.8f,   postY, 1.0f,  postH, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.927f, roofY, 2.44f, roofH, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Haybale, 10.85f, -5.1115f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 11.50f, -5.1115f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Haybale, 11.175f, -4.33f,  0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
             },
             robots: new[]
             {
-                R(7.658f, -5.15f, 6.001f, 6.153f, RobotType.SemiHarvester), // sprite 'Robot_SemiHarvest'
+                R(9.0f, g + 0.45f,       6.001f, 6.153f, RobotType.SemiHarvester),   // inside the shelter
+                R(9.0f, roofTop + 0.45f, 6.001f, 6.153f, RobotType.SemiHarvester),   // on the roof
             },
             referenceFraming: true);
 
@@ -1078,7 +1095,8 @@ public static class LevelDataGenerator
         LevelData.RobotSpawnData[] robots,
         int world = 1,
         bool isBoss = false,
-        bool referenceFraming = false)
+        bool referenceFraming = false,
+        LevelData.PlatformSpawnData[] platforms = null)
     {
         string path = $"{folder}/{filename}.asset";
         if (AssetDatabase.LoadAssetAtPath<LevelData>(path) != null)
@@ -1094,6 +1112,7 @@ public static class LevelDataGenerator
         asset.world       = world;
         asset.isBossLevel = isBoss;
         asset.referenceFraming = referenceFraming;
+        asset.platforms   = platforms ?? new LevelData.PlatformSpawnData[0];
 
         AssetDatabase.CreateAsset(asset, path);
         Debug.Log($"[FarmFury] Created {path}");
@@ -1119,6 +1138,9 @@ public static class LevelDataGenerator
                 passThrough = passThrough, healthOverride = hp, massOverride = mass,
                 artVariant = artVariant, indestructible = indestructible,
                 forceStayKinematic = forceStayKinematic };
+
+    static LevelData.PlatformSpawnData P(float x, float surfaceY, float width, int variant = 0) =>
+        new LevelData.PlatformSpawnData { x = x, surfaceY = surfaceY, width = width, variant = variant };
 
     static LevelData.RobotSpawnData R(float x, float y, float scaleX = 0f, float scaleY = 0f,
                                       RobotType robotType = RobotType.Basic) =>

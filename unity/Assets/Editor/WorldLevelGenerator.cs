@@ -149,10 +149,21 @@ public static class WorldLevelGenerator
         // A template framed by ReferenceFraming stands on World 1's shared ground line (y=-5.6); these worlds
         // still use the original physics ground (-6.6, the Launcher anchor), so drop it back onto that.
         float dy = template.referenceFraming ? -6.6f - ReferenceFraming.World1GroundY : 0f;
+        // Generated levels don't carry the template's raised islands (cornfield art, 2026-11-08): anything standing
+        // on one drops by the island's height back onto the template's ground line, as before the islands existed.
+        float IslandLift(float x, float y)
+        {
+            if (template.platforms == null) return 0f;
+            foreach (var p in template.platforms)
+                if (Mathf.Abs(x - p.x) <= p.width * 0.5f && y > p.surfaceY - 0.1f)
+                    return p.surfaceY - ReferenceFraming.World1GroundY;
+            return 0f;
+        }
 
         for (int i = 0; i < blocks.Length; i++)
         {
             var b = blocks[i];
+            b.position.y -= IslandLift(b.position.x, b.position.y);
             b.position.x = MapX(b.position.x);
             b.position.y += dy;
             b.flipX = mirror;
@@ -163,6 +174,7 @@ public static class WorldLevelGenerator
         for (int i = 0; i < robots.Length; i++)
         {
             var r = robots[i];
+            r.position.y -= IslandLift(r.position.x, r.position.y);
             r.position.x = MapX(r.position.x);
             r.position.y += dy;
             if (!boss && rng.NextDouble() < tierChance)

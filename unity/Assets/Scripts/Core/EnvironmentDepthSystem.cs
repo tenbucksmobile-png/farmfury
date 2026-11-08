@@ -37,6 +37,22 @@ public class EnvironmentDepthSystem : MonoBehaviour
     // its own ground. An unwired slot falls back to World 1's stack.
     [SerializeField] Sprite[] _worldBackdrops = new Sprite[10];
 
+    // World 1 cornfield stack (2026-11-08, framed World 1 levels only — see CornfieldActive). Art in
+    // Sprites/Environment/Cornfield/, cut out by tools/import_cornfield_art.py, wired by SceneSetup:
+    //   Far  = CornfieldFar.png (Rough_Canvas/DistantBarn.png: sky, hazy hills, barn, windmill, silos), cover-fit
+    //   Mid  = CornfieldMid.png  hazy mid-distance corn band, tiled, parallax
+    //   Wall = CornWall.png      corn stalks at play depth, tiled, world-fixed
+    //   Soil = CornSoil.png      grass lip + tilled soil strip; its grass line sits on the physics ground
+    //   Silhouettes = CornSilhouetteL/R.png, corn clumps baked near-black with a soft inner edge, framing the corners
+    [SerializeField] Sprite _sprCornFar;
+    [SerializeField] Sprite _sprCornMid;
+    [SerializeField] Sprite _sprCornWall;
+    [SerializeField] Sprite _sprCornSoil;
+    [SerializeField] Sprite _sprCornSilhouetteL;
+    [SerializeField] Sprite _sprCornSilhouetteR;
+    [SerializeField] Sprite _sprFlybyPlane;   // SkyFlyby: biplane (MeadowRuins/Plane.png)
+    [SerializeField] Sprite _sprFlybyDrone;   // SkyFlyby: robot scout drone (Stampede Robots/Drone.png)
+
     // Tunable per-layer reveal bands — the fraction (0-1) of EACH painting's own local UV height
     // that stays visible before the shader clips the rest to transparent. Exposed as live
     // Inspector sliders (not baked into the shared material) specifically so the split point can
@@ -145,8 +161,10 @@ public class EnvironmentDepthSystem : MonoBehaviour
         // centring the paintings on the camera, so the scenery, blocks and painted grass all meet at one line.
         _groundAnchored = ReferenceFraming.Active(data) && _currentWorld == 1;
         _groundAnchorY  = _groundAnchored ? ReferenceFraming.GroundY(data) : 0f;
+        _parallaxOriginPending = true;   // the launcher parks the camera after this handler; capture it next frame
         ApplyWorldLayers();
         RescaleToCamera();
+        if (_flyby != null) _flyby.ResetSchedule();
     }
 
     // Swaps FarHills/Midground to the current world's art + clip band, and shows/hides the
@@ -175,6 +193,17 @@ public class EnvironmentDepthSystem : MonoBehaviour
 
     void ApplyWorldLayers()
     {
+        bool corn = CornfieldActive;
+        SetCornStripsActive(corn);
+        if (corn)
+        {
+            SetLayerSprite(_farHills, _sprCornFar);
+            ApplyClip(_farHills, 1f);
+            if (_midground  != null) _midground.gameObject.SetActive(false);
+            if (_foreground != null) _foreground.gameObject.SetActive(false);
+            return;
+        }
+
         Sprite backdrop = WorldBackdrop;
         if (backdrop != null)
         {
@@ -232,6 +261,13 @@ public class EnvironmentDepthSystem : MonoBehaviour
     void LateUpdate()
     {
         if (_cam == null) return;
+        if (_parallaxOriginPending)
+        {
+            _parallaxOriginPending = false;
+            _parallaxOrigin = _cam.transform.position;
+            RescaleToCamera();
+            return;
+        }
         // Also refit when the camera moves: framed levels set its position after this class's level-start handler.
         if (!Mathf.Approximately(_cam.orthographicSize, _lastOrthoSize) ||
             ((Vector2)_cam.transform.position - _lastCamPos).sqrMagnitude > 1e-6f)
@@ -246,8 +282,169 @@ public class EnvironmentDepthSystem : MonoBehaviour
         CoverFit(_farHills);
         CoverFit(_midground);
         CoverFit(_foreground);
+        if (CornfieldActive) UpdateCornfield();
         UpdateDepthFx();
     }
+
+    // ── World 1 cornfield (framed levels, 2026-11-08) ───────────────────────────────────────────────────────
+    // Sizes are world units at the framed zoom (ortho 8 → 16 u = 1 screen height). Parallax factor = how much a
+    // layer follows the camera: 1 = locked to the screen (infinitely far), 0 = fixed in the world (play depth),
+    // negative = slides past faster than the world (nearer than the play layer).
+    const float CornFarAnchorUV     = 0.052f;  // barn/silo bases in DistantBarn.png, from the bottom (measured)
+    const float CornMidHeight       = 4.2f;    // ≈0.26 sh: the far barn peeks over its tassels
+    const float CornMidSink         = 0.3f;    // bottom tucked under the ground line
+    const float CornMidParallax     = 0.55f;
+    const float CornWallHeight      = 2.6f;    // ≈0.16 sh: about 3.5 animals tall, below most towers' tops
+    const float CornWallSink        = 0.15f;   // stalk bases tuck under the soil strip's grass lip
+    const float CornSoilGroundUV    = 0.837f;  // grass line in CornSoil.png, from the bottom (measured)
+    const float CornSoilMinBelow    = 2.6f;    // soil drawn at least this far below the ground line
+    static readonly Color SoilUnderfill = new Color(0.374f, 0.19f, 0.085f);   // bottom rows of CornSoil.png
+    // The play-depth corn sits behind the structures: a little darker and less saturated than the islands and
+    // blocks so it doesn't compete with them (framework B7: nothing behind the structures that competes).
+    static readonly Color CornWallTint = new Color(0.80f, 0.84f, 0.74f, 1f);
+    const float SilhouetteParallax  = -0.3f;
+
+    const int CornMidOrder  = -30;   // FarHills -40 < haze veil -35 < mist -32 < mid corn -30
+    const int CornMistOrder = -32;
+    const int CornWallOrder = -20;
+    const int CornSoilOrder = -18;   // in front of the stalk bases
+    const int SilhouetteOrder = 40;  // in front of everything on the play layer (animals are 6)
+
+    sealed class Strip
+    {
+        public Transform root;
+        public Sprite sprite;
+        public float factor;
+        public int order;
+        public Color tint = Color.white;
+        public readonly System.Collections.Generic.List<SpriteRenderer> tiles = new();
+    }
+
+    Strip _cornMid, _cornWall, _cornSoil;
+    SpriteRenderer _soilUnderfill, _silLeft, _silRight;
+    SkyFlyby _flyby;
+    Transform _cornRoot;
+    bool _parallaxOriginPending;
+    Vector3 _parallaxOrigin;
+
+    bool CornfieldActive =>
+        _groundAnchored && _currentWorld == 1 &&
+        _sprCornFar != null && _sprCornMid != null && _sprCornWall != null && _sprCornSoil != null;
+
+    void SetCornStripsActive(bool on)
+    {
+        if (on && _cornRoot == null)
+        {
+            _cornRoot = new GameObject("Cornfield").transform;
+            _cornRoot.SetParent(transform, false);
+            _cornMid  = MakeStrip("Corn_Mid",  _sprCornMid,  CornMidParallax, CornMidOrder);
+            _cornWall = MakeStrip("Corn_Wall", _sprCornWall, 0f,              CornWallOrder);
+            _cornWall.tint = CornWallTint;
+            _cornSoil = MakeStrip("Corn_Soil", _sprCornSoil, 0f,              CornSoilOrder);
+            _soilUnderfill = MakeChildRenderer(_cornRoot, "Corn_SoilUnderfill", MakeSolidSprite(), CornSoilOrder);
+            _soilUnderfill.color = SoilUnderfill;
+            _silLeft  = MakeChildRenderer(_cornRoot, "Corn_SilhouetteLeft",  _sprCornSilhouetteL, SilhouetteOrder);
+            _silRight = MakeChildRenderer(_cornRoot, "Corn_SilhouetteRight", _sprCornSilhouetteR, SilhouetteOrder);
+            var fly = new GameObject("SkyFlyby");
+            fly.transform.SetParent(_cornRoot, false);
+            _flyby = fly.AddComponent<SkyFlyby>();
+            _flyby.Init(_cam, _sprFlybyPlane, _sprFlybyDrone);
+        }
+        if (_cornRoot != null) _cornRoot.gameObject.SetActive(on);
+    }
+
+    Strip MakeStrip(string name, Sprite sprite, float factor, int order)
+    {
+        var root = new GameObject(name).transform;
+        root.SetParent(_cornRoot, false);
+        return new Strip { root = root, sprite = sprite, factor = factor, order = order };
+    }
+
+    static SpriteRenderer MakeChildRenderer(Transform parent, string name, Sprite sprite, int order)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.sortingOrder = order;
+        return sr;
+    }
+
+    void UpdateCornfield()
+    {
+        float camH = _cam.orthographicSize * 2f, camW = camH * _cam.aspect;
+        Vector3 c = _cam.transform.position;
+        float g = _groundAnchorY;
+        float camBottom = c.y - camH * 0.5f;
+
+        // Mid corn: bottom just under the ground line, drifting with the camera.
+        LayoutStrip(_cornMid, CornMidHeight, g - CornMidSink, c, camW);
+        // Corn wall at play depth.
+        LayoutStrip(_cornWall, CornWallHeight, g - CornWallSink, c, camW);
+        // Soil: fixed size from the parked camera (no rescaling while the camera follows a shot), grass line on g.
+        float restBottom = _parallaxOrigin.y - camH * 0.5f;
+        float soilH = Mathf.Max(CornSoilMinBelow, g - restBottom + 0.6f) / CornSoilGroundUV;
+        float soilBottom = g - soilH * CornSoilGroundUV;
+        LayoutStrip(_cornSoil, soilH, soilBottom, c, camW);
+        // Flat soil colour below the strip when the camera dips under the ground following a shot.
+        float fillTop = soilBottom + 0.05f;
+        float fillBottom = Mathf.Min(camBottom, soilBottom) - 1f;
+        _soilUnderfill.enabled = fillTop > camBottom;
+        _soilUnderfill.transform.position = new Vector3(c.x, (fillTop + fillBottom) * 0.5f, 0f);
+        _soilUnderfill.transform.localScale = new Vector3(camW * 1.1f, fillTop - fillBottom, 1f);
+
+        // Foreground silhouettes: framed to the screen corners, drifting a little against the pan (a near-layer cue)
+        // rather than full 1.3x parallax — the camera follows shots far enough that a true near layer would sweep
+        // the right-hand clump across the structures.
+        float slide = (c.x - _parallaxOrigin.x) * SilhouetteParallax;   // screen-space drift, opposite the pan
+        float left = c.x - camW * 0.5f, right = c.x + camW * 0.5f;
+        PlaceClump(_silLeft,  0.50f * camH, left  + 0.09f * camW, rightEdge: true,  camBottom - 0.02f * camH, slide);
+        PlaceClump(_silRight, 0.22f * camH, right - 0.06f * camW, rightEdge: false, camBottom - 0.02f * camH, slide);
+
+        // Mist where the far hills meet the corn tops.
+        _cornMistY = g - CornMidSink + CornMidHeight * 0.85f;
+    }
+
+    static void PlaceClump(SpriteRenderer sr, float height, float edgeX, bool rightEdge, float bottom, float slide)
+    {
+        if (sr == null || sr.sprite == null) return;
+        Vector2 native = sr.sprite.bounds.size;
+        float s = height / native.y, w = native.x * s;
+        float x = rightEdge ? edgeX - w * 0.5f : edgeX + w * 0.5f;
+        sr.transform.position = new Vector3(x + slide, bottom + height * 0.5f - sr.sprite.bounds.center.y * s, 0f);
+        sr.transform.localScale = new Vector3(s, s, 1f);
+    }
+
+    // Tiles a strip across the screen, mirroring every other tile so neighbouring edges always match.
+    void LayoutStrip(Strip s, float height, float bottomY, Vector3 cam, float camW)
+    {
+        if (s == null || s.sprite == null) return;
+        Bounds b = s.sprite.bounds;
+        float scale = height / b.size.y, tileW = b.size.x * scale;
+        float originX = _parallaxOrigin.x + (cam.x - _parallaxOrigin.x) * s.factor;
+        int k0 = Mathf.FloorToInt((cam.x - camW * 0.5f - originX) / tileW);
+        int count = Mathf.CeilToInt(camW / tileW) + 2;
+        while (s.tiles.Count < count)
+        {
+            var sr = MakeChildRenderer(s.root, $"Tile{s.tiles.Count}", s.sprite, s.order);
+            sr.color = s.tint;
+            s.tiles.Add(sr);
+        }
+        float y = bottomY + height * 0.5f - b.center.y * scale;
+        for (int i = 0; i < s.tiles.Count; i++)
+        {
+            var sr = s.tiles[i];
+            bool used = i < count;
+            sr.enabled = used;
+            if (!used) continue;
+            int k = k0 + i;
+            sr.transform.position = new Vector3(originX + (k + 0.5f) * tileW, y, 0f);
+            sr.transform.localScale = new Vector3(scale, scale, 1f);
+            sr.flipX = (k & 1) != 0;
+        }
+    }
+
+    float _cornMistY;
 
     // ── Atmospheric depth (framed World 1 levels, 2026-11-08) ───────────────────────────────────────────────
     // The reference keeps distant scenery lighter, softer and tinted toward the sky (atmospheric perspective),
@@ -265,7 +462,8 @@ public class EnvironmentDepthSystem : MonoBehaviour
 
     void UpdateDepthFx()
     {
-        bool on = _groundAnchored && _foreground != null && _foreground.gameObject.activeSelf;
+        bool corn = CornfieldActive;
+        bool on = corn || (_groundAnchored && _foreground != null && _foreground.gameObject.activeSelf);
         if (!on)
         {
             if (_hazeVeil != null) _hazeVeil.enabled = false;
@@ -283,9 +481,16 @@ public class EnvironmentDepthSystem : MonoBehaviour
         _hazeVeil.transform.position = new Vector3(c.x, c.y, 0f);
         _hazeVeil.transform.localScale = new Vector3(camW * 1.05f, camH * 1.05f, 1f);
 
-        // Seam = top of the foreground meadow's visible band.
-        var fsr = _foreground.GetComponent<SpriteRenderer>();
-        float bandTop = fsr.bounds.min.y + fsr.bounds.size.y * _foregroundClipAbove;
+        // Seam = top of the foreground meadow's visible band (cornfield: where the far hills meet the mid corn,
+        // drawn behind the corn so only the hills haze over).
+        float bandTop;
+        if (corn) bandTop = _cornMistY;
+        else
+        {
+            var fsr = _foreground.GetComponent<SpriteRenderer>();
+            bandTop = fsr.bounds.min.y + fsr.bounds.size.y * _foregroundClipAbove;
+        }
+        _mistBand.sortingOrder = corn ? CornMistOrder : MistOrder;
         float h = MistHeightSh * camH;
         _mistBand.enabled = true;
         _mistBand.color = new Color(HazeColour.r, HazeColour.g, HazeColour.b, MistAlpha);
@@ -345,7 +550,16 @@ public class EnvironmentDepthSystem : MonoBehaviour
         float scale = Mathf.Max(camW / native.x, camH / native.y);
         Vector3 camPos = _cam.transform.position;
         float centreY = camPos.y;
-        if (_groundAnchored)
+        if (layer == _farHills && CornfieldActive)
+        {
+            // Barn/silo bases just behind the mid corn's tassels; the corn and soil cover everything below, so
+            // only the width and the top of the screen need covering.
+            float anchorY = _groundAnchorY - CornMidSink + CornMidHeight * 0.8f;
+            float camTop = camPos.y + camH * 0.5f;
+            scale = Mathf.Max(camW / native.x, (camTop - anchorY) / ((1f - CornFarAnchorUV) * native.y));
+            centreY = anchorY + (0.5f - CornFarAnchorUV) * scale * native.y;
+        }
+        else if (_groundAnchored)
         {
             // Smallest scale that still covers the screen with the painted ground line held at _groundAnchorY.
             float g = ReferenceFraming.World1PaintedGroundUV;

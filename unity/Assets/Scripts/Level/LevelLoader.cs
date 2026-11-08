@@ -168,7 +168,9 @@ public class LevelLoader : MonoBehaviour
         _birdQueue.Clear();
         foreach (var b in birdsToUse) _birdQueue.Enqueue(b);
 
-        foreach (var b in data.blocks) SpawnBlock(b, data.world);
+        if (data.platforms != null)
+            foreach (var p in data.platforms) SpawnPlatform(p);
+        foreach (var b in data.blocks) SpawnBlock(b, data.world, ReferenceFraming.Active(data));
         foreach (var r in data.robots) SpawnRobot(r, data.world);
 
         ScoreManager.Instance.InitLevel(
@@ -260,7 +262,7 @@ public class LevelLoader : MonoBehaviour
 
     void HandleLevelStarted(LevelData data) => LoadLevel(data);
 
-    void SpawnBlock(LevelData.BlockSpawnData data, int world = 1)
+    void SpawnBlock(LevelData.BlockSpawnData data, int world = 1, bool trimCollider = false)
     {
         var prefab = data.type switch
         {
@@ -274,12 +276,12 @@ public class LevelLoader : MonoBehaviour
             new Vector3(data.position.x, data.position.y, 0f),
             Quaternion.identity,
             _blockParent);
-        block.Initialise(data.size.x, data.size.y, data.artVariant, world);
+        block.Initialise(data.size.x, data.size.y, data.artVariant, world, trimCollider);
         block.ApplyOverrides(data.healthOverride, data.massOverride);
         block.Indestructible = data.indestructible;
         if (data.forceStayKinematic) block.SetStayKinematic(true);
         if (data.passThrough && block is WoodBlock wood) wood._passThrough = true;
-        if (data.flipX && block.TryGetComponent<SpriteRenderer>(out var blockSr)) blockSr.flipX = true;
+        if (data.flipX) block.SetFlipX(true);
         _spawnedBlocks.Add(block);
     }
 
@@ -365,8 +367,60 @@ public class LevelLoader : MonoBehaviour
         _birdQueue.Clear();
     }
 
+    // ── Platforms (raised earth islands, 2026-11-08) ─────────────────────────────────────────────────────────
+    // Art: Sprites/Environment/Cornfield/PlatformWide_A/B.png (tools/import_cornfield_art.py), wired by SceneSetup.
+    // The surface UVs are measured by that script: the grass top's height from the bottom of the trimmed sprite.
+    [SerializeField] private Sprite[] _platformSprites = new Sprite[2];
+    static readonly float[] PlatformSurfaceUV = { 0.754f, 0.699f };
+    const int PlatformSortingOrder = 1;   // decorative band (<= 1): behind blocks (2) and robots (3)
+
+    readonly List<GameObject> _spawnedPlatforms = new();
+
+    void SpawnPlatform(LevelData.PlatformSpawnData data)
+    {
+        int v = Mathf.Clamp(data.variant, 0, PlatformSurfaceUV.Length - 1);
+        Sprite sprite = _platformSprites != null && v < _platformSprites.Length ? _platformSprites[v] : null;
+        var go = new GameObject($"Platform_{_spawnedPlatforms.Count}");
+        go.transform.SetParent(_blockParent, false);
+        go.layer = 6;                 // Ground: blocks' support checks and the animals' ground logic see it
+        go.tag   = "Ground";
+
+        float width = Mathf.Max(0.5f, data.width);
+        float height, surfaceFromBottom;
+        if (sprite != null)
+        {
+            Vector2 native = sprite.bounds.size;
+            float s = width / native.x;
+            height = native.y * s;
+            surfaceFromBottom = height * PlatformSurfaceUV[v];
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.sortingOrder = PlatformSortingOrder;
+            go.transform.localScale = new Vector3(s, s, 1f);
+        }
+        else
+        {
+            height = width * 0.3f;
+            surfaceFromBottom = height * 0.75f;
+        }
+        // Centre-pivot sprite: the transform sits at the sprite's middle.
+        float centreY = data.surfaceY - surfaceFromBottom + height * 0.5f;
+        go.transform.position = new Vector3(data.x, centreY, 0f);
+
+        // Solid slab from the grass surface down through most of the earth (the rounded ends and the hanging
+        // roots stay non-solid). Collider sizes are in local units, so divide by the scale.
+        var col = go.AddComponent<BoxCollider2D>();
+        float sc = go.transform.localScale.x;
+        float slabH = surfaceFromBottom * 0.75f;
+        col.size   = new Vector2(width * 0.92f / sc, slabH / sc);
+        col.offset = new Vector2(0f, (data.surfaceY - slabH * 0.5f - centreY) / sc);
+        _spawnedPlatforms.Add(go);
+    }
+
     void ClearLevel()
     {
+        foreach (var p in _spawnedPlatforms) if (p) Destroy(p);
+        _spawnedPlatforms.Clear();
         foreach (var b in _spawnedBlocks) if (b) Destroy(b.gameObject);
         foreach (var r in _spawnedRobots) if (r) Destroy(r.gameObject);
         _spawnedBlocks.Clear();

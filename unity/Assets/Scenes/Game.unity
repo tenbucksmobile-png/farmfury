@@ -213,6 +213,14 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 65e8c1dce4b17574286c3d13ea792d58, type: 3}
   - {fileID: 21300000, guid: ffc7ba828af3461448f86e5359676a3a, type: 3}
   - {fileID: 21300000, guid: d1397b91bfca5d84a87970366365a234, type: 3}
+  _sprCornFar: {fileID: 21300000, guid: ecfb5aa6bf82e3b4d982dd18d162bfa2, type: 3}
+  _sprCornMid: {fileID: 21300000, guid: dbd9bc89f547846469180262dd1036d2, type: 3}
+  _sprCornWall: {fileID: 21300000, guid: f4783c8cb9f2a81458d6efba2ef7ba21, type: 3}
+  _sprCornSoil: {fileID: 21300000, guid: a734230c20c59d44f828ffd3baf8d184, type: 3}
+  _sprCornSilhouetteL: {fileID: 21300000, guid: 92841da2d612e4a47b96b75d112d4357, type: 3}
+  _sprCornSilhouetteR: {fileID: 21300000, guid: fc7e34dc71817fd449cec93ce1d796f0, type: 3}
+  _sprFlybyPlane: {fileID: 21300000, guid: b99bce49330749d46a9e0e94503e4d1b, type: 3}
+  _sprFlybyDrone: {fileID: 21300000, guid: fe733077df48c5044851831ad786701e, type: 3}
   _farHillsClipAbove: 1
   _midgroundClipAbove: 0.23
   _foregroundClipAbove: 0.3
@@ -814,6 +822,7 @@ MonoBehaviour:
   _trajectoryDots: 20
   _trajectorySubsteps: 3
   _trajectoryDotRadius: 0.08
+  _mountBaleSprite: {fileID: 21300000, guid: 7d8dd52190664fa40841c1e389047d5f, type: 3}
 --- !u!4 &364537116
 Transform:
   m_ObjectHideFlags: 0
@@ -4926,6 +4935,9 @@ MonoBehaviour:
     boss: {fileID: 713649539132475618, guid: 1ef3f213b21de2d4580c5a7c3a6c6eef, type: 3}
   _blockParent: {fileID: 1511578342}
   _robotParent: {fileID: 322750861}
+  _platformSprites:
+  - {fileID: 21300000, guid: 6eecc2324fe48634db11a791a11ea9c6, type: 3}
+  - {fileID: 21300000, guid: a6eb94e91b4327141b1c05ffe301474e, type: 3}
 --- !u!4 &2045008050
 Transform:
   m_ObjectHideFlags: 0

@@ -34,6 +34,18 @@ public class LevelData : ScriptableObject
     [Header("Layout")]
     public BlockSpawnData[] blocks;
     public RobotSpawnData[] robots;
+    // Raised earth islands that structures stand on (reference framework rule A6, 2026-11-08). Solid terrain:
+    // layer Ground, tag "Ground", never breaks. Spawned before blocks/robots by LevelLoader.SpawnPlatform.
+    public PlatformSpawnData[] platforms;
+
+    [Serializable]
+    public struct PlatformSpawnData
+    {
+        public float x;          // centre X
+        public float surfaceY;   // world Y of the walkable grass surface (blocks rest on this line)
+        public float width;      // visual width in world units
+        public int   variant;    // 0 = PlatformWide_A (flat), 1 = PlatformWide_B (deeper underside)
+    }
 
     [Serializable]
     public struct BlockSpawnData

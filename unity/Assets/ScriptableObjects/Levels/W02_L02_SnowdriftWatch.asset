@@ -97,3 +97,4 @@ MonoBehaviour:
   - robotType: 2
     position: {x: 7.9052057, y: -5.59}
     scale: {x: 5.215, y: 5.745}
+  platforms: []
