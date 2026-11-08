@@ -43,7 +43,7 @@ ROBOT = {"pawn": ("Basic", 5.5, 0.806, 0.0), "semi": ("SemiHarvester", 5.5, 0.80
 ISLAND = [(0.754, 2874 / 863), (0.699, 3003 / 1182)]   # (surface UV from bottom, width/height) per variant
 import json as _json
 MOUNTS = _json.load(open(os.path.join(HERE, "mounts.json")))   # written by tools/import_cornfield_art.py
-MOUNT_VARIANT = {"Hill": 2, "Mesa": 3, "Scaffold": 4, "Wagon": 5}
+MOUNT_VARIANT = {"Hill": 2, "Mesa": 3, "Scaffold": 4, "Wagon": 5, "Ramp": 6}
 WOOD_T, STONE_T = 0.25, 0.30                            # visible plank / slab thickness
 
 
@@ -89,6 +89,14 @@ class Level:
                                  h=width / ISLAND[variant][1], uv=ISLAND[variant][0]))
         return surface
 
+    def wagon_at(self, cx, ground_y, width, rolling=True):
+        """A wagon standing on ground_y (e.g. a ramp plateau); rolling = parked until hit. Returns (deck y, left, right)."""
+        m = MOUNTS["Wagon"]
+        h = width / m["aspect"]
+        surface = ground_y - 0.015 * h + m["uv"] * h
+        self.islands.append(dict(x=cx, s=surface, w=width, v=5, solids=m["boxes"], h=h, uv=m["uv"], kind="Wagon", rolling=rolling))
+        return surface, cx - width / 2 + m["flat"][0] * width, cx - width / 2 + m["flat"][1] * width
+
     def mount(self, kind, x, width):
         """A ground-standing mount (Hill/Mesa/Scaffold/Wagon). Returns (surface y, usable left x, usable right x)."""
         m = MOUNTS[kind]
@@ -123,7 +131,8 @@ class Level:
         out.append("            },")
         if self.islands:
             out += ["            platforms: new[]", "            {"]
-            out += [f"                P({f(i['x'])}, {f(i['s'])}, {f(i['w'])}, variant: {i['v']})," for i in self.islands]
+            out += [f"                P({f(i['x'])}, {f(i['s'])}, {f(i['w'])}, variant: {i['v']}"
+                    + (", rolling: true" if i.get("rolling") else "") + ")," for i in self.islands]
             out.append("            },")
         if self.boss:
             out.append("            isBoss: true,")
@@ -132,6 +141,10 @@ class Level:
 
 
 # ═══════════════════════════════════════════ the levels ═══════════════════════════════════════════════════
+# 2026-11-08 v3 (user: "build multiple stories high, so when they hit they slowly topple over and break down on the
+# way down... random balancing beams... a wagon on a mount that rolls down into a bigger structure... some structures
+# are too far apart"). Framed levels run live physics (blocks Dynamic-asleep, lower gravity), so these stacks topple
+# for real. Everything sits between x 5.5 and 13.5.
 C, B = "Cluck", "Bessie"
 LEVELS = []
 
@@ -142,174 +155,191 @@ def level(*a, **k):
     return L
 
 
+def tower(L, xc, base, floors, width=1.9, h=1.15, taper=0.12, stone_floors=0, robots=None, top=None):
+    """A multi-storey timber tower (posts + floor planks), narrowing as it rises. robots: kind per floor or None."""
+    b, w = base, width
+    for i in range(floors):
+        if robots and i < len(robots) and robots[i]:
+            L.robot(xc, b, robots[i])
+        b = L.hut(xc - w / 2, xc + w / 2, b, h, stone=i < stone_floors, roof_stone=i < stone_floors)
+        w = max(1.1, w - taper)
+    if top:
+        L.robot(xc, b, top)
+    return b
+
+
+def seesaw(L, xc, base, post_h, beam, left=None, right=None):
+    """A long beam balanced on one post: things on its ends (robot kinds, 'crate', 'barrel', 'hay')."""
+    t = L.post(xc, base, post_h)
+    t = L.plank(xc - beam / 2, xc + beam / 2, t)
+    for x, item in ((xc - beam / 2 + 0.45, left), (xc + beam / 2 - 0.45, right)):
+        if item == "crate": L.box(x, t, 0.55, stone=False)
+        elif item == "barrel": L.barrel(x, t)
+        elif item == "hay": L.hay(x, t)
+        elif item: L.robot(x, t, item)
+    return t
+
+
+def ramp_wagon(L, ramp_x, ramp_w=5.6, wagon_w=2.4):
+    """A ramp (plateau left, slope down to the right) with a parked wagon at the plateau's edge.
+    Returns (deck_y, deck_left, deck_right, slope_end_x)."""
+    s, l, r = L.mount("Ramp", ramp_x, ramp_w)
+    cx = r - 0.95 * wagon_w / 2.4
+    deck, dl, dr = L.wagon_at(cx, s, wagon_w)
+    slope_end = ramp_x - ramp_w / 2 + 0.98 * ramp_w
+    return deck, dl, dr, slope_end
+
+
 L = level("L02_StoneWall", "W1_L02", "Harvest Yard", 2, [C, C, C], """
-Easy: a wooden lean-to with a robot sheltering inside, and a robot hiding between crates on a hay wagon.""")
-L.hut(5.9, 7.7, G, 1.3); L.robot(6.8, G, "semi")
-s, l, r = L.mount("Wagon", 11.4, 4.4)
-L.box(l + 0.5, s, 0.6, stone=False); L.robot(l + 1.3, s, "pawn"); L.box(l + 2.1, s, 0.6, stone=False)
+Warm-up: a two-storey timber shed with a robot on each floor, and a see-saw beam with a robot balanced on one end.""")
+tower(L, 7.4, G, 2, width=1.8, robots=["semi", "pawn"])
+seesaw(L, 10.6, G, 1.0, 2.6, left="crate", right="pawn")
 
 L = level("L03_TheTower", "W1_L03", "The Tower", 2, [C, C, C], """
-A three-storey wooden tower with a robot on every floor and one on the roof. Knock the bottom posts out and
-the whole thing comes down on them.""")
-r1 = L.hut(8.0, 9.8, G, 1.3); L.robot(8.9, G, "semi")
-r2 = L.hut(8.2, 9.6, r1, 1.2); L.robot(8.9, r1, "pawn")
-r3 = L.hut(8.35, 9.45, r2, 1.1); L.robot(8.9, r2, "semi")
-L.robot(8.9, r3, "pawn")
-L.hay(7.2, G)
+A five-storey tapering timber tower, a robot every other floor and one on top. Hit it low and it leans, topples
+and breaks apart on the way down.""")
+tower(L, 9.4, G, 5, width=2.0, taper=0.14, robots=["semi", None, "pawn", None, "pawn"], top="semi")
+L.hay(7.6, G)
 
 L = level("L04_EggPractice", "W1_L04", "Egg Practice", 2, [C, C, C], """
-Three exposed robots along a raised island, each ducking behind a small crate: spread Cluck's eggs across them.""")
-s = L.island(10.0, G + 1.8, 6.6, 0)
-for x in (8.0, 10.0, 12.0):
-    L.box(x - 0.75, s, 0.6, stone=False)
+Three exposed robots along a raised island, each under a little lean-to: spread Cluck's eggs across them.""")
+s = L.island(9.8, G + 1.8, 6.6, 0)
+for x in (7.8, 9.8, 11.8):
+    L.hut(x - 0.6, x + 0.6, s, 1.05)
     L.robot(x, s, "pawn")
 
-L = level("L05_TheGauntlet", "W1_L05", "The Gauntlet", 2, [C, C, C], """
-Three targets at rising distance and height: a ground hut, a hut up on a timber scaffold, a robot on a rock mesa.""")
-L.robot(6.2, G, "semi"); L.hut(5.3, 7.1, G, 1.25)
-s, l, r = L.mount("Scaffold", 10.2, 2.6)
-L.robot(10.15, s, "pawn"); L.hut(9.35, 10.95, s, 1.15)
-s, l, r = L.mount("Mesa", 14.2, 2.6)
-L.robot((l + r) / 2, s, "semi")
+L = level("L05_TheGauntlet", "W1_L05", "Runaway Wagon", 2, [C, C, C], """
+A loaded hay wagon is parked at the top of a ramp. Knock it and it rolls down the slope straight into the
+three-storey tower at the bottom.""")
+deck, dl, dr, end = ramp_wagon(L, 6.4)
+L.box(dl + 0.35, deck, 0.5, stone=False); L.robot(dl + 1.05, deck, "pawn")
+tower(L, end + 1.25, G, 3, width=1.9, robots=["semi", "pawn", "semi"], top="pawn")
 
 L = level("L06_DoubleBarrel", "W1_L06", "Double Barrel", 2, [C, C, C], """
-A two-room farmhouse with a dynamite barrel beside each robot, and a third robot on the roof.""")
-h = 1.4
+A two-storey farmhouse: dynamite beside each ground-floor robot, a lookout room upstairs and one on the roof.""")
 for x in (7.0, 8.9, 10.8):
-    top = L.post(x, G, h)
-L.plank(6.86, 8.9, top); r = L.plank(8.9, 10.94, top)
+    top = L.post(x, G, 1.4)
+L.plank(6.86, 8.9, top); f1 = L.plank(8.9, 10.94, top)
 L.robot(7.6, G, "semi"); L.barrel(8.45, G)
 L.robot(10.25, G, "semi"); L.barrel(9.4, G)
+r = L.hut(7.9, 9.9, f1, 1.15); L.robot(8.9, f1, "pawn")
 L.robot(8.9, r, "pawn")
-s, l, r = L.mount("Scaffold", 14.0, 2.4)
-L.box(l + 0.4, s, 0.55, stone=False); L.robot(l + 1.2, s, "pawn")
 
 L = level("L07_BarrelRow", "W1_L07", "Barrel Row", 2, [C, C, C], """
-A stone-pillar bridge over a row of dynamite on an island: two robots on the bridge, one guarding the far end.""")
-s = L.island(10.3, G + 1.2, 7.4, 0)
-for x in (8.9, 9.8, 10.7):
+A stone-pillar bridge over a row of dynamite on an island, a robot on the bridge and a lookout tower at the end.""")
+s = L.island(9.6, G + 1.2, 6.8, 0)
+for x in (8.1, 9.0, 9.9):
     L.barrel(x, s)
-top = L.post(8.3, s, 1.0, stone=True); L.post(11.3, s, 1.0, stone=True)
-r = L.plank(8.0, 11.6, top)
-L.robot(9.3, r, "pawn"); L.robot(10.6, r, "semi")
-L.hay(12.6, s); L.robot(13.4, s, "semi")
+top = L.post(7.5, s, 1.0, stone=True); L.post(10.5, s, 1.0, stone=True)
+r = L.plank(7.2, 10.8, top)
+L.robot(8.9, r, "pawn")
+tower(L, 11.9, s, 2, width=1.4, robots=["semi", None], top="pawn")
 
 L = level("L08_FortressAssault", "W1_L08", "Fortress Assault", 3, [C, C, C, C], """
-A two-storey fort: stone ground floor with two rooms, timber upper floor, a robot on top.""")
+Three storeys: a stone ground floor with two rooms, two timber floors above, a robot on every level.""")
 for x in (8.2, 10.0, 11.8):
     top = L.post(x, G, 1.4, stone=True)
 L.plank(8.025, 10.0, top, stone=True); f1 = L.plank(10.0, 11.975, top, stone=True)
 L.robot(9.1, G, "semi"); L.robot(10.9, G, "semi")
-r = L.hut(8.5, 11.5, f1, 1.2)
-L.robot(10.0, f1, "pawn"); L.robot(10.0, r, "semi")
-s, l, r = L.mount("Mesa", 14.4, 2.4)
-L.robot((l + r) / 2, s, "pawn")
+tower(L, 10.0, f1, 2, width=2.6, taper=0.5, robots=["pawn", "semi"], top="pawn")
 
-L = level("L09_StoneBastion", "W1_L09", "Stone Bastion", 3, [C, C, C, C], """
-A stone bunker on an island hides a Harvester between two barrels; a lookout stands on the roof and a robot
-sits on a hay mound out front.""")
-s = L.island(10.6, G + 1.4, 5.6, 1)
-t = L.box(8.75, s, 0.75); L.box(8.75, t, 0.75)
-t = L.box(12.45, s, 0.75); top = L.box(12.45, t, 0.75)
-r = L.plank(8.3, 12.9, top, stone=True)
-L.robot(10.6, s, "harv"); L.barrel(9.55, s); L.barrel(11.65, s)
-L.robot(10.6, r, "pawn")
-t = L.hay(6.1, G); L.hay(7.05, G); t = L.hay(6.575, t - 0.04)
-L.robot(6.575, t, "semi")
+L = level("L09_StoneBastion", "W1_L09", "Downhill Demolition", 3, [C, C, C, C], """
+A wagon loaded with dynamite waits at the top of a ramp. Send it rolling into the stone bunker at the bottom.""")
+deck, dl, dr, end = ramp_wagon(L, 6.2)
+L.barrel(dl + 0.45, deck); L.barrel(dl + 1.15, deck)
+x0 = end + 0.4
+t = L.box(x0 + 0.4, G, 0.8); L.box(x0 + 0.4, t, 0.8)
+t = L.box(x0 + 3.2, G, 0.8); top = L.box(x0 + 3.2, t, 0.8)
+r = L.plank(x0 - 0.05, x0 + 3.65, top, stone=True)
+L.robot(x0 + 1.8, G, "harv")
+r2 = L.hut(x0 + 0.9, x0 + 2.7, r, 1.15); L.robot(x0 + 1.8, r, "pawn")
+L.robot(x0 + 1.8, r2, "semi")
 
 L = level("L10_BessiesDebut", "W1_L10", "Bessie's Debut", 2, [C, C, B], """
-Bessie's first level: a stone pyramid with a robot on top — slam it — and two robots sheltering beside it.""")
-for row, n in enumerate((3, 2, 1)):
+Bessie's first level: a four-row stone pyramid crowned by a robot, flanked by two see-saw beams.""")
+for row, n in enumerate((4, 3, 2, 1)):
     b = G + row * 0.8
     for k in range(n):
-        top = L.box(9.4 + (k - (n - 1) / 2) * 0.8, b, 0.8)
-L.robot(9.4, top, "semi")
-L.robot(7.5, G, "pawn"); L.hay(6.7, G)
-L.robot(11.4, G, "pawn")
-s, l, r = L.mount("Wagon", 14.4, 3.8)
-t = L.box(l + 0.6, s, 0.7); L.robot(l + 0.6, t, "pawn"); L.robot(l + 1.6, s, "semi")
+        top = L.box(9.6 + (k - (n - 1) / 2) * 0.8, b, 0.8)
+L.robot(9.6, top, "semi")
+seesaw(L, 6.9, G, 0.9, 2.2, left="crate", right="pawn")
+seesaw(L, 12.4, G, 0.9, 2.2, left="pawn", right="barrel")
 
 L = level("L11_FullRoster", "W1_L11", "Full Roster", 3, [C, C, B, C], """
-Three tiers: a ground hut, a two-storey tower on a low island, and a lookout on a high rock mesa.""")
-L.robot(6.4, G, "semi"); L.hut(5.5, 7.3, G, 1.25)
-s = L.island(10.0, G + 1.6, 3.2, 0)
-r1 = L.hut(9.0, 11.0, s, 1.2); L.robot(10.0, s, "pawn")
-L.hut(9.2, 10.8, r1, 1.1); L.robot(10.0, r1, "semi")
-s, l, r = L.mount("Mesa", 14.0, 2.6)
+A ground hut, a three-storey tower on a low island, and a lookout on a rock mesa just behind it.""")
+L.robot(6.3, G, "semi"); L.hut(5.4, 7.2, G, 1.25)
+s = L.island(9.4, G + 1.4, 3.0, 0)
+tower(L, 9.4, s, 3, width=2.0, robots=["pawn", "semi", "pawn"], top=None)
+s, l, r = L.mount("Mesa", 12.6, 2.4)
 L.robot((l + r) / 2, s, "pawn")
 
 L = level("L12_HeavyGuard", "W1_L12", "Heavy Guard", 2, [C, C, B], """
-A Harvester behind stone walls with a barrel at the door; pawns stand guard on the roof and on a high ledge.""")
-top = L.post(8.4, G, 1.6, stone=True); L.post(10.8, G, 1.6, stone=True)
-r = L.plank(8.2, 11.0, top, stone=True)
-L.robot(9.6, G, "harv"); L.barrel(7.6, G)
-L.robot(9.6, r, "pawn")
-s = L.island(13.2, G + 2.4, 2.4, 0)
-L.box(12.6, s, 0.6, stone=False)
-L.robot(13.4, s, "pawn")
+A Harvester inside a stone keep; on the roof a long beam balances a pawn against a dynamite barrel.""")
+top = L.post(8.6, G, 1.6, stone=True); L.post(11.0, G, 1.6, stone=True)
+r = L.plank(8.4, 11.2, top, stone=True)
+L.robot(9.8, G, "harv"); L.barrel(7.8, G)
+seesaw(L, 9.8, r, 0.8, 2.8, left="pawn", right="barrel")
+L.robot(12.4, G, "pawn"); L.box(13.1, G, 0.6, stone=False)
 
-L = level("L13_TenStrong", "W1_L13", "Ten Strong", 3, [C, C, B, C], """
-A tall timber tower on haybale stilts: a robot on every floor. Take out the hay and watch it fall.""")
-for x in (8.55, 9.5, 10.45):
+L = level("L13_TenStrong", "W1_L13", "Hay Ride", 3, [C, C, B, C], """
+A hay wagon with a robot riding on top waits on the ramp; below it stands a four-storey tower on haybale stilts.""")
+deck, dl, dr, end = ramp_wagon(L, 6.0)
+t = L.hay(dl + 0.55, deck - 0.03); L.robot(dl + 1.3, deck, "pawn")
+x0 = end + 1.6
+for x in (x0 - 0.95, x0, x0 + 0.95):
     t = L.hay(x, G)
-f = L.plank(8.0, 11.0, t - 0.04)
-for storey in range(3):
-    L.robot(9.5, f, "pawn" if storey % 2 else "semi")
-    f = L.hut(8.2, 10.8, f, 1.15)
-L.robot(9.5, f, "semi")
-s, l, r = L.mount("Scaffold", 13.8, 2.4)
-L.robot((l + r) / 2 - 0.2, s, "pawn"); L.box(r - 0.35, s, 0.5, stone=False)
+f = L.plank(x0 - 1.5, x0 + 1.5, t - 0.04)
+tower(L, x0, f, 4, width=2.2, robots=["semi", "pawn", "semi", None], top="pawn")
 
 L = level("L14_StoneAndPawns", "W1_L14", "Stone And Pawns", 3, [C, C, B, B], """
-A stone staircase on a low island with a pawn on every step.""")
-s = L.island(10.2, G + 1.0, 5.6, 1)
+A stone staircase on a low island with a pawn on every step, and a see-saw on the top step.""")
+s = L.island(9.8, G + 1.0, 5.6, 1)
 for row in range(4):
     for k in range(5 - row):
-        top = L.box(8.0 + (row + k) * 0.8, s + row * 0.8, 0.8)
-    L.robot(8.0 + row * 0.8, s + (row + 1) * 0.8, "pawn")
+        top = L.box(7.6 + (row + k) * 0.8, s + row * 0.8, 0.8)
+    if row < 3: L.robot(7.6 + row * 0.8, s + (row + 1) * 0.8, "pawn")
+seesaw(L, 10.4, s + 3.2, 0.6, 1.8, left="pawn", right="crate")
 
 L = level("L15_FiveStones", "W1_L15", "Five Stones", 2, [C, B, C], """
-Five stone pillars hold up a long slab on a high island, two robots on top; a Harvester guards the near end
-on the island's edge.""")
-s = L.island(11.0, G + 2.6, 7.2, 0)
-for x in (9.2, 10.2, 11.2, 12.2, 13.2):
+Five stone pillars hold a slab on a high island with a timber room on top; a Harvester guards the edge.""")
+s = L.island(10.4, G + 2.4, 6.4, 0)
+for x in (8.6, 9.6, 10.6, 11.6, 12.6):
     top = L.post(x, s, 1.0, stone=True)
-L.plank(9.0, 11.2, top, stone=True); r = L.plank(11.2, 13.4, top, stone=True)
-L.robot(10.1, r, "semi"); L.robot(12.3, r, "semi")
-L.robot(8.3, s, "harv")
-s, l, r = L.mount("Wagon", 5.0, 3.6)
-L.robot(l + 1.0, s, "semi"); L.box(l + 1.8, s, 0.55, stone=False)
+L.plank(8.4, 10.6, top, stone=True); r = L.plank(10.6, 12.8, top, stone=True)
+tower(L, 10.6, r, 2, width=2.6, taper=0.6, robots=["semi", "pawn"], top="semi")
+L.robot(7.7, s, "harv")
 
 L = level("L16_TwinTowers", "W1_L16", "Twin Towers", 3, [C, C, B, C], """
 Two timber towers on scaffolds joined by a plank bridge at the top, a robot on every floor and one on the bridge.""")
-for xc in (8.4, 12.8):
+for xc in (8.0, 11.9):
     s_, l, r = L.mount("Scaffold", xc, 2.4)
     c = (l + r) / 2
     r1 = L.hut(c - 0.9, c + 0.9, s_, 1.15); L.robot(c, s_, "semi")
     r2 = L.hut(c - 0.75, c + 0.75, r1, 1.05); L.robot(c, r1, "pawn")
-br = L.plank(8.364 + 0.45, 12.764 - 0.45, r2)   # overlaps each roof by 0.3 (support probe is the middle 90%)
-L.robot(10.6, br, "semi")
+br = L.plank(7.964 + 0.45, 11.864 - 0.45, r2)
+L.robot(9.9, br, "semi")
 
-L = level("L17_EightStrong", "W1_L17", "Eight Strong", 3, [C, C, B, C], """
-A farmstead fortress: a stone wall with barrels, a ground hut, and a two-storey keep on an island behind.""")
-t = L.box(6.6, G, 0.8); t = L.box(6.6, t, 0.8); L.robot(6.6, t, "pawn")
-L.barrel(7.5, G); L.barrel(5.7, G)
-L.robot(9.2, G, "semi"); L.hut(8.3, 10.1, G, 1.25)
-s = L.island(12.8, G + 1.8, 4.0, 1)
-r1 = L.hut(11.6, 14.0, s, 1.3, stone=True, roof_stone=True); L.robot(12.3, s, "semi"); L.barrel(13.3, s)
-r2 = L.hut(11.9, 13.7, r1, 1.15); L.robot(12.8, r1, "pawn")
-L.robot(12.8, r2, "harv")
+L = level("L17_EightStrong", "W1_L17", "Wagon Train", 3, [C, C, B, C], """
+A wagon carrying a little hut rolls off the ramp into a stone-and-timber fortress; dynamite waits by the walls.""")
+deck, dl, dr, end = ramp_wagon(L, 5.8)
+r = L.hut(dl + 0.15, dl + 1.25, deck, 0.9); L.robot(dl + 0.7, deck, "pawn")
+x0 = end + 0.3
+L.barrel(x0 + 0.3, G)
+t = L.box(x0 + 1.1, G, 0.8); t = L.box(x0 + 1.1, t, 0.8); L.robot(x0 + 1.1, t, "pawn")
+f = L.hut(x0 + 2.0, x0 + 4.2, G, 1.3, stone=True, roof_stone=True); L.robot(x0 + 3.1, G, "semi")
+tower(L, x0 + 3.1, f, 2, width=1.9, robots=["pawn", "semi"], top="harv")
 
 L = level("L18_CaptainsLastStand", "W1_L18", "Captain's Last Stand", 3, [C, C, B, B], """
-Boss: the Commander stands on a stone keep on a high island, a guard inside and barrels at the gate; a pawn
-watches from a stone tower below.""", boss=True)
-s = L.island(11.6, G + 2.4, 5.4, 1)
-top = L.post(10.2, s, 1.6, stone=True); L.post(13.0, s, 1.6, stone=True)
-r = L.plank(9.9, 13.3, top, stone=True)
-L.robot(11.6, s, "semi"); L.barrel(9.4, s); L.barrel(13.8, s)
-L.robot(11.6, r, "boss")
-t = L.box(7.4, G, 0.8); t = L.box(7.4, t, 0.8); t = L.box(7.4, t, 0.8)
-L.robot(7.4, t, "pawn")
+Boss: the Commander stands on a three-storey stone-and-timber keep on a high island; guards balance on a see-saw
+and watch from a stone tower below.""", boss=True)
+s = L.island(10.8, G + 2.0, 5.4, 1)
+top = L.post(9.4, s, 1.5, stone=True); L.post(12.2, s, 1.5, stone=True)
+r = L.plank(9.1, 12.5, top, stone=True)
+L.robot(10.8, s, "semi"); L.barrel(8.6, s); L.barrel(13.0, s)
+r2 = L.hut(9.7, 11.9, r, 1.2); L.robot(10.8, r, "pawn")
+L.robot(10.8, r2, "boss")
+t = L.box(6.6, G, 0.8); t = L.box(6.6, t, 0.8); t = L.box(6.6, t, 0.8)
+L.robot(6.6, t, "pawn")
 
 
 # ═══════════════════════════════════════════ checks ═══════════════════════════════════════════════════════

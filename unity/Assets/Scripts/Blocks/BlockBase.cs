@@ -102,6 +102,38 @@ public abstract class BlockBase : MonoBehaviour
     // forceStayKinematic in LevelData.cs for why this exists).
     public void SetStayKinematic(bool value) => _stayKinematic = value;
 
+    // ── Live physics (framed levels, 2026-11-08: "when they hit they slowly topple over and break down on the
+    // way down, like Angry Birds") ──────────────────────────────────────────────────────────────────────────────
+    // The block becomes a real Dynamic body that starts ASLEEP: a sleeping stack doesn't move at all until something
+    // touches it, then the touched part wakes, leans, topples and breaks on impact like an Angry Birds structure.
+    // Lower gravity makes topples slower and more readable. Settling contacts in the first moments are ignored.
+    public const float LiveGravityScale = 0.6f;
+    const float LiveGraceSeconds = 0.6f;
+    float _graceUntil;
+    public bool IsLive { get; private set; }
+
+    public void GoLive()
+    {
+        if (NeverFalls || _rb == null) return;
+        IsLive = true;
+        _rb.bodyType = RigidbodyType2D.Dynamic;
+        _rb.gravityScale = LiveGravityScale;
+        _rb.linearVelocity = Vector2.zero;
+        _rb.angularVelocity = 0f;
+        _rb.Sleep();
+        _graceUntil = Time.time + LiveGraceSeconds;
+    }
+
+    // Wakes everything resting on or against this block (a destroyed body doesn't reliably wake its neighbours).
+    void WakeNeighbours()
+    {
+        if (_col == null) return;
+        Bounds b = _col.bounds;
+        foreach (var hit in Physics2D.OverlapBoxAll(b.center, (Vector2)b.size + new Vector2(0.3f, 0.6f), 0f))
+            if (hit != null && hit.attachedRigidbody != null && hit.attachedRigidbody.bodyType == RigidbodyType2D.Dynamic)
+                hit.attachedRigidbody.WakeUp();
+    }
+
     // Per-prefab audio overrides — both null/false by default, so WoodBlock/StoneBlock keep the
     // existing generic WoodHit/StoneHit + BlockDestroy behaviour unchanged. Added 2026-07-07 for
     // HaybaleBlock: at hp=10 every haybail hit is a guaranteed same-frame one-shot kill (see
@@ -448,6 +480,7 @@ public abstract class BlockBase : MonoBehaviour
     protected virtual void OnCollisionEnter2D(Collision2D col)
     {
         if (IsDestroyed) return;
+        if (IsLive && Time.time < _graceUntil) return;   // settling, not a hit
         if (_rb.bodyType == RigidbodyType2D.Static &&
             col.rigidbody != null &&
             col.rigidbody.bodyType == RigidbodyType2D.Static)
@@ -499,6 +532,7 @@ public abstract class BlockBase : MonoBehaviour
 
     protected virtual void DestroyBlock()
     {
+        if (IsLive) WakeNeighbours();
         if (IsDestroyed) return;
         IsDestroyed = true;
         FarmFury.Core.HighlightMarkers.BlockDestroyed(GetType().Name);

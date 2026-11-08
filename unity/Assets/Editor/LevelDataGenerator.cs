@@ -264,8 +264,8 @@ public static partial class LevelDataGenerator
                 artVariant = artVariant, indestructible = indestructible,
                 forceStayKinematic = forceStayKinematic };
 
-    static LevelData.PlatformSpawnData P(float x, float surfaceY, float width, int variant = 0) =>
-        new LevelData.PlatformSpawnData { x = x, surfaceY = surfaceY, width = width, variant = variant };
+    static LevelData.PlatformSpawnData P(float x, float surfaceY, float width, int variant = 0, bool rolling = false) =>
+        new LevelData.PlatformSpawnData { x = x, surfaceY = surfaceY, width = width, variant = variant, rolling = rolling };
 
     static LevelData.RobotSpawnData R(float x, float y, float scaleX = 0f, float scaleY = 0f,
                                       RobotType robotType = RobotType.Basic) =>

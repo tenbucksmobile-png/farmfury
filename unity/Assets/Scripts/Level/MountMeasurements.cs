@@ -11,4 +11,7 @@ public static class MountMeasurements
     public static readonly Vector4[] MountScaffoldSolids = { new Vector4(0.101f, 0.867f, 0.861f, 0.990f) };
     public const float MountWagonUV = 0.990f;
     public static readonly Vector4[] MountWagonSolids = { new Vector4(0.279f, 0.986f, 0.754f, 0.990f) };
+    public const float MountRampUV = 0.905f;
+    public static readonly Vector4[] MountRampSolids = {  };
+    public static readonly Vector2[] MountRampPoly = { new Vector2(0.020f, 0.000f), new Vector2(0.020f, 0.863f), new Vector2(0.060f, 0.905f), new Vector2(0.100f, 0.905f), new Vector2(0.140f, 0.905f), new Vector2(0.180f, 0.905f), new Vector2(0.220f, 0.905f), new Vector2(0.260f, 0.905f), new Vector2(0.300f, 0.901f), new Vector2(0.340f, 0.895f), new Vector2(0.380f, 0.873f), new Vector2(0.420f, 0.729f), new Vector2(0.460f, 0.692f), new Vector2(0.500f, 0.654f), new Vector2(0.540f, 0.614f), new Vector2(0.580f, 0.577f), new Vector2(0.620f, 0.533f), new Vector2(0.660f, 0.496f), new Vector2(0.700f, 0.463f), new Vector2(0.740f, 0.408f), new Vector2(0.780f, 0.364f), new Vector2(0.820f, 0.329f), new Vector2(0.860f, 0.287f), new Vector2(0.900f, 0.243f), new Vector2(0.940f, 0.205f), new Vector2(0.980f, 0.137f), new Vector2(0.980f, 0.000f) };
 }

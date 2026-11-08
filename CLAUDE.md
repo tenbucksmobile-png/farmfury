@@ -121,6 +121,19 @@ needing a live pass before shipping.
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
+- **2026-11-08 (latest) — Live physics + tall Angry Birds structures + rolling wagons** (user: structures must be
+  multi-storey and "slowly topple over and break down on the way down... balancing beams... a wagon on a mount that
+  rolls down into a bigger structure... too far apart"). Framed levels now run LIVE physics: `BlockBase.GoLive()`
+  makes every block Dynamic but ASLEEP (untouched stacks don't move; a hit wakes the touched part), gravityScale
+  `BlockBase.LiveGravityScale` 0.6 (slower, readable topples), 0.6 s settling grace, `WakeNeighbours()` on destroy;
+  robots `RobotEnemy.GoLive()` after the reveal pop (mass 4, asleep), crushed by impacts >= 2.5 (half) / 6 (all).
+  New mount 6 Ramp (Kling art, plateau left + straight slope right, PolygonCollider from `MountRampPoly`) and
+  `PlatformSpawnData.rolling`: a wagon parked Static until hit (`RollingWagon`: animal/projectile or momentum >= 3),
+  then a 20-mass body nudged right that rolls down the slope carrying its cargo. design_world1.py v3: `tower()` (up
+  to 5 tapering storeys), `seesaw()` balancing beams, `ramp_wagon()`; L05 Runaway Wagon, L09 Downhill Demolition
+  (dynamite cargo), L13 Hay Ride, L17 Wagon Train use the ramp; all layouts between x 5.5 and 13.5. Box2D stacking
+  of tall thin towers is unverified in Play mode — if a stack misbehaves when woken, widen its posts in the designer.
+
 - **2026-11-08 (late) — Cosmetics: cannon skins, trails, impact effects** (user decision; hats removed). StoreProducts
   `Cannons` (golden, pumpkin, corncob, milkchurn, tractor) / `Trails` / `Impacts` (confetti, popcorn, fireworks,
   feathers, eggsplat); SaveManager `Get/SetEquippedCannon/Impact` + `GetEquipped(category)`; shop chooser, pages and

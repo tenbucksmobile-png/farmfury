@@ -132,6 +132,7 @@ def main():
 MOUNTS = {  # name -> (source file, kind)  kind: "solid" = whole body is collider, "deck" = only the top deck
     "Hill": ("Mount_Hill.png", "solid"), "Mesa": ("Mount_Mesa.png", "solid"),
     "Scaffold": ("Mount_Scaffold.png", "deck"), "Wagon": ("Mount_Wagon.png", "deck"),
+    "Ramp": ("Mount_Ramp.png", "profile"),
 }
 CUT = {"Wagon": dict(white=175, sat=22)}   # the wagon's pale grey drop shadow goes with the background
 
@@ -158,6 +159,24 @@ def measure_mount(rgba, kind):
         return (xs.min() / w, (xs.max() + 1) / w) if len(xs) else (0.45, 0.55)
 
     boxes = []
+    if kind == "profile":
+        # Polygon traced along the top: for each sampled column, the first row of a solid run (skips grass blades).
+        pts, n = [], 24
+        for i in range(n + 1):
+            x = min(w - 1, int((0.02 + 0.96 * i / n) * w))
+            col = a[:, x]
+            y = 0
+            while y < h - 8 and not col[y:y + 8].all(): y += 1
+            pts.append((x / w, (h - y) / h))
+        # Flatten the plateau to its median height (grass tufts poke above it) so a wagon sits level on top.
+        level = float(np.median([q[1] for q in pts if q[0] < 0.36]))
+        pts = [(x, min(y, level)) for x, y in pts]
+        left, right = pts[0][0], pts[-1][0]
+        poly = [(left, 0.0)] + pts + [(right, 0.0)]
+        # Plateau = the flat stretch at the top-left: columns within 3% of the highest point.
+        top_uv = max(q[1] for q in pts)
+        flat = [q[0] for q in pts if q[1] >= top_uv - 0.03]
+        return top_uv, [], (min(flat), max(flat)), poly
     if kind == "deck":
         y = top
         while y < h and a[y, c0:c1].mean() > 0.8: y += 1   # deck thickness
@@ -174,7 +193,7 @@ def measure_mount(rgba, kind):
     flat = extent(top + max(2, h // 100))
     if kind == "solid":   # the walking surface is the whole flat top (grass overhangs the rock below it)
         boxes[0] = (flat[0] + 0.01, flat[1] - 0.01, boxes[0][2], boxes[0][3])
-    return surface_uv, boxes, flat
+    return surface_uv, boxes, flat, None
 
 
 def import_mounts():
@@ -184,14 +203,17 @@ def import_mounts():
         path = os.path.join(SRC, src)
         if not os.path.exists(path): print("  missing", src); continue
         rgba = trim(strip_ground_line(cut_white(path, **CUT.get(name, {}))))
-        uv, boxes, flat = measure_mount(rgba, kind)
+        uv, boxes, flat, poly = measure_mount(rgba, kind)
         save(rgba, f"Mount_{name}.png")
         h, w = rgba.shape[:2]
-        data[name] = dict(uv=uv, aspect=w / h, boxes=boxes, flat=flat)
+        data[name] = dict(uv=uv, aspect=w / h, boxes=boxes, flat=flat, poly=poly)
         print(f"  {name}: surfaceUV {uv:.3f}, flat top x {flat[0]:.2f}-{flat[1]:.2f}, {len(boxes)} solids")
         v4 = ", ".join(f"new Vector4({b[0]:.3f}f, {b[1]:.3f}f, {b[2]:.3f}f, {b[3]:.3f}f)" for b in boxes)
         cs.append(f"    public const float Mount{name}UV = {uv:.3f}f;\n"
                   f"    public static readonly Vector4[] Mount{name}Solids = {{ {v4} }};")
+        if poly:
+            v2 = ", ".join(f"new Vector2({px:.3f}f, {py:.3f}f)" for px, py in poly)
+            cs.append(f"    public static readonly Vector2[] Mount{name}Poly = {{ {v2} }};")
     json.dump(data, open(os.path.join(os.path.dirname(__file__), "mounts.json"), "w"), indent=1)
     out = os.path.join(os.path.dirname(__file__), "..", "unity", "Assets", "Scripts", "Level", "MountMeasurements.cs")
     open(out, "w", encoding="utf-8").write(

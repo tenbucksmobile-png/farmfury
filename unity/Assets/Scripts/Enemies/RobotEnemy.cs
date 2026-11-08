@@ -412,6 +412,24 @@ public class RobotEnemy : MonoBehaviour
     // landing on a lower block, or the ground) go through the normal OnCollisionEnter2D damage
     // path like any other impact, making a knocked-down robot easier to finish off — user-
     // requested 2026-07-09.
+    // Live physics (framed levels, 2026-11-08): after the level reveal the robot becomes a light Dynamic body that
+    // starts asleep on its perch, so a collapsing structure carries it down; hard landings and debris crush it.
+    const float LiveMass = 4f;
+    const float CrushImpulse = 2.5f, SmashImpulse = 6f;   // half / all of its health
+    bool _live;
+
+    public void GoLive()
+    {
+        if (IsDestroyed || _rb == null) return;
+        _live = true;
+        _rb.bodyType = RigidbodyType2D.Dynamic;
+        _rb.mass = LiveMass;
+        _rb.gravityScale = BlockBase.LiveGravityScale;
+        _rb.linearVelocity = Vector2.zero;
+        _rb.Sleep();
+        _invincibleUntil = Time.time + 0.5f;
+    }
+
     public void MakeDynamicFromSupportLoss()
     {
         if (IsDestroyed) return;
@@ -517,7 +535,10 @@ public class RobotEnemy : MonoBehaviour
         }
         else if (impulse >= _minDamageImpulse)
         {
-            TakeDamage(impulse * _impulseDamageMultiplier);
+            float damage = impulse * _impulseDamageMultiplier;
+            // Live robots (Angry Birds pigs): falling debris or a hard landing crushes them.
+            if (_live) damage = Mathf.Max(damage, impulse >= SmashImpulse ? _maxHealth : impulse >= CrushImpulse ? _maxHealth * 0.5f : 0f);
+            TakeDamage(damage);
         }
     }
 

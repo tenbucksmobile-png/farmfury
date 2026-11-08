@@ -48,7 +48,10 @@ public class LevelData : ScriptableObject
         public float x;          // centre X
         public float surfaceY;   // world Y of the walkable grass surface (blocks rest on this line)
         public float width;      // visual width in world units
-        public int   variant;    // 0 = PlatformWide_A (flat), 1 = PlatformWide_B (deeper underside)
+        public int   variant;    // LevelLoader mount kind: 0/1 islands, 2 hill, 3 mesa, 4 scaffold, 5 wagon, 6 ramp
+        // Wagon only: parked (static) until something hits it, then rolls (RollingWagon) — e.g. off a ramp's plateau
+        // and down into a structure below. surfaceY is then the wagon bed's top.
+        public bool  rolling;
     }
 
     [Serializable]

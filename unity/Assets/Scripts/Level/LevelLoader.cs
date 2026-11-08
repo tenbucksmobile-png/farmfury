@@ -179,7 +179,19 @@ public class LevelLoader : MonoBehaviour
             _spawnedRobots.Count,
             data.blocks.Length);
 
-        StartCoroutine(SettleUnsupportedBlocksNextFrame());
+        if (ReferenceFraming.Active(data)) StartCoroutine(GoLiveAfterReveal());
+        else StartCoroutine(SettleUnsupportedBlocksNextFrame());
+    }
+
+    // Framed levels run live physics (BlockBase.GoLive / RobotEnemy.GoLive): blocks go Dynamic-asleep at once (the
+    // reveal only toggles their renderers); robots wait until their pop-in scale animation has finished.
+    IEnumerator GoLiveAfterReveal()
+    {
+        yield return new WaitForFixedUpdate();
+        foreach (var block in _spawnedBlocks) if (block != null) block.GoLive();
+        yield return null;
+        while (LevelReveal.IsRevealing) yield return null;
+        foreach (var robot in _spawnedRobots) if (robot != null) robot.GoLive();
     }
 
     // Wakes any spawned block that has zero real support beneath it (see
@@ -382,8 +394,9 @@ public class LevelLoader : MonoBehaviour
     //   3 Mesa                 tall rock pillar on the ground (solid)
     //   4 Scaffold             timber deck on legs (deck only; shots pass between the legs)
     //   5 Wagon                hay-wagon flatbed (bed only)
-    public const int MountCount = 6;
-    struct MountSpec { public float surfaceUV; public Vector4[] solids; }
+    //   6 Ramp                 plateau on the left, straight slope down to the right (polygon collider)
+    public const int MountCount = 7;
+    struct MountSpec { public float surfaceUV; public Vector4[] solids; public Vector2[] poly; }
     static readonly MountSpec[] Mounts =
     {
         new() { surfaceUV = 0.754f, solids = new[] { new Vector4(0.04f, 0.96f, 0.19f, 0.754f) } },
@@ -392,7 +405,10 @@ public class LevelLoader : MonoBehaviour
         new() { surfaceUV = MountMeasurements.MountMesaUV,     solids = MountMeasurements.MountMesaSolids },
         new() { surfaceUV = MountMeasurements.MountScaffoldUV, solids = MountMeasurements.MountScaffoldSolids },
         new() { surfaceUV = MountMeasurements.MountWagonUV,    solids = MountMeasurements.MountWagonSolids },
+        new() { surfaceUV = MountMeasurements.MountRampUV,     solids = MountMeasurements.MountRampSolids, poly = MountMeasurements.MountRampPoly },
     };
+    // Wagon wheels in the trimmed Mount_Wagon.png: (centre x of width, centre y of height, radius of height).
+    static readonly Vector3[] WagonWheels = { new(0.370f, 0.383f, 0.362f), new(0.795f, 0.375f, 0.362f) };
 
     readonly List<GameObject> _spawnedPlatforms = new();
 
@@ -432,6 +448,27 @@ public class LevelLoader : MonoBehaviour
             float cx = ((b.x + b.y) * 0.5f - 0.5f) * width, cy = ((b.z + b.w) * 0.5f - 0.5f) * height;
             col.size   = new Vector2(w / sc, h / sc);
             col.offset = new Vector2(cx / sc, cy / sc);
+        }
+        if (spec.poly != null && spec.poly.Length >= 3)
+        {
+            var pc = go.AddComponent<PolygonCollider2D>();
+            var pts = new Vector2[spec.poly.Length];
+            for (int i = 0; i < pts.Length; i++)
+                pts[i] = new Vector2((spec.poly[i].x - 0.5f) * width / sc, (spec.poly[i].y - 0.5f) * height / sc);
+            pc.points = pts;
+        }
+        if (data.rolling && v == 5)
+        {
+            var slick = new PhysicsMaterial2D("WagonWheel") { friction = 0.02f, bounciness = 0f };
+            foreach (var w in WagonWheels)
+            {
+                var cc = go.AddComponent<CircleCollider2D>();
+                cc.offset = new Vector2((w.x - 0.5f) * width / sc, (w.y - 0.5f) * height / sc);
+                cc.radius = w.z * height / sc;
+                cc.sharedMaterial = slick;
+            }
+            go.AddComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Static;
+            go.AddComponent<RollingWagon>();
         }
         _spawnedPlatforms.Add(go);
     }
