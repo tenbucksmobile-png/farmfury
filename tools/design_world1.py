@@ -190,6 +190,13 @@ def ramp_wagon(L, ramp_x, ramp_w=5.6, wagon_w=2.4):
     return deck, dl, dr, slope_end
 
 
+def edge_wagon(L, surface, edge_r, wagon_w=2.0):
+    """A wagon parked at the right edge of a high surface (island / mesa top): when hit it tips off the edge and
+    drops onto whatever is below. Returns (deck_y, deck_left, deck_right)."""
+    cx = edge_r - 0.05 - 0.375 * wagon_w
+    return L.wagon_at(cx, surface, wagon_w)
+
+
 L = level("L02_StoneWall", "W1_L02", "Harvest Yard", 2, [C, C, C], """
 Warm-up: a two-storey timber shed with a robot on each floor, and a see-saw beam with a robot balanced on one end.""")
 tower(L, 7.4, G, 2, width=1.8, robots=["semi", "pawn"])
@@ -226,14 +233,18 @@ r = L.hut(7.9, 9.9, f1, 1.15); L.robot(8.9, f1, "pawn")
 L.robot(8.9, r, "pawn")
 
 L = level("L07_BarrelRow", "W1_L07", "Barrel Row", 2, [C, C, C], """
-A stone-pillar bridge over a row of dynamite on an island, a robot on the bridge and a lookout tower at the end.""")
-s = L.island(9.6, G + 1.2, 6.8, 0)
-for x in (8.1, 9.0, 9.9):
+A wagon carrying dynamite is parked on the edge of a high island. Knock it off and it drops onto the stone bridge
+over a row of barrels, a robot on the bridge and a lookout tower at the end.""")
+s = L.island(10.0, G + 1.2, 6.0, 0)
+for x in (8.4, 9.3, 10.2):
     L.barrel(x, s)
-top = L.post(7.5, s, 1.0, stone=True); L.post(10.5, s, 1.0, stone=True)
-r = L.plank(7.2, 10.8, top)
-L.robot(8.9, r, "pawn")
-tower(L, 11.9, s, 2, width=1.4, robots=["semi", None], top="pawn")
+top = L.post(7.8, s, 1.0, stone=True); L.post(10.8, s, 1.0, stone=True)
+r = L.plank(7.5, 11.1, top)
+L.robot(9.3, r, "pawn")
+tower(L, 12.2, s, 2, width=1.4, robots=["semi", None], top="pawn")
+hi = L.island(6.0, G + 3.8, 3.0, 1)
+deck, dl, dr = edge_wagon(L, hi, 6.0 + 1.5 * 0.92, 2.2)
+L.barrel(dl + 0.5, deck); L.robot(dl + 1.25, deck, "pawn")
 
 L = level("L08_FortressAssault", "W1_L08", "Fortress Assault", 3, [C, C, C, C], """
 Three storeys: a stone ground floor with two rooms, two timber floors above, a robot on every level.""")
@@ -265,21 +276,27 @@ L.robot(9.6, top, "semi")
 seesaw(L, 6.9, G, 0.9, 2.2, left="crate", right="pawn")
 seesaw(L, 12.4, G, 0.9, 2.2, left="pawn", right="barrel")
 
-L = level("L11_FullRoster", "W1_L11", "Full Roster", 3, [C, C, B, C], """
-A ground hut, a three-storey tower on a low island, and a lookout on a rock mesa just behind it.""")
-L.robot(6.3, G, "semi"); L.hut(5.4, 7.2, G, 1.25)
-s = L.island(9.4, G + 1.4, 3.0, 0)
-tower(L, 9.4, s, 3, width=2.0, robots=["pawn", "semi", "pawn"], top=None)
-s, l, r = L.mount("Mesa", 12.6, 2.4)
-L.robot((l + r) / 2, s, "pawn")
+L = level("L11_FullRoster", "W1_L11", "Mesa Drop", 3, [C, C, B, C], """
+A wagon with a robot aboard is parked on top of a tall rock mesa. Tip it over the edge and it slides down the
+mesa's side into the three-storey tower below; a second tower stands on a low island behind.""")
+s, l, r = L.mount("Mesa", 7.2, 3.6)
+deck, dl, dr = edge_wagon(L, s, r, 2.0)
+L.box(dl + 0.3, deck, 0.5, stone=False); L.robot(dl + 0.95, deck, "pawn")
+tower(L, 10.4, G, 3, width=1.9, robots=["semi", "pawn", "semi"], top="pawn")
+s2 = L.island(12.9, G + 1.2, 2.4, 0)
+tower(L, 12.9, s2, 2, width=1.6, robots=["pawn", "semi"], top=None)
 
 L = level("L12_HeavyGuard", "W1_L12", "Heavy Guard", 2, [C, C, B], """
-A Harvester inside a stone keep; on the roof a long beam balances a pawn against a dynamite barrel.""")
+A Harvester inside a stone keep, a see-saw on its roof balancing a pawn against a barrel. High on an island to the
+left a wagon waits at the edge, right above the dynamite barrel at the keep's door.""")
 top = L.post(8.6, G, 1.6, stone=True); L.post(11.0, G, 1.6, stone=True)
 r = L.plank(8.4, 11.2, top, stone=True)
 L.robot(9.8, G, "harv"); L.barrel(7.8, G)
 seesaw(L, 9.8, r, 0.8, 2.8, left="pawn", right="barrel")
 L.robot(12.4, G, "pawn"); L.box(13.1, G, 0.6, stone=False)
+hi = L.island(6.4, G + 4.2, 2.8, 0)
+deck, dl, dr = edge_wagon(L, hi, 6.4 + 1.4 * 0.92, 2.0)
+L.box(dl + 0.35, deck, 0.5, stone=False); L.robot(dl + 1.0, deck, "pawn")
 
 L = level("L13_TenStrong", "W1_L13", "Hay Ride", 3, [C, C, B, C], """
 A hay wagon with a robot riding on top waits on the ramp; below it stands a four-storey tower on haybale stilts.""")
