@@ -89,3 +89,5 @@ MonoBehaviour:
     position: {x: 9, y: -3.4996998}
     scale: {x: 6.001, y: 6.153}
   platforms: []
+  weather: 0
+  gadgets: []

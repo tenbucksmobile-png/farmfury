@@ -413,3 +413,55 @@ summary of what's still genuinely open. Newest entries first, same as they were 
 
 ---
 
+---
+
+## 2026-11-09 — Filling the World 1 scene, weather, contraptions, taller towers, effect sizing
+
+- **Why the scene felt bare:** the reference (AB2 stills 13/22 in `tools/review/sessions/ref-angrybirds-20261108-141802`)
+  gets its fullness from layered landforms, fog swallowing the island bases, big dark foreground silhouettes and a
+  weather layer — not from props on the play layer. So the work went into depth + atmosphere, with only two
+  interactive farm contraptions on the play layer.
+- **Art choices:** landforms generated crisp on white (pale hazy art can't be cut from white) with the haze baked in by
+  the import script (ridges 62% toward the haze colour + 3 px blur, hills 22%); clouds on flat blue, keyed along the
+  blue->white axis. FarRidges_A / NearHills_B / Sunflower_B picked; the other variants stay in `Ambience/`.
+- **First render** put both landforms behind the mid corn (only the tops showed) — raised to ridges 4.4 u from g+3.0,
+  hills 3.3 u from g+2.7.
+- **Hoist geometry:** the crane art's pulley wheel hangs on a strap at 0.33 of the height, too low to drop anything onto
+  a structure, so the rope hangs from the arm tip (0.93, 0.70) and the crane can be mirrored to reach left.
+- **Effects audit (measured):** Explosion.png 500 px @ 512 PPU = 0.98 u native; robot bursts used localScale x 0.5 =
+  2.75 x 0.98 = 2.7 u on a 0.81 u pawn (Harvester 3.7 u on 1.1 u). Blocks used max(padded footprint) x k: a stone slab
+  3.4 u visible -> 4.6 u footprint -> 4.5 u burst; the hit flash was a square 1.6x the collider width (3 u on a
+  plank); reveal dust used the padded sprite rect x 1.5; the cosmetic impact was a fixed 2.4 u.
+- **Probe:** normal mode all intact before and after the friction/damping change. Stress mode first showed L17's ground
+  robot at y -10.75 having free-fallen 216 u in 6 s (0.5 x 12 x 6^2): it went Dynamic through a support-loss check
+  while its colliders were still off from the reveal pop. Fixed in `MakeDynamicFromSupportLoss`.
+
+---
+
+## 2026-11-09 — World 2 Frozen Tundra on the World 1 template
+
+- **Art strategy:** reuse first — World 2 already had the aurora sky painting, ice props (crystals, boulder,
+  splinters, ice blocks, frosted wood) and the frost robots + Ice Cannon. Kling (kling-image-v3_0_omni i2i, 2 credits
+  each) filled only the gaps, each piece shaped after its World 1 counterpart (so mount measurements and level layouts
+  carry over) and styled after `ParallaxMidGrounds_W2.png`: glaciers, frozen farm hills, frozen field, frozen corn wall,
+  ice floe / pillar / snow ramp / sled / frosted scaffold, snow-capped bale, frosted crane, the Frost Tyrant (+ alert,
+  hit, explode from the chosen idle), a long frosted plank, a tall frosted post and an ice slab (21 images).
+- **Magenta, not white:** snow and ice can't be cut from white, so every piece was generated on solid magenta and keyed
+  on min(R,B)-G with an edge despill; a speck filter removes generator "stars" that otherwise defeat trimming.
+- **Kling input limit:** reference images must be no wider than 2:1 — the plank/post refs had to be padded.
+- **Stubby planks:** the generator drew the plank/slab ~3:1; towers need 6-8:1, so the import lengthens them by repeating
+  the middle section (alternately mirrored) between the end caps.
+- **Boss scale:** poses are padded to the Commander's 500 px canvas; alert/hit share the idle's scale and feet line so
+  the taunt loop doesn't change his size.
+- **Frost robots** are 426 px tall (World 1's are 256), so the designer spawns pawns/semis at scale 4.4 (1.07 u tall) to
+  fit a storey.
+- **Sled skids:** the runner's bottom edge is slightly tilted in the art, so the measured contact stretch was tiny; the
+  skids are placed at the runner ends by eye.
+- **Generator interaction:** `WorldLevelGenerator` deletes every `W*` LevelData before regenerating — it wiped the new
+  World 2 assets on the first run (139 instead of 160 levels wired); it now leaves `W02_*` alone.
+- **Mothership direction:** Ship.png's bow points right; it flies in and out leftwards, so it's mirrored.
+- **Self-collapse in World 2 (probe):** most World 2 towers collapsed during the reveal (blocks woke at the first robot
+  pop, then posts slid apart). Cause: the frozen pieces are tightly cropped, so `TrimColliderToArt` took the full-rect
+  branch, which never applied `TrimInset`; every stacked pair overlapped ~0.021 u (probe OVERLAP lines) and pushed
+  apart once awake. Fixed by insetting in that branch as well; all 40 World 1 + 2 levels then probe 100% intact.
+

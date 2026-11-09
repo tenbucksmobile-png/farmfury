@@ -202,11 +202,12 @@ MonoBehaviour:
   _sprSkew: {fileID: 0}
   _sprDiagonal: {fileID: 0}
   _sprFlat: {fileID: 0}
-  _sprNormalW2: {fileID: 0}
-  _sprVerticalW2: {fileID: 0}
-  _sprHorizontalW2: {fileID: 0}
+  _sprNormalW2: {fileID: 21300000, guid: e85ec2bfceee6f1478fa6fa4ed1f52cc, type: 3}
+  _sprVerticalW2: {fileID: 21300000, guid: e85ec2bfceee6f1478fa6fa4ed1f52cc, type: 3}
+  _sprHorizontalW2: {fileID: 21300000, guid: e85ec2bfceee6f1478fa6fa4ed1f52cc, type: 3}
   _sprDiagonalW2: {fileID: 0}
   _sprShortW2: {fileID: 0}
+  _sprExplodeW2: {fileID: 0}
   _sprDamaged: {fileID: 21300000, guid: c1fecff9eff0f3d40bc0b56bf284aae8, type: 3}
   _sprExplode: {fileID: 21300000, guid: c1fecff9eff0f3d40bc0b56bf284aae8, type: 3}
   _explodeSizeMultiplier: 1

@@ -60,10 +60,10 @@ public class LevelReveal : MonoBehaviour
         IsRevealing = false;
         if (!ReferenceFraming.Active(level)) return;
         IsRevealing = true;   // lock aiming from this frame, before the loader has even spawned anything
-        _routine = StartCoroutine(Reveal());
+        _routine = StartCoroutine(Reveal(level != null && level.isBossLevel));
     }
 
-    IEnumerator Reveal()
+    IEnumerator Reveal(bool bossLevel)
     {
         yield return null;   // LevelLoader spawns in its own OnLevelStarted handler
 
@@ -82,30 +82,146 @@ public class LevelReveal : MonoBehaviour
         {
             if (b == null || puffs >= MaxBlockPuffs) continue;
             var sr = b.GetComponent<SpriteRenderer>();
-            Vector2 size = sr != null ? (Vector2)sr.bounds.size : Vector2.one;
-            SpawnPuff(b.transform.position, Mathf.Max(size.x, size.y) * 1.5f, DustColour, Random.Range(0f, 0.08f));
+            // Visible art, not the padded sprite rect (2026-11-09, EffectSizing): a long slab got a 5 u puff.
+            Vector2 size = EffectSizing.VisibleSize(sr, out Vector3 at);
+            SpawnPuff(at, EffectSizing.BurstDiameter(size, 1.6f, 0.4f, 1.6f), DustColour, Random.Range(0f, 0.08f));
             puffs++;
         }
 
         yield return new WaitForSeconds(RobotsDelay);
 
-        // Robots pop in one after another, top of the structure first.
+        // Robots pop in one after another, top of the structure first. On a boss level the boss (the biggest robot)
+        // doesn't pop: it is dropped off by the mothership afterwards (BossDropIn).
         robots.RemoveAll(r => r == null);
         robots.Sort((a, b) => b.transform.position.y.CompareTo(a.transform.position.y));
+        RobotEnemy boss = bossLevel ? Biggest(robots) : null;
         foreach (var r in robots)
         {
-            if (r == null) continue;
+            if (r == null || r == boss) continue;
             Show(r, hidden);
             var sr = r.GetComponent<SpriteRenderer>();
-            float size = sr != null ? Mathf.Max(sr.bounds.size.x, sr.bounds.size.y) : 1f;
-            SpawnPuff(r.transform.position, size * 1.3f, RobotPuff, 0f);
+            Vector2 vis = EffectSizing.VisibleSize(sr, out Vector3 at);
+            SpawnPuff(at, Mathf.Clamp(Mathf.Max(vis.x, vis.y) * 1.3f, 0.5f, 2.6f), RobotPuff, 0f);
             StartCoroutine(Pop(r.transform));
             yield return new WaitForSeconds(RobotStagger);
         }
 
         yield return new WaitForSeconds(RobotPopTime);
+        if (boss != null) yield return BossDropIn(boss, hidden);
         IsRevealing = false;
         _routine = null;
+    }
+
+    // ── Boss drop-in (2026-11-09, user: "on the boss level - make it the same as angry birds and have the boss be
+    // dropped off, jump onto a structure from the mothership, make the mothership fly off again") ─────────────────────
+    // The robot mothership glides in from the right and hovers above the boss's spot; the boss appears under its hull,
+    // leaps out on an arc and lands on the structure (squash, dust, camera shake); the ship pulls up and flies off to
+    // the upper left. Aiming stays locked until the boss has landed. Ship art: LevelLoader.MothershipSprite.
+    const float ShipWidthSh   = 0.30f;   // ship width, fraction of the screen height
+    const float ShipInTime    = 1.1f, ShipHover = 0.35f, BossJumpTime = 0.7f, BossJumpRise = 0.9f, ShipOutTime = 1.5f;
+    const int   ShipSortingOrder = 5;    // in front of the structure (blocks 2, robots 3), behind animals (6)
+
+    static RobotEnemy Biggest(List<RobotEnemy> robots)
+    {
+        RobotEnemy best = null;
+        float size = 0f;
+        foreach (var r in robots)
+        {
+            if (r == null) continue;
+            var v = EffectSizing.VisibleSize(r.GetComponent<SpriteRenderer>(), out _);
+            if (Mathf.Max(v.x, v.y) > size) { size = Mathf.Max(v.x, v.y); best = r; }
+        }
+        return best;
+    }
+
+    IEnumerator BossDropIn(RobotEnemy boss, List<Renderer> hidden)
+    {
+        var cam = Camera.main;
+        Transform bt = boss.transform;
+        Vector3 land = bt.position;
+        var bossCols = bt.GetComponentsInChildren<Collider2D>();
+        foreach (var c in bossCols) c.enabled = false;   // LevelLoader/GoLive switch them back on
+
+        float camH = cam != null ? cam.orthographicSize * 2f : 16f, camW = camH * (cam != null ? cam.aspect : 1.78f);
+        Vector3 c0 = cam != null ? cam.transform.position : Vector3.zero;
+
+        // The ship.
+        var ship = new GameObject("BossMothership");
+        var sr = ship.AddComponent<SpriteRenderer>();
+        sr.sprite = LevelLoader.MothershipSprite;
+        sr.sortingOrder = ShipSortingOrder;
+        float shipW = ShipWidthSh * camH;
+        float scale = sr.sprite != null ? shipW / sr.sprite.bounds.size.x : 1f;
+        float shipH = sr.sprite != null ? sr.sprite.bounds.size.y * scale : shipW * 0.5f;
+        if (sr.sprite == null) { sr.sprite = _puffSprite; sr.color = new Color(0.25f, 0.28f, 0.4f); ship.transform.localScale = new Vector3(shipW, shipW * 0.4f, 1f); }
+        else ship.transform.localScale = new Vector3(scale, scale, 1f);
+        // The art's bow points right; the ship enters from the right travelling left, so mirror it to fly nose-first
+        // (user, 2026-11-09: "flip the mothership to fly in facing the right direction").
+        sr.flipX = true;
+
+        float bossH = EffectSizing.VisibleSize(boss.GetComponent<SpriteRenderer>(), out _).y;
+        float camTop = c0.y + camH * 0.5f;
+        Vector3 hover = new Vector3(land.x, Mathf.Min(land.y + bossH * 0.5f + 1.6f + shipH * 0.5f, camTop - shipH * 0.55f), 0f);
+        Vector3 from = new Vector3(c0.x + camW * 0.5f + shipW, hover.y + 1.2f, 0f);
+
+        // Fly in, easing out, nose dipping as it brakes.
+        for (float e = 0f; e < ShipInTime; e += Time.deltaTime)
+        {
+            float k = e / ShipInTime, ease = 1f - (1f - k) * (1f - k) * (1f - k);
+            ship.transform.position = Vector3.Lerp(from, hover, ease);
+            ship.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(8f, 0f, ease));
+            yield return null;
+        }
+        for (float e = 0f; e < ShipHover; e += Time.deltaTime)
+        {
+            ship.transform.position = hover + Vector3.up * Mathf.Sin(e * 9f) * 0.05f;
+            yield return null;
+        }
+
+        // The boss leaps out from under the hull and drops onto the structure.
+        Vector3 start = hover + Vector3.down * (shipH * 0.35f);
+        Show(boss, hidden);
+        Vector3 baseScale = bt.localScale;
+        StartCoroutine(ShipLeaves(ship.transform, hover, c0, camW, camH, shipW));
+        for (float e = 0f; e < BossJumpTime; e += Time.deltaTime)
+        {
+            float k = e / BossJumpTime;
+            Vector3 p = Vector3.Lerp(start, land, k * k);                 // accelerating down
+            p.y += Mathf.Sin(Mathf.PI * Mathf.Min(1f, k * 1.6f)) * BossJumpRise * (1f - k);   // the hop out of the hatch
+            bt.position = p;
+            bt.rotation = Quaternion.Euler(0f, 0f, Mathf.Sin(k * Mathf.PI * 2f) * 8f * (1f - k));
+            yield return null;
+        }
+        bt.position = land;
+        bt.rotation = Quaternion.identity;
+
+        // Landing: squash, dust, shake.
+        SpawnPuff(land + Vector3.down * bossH * 0.4f, Mathf.Clamp(bossH * 1.6f, 1f, 3f), DustColour, 0f);
+        CameraShake.Shake(0.25f, 0.3f);
+        AudioManager.Play(AudioManager.Sound.StoneHit);
+        for (float e = 0f; e < 0.22f; e += Time.deltaTime)
+        {
+            float s = 1f + 0.2f * Mathf.Sin(Mathf.PI * (e / 0.22f));
+            bt.localScale = new Vector3(baseScale.x * s, baseScale.y * (2f - s), baseScale.z);
+            yield return null;
+        }
+        bt.localScale = baseScale;
+        if (!RobotEnemy.SuppressIdleMotion) foreach (var c in bossCols) if (c != null) c.enabled = true;
+    }
+
+    // The ship pulls up and away to the upper left, accelerating, then is gone.
+    IEnumerator ShipLeaves(Transform ship, Vector3 hover, Vector3 c0, float camW, float camH, float shipW)
+    {
+        yield return new WaitForSeconds(0.25f);
+        Vector3 to = new Vector3(c0.x - camW * 0.5f - shipW, c0.y + camH * 0.5f + shipW * 0.6f, 0f);
+        for (float e = 0f; e < ShipOutTime && ship != null; e += Time.deltaTime)
+        {
+            float k = e / ShipOutTime, ease = k * k * k;
+            ship.position = Vector3.Lerp(hover, to, ease) + Vector3.up * Mathf.Sin(k * Mathf.PI) * 0.4f;
+            ship.rotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(0f, 12f, k));
+            yield return null;
+        }
+        if (ship != null) Destroy(ship.gameObject);
     }
 
     static void Hide(Component owner, List<Renderer> hidden)

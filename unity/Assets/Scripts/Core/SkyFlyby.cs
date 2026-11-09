@@ -13,7 +13,7 @@ public class SkyFlyby : MonoBehaviour
     // Far away (user request 2026-11-08: "flies in the distance, with a bit of fade so it looks far"): drawn BEHIND
     // EnvironmentDepthSystem's haze veil (-35) so the golden haze washes over it like the far hills, small, and
     // slightly see-through.
-    const int   SortingOrder   = -37;            // far painting -40 < fly-bys < haze veil -35
+    const int   SortingOrder   = -36;            // far painting -40 < sun -39 < clouds -38 < ridges -37 < fly-bys < haze veil -35
     const float PlaneHeightSh  = 0.04f;          // plane drawn this tall (fraction of screen height)
     const float DroneHeightSh  = 0.03f;
     static readonly Color DistanceTint = new Color(0.86f, 0.84f, 0.80f, 0.78f);
@@ -21,7 +21,7 @@ public class SkyFlyby : MonoBehaviour
     const float DroneCrossSec  = 20f;
     const float FirstDelay     = 2.5f;           // first fly-by shortly after the level appears
     const float MinGap = 9f, MaxGap = 18f;       // pause between fly-bys
-    const float DroneChance    = 0.3f;
+    const float DroneChance    = 0f;    // biplane only (2026-11-09, user: a drone was flying instead of the plane); was 0.3
     const float PuffEvery      = 0.12f;          // smoke trail (plane only)
     const float PuffLife       = 1.6f;
 
@@ -113,7 +113,7 @@ public class SkyFlyby : MonoBehaviour
 
     void Launch()
     {
-        _isDrone = _drone != null && (_plane == null || Random.value < DroneChance);
+        _isDrone = _drone != null && (_plane == null || (DroneChance > 0f && Random.value < DroneChance));
         Sprite s = _isDrone ? _drone : _plane;
         if (s == null) { _timer = MaxGap; return; }
         _flyer.sprite = s;

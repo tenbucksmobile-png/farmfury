@@ -19,7 +19,7 @@ MonoBehaviour:
   isBossLevel: 0
   referenceFraming: 1
   trimColliders: 0
-  birds: 00000000000000000000000000000000
+  birds: 000000000000000000000000
   blocks:
   - type: 3
     position: {x: 4.311, y: -2.408}
@@ -121,6 +121,66 @@ MonoBehaviour:
     artVariant: 2
     forceStayKinematic: 0
     flipX: 0
+  - type: 0
+    position: {x: 10.524, y: -1.79}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.744, y: -1.79}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.041, y: -1.091}
+    size: {x: 1.674, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 10.584, y: -0.49}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.684, y: -0.49}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.045, y: 0.209}
+    size: {x: 1.54, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
   robots:
   - robotType: 1
     position: {x: 11.088, y: -5.05}
@@ -130,6 +190,9 @@ MonoBehaviour:
     scale: {x: 5.5, y: 5.5}
   - robotType: 2
     position: {x: 11.088, y: -1.85}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 11.088, y: 0.75}
     scale: {x: 5.5, y: 5.5}
   platforms:
   - x: 6.2
@@ -142,3 +205,5 @@ MonoBehaviour:
     width: 2.4
     variant: 5
     rolling: 1
+  weather: 0
+  gadgets: []

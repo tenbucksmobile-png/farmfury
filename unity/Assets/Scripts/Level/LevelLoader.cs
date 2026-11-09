@@ -39,6 +39,8 @@ public class LevelLoader : MonoBehaviour
     // one does.
     [Header("World 2 Enemy Prefabs (reskins, same RobotType tiers)")]
     [SerializeField] private RobotEnemy _robotPrefabW2;
+    // World 2's own boss (2026-11-09): the Frost Tyrant (FrostTyrantRobot.prefab, SceneSetup.EnsureFrostTyrantPrefab).
+    [SerializeField] private RobotEnemy _commanderPrefabW2;
     [SerializeField] private RobotEnemy _harvesterPrefabW2;
     [SerializeField] private RobotEnemy _semiHarvesterPrefabW2;
 
@@ -87,6 +89,20 @@ public class LevelLoader : MonoBehaviour
 
     public event Action OnBirdConsumed;   // also raised when a revive adds an animal (HUD queue refresh)
 
+    /// <summary>
+    /// In-level character switch (2026-11-09): the remaining animals are replaced by the player's new picks. Never
+    /// more than are left — extra picks are ignored, and a shorter list keeps the remainder of the old queue.
+    /// </summary>
+    public void ReplaceRemainingBirds(AnimalType[] picks)
+    {
+        if (picks == null || _birdQueue.Count == 0) return;
+        var old = _birdQueue.ToArray();
+        _birdQueue.Clear();
+        for (int i = 0; i < old.Length; i++)
+            _birdQueue.Enqueue(i < picks.Length ? picks[i] : old[i]);
+        OnBirdConsumed?.Invoke();
+    }
+
     /// <summary>A revive's extra animal (GameManager.GrantRevive): joins the end of the queue.</summary>
     public void AddBird(AnimalType type)
     {
@@ -98,6 +114,7 @@ public class LevelLoader : MonoBehaviour
 
     void Awake()
     {
+        MothershipSprite = _mothershipSprite;
 #if UNITY_EDITOR
         AutoLoadPrefabs();
 #endif
@@ -164,15 +181,20 @@ public class LevelLoader : MonoBehaviour
         AnimalType[] birdsToUse = GameManager.Instance != null && GameManager.Instance.CurrentLineup != null
             ? GameManager.Instance.CurrentLineup
             : data.birds;
+        if (birdsToUse != null && birdsToUse.Length > LevelData.MaxLineup)
+            birdsToUse = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Take(birdsToUse, LevelData.MaxLineup));
 
         _birdQueue.Clear();
         foreach (var b in birdsToUse) _birdQueue.Enqueue(b);
 
+        _loadingWorld = data.world;
         if (data.platforms != null)
             foreach (var p in data.platforms) SpawnPlatform(p);
         RobotEnemy.SuppressIdleMotion = ReferenceFraming.Active(data);   // live physics: robots mustn't shove blocks
         foreach (var b in data.blocks) SpawnBlock(b, data.world, ReferenceFraming.Active(data) || data.trimColliders);
         foreach (var r in data.robots) SpawnRobot(r, data.world);
+        if (data.gadgets != null)
+            foreach (var g in data.gadgets) SpawnGadget(g);
 
         ScoreManager.Instance.InitLevel(
             GameManager.Instance.CurrentLevelIndex,
@@ -325,6 +347,7 @@ public class LevelLoader : MonoBehaviour
                 RobotType.Harvester     => _harvesterPrefabW2,
                 RobotType.SemiHarvester => _semiHarvesterPrefabW2,
                 RobotType.Basic         => _robotPrefabW2,
+                RobotType.Commander     => _commanderPrefabW2,
                 _                       => null,
             };
         }
@@ -410,6 +433,9 @@ public class LevelLoader : MonoBehaviour
     // Art: Sprites/Environment/Cornfield/PlatformWide_A/B.png (tools/import_cornfield_art.py), wired by SceneSetup.
     // The surface UVs are measured by that script: the grass top's height from the bottom of the trimmed sprite.
     [SerializeField] private Sprite[] _platformSprites = new Sprite[MountCount];
+    // World 2 (2026-11-09): the same mount kinds, frozen — 0/1 ice floe, 2 (unused, floe), 3 ice pillar,
+    // 4 frosted scaffold, 5 sled, 6 snow ramp. Measured by tools/import_frozen_art.py into MountMeasurementsW2.
+    [SerializeField] private Sprite[] _platformSpritesW2 = new Sprite[MountCount];
     const int PlatformSortingOrder = 1;   // decorative band (<= 1): behind blocks (2) and robots (3)
 
     // Mount kinds (LevelData.PlatformSpawnData.variant), 2026-11-08. surfaceUV = the walkable top's height from the
@@ -437,13 +463,27 @@ public class LevelLoader : MonoBehaviour
     // Wagon wheels in the trimmed Mount_Wagon.png: (centre x of width, centre y of height, radius of height).
     static readonly Vector3[] WagonWheels = { new(0.370f, 0.383f, 0.362f), new(0.795f, 0.375f, 0.362f) };
 
+    static readonly MountSpec[] MountsW2 =
+    {
+        new() { surfaceUV = MountMeasurementsW2.FloeUV,          solids = MountMeasurementsW2.FloeSolids },
+        new() { surfaceUV = MountMeasurementsW2.FloeUV,          solids = MountMeasurementsW2.FloeSolids },
+        new() { surfaceUV = MountMeasurementsW2.FloeUV,          solids = MountMeasurementsW2.FloeSolids },
+        new() { surfaceUV = MountMeasurementsW2.IcePillarUV,     solids = MountMeasurementsW2.IcePillarSolids },
+        new() { surfaceUV = MountMeasurementsW2.FrostScaffoldUV, solids = MountMeasurementsW2.FrostScaffoldSolids },
+        new() { surfaceUV = MountMeasurementsW2.SledUV,          solids = MountMeasurementsW2.SledSolids },
+        new() { surfaceUV = MountMeasurementsW2.SnowRampUV,      solids = MountMeasurementsW2.SnowRampSolids, poly = MountMeasurementsW2.SnowRampPoly },
+    };
+    int _loadingWorld = 1;
+
     readonly List<GameObject> _spawnedPlatforms = new();
 
     void SpawnPlatform(LevelData.PlatformSpawnData data)
     {
         int v = Mathf.Clamp(data.variant, 0, Mounts.Length - 1);
-        var spec = Mounts[v];
-        Sprite sprite = _platformSprites != null && v < _platformSprites.Length ? _platformSprites[v] : null;
+        bool w2 = _loadingWorld == 2 && _platformSpritesW2 != null && v < _platformSpritesW2.Length && _platformSpritesW2[v] != null;
+        var spec = w2 ? MountsW2[v] : Mounts[v];
+        Sprite sprite = w2 ? _platformSpritesW2[v]
+                      : _platformSprites != null && v < _platformSprites.Length ? _platformSprites[v] : null;
         var go = new GameObject($"Mount_{_spawnedPlatforms.Count}");
         go.transform.SetParent(_blockParent, false);
         go.layer = 6;                 // Ground: blocks' support checks and the animals' ground logic see it
@@ -487,7 +527,8 @@ public class LevelLoader : MonoBehaviour
         if (data.rolling && v == 5)
         {
             var slick = new PhysicsMaterial2D("WagonWheel") { friction = 0.02f, bounciness = 0f };
-            foreach (var w in WagonWheels)
+            // The World 2 sled slides on two runner skids (small circles at the runner ends) instead of wheels.
+            foreach (var w in w2 ? MountMeasurementsW2.SledSkids : WagonWheels)
             {
                 var cc = go.AddComponent<CircleCollider2D>();
                 cc.offset = new Vector2((w.x - 0.5f) * width / sc, (w.y - 0.5f) * height / sc);
@@ -500,8 +541,51 @@ public class LevelLoader : MonoBehaviour
         _spawnedPlatforms.Add(go);
     }
 
+    // ── Contraptions (2026-11-09): sunflowers and hay hoists, World 1 cornfield ────────────────────────────────────
+    // Art: Sprites/Environment/Cornfield/Sunflower.png, SunflowerSeed.png, HoistCrane.png, HoistBucket.png
+    // (tools/import_cornfield_art.py --ambience), wired by SceneSetup. Each builds itself in code (Sunflower.Spawn /
+    // HayHoist.Spawn) and is destroyed with the level.
+    // The robot mothership that drops the boss off on a boss level (LevelReveal.BossDropIn, 2026-11-09):
+    // Sprites/Environment/BossMothership.png (Stampede's UI/MotherShip/Ship.png), wired by SceneSetup.
+    [SerializeField] private Sprite _mothershipSprite;
+    public static Sprite MothershipSprite { get; private set; }
+    [SerializeField] private Sprite _sunflowerSprite;
+    [SerializeField] private Sprite _sunflowerSeedSprite;
+    [SerializeField] private Sprite _hoistCraneSprite;
+    [SerializeField] private Sprite _hoistBucketSprite;
+    // World 2 (2026-11-09): ice crystal + shard (World2Props/IceCrystals.png, IceSpire.png), frosted crane hoisting a
+    // block of ice (Frozen/FrozenCrane.png, World2Props/IceBlock.png), rolling ice boulder (World2Props/IceBoulder.png).
+    [SerializeField] private Sprite _iceCrystalSprite;
+    [SerializeField] private Sprite _iceShardSprite;
+    [SerializeField] private Sprite _frozenCraneSprite;
+    [SerializeField] private Sprite _iceBlockLoadSprite;
+    [SerializeField] private Sprite _iceBoulderSprite;
+    readonly List<GameObject> _spawnedGadgets = new();
+
+    void SpawnGadget(LevelData.GadgetSpawnData data)
+    {
+        bool w2 = _loadingWorld == 2;
+        GameObject go = data.type switch
+        {
+            GadgetType.HayHoist when w2 && _frozenCraneSprite != null =>
+                HayHoist.Spawn(_blockParent, _frozenCraneSprite, _iceBlockLoadSprite, data.position,
+                               Mathf.Max(1f, data.size), data.ropeLength, data.faceLeft, 0.99f).gameObject,
+            GadgetType.HayHoist => HayHoist.Spawn(_blockParent, _hoistCraneSprite, _hoistBucketSprite, data.position,
+                                                  Mathf.Max(1f, data.size), data.ropeLength, data.faceLeft).gameObject,
+            GadgetType.IceCrystal => Sunflower.Spawn(_blockParent, _iceCrystalSprite, _iceShardSprite, data.position,
+                                                     Mathf.Max(0.5f, data.size), crystal: true).gameObject,
+            GadgetType.IceBoulder => RollingBoulder.Spawn(_blockParent, _iceBoulderSprite, data.position,
+                                                          Mathf.Max(0.5f, data.size)).gameObject,
+            _ => Sunflower.Spawn(_blockParent, _sunflowerSprite, _sunflowerSeedSprite, data.position,
+                                 Mathf.Max(0.5f, data.size)).gameObject,
+        };
+        _spawnedGadgets.Add(go);
+    }
+
     void ClearLevel()
     {
+        foreach (var g in _spawnedGadgets) if (g) Destroy(g);
+        _spawnedGadgets.Clear();
         foreach (var p in _spawnedPlatforms) if (p) Destroy(p);
         _spawnedPlatforms.Clear();
         foreach (var b in _spawnedBlocks) if (b) Destroy(b.gameObject);
@@ -517,9 +601,39 @@ public class LevelLoader : MonoBehaviour
         GameManager.Instance.CompleteLevel();
     }
 
+    // Anything still falling, sliding or spinning: a live block, a robot, a contraption's bucket or a rolling wagon,
+    // or an ability projectile / seed still in the air.
+    bool WreckageMoving()
+    {
+        static bool Moving(Rigidbody2D rb) =>
+            rb != null && rb.bodyType == RigidbodyType2D.Dynamic && rb.IsAwake() &&
+            (rb.linearVelocity.sqrMagnitude > 0.04f || Mathf.Abs(rb.angularVelocity) > 15f);
+        foreach (var b in _spawnedBlocks)
+            if (b != null && !b.IsDestroyed && Moving(b.GetComponent<Rigidbody2D>())) return true;
+        foreach (var r in _spawnedRobots)
+            if (r != null && !r.IsDestroyed && Moving(r.GetComponent<Rigidbody2D>())) return true;
+        foreach (var g in _spawnedGadgets)
+            if (g != null) foreach (var rb in g.GetComponentsInChildren<Rigidbody2D>()) if (Moving(rb)) return true;
+        foreach (var p in _spawnedPlatforms)
+            if (p != null && Moving(p.GetComponent<Rigidbody2D>())) return true;
+        return FindObjectsByType<AbilityProjectile>().Length > 0;
+    }
+
     IEnumerator DelayedLevelFailed()
     {
         yield return new WaitForSeconds(1.5f);
+        // Live physics (2026-11-09, user: "the game requested a revival before the final destruction of the robot...
+        // when clicked yes it ended up destroying all robots"): tall towers come down over several seconds under the
+        // slowed gravity, so a fixed 1.5 s offered the revive while the collapse was still killing robots. Wait until
+        // the wreckage has settled — half a second with nothing moving — capped at 12 s in all (slower falls, 2026-11-09).
+        float waited = 1.5f;
+        int quiet = 0;
+        while (waited < 12f && quiet < 2 && _spawnedRobots.Count > 0)
+        {
+            yield return new WaitForSeconds(0.25f);
+            waited += 0.25f;
+            quiet = WreckageMoving() ? 0 : quiet + 1;
+        }
         _failedRoutine = null;
         // Defensive re-check alongside the cancel-on-clear in NotifyRobotDestroyed() above — if
         // the last robot somehow died in the same frame this coroutine's wait elapsed (before its

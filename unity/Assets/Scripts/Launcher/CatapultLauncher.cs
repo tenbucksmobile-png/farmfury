@@ -298,6 +298,7 @@ public class CatapultLauncher : MonoBehaviour
                     && _levelLoader != null
                     && _levelLoader.HasBirdsRemaining
                     && !LevelReveal.IsRevealing   // structure still appearing (framed levels)
+                    && Time.timeScale > 0f         // frozen behind an in-level screen (Locker, character switch)
                     && GameManager.Instance?.State == GameState.Playing;
 
         // ── Press: must click/tap ON the bird (loaded in the cannon barrel) ──
@@ -355,6 +356,17 @@ public class CatapultLauncher : MonoBehaviour
 
     /// <summary>After a revive added an animal: load it into the cannon.</summary>
     public void ReloadAfterRevive() => PrepareNextBird();
+
+    /// <summary>
+    /// The in-level character switch (HUD swap button, 2026-11-09) is open only between shots: nothing in flight,
+    /// not mid-drag, animals left, the structure fully revealed.
+    /// </summary>
+    public bool CanSwapAnimals =>
+        _activeAnimal == null && !_isDragging && _levelLoader != null && _levelLoader.HasBirdsRemaining &&
+        !LevelReveal.IsRevealing && GameManager.Instance != null && GameManager.Instance.State == GameState.Playing;
+
+    /// <summary>After a switch replaced the queue: put the new first animal in the cannon.</summary>
+    public void ReloadAfterSwap() => PrepareNextBird();
 
     void PrepareNextBird()
     {
@@ -457,6 +469,7 @@ public class CatapultLauncher : MonoBehaviour
         var skin = FarmFury.Core.CosmeticEffects.CannonSkin();
         if (_cannonSR != null && skin != null) _cannonSR.sprite = skin;
         _framed = ReferenceFraming.Active(data);
+        _mountWorld = data != null ? data.world : 1;
         if (_camera != null)
             _camera.orthographicSize = _framed ? ReferenceFraming.OrthoSize : ComputeOrthoSizeForLevel(data);
         // Framed levels share one ground line with the scenery (ReferenceFraming.World1GroundY); every other
@@ -601,6 +614,9 @@ public class CatapultLauncher : MonoBehaviour
     // hay bales: 3 on the ground, 2 on top. Visual only — shots start above it and nothing needs to rest on it.
     // Everything that aims or fires reads _cannonRestPos, so lifting it moves the whole launcher.
     [SerializeField] private Sprite _mountBaleSprite;   // Haybail.png, wired by SceneSetup.WireLauncher
+    [SerializeField] private Sprite _mountBaleSpriteW2; // Frozen/FrozenBale.png — snow-capped bales (World 2, 2026-11-09)
+    int _mountWorld = 1;
+    Sprite MountSprite => _mountWorld == 2 && _mountBaleSpriteW2 != null ? _mountBaleSpriteW2 : _mountBaleSprite;
     const float MountBaleSize   = 1.15f;   // world units per bale (sprite is square)
     const float MountBaleBottom = 19f / 500f;   // transparent rows under the bale in Haybail.png
     const float MountBaleTop    = 63f / 500f;   // transparent rows above it
@@ -627,7 +643,7 @@ public class CatapultLauncher : MonoBehaviour
     {
         if (_cannonGO != null) _cannonGO.transform.position = _cannonScenePos;
         _cannonRestPos = _cannonScenePos;
-        if (!on || _mountBaleSprite == null)
+        if (!on || MountSprite == null)
         {
             if (_mount != null) _mount.SetActive(false);
             return;
@@ -638,7 +654,7 @@ public class CatapultLauncher : MonoBehaviour
         if (_mount == null)
         {
             _mount = new GameObject("CannonMount");
-            float scale = MountBaleSize / _mountBaleSprite.bounds.size.x;
+            float scale = MountBaleSize / MountSprite.bounds.size.x;
             int i = 0;
             for (int row = 0; row < 2; row++)
                 for (int k = 0; k < 3 - row; k++)
@@ -650,12 +666,13 @@ public class CatapultLauncher : MonoBehaviour
                     bale.transform.localPosition = new Vector3(x, y, 0f);
                     bale.transform.localScale = new Vector3(scale, scale, 1f);
                     var sr = bale.AddComponent<SpriteRenderer>();
-                    sr.sprite = _mountBaleSprite;
+                    sr.sprite = MountSprite;
                     sr.sortingOrder = MountSortingOrder;
                     sr.flipX = (i & 1) == 0;   // vary the straw pattern
                 }
         }
         _mount.SetActive(true);
+        foreach (var sr in _mount.GetComponentsInChildren<SpriteRenderer>(true)) sr.sprite = MountSprite;   // per world
         _mount.transform.position = new Vector3(_cannonScenePos.x + CannonWheelOffsetX, groundY, 0f);
     }
 

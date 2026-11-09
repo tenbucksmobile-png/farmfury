@@ -35,12 +35,35 @@ public class LevelData : ScriptableObject
     [Header("Bird Queue")]
     public AnimalType[] birds;
 
+    /// <summary>A lineup is always at most three animals (2026-11-09, user: "from a certain level one can choose
+    /// four cards - this should remain at 3"). Character Select offers this many slots; a revive still adds one.</summary>
+    public const int MaxLineup = 3;
+    public int LineupSize => Mathf.Clamp(birds != null && birds.Length > 0 ? birds.Length : MaxLineup, 1, MaxLineup);
+
     [Header("Layout")]
     public BlockSpawnData[] blocks;
     public RobotSpawnData[] robots;
     // Raised earth islands that structures stand on (reference framework rule A6, 2026-11-08). Solid terrain:
     // layer Ground, tag "Ground", never breaks. Spawned before blocks/robots by LevelLoader.SpawnPlatform.
     public PlatformSpawnData[] platforms;
+
+    // World 1 cornfield mood (2026-11-09): sky/haze grade, rain, wind strength and ambient life for the level, applied
+    // by EnvironmentDepthSystem + CornfieldAmbience. Purely visual. Golden (0) is the default for every older asset.
+    public LevelWeather weather;
+
+    // Interactive farm contraptions (2026-11-09): sunflowers that spray seeds when hit, hay hoists whose hanging bucket
+    // drops onto whatever is below. Spawned by LevelLoader.SpawnGadget after the blocks.
+    public GadgetSpawnData[] gadgets;
+
+    [Serializable]
+    public struct GadgetSpawnData
+    {
+        public GadgetType type;
+        public Vector2    position;   // Sunflower: base (on the ground/surface). HayHoist: post base.
+        public float      size;       // Sunflower: height. HayHoist: post height (the arm reaches right).
+        public float      ropeLength; // HayHoist: rope from the arm's tip to the bucket's handle
+        public bool       faceLeft;   // HayHoist: arm reaches left (post stands right of the structure)
+    }
 
     [Serializable]
     public struct PlatformSpawnData
@@ -102,6 +125,9 @@ public class LevelData : ScriptableObject
 
 public enum AnimalType    { Cluck, Bessie, Percy, Woolly, Ducky, Horace, Gerald, Billy }
 public enum BlockType     { Wood,  Stone,  Haybale, Barrel }
+// World 1 moods first; World 2 (Frozen Tundra, 2026-11-09) adds its own five.
+public enum LevelWeather  { Golden, MorningMist, Overcast, Rain, Dusk, AuroraNight, Snowfall, Blizzard, IceFog, PolarDawn }
+public enum GadgetType    { Sunflower, HayHoist, IceCrystal, IceBoulder }
 // Commander added 2026-07-12 for L18's boss level — Commander.png/Commander_Hit.png/
 // Commander_Explode.png art dropped in by the user, see SceneSetup.EnsureCommanderRobotPrefab().
 public enum RobotType     { Basic, Harvester, SemiHarvester, Commander }

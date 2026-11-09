@@ -48,6 +48,9 @@ public class HUDController : MonoBehaviour
     [SerializeField] private Sprite _pauseButtonSprite; // Btn_pause.png
     [SerializeField] private Sprite _coinSprite;        // Franchise/Shop/Coin_UI.png
     [SerializeField] private Sprite _lockerSprite;      // Franchise/Shop/Locker.png
+    [SerializeField] private Sprite _swapSprite;        // Franchise/Menu/SwapCharacter.png (Arcade/Stampede swap icon)
+    Button _swapButton;
+    Image  _swapImage;
     private RectTransform  _topRightRoot;
     private Text           _coinText;
 
@@ -106,7 +109,17 @@ public class HUDController : MonoBehaviour
         if (_coinText != null) _coinText.text = balance.ToString("N0");
     }
 
-    void Update() => AnimateBirdIcons();
+    void Update()
+    {
+        AnimateBirdIcons();
+        // The switch only works between shots (nothing in flight, not aiming); dimmed otherwise.
+        if (_swapButton != null)
+        {
+            var flow = FarmFury.UI.GameFlow.Instance;
+            bool can = flow != null && flow.CanSwapCharacters;
+            if (_swapButton.interactable != can) _swapButton.interactable = can;
+        }
+    }
 
     // ── Event handlers ────────────────────────────────────────────────────────
 
@@ -232,6 +245,20 @@ public class HUDController : MonoBehaviour
         lockerBtn.targetGraphic = lockerImg;
         StyleTopButtonColors(lockerBtn);
         lockerBtn.onClick.AddListener(() => FarmFury.UI.GameFlow.Instance?.OpenLocker());
+
+        // Character switch (2026-11-09), under the Locker: back to Character Select for the animals still to fire.
+        _swapImage = MakeImage(_topRightRoot, "SwapBtn",
+                          _swapSprite != null ? _swapSprite : _squareSpr,
+                          _swapSprite != null ? Color.white : new Color(0.2f, 0.25f, 0.38f, 0.95f),
+                          anchorMin: new Vector2(1f, 0f), anchorMax: new Vector2(1f, 0f),
+                          pivot:     new Vector2(1f, 1f),
+                          pos:       new Vector2(0f, -16f - btnSize - 16f),
+                          size:      new Vector2(btnSize, btnSize));
+        _swapImage.preserveAspect = true;
+        _swapButton = _swapImage.gameObject.AddComponent<Button>();
+        _swapButton.targetGraphic = _swapImage;
+        StyleTopButtonColors(_swapButton);
+        _swapButton.onClick.AddListener(() => FarmFury.UI.GameFlow.Instance?.OpenCharacterSwap());
 
         // Coin balance (franchise HUD chip): spinning coin + count, just left of the pause button.
         const float coinSize = 72f;

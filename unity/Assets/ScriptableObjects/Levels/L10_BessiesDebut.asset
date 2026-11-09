@@ -111,14 +111,64 @@ MonoBehaviour:
     artVariant: 11
     forceStayKinematic: 0
     flipX: 0
-  - type: 1
-    position: {x: 9.573, y: -2.785}
-    size: {x: 1.189, y: 1.342}
+  - type: 0
+    position: {x: 8.986, y: -2.666}
+    size: {x: 1, y: 1.244}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 11
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 10.306, y: -2.666}
+    size: {x: 1, y: 1.244}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 9.55, y: -1.941}
+    size: {x: 1.786, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 9.036, y: -1.316}
+    size: {x: 1, y: 1.244}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 10.256, y: -1.316}
+    size: {x: 1, y: 1.244}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 9.553, y: -0.591}
+    size: {x: 1.674, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
     forceStayKinematic: 0
     flipX: 0
   - type: 0
@@ -183,7 +233,13 @@ MonoBehaviour:
     flipX: 0
   robots:
   - robotType: 2
-    position: {x: 9.6, y: -1.95}
+    position: {x: 9.6, y: -2.75}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 9.6, y: -1.4}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 9.6, y: -0.05}
     scale: {x: 5.5, y: 5.5}
   - robotType: 0
     position: {x: 7.55, y: -4}
@@ -192,3 +248,5 @@ MonoBehaviour:
     position: {x: 11.75, y: -4}
     scale: {x: 5.5, y: 5.5}
   platforms: []
+  weather: 1
+  gadgets: []

@@ -1,6 +1,6 @@
 # FARM FURY — Game Design Document
 
-**v3.1** (8 November 2026) · "Physics Destruction · Nine Worlds · One Farm to Save" · A Farm Fury Universe Game
+**v3.3** (9 November 2026) · "Physics Destruction · Nine Worlds · One Farm to Save" · A Farm Fury Universe Game
 Physics Puzzle · Casual · Free-to-Play · iOS & Android · Unity 6.5
 
 This Markdown file replaces `FarmFury_GDD_v2.docx` (June 2026, concept phase) as the living design document, in the
@@ -32,7 +32,7 @@ level rewards the player who spots the clever shot.
 
 **What makes it original**
 - Farm animals, not fictional birds — instantly relatable.
-- Every ability comes from real animal nature — cows stomp, chickens lay eggs, pigs roll, ducks skip.
+- Every ability comes from real animal nature — cows stomp, chickens lay eggs, pigs roll, ducks whip up the pond.
 - Harvest Robots as the enemy — cold machinery against warm organic animals; each world has its own robots and boss.
 - A story with stakes — saving a home, not just scoring points.
 - Built solo with an AI pipeline (Claude Code, Kling AI, Suno).
@@ -40,13 +40,15 @@ level rewards the player who spots the clever shot.
 ## 2. Core Loop (Built)
 
 1. Pick a level (World Select → Level Select).
-2. **Character Select:** choose a lineup — one slot per shot the level allows (3; 4 on a boss).
+2. **Character Select:** choose a lineup of three animals (never more — `LevelData.MaxLineup`; a revive still adds one).
 3. **Aim and fire the Farm Cannon:** drag back from the cannon — drag *direction* sets the launch angle (20°–80°),
    drag *distance* sets the power. A dotted arc previews the shot (fades on later levels).
 4. **Tap mid-flight** to trigger the animal's ability (from World 1 level 4 on).
 5. Destroy every robot. Structures stand still until something hits them, then topple storey by storey under
    live physics (slowed gravity so the collapse reads); robots get crushed by falling pieces; explosive props
    (hay bales, dynamite barrels) chain; parked wagons roll off ramps and ledges into the structures below.
+   A **switch** button (under the Locker) reopens Character Select between shots to swap the animals still to fire
+   — never more than are left.
 6. Run out of animals with robots left → **revive** offer (+1 animal) or Level Failed.
 7. **Results:** stars, coin payout, Double Coins (rewarded ad), then on to the next level.
 
@@ -60,8 +62,8 @@ Each animal has one ability, triggered by a tap in flight. Animals unlock with t
 | **Bessie** (cow) | **Ground Slam** — radial shockwave on landing | Cows are huge and heavy | Stone, tall unstable towers | World 1 |
 | **Percy** (pig) | **Bounce Roll** — curls up, bounces 3×, gaining speed | Pigs are round | Low, spread-out defences | World 2 |
 | **Woolly** (sheep) | **Wool Balls** — throws three bouncy wool balls that each hit up to three times | Shearing — fleece as ammo | Wide targets, ice | World 2 |
-| **Ducky** (duck) | **Skip Shot** — skips flat surfaces 3× | Ducks on water | Low flat structures | World 3 |
-| **Horace** (horse) | **Rear Kick** — kicks debris backward on impact | Horses kick | Targets behind the main structure | World 4 |
+| **Ducky** (duck) | **Water Swirls** — three spinning swirls of pond water that grow as they fly and burst over the structure, knocking it over | Ducks on the pond | Wide, top-heavy towers | World 3 |
+| **Horace** (horse) | **Horseshoe Throw** — hurls two heavy iron horseshoes that ricochet through the structure | Horses are shod | Dense timber towers | World 4 |
 | **Gerald** (turkey) | **Feather Bombs** — drops three bombs that burst in a small radius | Ruffled feathers | Clustered robots, wood | World 5 |
 | **Billy** (goat) | **Mud Throw** — one mud ball that splats over a wide radius | Goats love mud | Spread-out structures | World 6 |
 
@@ -137,18 +139,32 @@ gravity wells + zero-G ability variants (W6). Character weight affecting range (
 
 **World 1** (rebuilt Nov 2026, Angry Birds style) is designed in `tools/design_world1.py`, which checks every
 piece is supported and every target reachable, and renders previews. The structures:
-- multi-storey towers (up to five tapering storeys) that topple and break on the way down;
+- multi-storey towers (mostly four to six tapering storeys, a robot every other floor) that topple easily and
+  break on the way down;
 - balancing beams (see-saws carrying a robot against a barrel);
 - **mounts** at near, middle and far distances: floating islands, a tall rock mesa, a scaffold, a wagon bed and a
   ramp;
 - **rolling wagons:** a wagon parked on a ramp, a mesa edge or a high island, loaded with robots or dynamite — hit
   it and it rolls or tips down into the bigger structure below (L05, L07, L09, L11, L12, L13, L17);
-- level 1 is a simple shelter; level 18 is the Commander's keep (boss).
+- **farm contraptions** (Nov 2026): a **sunflower** that sprays a fan of seeds into the structure beside it when
+  anything hits it (L02, L06, L08, L16), and a **hay hoist** — a timber crane with a heavy water bucket on a rope;
+  shoot the rope or bucket and it drops onto what's below (L04, L06);
+- **weather** per level: golden afternoon, morning mist, overcast, rain with lightning, dusk with fireflies —
+  purely visual mood (sky grade, haze, wind strength, particles);
+- level 1 is a simple shelter; level 18 is the Commander's keep (boss), in a thunderstorm — the Commander is
+  dropped off by the robot mothership, leaps onto the keep, and the ship flies away (Angry Birds-style boss intro).
 
 All layouts sit between x 5.5 and 13.5 so nothing is too far apart. A headless physics probe confirms every World 1
 structure stands untouched until hit.
 
-**Worlds 2–9** are generated from World 1's towers (`WorldLevelGenerator`), so the physics is the already-tuned
+**World 2 — Frozen Tundra** (rebuilt Nov 2026 on the World 1 template, `tools/design_world2.py`): 22 framed levels
+under the aurora, in snowfall, blizzards, ice fog and polar dawn. Structures are frosted timber with ice where World 1
+has stone; mounts are ice floes, ice pillars, frosted scaffolds and snow ramps; a **sled** replaces the wagon. Frozen
+contraptions: **ice crystals** that fire a fan of ice shards, **frosted hoists** that drop a block of ice, and **ice
+boulders** that roll off ledges and ramps. Percy and Woolly lead the lineups. The boss is the **Frost Tyrant** — an
+ice-armoured war robot with a freeze-ray arm, dropped onto his keep by the robot mothership.
+
+**Worlds 3–9** are generated from World 1's towers (`WorldLevelGenerator`), so the physics is the already-tuned
 physics:
 - levels walk through World 1's towers 1–17 in order, so every world ramps up like World 1;
 - every other level mirrors the tower left-right; towers shift slightly;
@@ -220,9 +236,13 @@ loot boxes, every level completable without spending. The model now matches the 
 ## 10. Visual & Audio Design
 
 - **Style:** chunky cartoon renders with bold outlines; warm organic animals against cold machinery.
-- **Backdrops:** World 1 is a three-layer parallax stack; World 2 a two-layer aurora stack; Worlds 3–9 one full
+- **Backdrops:** World 1 (framed levels) is the cornfield stack: far painting, drifting clouds and sun glow,
+  hazy sandstone bluffs with a ruined tower, wooded hills with water towers, mid corn, the corn wall swaying in the
+  wind, ground fog, crows and a biplane crossing, and the weather layer (rain, lightning, pollen/fireflies/chaff);
+  the older World 1 stack is three painted layers; World 2 a two-layer aurora stack; Worlds 3–9 one full
   painting each (shared with Stampede).
-- **Effects:** wood/stone debris bursts, explosions, egg splats, dust.
+- **Effects:** wood/stone debris bursts, explosions, egg splats, dust — every burst sized from the visible art of
+  what broke (about 1.5x a block's or robot's size), never bigger than the action.
 - **Audio:** World 1 gameplay and menu music; cannon shot; falling screams for Cluck and Bessie; robot hit/death SFX.
   **Planned:** music per world (Suno), falling loops for the other six animals.
 - The win/lose celebration videos and the World 1 → 2 transition video were **removed** (November 2026).

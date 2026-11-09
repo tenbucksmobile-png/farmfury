@@ -69,6 +69,7 @@ public static partial class SceneSetup
         EnsureHarvesterRobotPrefab();  // Create/update HarvesterRobot.prefab (separate from Robot)
         EnsureSemiHarvesterRobotPrefab();  // Create/update SemiHarvesterRobot.prefab (separate from Robot/HarvesterRobot)
         EnsureCommanderRobotPrefab();  // Create/update CommanderRobot.prefab (L18 boss)
+        EnsureFrostTyrantPrefab();     // Create/update FrostTyrantRobot.prefab (World 2 boss, 2026-11-09)
         EnsureFrostRobotPrefab();            // World 2 reskin of RobotType.Basic
         EnsureIceHarvestorRobotPrefab();     // World 2 reskin of RobotType.Harvester
         EnsureGlacierHarvestorRobotPrefab(); // World 2 reskin of RobotType.SemiHarvester
@@ -799,6 +800,7 @@ public static partial class SceneSetup
         WireSprite(so, "_pauseButtonSprite",   "Assets/Sprites/UI/Icon/Btn_pause.png");
         WireSprite(so, "_coinSprite",          FranchiseArt + "/Shop/Coin_UI.png");
         WireSprite(so, "_lockerSprite",        FranchiseArt + "/Shop/Locker.png");
+        WireSprite(so, "_swapSprite",          FranchiseArt + "/Menu/SwapCharacter.png");   // 2026-11-09
 
         so.ApplyModifiedProperties();
     }
@@ -1201,12 +1203,14 @@ public static partial class SceneSetup
         SetPrefab(so, "_semiHarvesterPrefab", "SemiHarvesterRobot", "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_commanderPrefab",     "CommanderRobot",     "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_robotPrefabW2",         "FrostRobot",            "Assets/Prefabs/Enemies", typeof(RobotEnemy));
+        SetPrefab(so, "_commanderPrefabW2",     "FrostTyrantRobot",      "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_harvesterPrefabW2",     "IceHarvestorRobot",     "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_semiHarvesterPrefabW2", "GlacierHarvestorRobot", "Assets/Prefabs/Enemies", typeof(RobotEnemy));
         SetPrefab(so, "_haybalePrefab",    "HaybaleBlock",    "Assets/Prefabs/Blocks",  typeof(WoodBlock));
         SetPrefab(so, "_barrelPrefab",     "ExplodingBarrelBlock", "Assets/Prefabs/Blocks", typeof(ExplodingBarrelBlock));
         WireWorldRobotSets(so);
         WirePlatformSprites(so);   // raised islands (SceneSetup.Cornfield.cs)
+        WireGadgetSprites(so);     // sunflowers + hay hoists (SceneSetup.Cornfield.cs)
 
         so.FindProperty("_blockParent").objectReferenceValue =
             GameObject.Find("BlockParent")?.transform;
@@ -1331,6 +1335,10 @@ public static partial class SceneSetup
         // Framed levels' haybale cannon mount (CatapultLauncher.ApplyMount).
         var bale = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Environment/World1Props/Haybail.png");
         if (bale != null) so.FindProperty("_mountBaleSprite").objectReferenceValue = bale;
+        const string frozenBale = "Assets/Sprites/Environment/Frozen/FrozenBale.png";
+        EnsureSingleSprite(frozenBale, 500);   // same canvas and PPU as Haybail.png, so the mount maths carry over
+        var baleW2 = AssetDatabase.LoadAssetAtPath<Sprite>(frozenBale);
+        if (baleW2 != null) so.FindProperty("_mountBaleSpriteW2").objectReferenceValue = baleW2;
 
         so.FindProperty("_cannonGO").objectReferenceValue = cannonGO;
 
@@ -1393,13 +1401,19 @@ public static partial class SceneSetup
         // why only these 5 shapes are wired (the only ones with real ice/snow art today).
         // Different source folder than the W1 wiring above, so a separate WireBlockPrefab call.
         const string folderW2 = "Assets/Sprites/Environment/World2Props";
+        // 2026-11-09 Frozen Tundra rebuild: timber stays timber in World 2 — frosted (long plank + tall post from
+        // tools/import_frozen_art.py in Environment/Frozen, frosted crate/diagonal from World2Props); ice replaces stone.
+        const string frozenFolder = "Assets/Sprites/Environment/Frozen";
         WireBlockPrefab("Assets/Prefabs/Blocks/WoodBlock.prefab", folderW2, new[]
         {
-            ("_sprNormalW2",     "Ice_block.png"),
-            ("_sprVerticalW2",   "Ice_vertical.png"),
-            ("_sprHorizontalW2", "Snow_block.png"),
-            ("_sprDiagonalW2",   "Ice_diagonal.png"),
-            ("_sprShortW2",      "Snow_short.png"),
+            ("_sprNormalW2",     "WoodBlock.png"),
+            ("_sprDiagonalW2",   "WoodVertical.png"),
+            ("_sprShortW2",      "WoodBlock.png"),
+        });
+        WireBlockPrefab("Assets/Prefabs/Blocks/WoodBlock.prefab", frozenFolder, new[]
+        {
+            ("_sprVerticalW2",   "FrostPost.png"),
+            ("_sprHorizontalW2", "FrostPlank.png"),
         });
 
         // Was 1.4 (WoodDebris.png is full-bleed, unlike Haybail_Damaged.png's ~92%x83% fill, so
@@ -1457,9 +1471,22 @@ public static partial class SceneSetup
         {
             ("_sprNormalW2",     "Ice_block.png"),
             ("_sprVerticalW2",   "Ice_vertical.png"),
-            ("_sprHorizontalW2", "Snow_block.png"),
             ("_sprDiagonalW2",   "Ice_diagonal.png"),
             ("_sprShortW2",      "Snow_short.png"),
+            ("_sprExplodeW2",    "IceSplinters.png"),
+        });
+        WireBlockPrefab("Assets/Prefabs/Blocks/StoneBlock.prefab", frozenFolder, new[]
+        {
+            ("_sprHorizontalW2", "IceSlab.png"),
+        });
+        // Frozen hay bales and frost barrels (2026-11-09).
+        WireBlockPrefab("Assets/Prefabs/Blocks/HaybaleBlock.prefab", frozenFolder, new[]
+        {
+            ("_sprNormalW2", "FrozenBale.png"), ("_sprHorizontalW2", "FrozenBale.png"), ("_sprVerticalW2", "FrozenBale.png"),
+        });
+        WireBlockPrefab("Assets/Prefabs/Blocks/ExplodingBarrelBlock.prefab", folderW2, new[]
+        {
+            ("_sprNormalW2", "Barrel_Dynamite.png"), ("_sprHorizontalW2", "Barrel_Dynamite.png"), ("_sprVerticalW2", "Barrel_Dynamite.png"),
         });
     }
 
@@ -2129,13 +2156,21 @@ public static partial class SceneSetup
     // is the single boss enemy of the level, not one of several. Uses its own dedicated
     // Commander_Explode.png death-burst art instead of the generic Explosion.png every other
     // robot type shares (WireRobotDeathFx sets that as a fallback default; overridden here).
-    static void EnsureCommanderRobotPrefab()
+    static void EnsureCommanderRobotPrefab() =>
+        EnsureBossRobotPrefab("CommanderRobot", "Assets/Sprites/Enemies/Robot/Commander");
+
+    // World 2's boss (2026-11-09): the Frost Tyrant — same boss setup as the Commander, its own four poses
+    // (FrostTyrant.png / _Alert / _Hit / _Explode, from tools/import_frozen_art.py).
+    static void EnsureFrostTyrantPrefab() =>
+        EnsureBossRobotPrefab("FrostTyrantRobot", "Assets/Sprites/Enemies/Robot/FrostTyrant");
+
+    static void EnsureBossRobotPrefab(string prefabName, string spriteBase)
     {
-        const string prefabPath         = "Assets/Prefabs/Enemies/CommanderRobot.prefab";
-        const string spritePath         = "Assets/Sprites/Enemies/Robot/Commander.png";
-        const string alertSpritePath    = "Assets/Sprites/Enemies/Robot/Commander_Alert.png";
-        const string damagedSpritePath  = "Assets/Sprites/Enemies/Robot/Commander_Hit.png";
-        const string explodeSpritePath  = "Assets/Sprites/Enemies/Robot/Commander_Explode.png";
+        string prefabPath         = $"Assets/Prefabs/Enemies/{prefabName}.prefab";
+        string spritePath         = $"{spriteBase}.png";
+        string alertSpritePath    = $"{spriteBase}_Alert.png";
+        string damagedSpritePath  = $"{spriteBase}_Hit.png";
+        string explodeSpritePath  = $"{spriteBase}_Explode.png";
 
         var imp = AssetImporter.GetAtPath(spritePath) as TextureImporter;
         if (imp == null)
@@ -2212,7 +2247,7 @@ public static partial class SceneSetup
         }
         else
         {
-            go       = new GameObject("CommanderRobot");
+            go       = new GameObject(prefabName);
             go.layer = 9;
             var rb   = go.AddComponent<Rigidbody2D>();
             rb.mass  = 20f;
@@ -2271,7 +2306,7 @@ public static partial class SceneSetup
             Object.DestroyImmediate(go);
         }
         AssetDatabase.Refresh();
-        Debug.Log("[FarmFury] CommanderRobot.prefab created with Commander.png (PPU=1746).");
+        Debug.Log($"[FarmFury] {prefabName}.prefab created with {spritePath} (PPU=1746).");
     }
 
     // ── Egg prefab: create if missing, wire into CluckAnimal prefab ─────────────

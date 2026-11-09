@@ -65,7 +65,7 @@ public class WoodBlock : BlockBase
         // this one Awake() covers both plain Wood (never explosive, wants 0.5) and Haybale
         // (always explosive, wants 1.0) — _isExplosive is already deserialized from the prefab
         // by the time Awake() runs, so this reads correctly for both without needing a subclass.
-        _explodeSizeMultiplier = _isExplosive ? 1.0f : 0.5f;
+        _explodeSizeMultiplier = _isExplosive ? 2.0f : 1.5f;   // EffectSizing k (2026-11-09)
         base.Awake();
         if (_sr) _sr.color = new Color(0.65f, 0.38f, 0.12f); // wood brown
     }

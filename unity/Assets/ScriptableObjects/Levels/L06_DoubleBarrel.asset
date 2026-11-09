@@ -121,6 +121,36 @@ MonoBehaviour:
     artVariant: 2
     forceStayKinematic: 0
     flipX: 0
+  - type: 0
+    position: {x: 8.386, y: -2.04}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 9.506, y: -2.04}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 8.856, y: -1.341}
+    size: {x: 1.563, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
   robots:
   - robotType: 2
     position: {x: 7.6, y: -5.15}
@@ -134,4 +164,19 @@ MonoBehaviour:
   - robotType: 0
     position: {x: 8.9, y: -2.1}
     scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 8.9, y: -0.8}
+    scale: {x: 5.5, y: 5.5}
   platforms: []
+  weather: 2
+  gadgets:
+  - type: 1
+    position: {x: 14.1, y: -5.6}
+    size: 5.2
+    ropeLength: 0.5
+    faceLeft: 1
+  - type: 0
+    position: {x: 6, y: -5.6}
+    size: 1.7
+    ropeLength: 0
+    faceLeft: 0

@@ -15,7 +15,7 @@ public class StoneBlock : BlockBase
         // consistent burst. Reduced to 1.0 (2x wood's 0.5, not 4.4x) per explicit user request
         // ("reduce the 4x radius to only two, make it seem realistic") — asserted here so it
         // can't silently drift back to whatever's serialized on the prefab.
-        _explodeSizeMultiplier = 1.0f;
+        _explodeSizeMultiplier = 1.6f;   // EffectSizing k (2026-11-09): a stone burst a little bigger than wood's
         base.Awake();
         if (_sr) _sr.color = new Color(0.55f, 0.55f, 0.58f); // stone grey
     }

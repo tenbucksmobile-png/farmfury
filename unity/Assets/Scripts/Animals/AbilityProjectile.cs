@@ -26,6 +26,11 @@ public class AbilityProjectile : MonoBehaviour
         public int    robotHits;     // egg-tier hits dealt to a robot per hit/burst
         public float  spin;          // degrees per second
         public float  life;          // seconds before it fades out regardless
+        // Grows in flight (2026-11-09, Ducky's water swirls: "enlarge and splash over the structures"): the art,
+        // its collider and its burst radius scale from `size` up to `growTo` over `growTime` seconds. 0 = fixed size.
+        public float  growTo;
+        public float  growTime;
+        public float  burstPush;     // impulse shoving every block in the burst outward (a splash knocks things over)
     }
 
     const int EggLayer = 10;
@@ -33,6 +38,8 @@ public class AbilityProjectile : MonoBehaviour
 
     Spec _spec;
     Rigidbody2D _rb;
+    float _native = 1f;      // the sprite's own size (scale = world size / native)
+    float _growth = 1f;      // current size / spec.size
     int _hitsLeft;
     float _age;
     bool _spent;
@@ -64,6 +71,7 @@ public class AbilityProjectile : MonoBehaviour
 
         var p = go.AddComponent<AbilityProjectile>();
         p._spec = spec;
+        p._native = native;
         p._rb = rb;
         p._hitsLeft = Mathf.Max(1, spec.hits);
         return p;
@@ -72,6 +80,13 @@ public class AbilityProjectile : MonoBehaviour
     void Update()
     {
         _age += Time.deltaTime;
+        if (!_spent && _spec.growTo > _spec.size && _spec.growTime > 0f)
+        {
+            float k = Mathf.Clamp01(_age / _spec.growTime);
+            float size = Mathf.Lerp(_spec.size, _spec.growTo, 1f - (1f - k) * (1f - k));   // fast, then easing out
+            _growth = size / Mathf.Max(0.0001f, _spec.size);
+            transform.localScale = Vector3.one * (size / Mathf.Max(0.0001f, _native));
+        }
         if (!_spent && (_age > _spec.life || transform.position.y < -20f)) { _spent = true; Destroy(gameObject); }
     }
 
@@ -96,10 +111,22 @@ public class AbilityProjectile : MonoBehaviour
     {
         _spent = true;
         Vector2 at = transform.position;
-        foreach (var hit in Physics2D.OverlapCircleAll(at, _spec.burstRadius, BlockMask))
-            if (hit.TryGetComponent<BlockBase>(out var block)) block.TakeDamage(_spec.blockDamage);
+        float radius = _spec.burstRadius * _growth;
+        foreach (var hit in Physics2D.OverlapCircleAll(at, radius, BlockMask))
+        {
+            if (!hit.TryGetComponent<BlockBase>(out var block)) continue;
+            block.TakeDamage(_spec.blockDamage);
+            if (_spec.burstPush > 0f && !block.IsDestroyed && hit.attachedRigidbody != null &&
+                hit.attachedRigidbody.bodyType == RigidbodyType2D.Dynamic)
+            {
+                Vector2 away = (Vector2)hit.transform.position - at;
+                float falloff = 1f - Mathf.Clamp01(away.magnitude / Mathf.Max(0.01f, radius));
+                hit.attachedRigidbody.WakeUp();
+                hit.attachedRigidbody.AddForce((away.normalized + Vector2.up * 0.2f) * _spec.burstPush * (0.4f + 0.6f * falloff), ForceMode2D.Impulse);
+            }
+        }
         var hitRobots = new System.Collections.Generic.HashSet<RobotEnemy>();
-        foreach (var hit in Physics2D.OverlapCircleAll(at, _spec.burstRadius, RobotMask))
+        foreach (var hit in Physics2D.OverlapCircleAll(at, radius, RobotMask))
         {
             var robot = hit.GetComponentInParent<RobotEnemy>();
             if (robot != null && hitRobots.Add(robot)) HitRobot(robot);
@@ -113,7 +140,7 @@ public class AbilityProjectile : MonoBehaviour
             sr.sprite = _spec.burstSprite;
             sr.sortingOrder = 10;
             float native = Mathf.Max(_spec.burstSprite.bounds.size.x, _spec.burstSprite.bounds.size.y);
-            fx.transform.localScale = Vector3.one * (_spec.burstRadius * 2f / Mathf.Max(0.0001f, native));
+            fx.transform.localScale = Vector3.one * (radius * 2f / Mathf.Max(0.0001f, native));
             fx.AddComponent<FragmentFader>();
         }
         Destroy(gameObject);

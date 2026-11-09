@@ -14,8 +14,8 @@ namespace FarmFury.UI
     /// SwapCharacterScreen): drag, or tap a side card, to bring a card to the centre; tap the centred card to pick it.
     /// A picked card's art flies out of the carousel on a short arc and drops into the next open lineup slot with a
     /// bounce. Locked animals (SaveManager.IsAnimalUnlocked: intro world not open) are dark silhouettes — browsable,
-    /// not pickable. The lineup row has one open slot per shot the level allows (LevelData.birds.Length, 3; 4 on a
-    /// boss level), empty on open; tap a filled slot to empty it. Play is enabled once every slot is filled and starts
+    /// not pickable. The lineup row has one open slot per shot the level allows (LevelData.LineupSize: the level's
+    /// queue, capped at three), empty on open; tap a filled slot to empty it. Play is enabled once every slot is filled and starts
     /// the level with that lineup (GameManager.StartLevel). Back returns to Level Select.
     /// Not yet seen in Play mode — positions are from the 1920x1080 reference-canvas maths only.
     /// </summary>
@@ -41,6 +41,10 @@ namespace FarmFury.UI
         private readonly List<AnimalType?> _lineup = new();
         private readonly HashSet<int> _landing = new();   // slots whose card is still in flight
         private readonly Driver _driver;
+        // In-level switch mode (2026-11-09): opened from the HUD mid-level with one slot per animal left.
+        private Action<AnimalType[]> _swapConfirm;
+        private Action _swapCancel;
+        public bool IsSwapping => _swapConfirm != null && IsOpen;
 
         // The carousel band sits below the backdrop's "Character" lettering and above the lineup row. Lowered and
         // tightened 2026-11-08 (user: the centre card touched the header, cards too far apart).
@@ -110,7 +114,7 @@ namespace FarmFury.UI
                 new Vector2(UIKit.RoundButtonSize, UIKit.RoundButtonSize));
 
             var back = UIKit.MakeButton(safe, "BackButton", _art.backButton != null ? "" : "<", _art.backButton != null ? Color.white : new Color(0.62f, 0.38f, 0.17f, 1f),
-                () => _onBack?.Invoke(), 72);
+                Back, 72);
             if (_art.backButton != null) { back.image.sprite = _art.backButton; back.image.preserveAspect = true; }
             UIKit.Place(back.image.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-EdgeMargin, EdgeMargin),
                 new Vector2(UIKit.RoundButtonSize, UIKit.RoundButtonSize));
@@ -120,6 +124,43 @@ namespace FarmFury.UI
         }
 
         public void Open(LevelData level)
+        {
+            _swapConfirm = null;
+            _swapCancel = null;
+            OpenInternal(level, level.LineupSize, null);
+        }
+
+        /// <summary>
+        /// Mid-level character switch: one slot per animal still to fire (never more), pre-filled with them; tap a
+        /// slot to empty it and pick someone else. Play hands the new picks to <paramref name="onConfirm"/>; Back
+        /// (or Esc) calls <paramref name="onCancel"/>.
+        /// </summary>
+        public void OpenSwap(LevelData level, AnimalType[] remaining, Action<AnimalType[]> onConfirm, Action onCancel)
+        {
+            _swapConfirm = onConfirm;
+            _swapCancel = onCancel;
+            int slots = Mathf.Clamp(remaining != null ? remaining.Length : 0, 1, LevelData.MaxLineup);
+            OpenInternal(level, slots, remaining);
+        }
+
+        /// <summary>Esc / Android back while switching.</summary>
+        public void CancelSwap() => Back();
+
+        private void Back()
+        {
+            if (_swapConfirm != null)
+            {
+                var cancel = _swapCancel;
+                _swapConfirm = null;
+                _swapCancel = null;
+                Hide();
+                cancel?.Invoke();
+                return;
+            }
+            _onBack?.Invoke();
+        }
+
+        private void OpenInternal(LevelData level, int shots, AnimalType[] prefill)
         {
             PendingLevel = level;
             var save = SaveManager.Instance;
@@ -140,9 +181,13 @@ namespace FarmFury.UI
 
             _driver.StopAllCoroutines();
             _landing.Clear();
-            int shots = Mathf.Max(1, level.birds != null ? level.birds.Length : 3);
+            // never more than LevelData.MaxLineup (3); in switch mode, the animals left
             _lineup.Clear();
-            for (int i = 0; i < shots; i++) { _lineup.Add(null); }
+            for (int i = 0; i < shots; i++)
+            {
+                if (prefill != null && i < prefill.Length) { _lineup.Add(prefill[i]); }
+                else { _lineup.Add(null); }
+            }
             BuildSlots();
             RefreshLineup();
 
@@ -264,9 +309,12 @@ namespace FarmFury.UI
                 badge.transform.parent.gameObject.SetActive(badge.sprite != null);
             }
             int open = _lineup.Count(a => !a.HasValue);
-            _pickHeader.text = open == _lineup.Count ? $"PICK {_lineup.Count} ANIMALS"
-                             : open > 0 ? $"PICK {open} MORE"
-                             : "READY! TAP PLAY";
+            string animals = _lineup.Count == 1 ? "ANIMAL" : "ANIMALS";
+            _pickHeader.text = _swapConfirm != null
+                ? (open == 0 ? "TAP AN ANIMAL TO SWAP IT, OR PLAY" : $"PICK {open} MORE")
+                : open == _lineup.Count ? $"PICK {_lineup.Count} {animals}"
+                : open > 0 ? $"PICK {open} MORE"
+                : "READY! TAP PLAY";
             _playButton.interactable = _landing.Count == 0 && _lineup.All(a => a.HasValue);
         }
 
@@ -274,6 +322,15 @@ namespace FarmFury.UI
         {
             if (PendingLevel == null || _landing.Count > 0 || !_lineup.All(a => a.HasValue)) { return; }
             var lineup = _lineup.Select(a => a.Value).ToArray();
+            if (_swapConfirm != null)
+            {
+                var confirm = _swapConfirm;
+                _swapConfirm = null;
+                _swapCancel = null;
+                Hide();
+                confirm(lineup);
+                return;
+            }
             if (SaveManager.Instance != null) { SaveManager.Instance.LastLineup = lineup.ToList(); }
             Hide();
             _onLaunch?.Invoke(PendingLevel, lineup);

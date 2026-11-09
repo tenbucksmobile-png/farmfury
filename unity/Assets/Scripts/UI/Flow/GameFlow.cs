@@ -228,6 +228,8 @@ namespace FarmFury.UI
                 return;
             }
 
+            if (CharacterSelect.IsSwapping) { CharacterSelect.CancelSwap(); return; }
+
             switch (_gm.State)
             {
                 case GameState.CharacterSelect: CloseCharacterSelect(); break;
@@ -339,6 +341,49 @@ namespace FarmFury.UI
         }
 
         public void ResumeFromPause() => _gm.ResumeGame();
+
+        // ------------------------------------------------------------ in-level character switch (2026-11-09)
+
+        private CatapultLauncher _launcher;
+
+        private bool FindGameplay()
+        {
+            if (_launcher == null) { _launcher = FindAnyObjectByType<CatapultLauncher>(); }
+            if (_loader == null) { _loader = FindAnyObjectByType<LevelLoader>(); }
+            return _launcher != null && _loader != null;
+        }
+
+        /// <summary>The HUD's switch button is usable: between shots, animals left, no other screen open.</summary>
+        public bool CanSwapCharacters =>
+            _gm != null && _gm.State == GameState.Playing && !_gm.ReviveDecisionPending && Time.timeScale > 0f &&
+            !CharacterSelect.IsOpen && FindGameplay() && _launcher.CanSwapAnimals;
+
+        /// <summary>
+        /// The HUD's switch button (user request: "allow a user to switch characters whilst in gameplay... they cannot
+        /// get more characters than what they have left"): freezes the level and opens Character Select with one slot
+        /// per animal still to fire. Play swaps them in and resumes the same attempt; Back resumes unchanged.
+        /// </summary>
+        public void OpenCharacterSwap()
+        {
+            if (!CanSwapCharacters || _gm.CurrentLevel == null) { return; }
+            Time.timeScale = 0f;
+            CharacterSelect.OpenSwap(_gm.CurrentLevel, _loader.BirdQueueSnapshot, ApplySwap, ResumeAfterSwap);
+        }
+
+        private void ApplySwap(AnimalType[] picks)
+        {
+            if (FindGameplay())
+            {
+                _loader.ReplaceRemainingBirds(picks);
+                _launcher.ReloadAfterSwap();
+            }
+            ResumeAfterSwap();
+        }
+
+        private void ResumeAfterSwap()
+        {
+            if (_gm.State == GameState.Playing) { Time.timeScale = 1f; }
+        }
 
         /// <summary>LevelCompleteManager, once the celebration video ends: the results, then any New Character page.</summary>
         public void ShowLevelComplete()

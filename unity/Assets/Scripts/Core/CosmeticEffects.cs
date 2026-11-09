@@ -9,7 +9,7 @@ namespace FarmFury.Core
     /// </summary>
     public static class CosmeticEffects
     {
-        const float ImpactSize = 2.4f;     // world units across at full size (a robot is ~0.8)
+        const float ImpactSize = 1.3f;     // world units across at full size (a robot is ~0.8; was 2.4, 3x a robot — 2026-11-09)
         const int ImpactSortingOrder = 11; // over the block/robot death bursts (10)
 
         static FarmFury.UI.ShopArt Shop => FarmFury.UI.GameFlow.Instance != null ? FarmFury.UI.GameFlow.Instance.Shop : null;

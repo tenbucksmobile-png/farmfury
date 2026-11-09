@@ -1,17 +1,30 @@
 using UnityEngine;
 
-// Ducky (duck) — Skip Shot: on tap, flattens trajectory for skimming.
-// Skips off flat ground surfaces up to 3x before normal landing physics.
+/// <summary>
+/// Ducky (duck). Ability changed 2026-11-09 (user request: "ducky ability should shoot swirls of water out that
+/// enlarge and splash over the structures"): tap mid-flight and Ducky fires three spinning water swirls ahead in a
+/// narrow fan. Each swirl flies almost straight, grows as it travels (small at the beak, about two animals wide by
+/// the time it reaches a structure; reduced 2026-11-09, "too oversized") and bursts on its first contact, splashing everything in a radius that grows
+/// with it. Built on <see cref="AbilityProjectile"/> (burst mode + growth), so block damage and the egg-tier robot
+/// hits stay inside the existing damage model. Replaces Skip Shot.
+/// </summary>
 public class DuckyAnimal : AnimalBase
 {
-    [Header("Skip Shot")]
-    [SerializeField] private int   _maxSkips      = 3;
-    [SerializeField] private float _skipBounceY   = 4f;   // upward velocity on each skip
-    [SerializeField] private float _horizontalMul = 1.2f; // speed boost on tap
-    [SerializeField] private float _flattenY      = 0.05f; // downward fraction kept on tap
+    [Header("Water Swirls")]
+    [SerializeField] private Sprite _swirlSprite;   // WaterSwirl.png (Stampede WaterSpout, wired by Wire Scene References)
+    private const int   SwirlCount  = 3;
+    private const float FanSpread   = 24f;    // degrees across the three, centred on the flight direction
+    private const float SwirlSpeed  = 9f;
 
-    private bool _skipEnabled;
-    private int  _skipCount;
+    static AbilityProjectile.Spec SwirlSpec(Sprite swirl) => new AbilityProjectile.Spec
+    {
+        sprite = swirl, burstSprite = swirl, size = 0.35f, growTo = 1.05f, growTime = 0.9f,   // was 0.4 -> 1.5 (too big)
+        mass = 1f, bounciness = 0f, gravityScale = 0.12f, hits = 1,
+        // A wide splash that shoves more than it smashes: modest damage (posts and planks survive a glancing
+        // splash), an outward push that topples what it soaks, and one egg-tier hit per robot per swirl.
+        blockDamage = 5f, burstRadius = 0.38f,    // x growth: 0.38 at launch, ~1.1 u (2.3 u across) fully grown
+        burstPush = 6f, robotHits = 1, spin = 540f, life = 3.5f,
+    };
 
     protected override void Awake()
     {
@@ -26,29 +39,19 @@ public class DuckyAnimal : AnimalBase
 
     protected override void TriggerAbility()
     {
-        _skipEnabled = true;
-        var vel = _rb.linearVelocity;
-        // Flatten trajectory: preserve horizontal, reduce vertical
-        _rb.linearVelocity = new Vector2(
-            vel.x * _horizontalMul,
-            -Mathf.Abs(vel.y) * _flattenY);
-        if (!HasRealSprites) _sr.color = new Color(1f, 0.65f, 0f); // orange "skip mode" tint
-    }
-
-    protected override void OnCollisionEnter2D(Collision2D col)
-    {
-        // Skip off ground only
-        if (_skipEnabled && _skipCount < _maxSkips && col.gameObject.CompareTag("Ground"))
+        Vector2 vel = _rb.linearVelocity;
+        Vector2 fwd = vel.sqrMagnitude > 0.01f ? vel.normalized : Vector2.right;
+        // Aim level-ish even on a steep dive, so the swirls reach the structure rather than the ground.
+        if (fwd.y < -0.35f) fwd = new Vector2(Mathf.Sign(fwd.x == 0f ? 1f : fwd.x) * 0.94f, -0.35f).normalized;
+        float baseAngle = Mathf.Atan2(fwd.y, fwd.x) * Mathf.Rad2Deg;
+        var spec = SwirlSpec(_swirlSprite);
+        for (int i = 0; i < SwirlCount; i++)
         {
-            _skipCount++;
-            var vel = _rb.linearVelocity;
-            // Preserve horizontal speed, add upward kick
-            _rb.linearVelocity = new Vector2(vel.x * 0.95f, _skipBounceY);
-            // Don't start contact timer — Ducky is still active
-            return;
+            float t = SwirlCount > 1 ? i / (float)(SwirlCount - 1) : 0.5f;
+            float rad = (baseAngle + Mathf.Lerp(-FanSpread * 0.5f, FanSpread * 0.5f, t)) * Mathf.Deg2Rad;
+            var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+            AbilityProjectile.Spawn(spec, transform.position + (Vector3)(dir * 0.45f), dir * SwirlSpeed, _col);
         }
-
-        _skipEnabled = false;
-        base.OnCollisionEnter2D(col);
+        AudioManager.Play(AudioManager.Sound.Launch);
     }
 }

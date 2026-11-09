@@ -26,8 +26,8 @@ SOURCES = {
     "Bessie": (os.path.join(STAMPEDE, "BessieSlam.png"), False),          # Ground Slam: burst
     "Percy":  (os.path.join(STAMPEDE, "Percy_effect.png"), False),        # Bounce Roll: curled up
     "Woolly": (os.path.join(KLING, "Woolly_WoolBall.png"), "grey"),       # Wool Balls (2026-11-08)
-    "Ducky":  (os.path.join(KLING, "Ducky_Skip.png"), True),              # Skip Shot
-    "Horace": (os.path.join(STAMPEDE, "horseshoe.png"), False),           # Rear Kick
+    "Ducky":  (os.path.join(STAMPEDE, "WaterSpout.png"), False),          # Water Swirls (2026-11-09)
+    "Horace": (os.path.join(STAMPEDE, "horseshoe.png"), False),           # Horseshoe Throw (2026-11-09)
     "Gerald": (os.path.join(KLING, "Gerald_FeatherBomb.png"), True),      # Feather Bombs (2026-11-08)
     "Billy":  (os.path.join(KLING, "Billy_MudBall.png"), True),           # Mud Throw (2026-11-08)
 }
@@ -40,6 +40,8 @@ PROJECTILES = {
     "WoolBall":     (os.path.join(KLING, "Woolly_WoolBall.png"), "grey"),
     "MudBall":      (os.path.join(KLING, "Billy_MudBall.png"), True),
     "MudSplat":     (os.path.join(KLING, "Billy_MudSplat.png"), True),
+    "WaterSwirl":   (os.path.join(STAMPEDE, "WaterSpout.png"), False),   # Ducky (2026-11-09)
+    "Horseshoe":    (os.path.join(STAMPEDE, "horseshoe.png"), False),    # Horace (2026-11-09)
 }
 PROJ_OUT = os.path.join(os.path.dirname(__file__), "..", "unity", "Assets", "Sprites", "Abilities")
 

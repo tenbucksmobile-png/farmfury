@@ -221,6 +221,20 @@ MonoBehaviour:
   _sprCornSilhouetteR: {fileID: 21300000, guid: fc7e34dc71817fd449cec93ce1d796f0, type: 3}
   _sprFlybyPlane: {fileID: 21300000, guid: b99bce49330749d46a9e0e94503e4d1b, type: 3}
   _sprFlybyDrone: {fileID: 21300000, guid: fe733077df48c5044851831ad786701e, type: 3}
+  _sprCornRidges: {fileID: 21300000, guid: dc0f6848579e67d4aad7ef69fb4b50e9, type: 3}
+  _sprCornHills: {fileID: 21300000, guid: 39bb64e86bd915843a072c8cba7fab0f, type: 3}
+  _sprClouds:
+  - {fileID: 21300000, guid: d9d5d9e1a90e13d4ba74f045be394644, type: 3}
+  - {fileID: 21300000, guid: 1a1d67a98ce10444da9fc52fc5502acc, type: 3}
+  - {fileID: 21300000, guid: fede25203eda1984fb327974d34a3d59, type: 3}
+  _windSwayMaterial: {fileID: 2100000, guid: 5f752834005a40e4185bbe4890b544b9, type: 2}
+  _sprFrozenRidges: {fileID: 21300000, guid: adc6ddc6e55e80340ad029aa7ba638ec, type: 3}
+  _sprFrozenHills: {fileID: 21300000, guid: 7b372b9d022c0d149a267bd400a53a3f, type: 3}
+  _sprFrozenMid: {fileID: 21300000, guid: 3713ff10eef46f04bbb123b38245b5f7, type: 3}
+  _sprFrozenWall: {fileID: 21300000, guid: 99e73e631c73db14c9dccf97213f98a6, type: 3}
+  _sprFrozenSoil: {fileID: 21300000, guid: 86b686ecc0bcab24a9afd5311129a0e9, type: 3}
+  _sprFrozenSilhouetteL: {fileID: 21300000, guid: fe9bc6e90c055904b9e3b190103c1f33, type: 3}
+  _sprFrozenSilhouetteR: {fileID: 21300000, guid: f88ab5f36ccb24f45b7cf82f8e5695c7, type: 3}
   _farHillsClipAbove: 1
   _midgroundClipAbove: 0.23
   _foregroundClipAbove: 0.3
@@ -680,7 +694,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
+  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -823,6 +837,7 @@ MonoBehaviour:
   _trajectorySubsteps: 3
   _trajectoryDotRadius: 0.08
   _mountBaleSprite: {fileID: 21300000, guid: 7d8dd52190664fa40841c1e389047d5f, type: 3}
+  _mountBaleSpriteW2: {fileID: 21300000, guid: e85ec2bfceee6f1478fa6fa4ed1f52cc, type: 3}
 --- !u!4 &364537116
 Transform:
   m_ObjectHideFlags: 0
@@ -957,7 +972,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
+  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -1639,27 +1654,27 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b36ac3a58754c7849ac6de2283238f88, type: 2}
   - {fileID: 11400000, guid: fac11de7a852479438b4216021827a61, type: 2}
   - {fileID: 11400000, guid: 08f7ec7ec2648544e8d8d3ef815ba51f, type: 2}
-  - {fileID: 11400000, guid: 91b07b5bef4eb634b8234d77bf7d0125, type: 2}
-  - {fileID: 11400000, guid: b994ac92ede17a8479234481051d32c2, type: 2}
-  - {fileID: 11400000, guid: 5ea64f09ec1a3ae4789e178d5fc3ef04, type: 2}
-  - {fileID: 11400000, guid: 154bdfc8ae8736847bde7cafc78f3b8e, type: 2}
-  - {fileID: 11400000, guid: bc200cdb1b2fd934fb3f246c42e17c0f, type: 2}
-  - {fileID: 11400000, guid: 561e1324a40e4df4db4948fcc7ae3215, type: 2}
-  - {fileID: 11400000, guid: 6633e4dbf840e4b428db17f8c21c20e4, type: 2}
-  - {fileID: 11400000, guid: 5c795c2d88ad8d645983b448e1a27cbf, type: 2}
-  - {fileID: 11400000, guid: bcda95a4b95ea4c49a897eacec26b5ca, type: 2}
-  - {fileID: 11400000, guid: b8f0d6e0ab7c06c488d0a5d576b4a8f5, type: 2}
-  - {fileID: 11400000, guid: d57d3de3f3ac1ea4296fc267394fd02a, type: 2}
-  - {fileID: 11400000, guid: 4a06e692010c81f449af7316fa2063f6, type: 2}
-  - {fileID: 11400000, guid: e3c589fb5a8fed34cb100580efe2f839, type: 2}
-  - {fileID: 11400000, guid: cd70b801dce855b4ba8244236a059921, type: 2}
-  - {fileID: 11400000, guid: 25d370ab443d93f4ea35fb8581a66c9b, type: 2}
-  - {fileID: 11400000, guid: f06ea90dab01be840b80afca38001e97, type: 2}
-  - {fileID: 11400000, guid: 5a4708fd51d861a44b2dedddfc07a0b0, type: 2}
-  - {fileID: 11400000, guid: b3f2272c5ce79364f8525e978a9d9b87, type: 2}
-  - {fileID: 11400000, guid: b8bccda346e5e904eb5e8f54fc7d2ced, type: 2}
-  - {fileID: 11400000, guid: 13ef7ab7c8f50bc41a860c43a2f9c48e, type: 2}
-  - {fileID: 11400000, guid: 47bd262498ebbbd499b674e67a9a908b, type: 2}
+  - {fileID: 11400000, guid: 5f7ca1ce8bad000459ef3bc89f8dc848, type: 2}
+  - {fileID: 11400000, guid: 865e326e512471d438a6da3ace516667, type: 2}
+  - {fileID: 11400000, guid: a01659d443b10494083e8f13cf99b233, type: 2}
+  - {fileID: 11400000, guid: 7b6e04bd681069842bfe4652bf567678, type: 2}
+  - {fileID: 11400000, guid: 3935c2dde6545c64b868b4bc05c8f3fa, type: 2}
+  - {fileID: 11400000, guid: fc7361f87bd82624ca0f0a70b6d223c0, type: 2}
+  - {fileID: 11400000, guid: 606083165683cca4aba3719c78af1c41, type: 2}
+  - {fileID: 11400000, guid: 9a476e212063d654794bc936b4d1335a, type: 2}
+  - {fileID: 11400000, guid: 01fa3ce2a71d3ee4a8cc55a5df568f84, type: 2}
+  - {fileID: 11400000, guid: c9dcac2793aa9834dab89719501d509c, type: 2}
+  - {fileID: 11400000, guid: 5623db80c6957c14f84042bb3cde47b6, type: 2}
+  - {fileID: 11400000, guid: 4c15784cef8d10c4b871817e2ab1331c, type: 2}
+  - {fileID: 11400000, guid: c2b919834f5496741a4c623ac559dc8a, type: 2}
+  - {fileID: 11400000, guid: eaaeb77f89ed8f842a7e03fb03cb2515, type: 2}
+  - {fileID: 11400000, guid: 676f261a8de02664f8f92e4eefed97b2, type: 2}
+  - {fileID: 11400000, guid: dedab4cbee4ee794398ef2ae7da0ce5f, type: 2}
+  - {fileID: 11400000, guid: 27d4c3e5f683e894c9bf3b8cc20b7e94, type: 2}
+  - {fileID: 11400000, guid: 9f0a5ab741f59d74bb31dd23339bd86a, type: 2}
+  - {fileID: 11400000, guid: b330d1aee75a11e46814b5ce896c6448, type: 2}
+  - {fileID: 11400000, guid: ff65889e090dc434789f4f24be8d24eb, type: 2}
+  - {fileID: 11400000, guid: 2292ad426952202408809795e5813be9, type: 2}
   - {fileID: 11400000, guid: bbe5d04c410b57a49b728dcbd8ebc8a5, type: 2}
   - {fileID: 11400000, guid: 40c3b0a0422677c4797a7c8017ffd0e1, type: 2}
   - {fileID: 11400000, guid: d4830201c62a16c4b9466f02c7def2b3, type: 2}
@@ -2196,6 +2211,7 @@ MonoBehaviour:
   _pauseButtonSprite: {fileID: 21300000, guid: 31a8c674f4922e443a427e353a35d515, type: 3}
   _coinSprite: {fileID: 21300000, guid: 321509b04823b5d418efce3cce145b48, type: 3}
   _lockerSprite: {fileID: 21300000, guid: e271d648c765f7a4b8e07a7adacddc7d, type: 3}
+  _swapSprite: {fileID: 21300000, guid: 06ebfb736e198a647b966fbed071c6fb, type: 3}
 --- !u!4 &1148615753
 Transform:
   m_ObjectHideFlags: 0
@@ -2238,7 +2254,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
+  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -4909,6 +4925,7 @@ MonoBehaviour:
   _semiHarvesterPrefab: {fileID: 2261584447380943551, guid: 5f4c2123138618b47a0ebe95fc519a58, type: 3}
   _commanderPrefab: {fileID: 3903788738106924525, guid: d061f104dfeb6f5468839b46bf5bbabd, type: 3}
   _robotPrefabW2: {fileID: 2095382871791006703, guid: 872210debaef78947ac9b0879626a0e6, type: 3}
+  _commanderPrefabW2: {fileID: 3358098738452992446, guid: c48240a80025f9741bb27bacb29d81c9, type: 3}
   _harvesterPrefabW2: {fileID: 304449510523221178, guid: 75663bd09b94796468b8fdbec775e2c2, type: 3}
   _semiHarvesterPrefabW2: {fileID: 2659763832321613247, guid: 67b7116550442b8439b1c4e25da5e23a, type: 3}
   _worldRobots:
@@ -4962,6 +4979,24 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 4a8203da37291c54c83b2d86e503b8a0, type: 3}
   - {fileID: 21300000, guid: 36e42d1d5a4d87143a9683768b7bceb4, type: 3}
   - {fileID: 21300000, guid: 39c47ac5c185a174bb96d3a918713150, type: 3}
+  _platformSpritesW2:
+  - {fileID: 21300000, guid: d44817794a0913549b8a78830e797d4e, type: 3}
+  - {fileID: 21300000, guid: d44817794a0913549b8a78830e797d4e, type: 3}
+  - {fileID: 21300000, guid: d44817794a0913549b8a78830e797d4e, type: 3}
+  - {fileID: 21300000, guid: 9234311a0cb66ec42a5e4bf15cdd16ea, type: 3}
+  - {fileID: 21300000, guid: 942f842a18edd634a91bcb8ad00b3f8a, type: 3}
+  - {fileID: 21300000, guid: 3bdc93427c1ba3b448baa93476b28e15, type: 3}
+  - {fileID: 21300000, guid: 56fe2d3f24ff4974383e4317b1b22793, type: 3}
+  _mothershipSprite: {fileID: 21300000, guid: aedf0dcc043eb96468cc881558708834, type: 3}
+  _sunflowerSprite: {fileID: 21300000, guid: 993cfd2e108e60747964039bb0d8d185, type: 3}
+  _sunflowerSeedSprite: {fileID: 21300000, guid: 00537f9649f66aa40ac532b188db7b0f, type: 3}
+  _hoistCraneSprite: {fileID: 21300000, guid: a5366e167b89b054394f8cd63d5b80b9, type: 3}
+  _hoistBucketSprite: {fileID: 21300000, guid: 70ce814a610246b45ad7c478da400da7, type: 3}
+  _iceCrystalSprite: {fileID: 21300000, guid: 5315c756cac486444ae482e10171cfcc, type: 3}
+  _iceShardSprite: {fileID: 21300000, guid: 3f718d0520c706e48b19de961b1edfab, type: 3}
+  _frozenCraneSprite: {fileID: 21300000, guid: e81554538322c2f47b982c531791f0db, type: 3}
+  _iceBlockLoadSprite: {fileID: 21300000, guid: 0710f690d09eab942a29c3b930f6f55b, type: 3}
+  _iceBoulderSprite: {fileID: 21300000, guid: 269655ece2c33e7488841402e42f8902, type: 3}
 --- !u!4 &2045008050
 Transform:
   m_ObjectHideFlags: 0

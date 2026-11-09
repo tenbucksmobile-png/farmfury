@@ -105,12 +105,16 @@ public static class WorldLevelGenerator
         foreach (var guid in AssetDatabase.FindAssets("t:LevelData", new[] { Folder }))
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
-            if (System.IO.Path.GetFileName(path).StartsWith("W")) AssetDatabase.DeleteAsset(path);
+            // Its own files only: World 2 ("W02_") is designed by tools/design_world2.py (2026-11-09).
+            string fn = System.IO.Path.GetFileName(path);
+            if (fn.StartsWith("W") && !fn.StartsWith("W02_")) AssetDatabase.DeleteAsset(path);
         }
 
         int made = 0;
         foreach (var spec in Worlds)
         {
+            // World 2 is designed by hand on the framed template (tools/design_world2.py, 2026-11-09).
+            if (spec.world == 2) continue;
             var names = LevelNames(spec);
             int regular = spec.levels - 1;
             for (int k = spec.firstLevel; k <= regular; k++)
@@ -211,7 +215,8 @@ public static class WorldLevelGenerator
     // where World 1 used Bessie (the heavy hitter) the slot stays a heavy animal from the world's pool.
     static AnimalType[] Lineup(WorldSpec spec, int k, AnimalType[] templateBirds, bool boss)
     {
-        int count = templateBirds.Length + (boss ? 1 : 0);
+        // Never more than three (LevelData.MaxLineup, 2026-11-09): boss levels used to get a fourth animal.
+        int count = Mathf.Min(LevelData.MaxLineup, templateBirds.Length + (boss ? 1 : 0));
         var lineup = new List<AnimalType>();
         for (int i = 0; i < count; i++)
         {

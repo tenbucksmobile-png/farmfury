@@ -67,8 +67,9 @@ needing a live pass before shipping.
   `FarmFuryIosBuild` — neither compiled yet: batch checks build the Windows target only).
 - **Not ported yet:** Stampede's Boot scene / Android AAB split + store build scripts, the iOS privacy manifest,
   the Character Story Cosmetics tab.
-- **Worlds 2-9 levels (2026-11-02) are generated, not hand-built, and unseen in Play mode.** 141 levels from
-  `WorldLevelGenerator` (see Recent work). Difficulty and solvability are inherited from World 1's towers but untested
+- **World 2 (Frozen Tundra) was rebuilt 2026-11-09** as 22 framed designs (`tools/design_world2.py`) — probe-clean but
+  unseen in Play mode. **Worlds 3-9 levels (2026-11-02) are generated, not hand-built, and unseen in Play mode.** 120
+  levels from `WorldLevelGenerator` (see Recent work). Difficulty and solvability are inherited from World 1's towers but untested
   with the new animals' abilities; the Mothership backdrop has no painted ground (towers stand in space); prop placement
   (`SceneryBuilder.BuildWorldProps`) is code-placed and may crowd at wide zooms. Ducky/Horace/Gerald/Billy poses are
   Stampede platformer frames standing in for cannon poses (no Idle/Impact pose).
@@ -120,6 +121,100 @@ needing a live pass before shipping.
   place: this machine's disk — if lost, recovery means restoring `assets/` and re-running the art
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
+
+- **2026-11-09 (latest) — World 2 Frozen Tundra rebuilt on the World 1 template** (user: "take that template and build
+  frozen tundra... creative... a new boss... fly in on the same mothership... flip the mothership"). Unverified in Play
+  mode; designer-checked and probe-checked (see HISTORY).
+  - **Levels:** all 22 World 2 levels are framed designs in `tools/design_world2.py` (writes
+    `Editor/LevelDataGenerator.World2.cs`, `MakeWorld2Framed`, which also deletes older `W02_*` assets). `L19_FrostboundWatch`
+    keeps id W2_L01; the rest keep ids W2_L02..L22 (save keys) with new names/files. `WorldLevelGenerator` now skips
+    world 2 and no longer deletes `W02_*` files. `design_world1.py` is world-aware (`Level(..., world=2)`): World 2
+    pieces/robots/mounts measured from the World 2 sprites; World 1 helper names map onto frozen mounts.
+  - **Look:** `EnvironmentDepthSystem` themes (`Theme*` properties, rebuilt when the world changes): World 2 far =
+    the aurora painting (`ParallaxFarHills_W2.png`), glacier ridges with a frozen watchtower, frozen farm hills,
+    frozen field, frozen corn wall over a snow lip, navy corner silhouettes (`Sprites/Environment/Frozen/`, Kling on
+    magenta, keyed by `tools/import_frozen_art.py`). Stalks barely sway (frozen). Weather (`LevelWeather`
+    AuroraNight / Snowfall / Blizzard / IceFog / PolarDawn) -> `CornfieldAmbience` frozen profiles: falling snow,
+    blizzard streaks, animated aurora ribbons (procedural), glints twinkling on the snow.
+  - **Pieces:** World 2 blocks are frosted timber (FrostPost / FrostPlank, World2Props WoodBlock / WoodVertical) and ice
+    instead of stone (Ice_block / Ice_vertical / IceSlab; ice shatters into IceSplinters via `BlockBase._sprExplodeW2`);
+    snow-capped bales (`FrozenBale.png`, also the cannon mount via `CatapultLauncher._mountBaleSpriteW2`); frost
+    barrels. `BlockBase`: Square/Block variants resolve to the W2 normal/horizontal art.
+  - **Mounts:** `LevelLoader._platformSpritesW2` + `MountsW2` (`MountMeasurementsW2.cs`): ice floe, ice pillar, frosted
+    scaffold, snow ramp, and a **sled** (rolling-wagon equivalent, slides on two runner skids).
+  - **Contraptions:** `GadgetType.IceCrystal` (Sunflower in crystal mode: ice shards, shatters), frosted hoist dropping
+    a block of ice (`HayHoist` with `FrozenCrane.png` + `IceBlock.png`), `GadgetType.IceBoulder` (`RollingBoulder.cs`).
+  - **Boss:** the **Frost Tyrant** (`FrostTyrantRobot.prefab`, `SceneSetup.EnsureBossRobotPrefab` shared with the
+    Commander; FrostTyrant / _Alert / _Hit / _Explode, Kling) on `LevelLoader._commanderPrefabW2`; dropped off by the
+    mothership (`LevelReveal.BossDropIn`), which now flies nose-first (`flipX`, the art's bow points right).
+  - Kling: 21 images (~46 credits). Note: `WireBlockPrefab` re-imports the World2Props sprites it touches at PPU =
+    width (WoodBlock, WoodVertical, IceSplinters, Barrel_Dynamite) — framed World 2 levels hide `Scenery_World2`
+    anyway, but any hand-placed scene copy of those props would change size.
+  - **Stability:** World 2's pieces are cropped tight, so `BlockBase.TrimColliderToArt` took its "full rect" branch and
+    skipped `TrimInset`; neighbours overlapped ~0.02 u and towers shook themselves down once the reveal woke them. The
+    full-rect branch now applies the inset too. `PhysicsProbe` (no input) on all 40 World 1 + World 2 levels: 100%
+    intact, 0 awake, 0 movement.
+
+- **2026-11-09 — World 1 scenery filled, weather, contraptions, taller towers, effect sizes, 3-animal lineups**
+  (user: "the scene seems bare... wind, flowers that shoot objects, rain... mountains far and close", stay farm
+  themed; then "structures must be built higher, multiple stories and topple easier", "effect art... visibly over
+  sized", "one can choose four cards - this should remain at 3"). Unverified in Play mode; probe-verified.
+  - **Depth:** `EnvironmentDepthSystem` cornfield mode gained two tiled landform strips — `CornRidges.png` (sandstone
+    bluffs + ruined tower, haze baked in, parallax 0.85, order -37 behind the haze veil) and `CornHills.png` (wooded
+    hills, water tower, farmhouse, parallax 0.70, order -33); bottoms fade into the mist. Art: 9 Kling images (18
+    credits) in `FarmFury_Technical/FarmFury_Artwork/MeadowRuins/Cornfield/Ambience/`, cut by
+    `python tools/import_cornfield_art.py --ambience` (also clouds, sunflower, seed, crane, bucket).
+  - **Weather/ambience:** `LevelData.weather` (`LevelWeather` Golden/MorningMist/Overcast/Rain/Dusk) ->
+    `CornfieldAmbience` (new, built by EnvironmentDepthSystem): per-weather profile tints the far painting/landforms/
+    corn, sets haze + mist colour, a full-screen grade, drifting clouds, sun glow, crows, pollen/fireflies/chaff,
+    ground fog, rain streaks + lightning, and the global `_FFWind` gust value. New `Shaders/WindSway.shader`
+    (`Materials/WindSway.mat`, wired by SceneSetup) bends the mid corn, corn wall and corner silhouettes (mirrored
+    lookup keeps tile seams closed). Sorting: far -40, sun -39, clouds -38, ridges -37, fly-bys/crows -36 (SkyFlyby
+    moved from -37), veil -35, hills -33, mist -32, mid corn -30 ... ground fog -17, specks 30, rain 38, grade 39.
+  - **Contraptions:** `LevelData.gadgets` (`GadgetSpawnData`: Sunflower/HayHoist) spawned by `LevelLoader.SpawnGadget`.
+    `Sunflower` (trigger on the head; an animal/projectile or a falling body fires 7 `AbilityProjectile` seeds, 4-46
+    deg to the right; one shot, then it wilts). `HayHoist` (crane is scenery; bucket mass 14 on a `DistanceJoint2D`
+    from the arm tip, layer Default; a shot on the rope trigger or the bucket cuts it). Designer: `L.sunflower(x, y)`,
+    `L.hoist(post_x, surface, h, rope, face_left)`; it checks reachability, bucket clearance and a target below.
+  - **Taller structures (design_world1.py v4):** 4-6 storeys in most levels, a robot every other floor. Live blocks
+    topple easier: `LiveMaterial` friction 0.9 -> 0.6, angular damping 0.6 -> 0.15, linear 0.1 -> 0.05.
+    `PhysicsProbe` normal mode: all 18 levels 100% intact, 0 awake, 0 movement. Stress (wake-everything) mode: L08,
+    L10, L14, L15 lose one robot to settling contacts — fragile once disturbed, by design.
+  - **Robot fall-through fix:** `RobotEnemy.MakeDynamicFromSupportLoss` no longer turns a not-yet-live robot (colliders
+    still off from the reveal pop) Dynamic — the stress probe caught L17's ground robot falling through the floor.
+  - **Effect sizes:** new `EffectSizing` (visible-art size from the tight sprite mesh, burst = k x sqrt(w*h), the
+    effect sprite scaled by its own native size). Block death bursts (k: wood 1.5, stone 1.6, hay 2.0, barrel 2.2 —
+    `_explodeSizeMultiplier` now means k), robot explosions 1.5x the robot (were ~3.3x: localScale x 0.5 dated from
+    0.6-scale robots), impact stars 1.5x the animal, block hit flash = the block's own shape (was a square 1.6x its
+    width), reveal dust from the visible size, cosmetic impact 2.4 -> 1.3 u.
+  - **Lineup capped at 3:** `LevelData.MaxLineup`/`LineupSize` drive Character Select's slots and LevelLoader's
+    queue; World 1 designs use three animals; `WorldLevelGenerator` no longer adds a fourth on boss levels.
+  - **Follow-up (user play-test: "requested a revival before the final destruction... clicking yes destroyed all
+    robots"; "a drone flying instead of the plane"):** `LevelLoader.DelayedLevelFailed` now waits for the wreckage
+    to settle (`WreckageMoving()`: any awake block/robot/bucket/wagon moving, or an ability projectile in the air;
+    0.5 s quiet, 9 s cap) before offering the revive — tall towers take seconds to fall at gravity 0.6. `SkyFlyby`
+    is biplane-only (`DroneChance` 0).
+  - **Follow-up 2 (user: Horace's horseshoe ability "not working"; swirl "too oversized"; structures should "topple
+    slightly easier when struck, however topple slower"):** Horace's Rear Kick (pushed debris BACKWARD, toward the
+    cannon — looked like nothing happened) replaced by Horseshoe Throw (`HoraceAnimal`, 2 x `AbilityProjectile`
+    mass 6, 3 hits, Stampede horseshoe -> `Sprites/Abilities/Horseshoe.png`, wired by `SceneSetup.WireAbilityProjectiles`).
+    Ducky's swirl 0.4->1.5 u reduced to 0.35->1.05 u, burst radius x growth now ~1.1 u (was ~2 u).
+    `BlockBase.LiveGravityScale` 0.6 -> 0.42 (slower collapses; robots/bucket/wagons share it), live friction 0.55,
+    new `ShoveOnHit` (animal/projectile strike adds 0.35 x its momentum, max 22, at the contact point),
+    `RobotEnemy` Crush/Smash 2.5/6 -> 2.1/5, revive settle cap 12 s.
+  - **In-level character switch** (user: switch characters mid-gameplay, "same [icon] used in arcade and stampede -
+    place under the locker... cannot get more characters than what they have left"): HUD `SwapBtn` under the Locker
+    (`_swapSprite` = `Sprites/UI/Franchise/Menu/SwapCharacter.png`, Arcade/Stampede SwapCharacterIcon) ->
+    `GameFlow.OpenCharacterSwap()`: freezes time, `CharacterSelectScreen.OpenSwap` with one slot per animal still in
+    the queue (pre-filled; tap a slot to empty it), Play -> `LevelLoader.ReplaceRemainingBirds` +
+    `CatapultLauncher.ReloadAfterSwap`, Back/Esc resumes. Only between shots (`CatapultLauncher.CanSwapAnimals`; the
+    button dims otherwise). The launcher now ignores input while `Time.timeScale == 0` (also covers the Locker).
+  - **Boss drop-in** (user: "on the boss level... have the boss be dropped off, jump onto a structure from the
+    mothership, make the mothership fly off again"): `LevelReveal.BossDropIn` on framed boss levels (World 1 L18; the
+    generated Worlds 2-9 boss levels are unframed, so they still pop in): the biggest robot skips the pop; the
+    mothership (`Sprites/Environment/BossMothership.png`, Stampede `UI/MotherShip/Ship.png`, via
+    `LevelLoader.MothershipSprite`) glides in from the right, hovers, the boss leaps out and lands on the keep (squash,
+    dust, shake), the ship flies off up-left. Aiming stays locked until the landing.
 
 - **2026-11-08 (newest) — Self-collapse fixed, verified headless** (user: "they still breaking by themselves").
   New `Editor/PhysicsProbe.cs` (menu FarmFury → Debug → Physics Probe, or batch `-executeMethod PhysicsProbe.Run`
@@ -572,8 +667,8 @@ Overlays (OverlayScreen) open on top of any screen; Esc / Android back closes th
 | Bessie (cow) | Ground Slam — radial shockwave on landing | World 1 |
 | Percy (pig) | Bounce Roll — curls, bounces 3× gaining speed | World 2 |
 | Woolly (sheep) | Wool Balls — throws 3 bouncy wool balls ahead (each hits up to 3 times) | World 2 |
-| Ducky (duck) | Skip Shot — skips flat surfaces 3× | World 3 |
-| Horace (horse) | Rear Kick — kicks debris backward on impact | World 4 |
+| Ducky (duck) | Water Swirls — fires 3 spinning water swirls that grow in flight and splash (push + damage) over a widening radius | World 3 |
+| Horace (horse) | Horseshoe Throw — hurls 2 heavy horseshoes ahead that ricochet through the structure (3 hits each) | World 4 |
 | Gerald (turkey) | Feather Bombs — drops 3 bombs that burst in a small radius | World 5 |
 | Billy (goat) | Mud Throw — hurls a mud ball that splats over a wide radius | World 6 |
 
@@ -592,7 +687,7 @@ All eight are scripted and art-wired; each leads the lineups of the world that i
 | 8 — Harvest Fairground (paid) | Farm Cannon | — | 12 |
 | 9 — Crop Factory (paid) | Farm Cannon | — | 12 |
 
-World 1 is hand-built (L01-L18). World 2's level 1 is L19 (hand-dumped); every other level of Worlds 2-9 is generated from World 1's towers by `WorldLevelGenerator` (2026-11-02, see Recent work), with each world's own robots, boss, backdrop and props. None of it verified in Play mode.
+World 1 (L01-L18, `tools/design_world1.py`) and World 2 (W2_L01-L22, `tools/design_world2.py`, 2026-11-09) are designed framed levels; every level of Worlds 3-9 is generated from World 1's towers by `WorldLevelGenerator` (2026-11-02, see Recent work), with each world's own robots, boss, backdrop and props. None of it verified in Play mode.
 
 ### Star System
 - 1★ — all robots dead (progress gate)
@@ -810,7 +905,7 @@ unity/Assets/Scripts/
                               through blocks now always die in exactly one hit, any contact.
     BessieAnimal.cs            — vy-18 slam; shockwave 3.6u radius on Ground-tagged landing
     PercyAnimal / WoollyAnimal / DuckyAnimal / HoraceAnimal / GeraldAnimal / BillyAnimal
-                              — Bounce Roll / Wool Balls / Skip Shot / Rear Kick / Feather Bombs / Mud Throw (the three thrown abilities use AbilityProjectile)
+                              — Bounce Roll / Wool Balls / Water Swirls / Horseshoe Throw / Feather Bombs / Mud Throw (the five thrown abilities use AbilityProjectile; Ducky's swirls use its growTo/growTime + burstPush, 2026-11-09)
                               Through respectively; scripted and ready, not yet used in any shipped level
     EggProjectile.cs           — layer 10; flat _damage=15 on first contact only
   Blocks/
@@ -1182,7 +1277,7 @@ paused level environment rather than on a plain title card.
 - Ground collider: `localScale=(60,0.5,1)`, `BoxCollider2D.size=(1,1)` → world collider 60×0.5, top edge at Y=−2.5 (physics-only; visuals are hand-authored scene GOs, not code-generated). Never set both scale AND size to large values.
 - **Effective mass formula:** both dynamic → `(mA × mB) / (mA + mB)`; one static → `movingBody.mass × 0.6`. Damage threshold impulse > 1.5. Damage = `impulse × 1.0` (no multiplier — blocks and robots both use ×1.0).
 - **Robot spawn invincibility:** `RobotEnemy.Initialise()` sets `_invincibleUntil = Time.time + 0.8f`; `OnCollisionEnter2D` returns early while invincible.
-- **Scenery sortingOrder rule:** decorative props (SceneryBuilder) must use `sortingOrder ≤ 1`. Blocks=2, robots=3, FarmCannon=4, CannonSmoke=5, animals=6. Any tie between two of these falls back to camera Z-distance sorting, which has caused multiple real invisible-object bugs in this project (trebuchet-vs-ground, animals-vs-cannon) — always assign a distinct explicit order for anything new.
+- **Scenery sortingOrder rule:** decorative props (SceneryBuilder) must use `sortingOrder ≤ 1`. Blocks=2, robots=3, FarmCannon=4, CannonSmoke=5, animals=6. (Contraptions: hoist crane 1, sunflower/bucket/rope 2.) Any tie between two of these falls back to camera Z-distance sorting, which has caused multiple real invisible-object bugs in this project (trebuchet-vs-ground, animals-vs-cannon) — always assign a distinct explicit order for anything new.
 
 ### Physics Values
 | Entity | mass | bounciness | linearDrag |

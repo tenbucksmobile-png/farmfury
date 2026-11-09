@@ -415,7 +415,8 @@ public class RobotEnemy : MonoBehaviour
     // Live physics (framed levels, 2026-11-08): after the level reveal the robot becomes a light Dynamic body that
     // starts asleep on its perch, so a collapsing structure carries it down; hard landings and debris crush it.
     const float LiveMass = 4f;
-    const float CrushImpulse = 2.5f, SmashImpulse = 6f;   // half / all of its health
+    // Scaled with the slower falls (LiveGravityScale 0.6 -> 0.42 cuts fall speeds ~16%), 2026-11-09: was 2.5 / 6.
+    const float CrushImpulse = 2.1f, SmashImpulse = 5f;   // half / all of its health
     bool _live;
 
     public void Freeze()
@@ -455,6 +456,11 @@ public class RobotEnemy : MonoBehaviour
         // truly falling (Dynamic), further disturbances to whatever's below don't matter — the
         // robot already left its perch.
         if (_rb.bodyType == RigidbodyType2D.Dynamic) return;
+        // Live-physics levels: until GoLive the robot's colliders are switched off (LevelReveal's pop). Going Dynamic
+        // in that window dropped it straight through the ground (PhysicsProbe stress run, 2026-11-09) — GoLive makes
+        // it a real body a moment later anyway.
+        if (SuppressIdleMotion && !_live) return;
+        foreach (var c in GetComponentsInChildren<Collider2D>(true)) c.enabled = true;
         _rb.bodyType = RigidbodyType2D.Dynamic;
 
         // Structural collapse counts as one "fall"-tier hit (its own, weaker category — see the
@@ -647,11 +653,15 @@ public class RobotEnemy : MonoBehaviour
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite       = _deathExplosionSprite;
         sr.sortingOrder = 10;
-        go.transform.position   = transform.position;
-        // Multiplier lowered 1.8 -> 1.1 -> 0.6 -> 0.5 -> briefly 1.5 -> back to 0.5 (2026-07-10,
+        // Sized from the robot's VISIBLE art (2026-11-09, EffectSizing): 1.5x its larger side. The older
+        // localScale x 0.5 rule below dated from 0.6-scale robots; with today's 5.5-7.5 scales it drew a 0.8 u robot's
+        // explosion ~2.7 u across.
+        Vector2 vis = EffectSizing.VisibleSize(_sr, out Vector3 centre);
+        go.transform.position   = new Vector3(centre.x, centre.y, 0f);
+        // (history) Multiplier lowered 1.8 -> 1.1 -> 0.6 -> 0.5 -> briefly 1.5 -> back to 0.5 (2026-07-10,
         // several corrections same day, final explicit request: "change the explosions back to
         // half size smaller"). Matches BlockBase.SpawnExplosion()'s own _explodeSizeMultiplier.
-        float sz = Mathf.Max(transform.localScale.x, transform.localScale.y) * 0.5f;
+        float sz = EffectSizing.ScaleFor(_deathExplosionSprite, Mathf.Clamp(1.5f * Mathf.Max(vis.x, vis.y), 0.6f, 3.2f));
         go.transform.localScale = new Vector3(sz, sz, 1f);
         go.AddComponent<FragmentFader>();
     }

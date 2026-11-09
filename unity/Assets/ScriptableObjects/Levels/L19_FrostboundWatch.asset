@@ -17,48 +17,85 @@ MonoBehaviour:
   parBirds: 2
   world: 2
   isBossLevel: 0
-  referenceFraming: 0
+  referenceFraming: 1
   trimColliders: 0
-  birds: 020000000200000002000000
+  birds: 020000000200000000000000
   blocks:
   - type: 0
-    position: {x: 4.24, y: -2.87}
-    size: {x: 0.721, y: 0.758}
+    position: {x: 7.07, y: -5.025}
+    size: {x: 0.342, y: 1.152}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 12
+    artVariant: 3
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 4.48, y: -2.23}
-    size: {x: 0.721, y: 0.758}
+    position: {x: 8.53, y: -5.025}
+    size: {x: 0.342, y: 1.152}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 12
+    artVariant: 3
     forceStayKinematic: 0
     flipX: 0
   - type: 0
-    position: {x: 4.16, y: -1.54}
-    size: {x: 0.721, y: 0.758}
+    position: {x: 7.8, y: -4.325}
+    size: {x: 1.801, y: 0.251}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 12
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 7.13, y: -3.625}
+    size: {x: 0.342, y: 1.152}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 8.47, y: -3.625}
+    size: {x: 0.342, y: 1.152}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 7.8, y: -2.925}
+    size: {x: 1.681, y: 0.251}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
     forceStayKinematic: 0
     flipX: 0
   robots:
-  - robotType: 1
-    position: {x: 4.9, y: -4.48}
-    scale: {x: 6.329, y: 5.325}
-  - robotType: 1
-    position: {x: 5.03, y: -2.88}
-    scale: {x: 6.329, y: 5.325}
-  - robotType: 1
-    position: {x: 5.92, y: -5.31}
-    scale: {x: 6.329, y: 5.325}
+  - robotType: 0
+    position: {x: 7.8, y: -5.063}
+    scale: {x: 4.4, y: 4.4}
+  - robotType: 0
+    position: {x: 7.8, y: -3.663}
+    scale: {x: 4.4, y: 4.4}
+  - robotType: 0
+    position: {x: 7.8, y: -2.263}
+    scale: {x: 4.4, y: 4.4}
   platforms: []
+  weather: 5
+  gadgets:
+  - type: 2
+    position: {x: 5.9, y: -5.6}
+    size: 1.5
+    ropeLength: 0
+    faceLeft: 0

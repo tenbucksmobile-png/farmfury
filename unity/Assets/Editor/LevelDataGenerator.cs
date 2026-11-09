@@ -141,54 +141,13 @@ public static partial class LevelDataGenerator
         // out by visible edges). Designed in tools/design_world1.py, which writes LevelDataGenerator.World1.cs.
         MakeWorld1Rebuilt(folder);
 
-        // ── W2_L01  Frostbound Watch (Level 19 — World 2's first level) ─────────
-        // Added 2026-07-26, user request: "wire the first ice harvestor robot and pig card...
-        // this is for level 19". The MatchUp screen art itself (Matchup_W2.png backdrop, Percy/
-        // IceHarvestor_card.png cards, VS.png, 3-2-1-ready countdown) was already wired world-wide
-        // back on 2026-07-19 (SceneSetup.WireWorld2MatchUpCards/WireMatchUpCards) — it applies to
-        // every World 2 level by RobotType/AnimalType, not per-level. But MatchUpScreen.Show()
-        // falls back to a plain "COMING SOON" screen for any level index with no LevelData asset,
-        // and World 2 had zero real levels until now — so none of that wiring was actually
-        // reachable in-game. GameManager auto-discovers LevelData purely by filename sort order;
-        // "L19_..." sorts right after World 1's "L18_...", landing at
-        // World2MapController.GlobalIndexOffset (=18), i.e. World 2's local index 0 / the game's
-        // "Level 19". Percy (pig) is the animal the GDD introduces for World 2 (see CLAUDE.md's
-        // animal table); robot is a single IceHarvestorRobot — RobotType.Harvester + world=2 routes
-        // to the IceHarvestorRobot prefab, not W1's HarvesterRobot (see LevelLoader.SpawnRobot) —
-        // per the explicit "first ice harvestor robot" request, one robot only.
-        //
-        // Real hand-authored layout, replacing the earlier coordinate-math placeholder — dumped
-        // 2026-07-26 via LevelLayoutDumper from the user's own Scene view build (see
-        // unity/Logs/level_layout_dump.txt), after fixing a dumper bug that was silently
-        // skipping/misclassifying World 2's "Harvestor"/"Glacier"-spelled robots (see CLAUDE.md's
-        // Recent major work entry). Blocks use BlockType.Wood with the sprite-inferred artVariant
-        // (Block/Vertical/Auto) — WoodBlock has no dedicated "_sprBlock" field wired, so the Block
-        // variant falls back to WoodBlock's own "normal" slot, which for a world=2 level resolves
-        // to the Ice_block.png reskin (see BlockBase.Initialise()'s world-aware fallback chain),
-        // so this still renders as ice despite the BlockType.Wood/"Wood..." sprite names in the
-        // dump comments.
-        // RE-DUMPED 2026-08-09 (fresh Scene view pass) — replaces the above 6-block/3-robot layout
-        // with a simpler 3-block/3-robot one (3 stacked ice blocks, 3 IceHarvestorRobot instances
-        // all detected as RobotType.Harvester — no Glacier-tier robot placed this time). Not yet
-        // visually re-verified in Play mode (no Play-mode access here).
-        Make(folder, "L19_FrostboundWatch",
-            id: "W2_L01", name: "Frostbound Watch", par: 2,
-            birds: new[] { AnimalType.Percy, AnimalType.Percy, AnimalType.Percy },
-            blocks: new[]
-            {
-                B(BlockType.Wood, 4.24f, -2.87f, 0.721f, 0.758f, artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
-                B(BlockType.Wood, 4.48f, -2.23f, 0.721f, 0.758f, artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
-                B(BlockType.Wood, 4.16f, -1.54f, 0.721f, 0.758f, artVariant: WoodArtVariant.Block), // sprite 'WoodBlock_0'
-            },
-            robots: new[]
-            {
-                R(4.9f,  -4.48f, 6.329f, 5.325f, RobotType.Harvester), // sprite 'IceHarvestor_left'
-                R(5.03f, -2.88f, 6.329f, 5.325f, RobotType.Harvester), // sprite 'IceHarvestor_left'
-                R(5.92f, -5.31f, 6.329f, 5.325f, RobotType.Harvester), // sprite 'IceHarvestor_left'
-            },
-            world: 2);
+        // ── World 2 (Frozen Tundra) W2_L01 - W2_L22 ─────────────────────────────────────────────────────
+        // Rebuilt 2026-11-09 on the World 1 template (framed, live physics, frozen mounts/contraptions, the Frost
+        // Tyrant boss). Designed in tools/design_world2.py, which writes LevelDataGenerator.World2.cs. Level 1 keeps
+        // its L19_FrostboundWatch file and W2_L01 id (save progress is keyed by levelId); the rest keep W2_LNN ids.
+        MakeWorld2Framed(folder);
 
-        // Worlds 2-9 (2026-11-02): built from the World 1 towers above — see WorldLevelGenerator.
+        // Worlds 3-9 (2026-11-02): built from the World 1 towers above — see WorldLevelGenerator (World 2 is designed).
         WorldLevelGenerator.GenerateAll();
 
         AssetDatabase.SaveAssets();
@@ -221,7 +180,9 @@ public static partial class LevelDataGenerator
         int world = 1,
         bool isBoss = false,
         bool referenceFraming = false,
-        LevelData.PlatformSpawnData[] platforms = null)
+        LevelData.PlatformSpawnData[] platforms = null,
+        LevelWeather weather = LevelWeather.Golden,
+        LevelData.GadgetSpawnData[] gadgets = null)
     {
         string path = $"{folder}/{filename}.asset";
         if (AssetDatabase.LoadAssetAtPath<LevelData>(path) != null)
@@ -238,6 +199,8 @@ public static partial class LevelDataGenerator
         asset.isBossLevel = isBoss;
         asset.referenceFraming = referenceFraming;
         asset.platforms   = platforms ?? new LevelData.PlatformSpawnData[0];
+        asset.weather     = weather;
+        asset.gadgets     = gadgets ?? new LevelData.GadgetSpawnData[0];
 
         AssetDatabase.CreateAsset(asset, path);
         Debug.Log($"[FarmFury] Created {path}");
@@ -266,6 +229,9 @@ public static partial class LevelDataGenerator
 
     static LevelData.PlatformSpawnData P(float x, float surfaceY, float width, int variant = 0, bool rolling = false) =>
         new LevelData.PlatformSpawnData { x = x, surfaceY = surfaceY, width = width, variant = variant, rolling = rolling };
+
+    static LevelData.GadgetSpawnData Gd(GadgetType type, float x, float y, float size, float ropeLength = 0f, bool faceLeft = false) =>
+        new LevelData.GadgetSpawnData { type = type, position = new Vector2(x, y), size = size, ropeLength = ropeLength, faceLeft = faceLeft };
 
     static LevelData.RobotSpawnData R(float x, float y, float scaleX = 0f, float scaleY = 0f,
                                       RobotType robotType = RobotType.Basic) =>

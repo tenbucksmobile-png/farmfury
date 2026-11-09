@@ -19,7 +19,7 @@ MonoBehaviour:
   isBossLevel: 0
   referenceFraming: 0
   trimColliders: 1
-  birds: 05000000050000000500000005000000
+  birds: 050000000500000005000000
   blocks:
   - type: 3
     position: {x: 0.24999905, y: -5.645}
@@ -121,8 +121,68 @@ MonoBehaviour:
     artVariant: 2
     forceStayKinematic: 0
     flipX: 0
+  - type: 0
+    position: {x: 6.4629993, y: -2.79}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 7.6829996, y: -2.79}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 6.9799995, y: -2.091}
+    size: {x: 1.674, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 6.522999, y: -1.49}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 7.622999, y: -1.49}
+    size: {x: 1, y: 1.188}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 6.9839993, y: -0.791}
+    size: {x: 1.54, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
   robots:
-  - robotType: 1
+  - robotType: 0
     position: {x: 7.0269995, y: -6.05}
     scale: {x: 7.5, y: 7.5}
   - robotType: 0
@@ -131,4 +191,9 @@ MonoBehaviour:
   - robotType: 2
     position: {x: 7.0269995, y: -2.85}
     scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 7.0269995, y: -0.25}
+    scale: {x: 5.5, y: 5.5}
   platforms: []
+  weather: 0
+  gadgets: []

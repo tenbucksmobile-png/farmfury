@@ -1,0 +1,139 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1966708deffe45949832dc573867a129, type: 3}
+  m_Name: W02_L09_Avalanche
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelId: W2_L09
+  levelName: Avalanche
+  parBirds: 3
+  world: 2
+  isBossLevel: 0
+  referenceFraming: 1
+  trimColliders: 0
+  birds: 020000000200000003000000
+  blocks:
+  - type: 1
+    position: {x: 8.6, y: -4.8}
+    size: {x: 0.42, y: 1.6}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 11, y: -4.8}
+    size: {x: 0.42, y: 1.6}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 9.8, y: -3.85}
+    size: {x: 2.802, y: 0.301}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 12
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 8.87, y: -3.125}
+    size: {x: 0.342, y: 1.152}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 10.73, y: -3.125}
+    size: {x: 0.342, y: 1.152}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 9.8, y: -2.425}
+    size: {x: 2.201, y: 0.251}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 9.02, y: -1.725}
+    size: {x: 0.342, y: 1.152}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 10.58, y: -1.725}
+    size: {x: 0.342, y: 1.152}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 9.8, y: -1.025}
+    size: {x: 1.901, y: 0.251}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  robots:
+  - robotType: 1
+    position: {x: 9.8, y: -5.05}
+    scale: {x: 7.5, y: 7.5}
+  - robotType: 0
+    position: {x: 9.8, y: -3.163}
+    scale: {x: 4.4, y: 4.4}
+  - robotType: 0
+    position: {x: 9.8, y: -0.363}
+    scale: {x: 4.4, y: 4.4}
+  - robotType: 0
+    position: {x: 12.4, y: -5.063}
+    scale: {x: 4.4, y: 4.4}
+  platforms:
+  - x: 6.4
+    surfaceY: -1.2
+    width: 3
+    variant: 0
+    rolling: 0
+  weather: 5
+  gadgets:
+  - type: 3
+    position: {x: 7.4, y: -1.2}
+    size: 1.1
+    ropeLength: 0
+    faceLeft: 0

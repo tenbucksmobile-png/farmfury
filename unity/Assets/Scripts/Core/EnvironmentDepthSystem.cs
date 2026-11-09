@@ -52,6 +52,29 @@ public class EnvironmentDepthSystem : MonoBehaviour
     [SerializeField] Sprite _sprCornSilhouetteR;
     [SerializeField] Sprite _sprFlybyPlane;   // SkyFlyby: biplane (MeadowRuins/Plane.png)
     [SerializeField] Sprite _sprFlybyDrone;   // SkyFlyby: robot scout drone (Stampede Robots/Drone.png)
+    // Depth + weather (2026-11-09, tools/import_cornfield_art.py --ambience, Kling art in Cornfield/Ambience/):
+    //   Ridges = CornRidges.png  distant sandstone bluffs with a ruined tower, haze baked in, tiled, far parallax
+    //   Hills  = CornHills.png   wooded hills with a water tower and farmhouse, lightly hazed, tiled, mid parallax
+    //   Clouds = Cloud_0..2.png  drifting sky clouds (CornfieldAmbience)
+    //   WindSway material = FarmFury/WindSway shader: the corn strips and silhouettes bend in the wind
+    [SerializeField] Sprite _sprCornRidges;
+    [SerializeField] Sprite _sprCornHills;
+    [SerializeField] Sprite[] _sprClouds;
+    [SerializeField] Material _windSwayMaterial;
+
+    // World 2 Frozen Tundra framed stack (2026-11-09): the same layers as the cornfield, frozen. Art in
+    // Sprites/Environment/Frozen/ (tools/import_frozen_art.py; Kling, magenta-keyed); the far layer is World 2's
+    // existing aurora painting (ParallaxFarHills_W2.png, pure night sky — anchored at its bottom edge).
+    //   Ridges = FrozenRidges.png  glaciers + a frozen watchtower ruin    Hills = FrozenHills.png  frozen farm hills
+    //   Mid    = FrozenMid.png     frozen field band                     Wall  = FrozenWall.png   frozen corn
+    //   Soil   = FrozenSoil.png    snow lip over frozen earth            Silhouettes = FrozenSilhouetteL/R.png (navy)
+    [SerializeField] Sprite _sprFrozenRidges;
+    [SerializeField] Sprite _sprFrozenHills;
+    [SerializeField] Sprite _sprFrozenMid;
+    [SerializeField] Sprite _sprFrozenWall;
+    [SerializeField] Sprite _sprFrozenSoil;
+    [SerializeField] Sprite _sprFrozenSilhouetteL;
+    [SerializeField] Sprite _sprFrozenSilhouetteR;
 
     // Tunable per-layer reveal bands — the fraction (0-1) of EACH painting's own local UV height
     // that stays visible before the shader clips the rest to transparent. Exposed as live
@@ -159,12 +182,44 @@ public class EnvironmentDepthSystem : MonoBehaviour
         _currentWorld = data != null ? data.world : 1;
         // Framed World 1 levels pin the painted meadow to the shared ground line (ReferenceFraming) instead of
         // centring the paintings on the camera, so the scenery, blocks and painted grass all meet at one line.
-        _groundAnchored = ReferenceFraming.Active(data) && _currentWorld == 1;
+        _groundAnchored = ReferenceFraming.Active(data) && (_currentWorld == 1 || (_currentWorld == 2 && FrozenReady));
         _groundAnchorY  = _groundAnchored ? ReferenceFraming.GroundY(data) : 0f;
         _parallaxOriginPending = true;   // the launcher parks the camera after this handler; capture it next frame
+        _weather = data != null ? data.weather : LevelWeather.Golden;
         ApplyWorldLayers();
         RescaleToCamera();
         if (_flyby != null) _flyby.ResetSchedule();
+        if (_ambience != null && CornfieldActive) _ambience.Apply(_weather, _groundAnchorY);
+        ApplyWeatherTints();
+    }
+
+    LevelWeather _weather;
+    CornfieldAmbience.Profile Weather => _ambience != null ? _ambience.Current : CornfieldAmbience.For(_weather);
+
+    // Colour grade of the painted layers for the level's weather (CornfieldAmbience profiles). Cornfield only: the
+    // older stacks keep their plain colours.
+    void ApplyWeatherTints()
+    {
+        bool corn = CornfieldActive;
+        var p = CornfieldAmbience.For(_weather);
+        Color sky = corn ? p.sky : Color.white, land = corn ? p.land : Color.white;
+        var far = _farHills != null ? _farHills.GetComponent<SpriteRenderer>() : null;
+        if (far != null) far.color = sky;
+        if (!corn) return;
+        TintStrip(_cornRidges, sky * new Color(1f, 1f, 1f, 1f));
+        TintStrip(_cornHills, land);
+        TintStrip(_cornMid, land);
+        TintStrip(_cornWall, ThemeWallTint * land);
+        TintStrip(_cornSoil, Color.Lerp(Color.white, land, 0.7f));
+        if (_soilUnderfill != null) _soilUnderfill.color = SoilUnderfill * Color.Lerp(Color.white, land, 0.7f);
+    }
+
+    static void TintStrip(Strip s, Color c)
+    {
+        if (s == null) return;
+        c.a = 1f;
+        s.tint = c;
+        foreach (var t in s.tiles) if (t != null) t.color = c;
     }
 
     // Swaps FarHills/Midground to the current world's art + clip band, and shows/hides the
@@ -197,7 +252,7 @@ public class EnvironmentDepthSystem : MonoBehaviour
         SetCornStripsActive(corn);
         if (corn)
         {
-            SetLayerSprite(_farHills, _sprCornFar);
+            SetLayerSprite(_farHills, ThemeFar);
             ApplyClip(_farHills, 1f);
             if (_midground  != null) _midground.gameObject.SetActive(false);
             if (_foreground != null) _foreground.gameObject.SetActive(false);
@@ -303,6 +358,11 @@ public class EnvironmentDepthSystem : MonoBehaviour
     // blocks so it doesn't compete with them (framework B7: nothing behind the structures that competes).
     static readonly Color CornWallTint = new Color(0.80f, 0.84f, 0.74f, 1f);
     const float SilhouetteParallax  = -0.3f;
+    // Landform layers (2026-11-09): bottoms tucked behind the mid corn and the mist band (their art fades out there).
+    const float RidgesHeight = 4.4f, RidgesBase = 3.0f, RidgesParallax = 0.85f;   // tops ≈0.58 sh
+    const float HillsHeight  = 3.3f, HillsBase  = 2.7f, HillsParallax  = 0.70f;   // tops ≈0.50 sh
+    const int RidgesOrder = -37;   // behind the haze veil (-35): hazed like the far painting
+    const int HillsOrder  = -33;   // in front of the veil, behind the mist (-32) and mid corn (-30)
 
     const int CornMidOrder  = -30;   // FarHills -40 < haze veil -35 < mist -32 < mid corn -30
     const int CornMistOrder = -32;
@@ -317,40 +377,96 @@ public class EnvironmentDepthSystem : MonoBehaviour
         public float factor;
         public int order;
         public Color tint = Color.white;
+        public Material material;
         public readonly System.Collections.Generic.List<SpriteRenderer> tiles = new();
     }
 
-    Strip _cornMid, _cornWall, _cornSoil;
+    Strip _cornMid, _cornWall, _cornSoil, _cornRidges, _cornHills;
     SpriteRenderer _soilUnderfill, _silLeft, _silRight;
     SkyFlyby _flyby;
+    CornfieldAmbience _ambience;
     Transform _cornRoot;
     bool _parallaxOriginPending;
     Vector3 _parallaxOrigin;
 
+    // The framed stack's art for the current world: World 1 cornfield, World 2 frozen (2026-11-09).
+    bool Frozen => _currentWorld == 2;
+    bool FrozenReady => _sprFarHillsW2 != null && _sprFrozenMid != null && _sprFrozenWall != null && _sprFrozenSoil != null;
+    Sprite ThemeFar    => Frozen ? _sprFarHillsW2        : _sprCornFar;
+    Sprite ThemeMid    => Frozen ? _sprFrozenMid         : _sprCornMid;
+    Sprite ThemeWall   => Frozen ? _sprFrozenWall        : _sprCornWall;
+    Sprite ThemeSoil   => Frozen ? _sprFrozenSoil        : _sprCornSoil;
+    Sprite ThemeRidges => Frozen ? _sprFrozenRidges      : _sprCornRidges;
+    Sprite ThemeHills  => Frozen ? _sprFrozenHills       : _sprCornHills;
+    Sprite ThemeSilL   => Frozen ? _sprFrozenSilhouetteL : _sprCornSilhouetteL;
+    Sprite ThemeSilR   => Frozen ? _sprFrozenSilhouetteR : _sprCornSilhouetteR;
+    // The aurora painting is all sky: its bottom edge sits behind the mid band (DistantBarn's barns sit at 0.052).
+    float ThemeFarAnchorUV  => Frozen ? 0f : CornFarAnchorUV;
+    float ThemeSoilGroundUV => Frozen ? FrozenSoilGroundUV : CornSoilGroundUV;
+    Color ThemeWallTint     => Frozen ? FrozenWallTint : CornWallTint;
+    const float FrozenSoilGroundUV = 0.851f;   // snow lip in FrozenSoil.png, from the bottom (measured)
+    static readonly Color FrozenWallTint = new Color(0.82f, 0.88f, 0.98f, 1f);
+    // Frozen stalks are stiff: they barely sway.
+    float SwayMid  => Frozen ? 0.025f : 0.07f;
+    float SwayWall => Frozen ? 0.045f : 0.13f;
+    float SwaySil  => Frozen ? 0.08f  : 0.22f;
+    int _builtWorld = -1;
+
     bool CornfieldActive =>
-        _groundAnchored && _currentWorld == 1 &&
-        _sprCornFar != null && _sprCornMid != null && _sprCornWall != null && _sprCornSoil != null;
+        _groundAnchored && (_currentWorld == 1 || _currentWorld == 2) &&
+        ThemeFar != null && ThemeMid != null && ThemeWall != null && ThemeSoil != null;
 
     void SetCornStripsActive(bool on)
     {
+        // A different world's framed stack: tear the old one down and build this world's.
+        if (on && _cornRoot != null && _builtWorld != _currentWorld)
+        {
+            Destroy(_cornRoot.gameObject);
+            _cornRoot = null;
+            _cornMid = _cornWall = _cornSoil = _cornRidges = _cornHills = null;
+            _soilUnderfill = _silLeft = _silRight = null;
+            _ambience = null;
+            _flyby = null;
+        }
         if (on && _cornRoot == null)
         {
+            _builtWorld = _currentWorld;
             _cornRoot = new GameObject("Cornfield").transform;
             _cornRoot.SetParent(transform, false);
-            _cornMid  = MakeStrip("Corn_Mid",  _sprCornMid,  CornMidParallax, CornMidOrder);
-            _cornWall = MakeStrip("Corn_Wall", _sprCornWall, 0f,              CornWallOrder);
-            _cornWall.tint = CornWallTint;
-            _cornSoil = MakeStrip("Corn_Soil", _sprCornSoil, 0f,              CornSoilOrder);
+            _cornRidges = MakeStrip("Corn_Ridges", ThemeRidges, RidgesParallax, RidgesOrder);
+            _cornHills  = MakeStrip("Corn_Hills",  ThemeHills,  HillsParallax,  HillsOrder);
+            _cornMid  = MakeStrip("Corn_Mid",  ThemeMid,  CornMidParallax, CornMidOrder);
+            _cornMid.material = SwayMaterial(SwayMid);
+            _cornWall = MakeStrip("Corn_Wall", ThemeWall, 0f,              CornWallOrder);
+            _cornWall.material = SwayMaterial(SwayWall);
+            _cornWall.tint = ThemeWallTint;
+            _cornSoil = MakeStrip("Corn_Soil", ThemeSoil, 0f,              CornSoilOrder);
             _soilUnderfill = MakeChildRenderer(_cornRoot, "Corn_SoilUnderfill", MakeSolidSprite(), CornSoilOrder);
             _soilUnderfill.color = SoilUnderfill;
-            _silLeft  = MakeChildRenderer(_cornRoot, "Corn_SilhouetteLeft",  _sprCornSilhouetteL, SilhouetteOrder);
-            _silRight = MakeChildRenderer(_cornRoot, "Corn_SilhouetteRight", _sprCornSilhouetteR, SilhouetteOrder);
+            _silLeft  = MakeChildRenderer(_cornRoot, "Corn_SilhouetteLeft",  ThemeSilL, SilhouetteOrder);
+            _silRight = MakeChildRenderer(_cornRoot, "Corn_SilhouetteRight", ThemeSilR, SilhouetteOrder);
+            var silMat = SwayMaterial(SwaySil);
+            if (silMat != null) { _silLeft.sharedMaterial = silMat; _silRight.sharedMaterial = silMat; }
+            var amb = new GameObject("Ambience");
+            amb.transform.SetParent(_cornRoot, false);
+            _ambience = amb.AddComponent<CornfieldAmbience>();
+            _ambience.Init(_cam, _sprClouds);
             var fly = new GameObject("SkyFlyby");
             fly.transform.SetParent(_cornRoot, false);
             _flyby = fly.AddComponent<SkyFlyby>();
             _flyby.Init(_cam, _sprFlybyPlane, _sprFlybyDrone);
         }
         if (_cornRoot != null) _cornRoot.gameObject.SetActive(on);
+    }
+
+    // A copy of the wired WindSway material per layer (each bends by its own amount). Null without the material:
+    // the strip then draws with the default sprite material, unswayed.
+    Material SwayMaterial(float amount)
+    {
+        if (_windSwayMaterial == null) return null;
+        var m = new Material(_windSwayMaterial);
+        m.SetFloat("_SwayAmount", amount);
+        return m;
     }
 
     Strip MakeStrip(string name, Sprite sprite, float factor, int order)
@@ -377,14 +493,17 @@ public class EnvironmentDepthSystem : MonoBehaviour
         float g = _groundAnchorY;
         float camBottom = c.y - camH * 0.5f;
 
+        // Landforms behind the corn: far bluffs, then nearer wooded hills; their faded bottoms sink into the mist.
+        LayoutStrip(_cornRidges, RidgesHeight, g + RidgesBase, c, camW);
+        LayoutStrip(_cornHills,  HillsHeight,  g + HillsBase,  c, camW);
         // Mid corn: bottom just under the ground line, drifting with the camera.
         LayoutStrip(_cornMid, CornMidHeight, g - CornMidSink, c, camW);
         // Corn wall at play depth.
         LayoutStrip(_cornWall, CornWallHeight, g - CornWallSink, c, camW);
         // Soil: fixed size from the parked camera (no rescaling while the camera follows a shot), grass line on g.
         float restBottom = _parallaxOrigin.y - camH * 0.5f;
-        float soilH = Mathf.Max(CornSoilMinBelow, g - restBottom + 0.6f) / CornSoilGroundUV;
-        float soilBottom = g - soilH * CornSoilGroundUV;
+        float soilH = Mathf.Max(CornSoilMinBelow, g - restBottom + 0.6f) / ThemeSoilGroundUV;
+        float soilBottom = g - soilH * ThemeSoilGroundUV;
         LayoutStrip(_cornSoil, soilH, soilBottom, c, camW);
         // Flat soil colour below the strip when the camera dips under the ground following a shot.
         float fillTop = soilBottom + 0.05f;
@@ -428,6 +547,7 @@ public class EnvironmentDepthSystem : MonoBehaviour
         {
             var sr = MakeChildRenderer(s.root, $"Tile{s.tiles.Count}", s.sprite, s.order);
             sr.color = s.tint;
+            if (s.material != null) sr.sharedMaterial = s.material;
             s.tiles.Add(sr);
         }
         float y = bottomY + height * 0.5f - b.center.y * scale;
@@ -477,7 +597,9 @@ public class EnvironmentDepthSystem : MonoBehaviour
         Vector3 c = _cam.transform.position;
 
         _hazeVeil.enabled = true;
-        _hazeVeil.color = new Color(HazeColour.r, HazeColour.g, HazeColour.b, HazeVeilAlpha);
+        var wp = Weather;
+        Color hazeCol = corn ? wp.haze : HazeColour;
+        _hazeVeil.color = new Color(hazeCol.r, hazeCol.g, hazeCol.b, corn ? wp.hazeAlpha : HazeVeilAlpha);
         _hazeVeil.transform.position = new Vector3(c.x, c.y, 0f);
         _hazeVeil.transform.localScale = new Vector3(camW * 1.05f, camH * 1.05f, 1f);
 
@@ -493,7 +615,7 @@ public class EnvironmentDepthSystem : MonoBehaviour
         _mistBand.sortingOrder = corn ? CornMistOrder : MistOrder;
         float h = MistHeightSh * camH;
         _mistBand.enabled = true;
-        _mistBand.color = new Color(HazeColour.r, HazeColour.g, HazeColour.b, MistAlpha);
+        _mistBand.color = new Color(hazeCol.r, hazeCol.g, hazeCol.b, corn ? wp.mistAlpha : MistAlpha);
         _mistBand.transform.position = new Vector3(c.x, bandTop + h * 0.08f, 0f);   // densest just under the seam
         _mistBand.transform.localScale = new Vector3(camW * 1.05f, h, 1f);
     }
@@ -556,8 +678,8 @@ public class EnvironmentDepthSystem : MonoBehaviour
             // only the width and the top of the screen need covering.
             float anchorY = _groundAnchorY - CornMidSink + CornMidHeight * 0.8f;
             float camTop = camPos.y + camH * 0.5f;
-            scale = Mathf.Max(camW / native.x, (camTop - anchorY) / ((1f - CornFarAnchorUV) * native.y));
-            centreY = anchorY + (0.5f - CornFarAnchorUV) * scale * native.y;
+            scale = Mathf.Max(camW / native.x, (camTop - anchorY) / ((1f - ThemeFarAnchorUV) * native.y));
+            centreY = anchorY + (0.5f - ThemeFarAnchorUV) * scale * native.y;
         }
         else if (_groundAnchored)
         {

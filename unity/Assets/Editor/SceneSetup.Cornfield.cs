@@ -19,6 +19,95 @@ public static partial class SceneSetup
         WireCornfieldSprite(eds, "_sprCornSilhouetteR", "CornSilhouetteR.png", opaque: false);
         WireCornfieldSprite(eds, "_sprFlybyPlane", "FlybyPlane.png", opaque: false);
         WireCornfieldSprite(eds, "_sprFlybyDrone", "FlybyDrone.png", opaque: false);
+        // Depth + weather (2026-11-09): landform layers, clouds, wind-sway material.
+        WireCornfieldSprite(eds, "_sprCornRidges", "CornRidges.png", opaque: false);
+        WireCornfieldSprite(eds, "_sprCornHills",  "CornHills.png",  opaque: false);
+        var clouds = eds.FindProperty("_sprClouds");
+        if (clouds != null)
+        {
+            var list = new System.Collections.Generic.List<Sprite>();
+            for (int i = 0; i < 8; i++)
+            {
+                if (AssetImporter.GetAtPath($"{CornfieldFolder}/Cloud_{i}.png") == null) break;
+                var sp = LoadCornfieldSprite($"Cloud_{i}.png", opaque: false);
+                if (sp != null) list.Add(sp);
+            }
+            clouds.arraySize = list.Count;
+            for (int i = 0; i < list.Count; i++) clouds.GetArrayElementAtIndex(i).objectReferenceValue = list[i];
+            Debug.Log($"[FarmFury] Cornfield: {list.Count} clouds wired");
+        }
+        var sway = eds.FindProperty("_windSwayMaterial");
+        if (sway != null) sway.objectReferenceValue = EnsureWindSwayMaterial();
+
+        // World 2 Frozen Tundra framed stack (2026-11-09, tools/import_frozen_art.py).
+        WireFrozenSprite(eds, "_sprFrozenRidges", "FrozenRidges.png");
+        WireFrozenSprite(eds, "_sprFrozenHills",  "FrozenHills.png");
+        WireFrozenSprite(eds, "_sprFrozenMid",    "FrozenMid.png");
+        WireFrozenSprite(eds, "_sprFrozenWall",   "FrozenWall.png");
+        WireFrozenSprite(eds, "_sprFrozenSoil",   "FrozenSoil.png");
+        WireFrozenSprite(eds, "_sprFrozenSilhouetteL", "FrozenSilhouetteL.png");
+        WireFrozenSprite(eds, "_sprFrozenSilhouetteR", "FrozenSilhouetteR.png");
+    }
+
+    const string FrozenFolder = "Assets/Sprites/Environment/Frozen";
+
+    static void WireFrozenSprite(SerializedObject so, string field, string file)
+    {
+        var sp = LoadSpriteAt($"{FrozenFolder}/{file}", opaque: false);
+        var prop = so.FindProperty(field);
+        if (sp != null && prop != null) { prop.objectReferenceValue = sp; Debug.Log($"[FarmFury] Frozen: {field} -> {file}"); }
+    }
+
+    // Assets/Materials/WindSway.mat (FarmFury/WindSway shader) — an asset so the shader ships in builds;
+    // EnvironmentDepthSystem copies it per layer with its own sway amount.
+    static Material EnsureWindSwayMaterial()
+    {
+        const string path = "Assets/Materials/WindSway.mat";
+        var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (mat != null) return mat;
+        var shader = Shader.Find("FarmFury/WindSway");
+        if (shader == null) { Debug.LogWarning("[FarmFury] FarmFury/WindSway shader missing"); return null; }
+        mat = new Material(shader);
+        AssetDatabase.CreateAsset(mat, path);
+        Debug.Log($"[FarmFury] Created {path}");
+        return mat;
+    }
+
+    // Contraption art on the LevelLoader (2026-11-09): sunflower + seed, hay hoist crane + bucket.
+    static void WireGadgetSprites(SerializedObject loader)
+    {
+        (string field, string file)[] map =
+        {
+            ("_sunflowerSprite", "Sunflower.png"), ("_sunflowerSeedSprite", "SunflowerSeed.png"),
+            ("_hoistCraneSprite", "HoistCrane.png"), ("_hoistBucketSprite", "HoistBucket.png"),
+        };
+        foreach (var (field, file) in map)
+        {
+            var prop = loader.FindProperty(field);
+            if (prop != null) prop.objectReferenceValue = LoadCornfieldSprite(file, opaque: false);
+        }
+        // World 2 contraptions (2026-11-09).
+        (string field, string path)[] w2 =
+        {
+            ("_iceCrystalSprite",   "Assets/Sprites/Environment/World2Props/IceCrystals.png"),
+            ("_iceShardSprite",     "Assets/Sprites/Environment/World2Props/IceSpire.png"),
+            ("_frozenCraneSprite",  $"{FrozenFolder}/FrozenCrane.png"),
+            ("_iceBlockLoadSprite", "Assets/Sprites/Environment/World2Props/IceBlock.png"),
+            ("_iceBoulderSprite",   "Assets/Sprites/Environment/World2Props/IceBoulder.png"),
+        };
+        foreach (var (field, path) in w2)
+        {
+            var prop = loader.FindProperty(field);
+            // World2Props art is also hand-placed in Scenery_World2: load it as imported (re-importing at another PPU
+            // would resize those scene props). Only our own Frozen/ art gets the strip import settings.
+            if (prop != null) prop.objectReferenceValue = path.StartsWith(FrozenFolder)
+                ? LoadSpriteAt(path, opaque: false) : AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+        // Boss drop-in ship (every world's boss level).
+        const string ship = "Assets/Sprites/Environment/BossMothership.png";
+        EnsureSingleSprite(ship, 100);
+        var shipProp = loader.FindProperty("_mothershipSprite");
+        if (shipProp != null) shipProp.objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(ship);
     }
 
     static void WirePlatformSprites(SerializedObject loader)
@@ -30,9 +119,17 @@ public static partial class SceneSetup
         arr.arraySize = files.Length;
         for (int i = 0; i < files.Length; i++)
             arr.GetArrayElementAtIndex(i).objectReferenceValue = LoadCornfieldSprite(files[i], opaque: false);
+        // World 2 mounts (2026-11-09), same slots: floe, floe, floe, ice pillar, frosted scaffold, sled, snow ramp.
+        var w2 = loader.FindProperty("_platformSpritesW2");
+        if (w2 == null) return;
+        string[] filesW2 = { "Mount_Floe.png", "Mount_Floe.png", "Mount_Floe.png", "Mount_IcePillar.png", "Mount_FrostScaffold.png", "Mount_Sled.png", "Mount_SnowRamp.png" };
+        w2.arraySize = filesW2.Length;
+        for (int i = 0; i < filesW2.Length; i++)
+            w2.GetArrayElementAtIndex(i).objectReferenceValue = LoadSpriteAt($"{FrozenFolder}/{filesW2[i]}", opaque: false);
     }
 
-    // Thrown-ability art (AbilityProjectile, 2026-11-08): Gerald's feather bombs, Woolly's wool balls, Billy's mud.
+    // Thrown-ability art (AbilityProjectile, 2026-11-08): Gerald's feather bombs, Woolly's wool balls, Billy's mud,
+    // Ducky's water swirls (2026-11-09).
     // Sprites are made by tools/import_ability_badges.py into Assets/Sprites/Abilities.
     static void WireAbilityProjectiles()
     {
@@ -40,6 +137,8 @@ public static partial class SceneSetup
         WireAnimalSprites("GeraldAnimal", typeof(GeraldAnimal), ("_bombSprite", art + "FeatherBomb.png"), ("_burstSprite", art + "FeatherBurst.png"));
         WireAnimalSprites("WoollyAnimal", typeof(WoollyAnimal), ("_woolBallSprite", art + "WoolBall.png"));
         WireAnimalSprites("BillyAnimal",  typeof(BillyAnimal),  ("_mudBallSprite", art + "MudBall.png"), ("_mudSplatSprite", art + "MudSplat.png"));
+        WireAnimalSprites("DuckyAnimal",  typeof(DuckyAnimal),  ("_swirlSprite", art + "WaterSwirl.png"));   // 2026-11-09
+        WireAnimalSprites("HoraceAnimal", typeof(HoraceAnimal), ("_horseshoeSprite", art + "Horseshoe.png")); // 2026-11-09
     }
 
     static void WireAnimalSprites(string prefabName, System.Type type, params (string field, string path)[] sprites)
@@ -90,9 +189,10 @@ public static partial class SceneSetup
         Debug.Log($"[FarmFury] Cornfield: {field} -> {file}");
     }
 
-    static Sprite LoadCornfieldSprite(string file, bool opaque)
+    static Sprite LoadCornfieldSprite(string file, bool opaque) => LoadSpriteAt($"{CornfieldFolder}/{file}", opaque);
+
+    static Sprite LoadSpriteAt(string path, bool opaque)
     {
-        string path = $"{CornfieldFolder}/{file}";
         if (AssetImporter.GetAtPath(path) is TextureImporter imp)
         {
             bool dirty = false;

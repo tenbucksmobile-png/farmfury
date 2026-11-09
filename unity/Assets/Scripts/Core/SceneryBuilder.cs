@@ -85,7 +85,7 @@ public class SceneryBuilder : MonoBehaviour
     void OnLevelStarted(LevelData data)
     {
         int world = data != null ? data.world : 1;
-        BuildForLevel(GameManager.Instance?.CurrentLevelIndex ?? 0, world);
+        BuildForLevel(GameManager.Instance?.CurrentLevelIndex ?? 0, world, ReferenceFraming.Active(data));
         ToggleHandAuthoredScenery(world, ReferenceFraming.Active(data));
     }
 
@@ -119,7 +119,7 @@ public class SceneryBuilder : MonoBehaviour
                     if (child.name.StartsWith(prefix)) { child.gameObject.SetActive(!framed); break; }
         }
         var w2 = FindIncludingInactive("Scenery_World2");
-        if (w2 != null) w2.SetActive(world == 2);
+        if (w2 != null) w2.SetActive(world == 2 && !framed);   // framed W2 levels use the frozen stack (2026-11-09)
     }
 
     // Runtime counterpart of SceneSetup.FindIncludingInactive (Editor-only, can't be shared
@@ -140,9 +140,10 @@ public class SceneryBuilder : MonoBehaviour
     // World 2 branches to BuildIceGroundProps() below instead of falling into World 1's
     // exact-placement/disabled-RNG logic — World 1's own path (including the early `return`
     // that disables its RNG scatter) is completely untouched by this branch.
-    public void BuildForLevel(int levelIdx, int world = 1)
+    public void BuildForLevel(int levelIdx, int world = 1, bool framed = false)
     {
         ClearProps();
+        if (world == 2 && framed) return;   // framed World 2 levels: the frozen stack is the scenery (2026-11-09)
 
         if (world == 2)
         {

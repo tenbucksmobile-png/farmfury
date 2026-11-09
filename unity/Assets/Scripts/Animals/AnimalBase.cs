@@ -277,7 +277,8 @@ public abstract class AnimalBase : MonoBehaviour
         sr.sortingOrder = 10;
         go.transform.position = transform.position;
         float diameter = _col.radius * 2f * transform.lossyScale.x;
-        float sz = diameter * 2f; // bigger than the character so the burst reads clearly around it
+        // 1.5x the animal, measured against the stars sprite's own size (2026-11-09, EffectSizing).
+        float sz = EffectSizing.ScaleFor(_sprImpactStars, diameter * 1.5f);
         go.transform.localScale = new Vector3(sz, sz, 1f);
         go.AddComponent<FragmentFader>();
     }

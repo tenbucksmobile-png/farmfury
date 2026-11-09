@@ -27,7 +27,7 @@ public class ExplodingBarrelBlock : WoodBlock
         _areaDamage  = 55f;
         // Explicit, not just inherited from WoodBlock.Awake()'s _isExplosive branch — 2026-08-09,
         // same reduction (2.2 -> 1.0, "reduce the 4x radius to only two") as StoneBlock/Haybale.
-        _explodeSizeMultiplier = 1.0f;
+        _explodeSizeMultiplier = 2.2f;   // EffectSizing k (2026-11-09): the barrel's blast reads bigger than its body
     }
 
     protected override void DestroyBlock()

@@ -222,6 +222,108 @@ def import_mounts():
     print("  wrote MountMeasurements.cs + tools/mounts.json")
 
 
+# ── Ambience + contraptions (2026-11-09): landform layers, clouds, sunflower, hay hoist ─────────────────────────
+AMB = os.path.join(SRC, "Ambience")
+HAZE = np.array([222, 214, 190], np.float32)    # pale golden haze, matches the far painting's distant hills
+
+
+def haze(rgba, amount, blur=0):
+    """Atmospheric perspective baked in: colours pulled toward the haze colour, optionally softened."""
+    out = rgba.astype(np.float32)
+    out[:, :, :3] = out[:, :, :3] * (1 - amount) + HAZE * amount
+    im = Image.fromarray(out.clip(0, 255).astype(np.uint8), "RGBA")
+    if blur:
+        from PIL import ImageFilter
+        im = im.filter(ImageFilter.GaussianBlur(blur))
+    return np.asarray(im).copy()
+
+
+def crop_bottom_band(rgba, frac, fade=0.18):
+    """Drop the flat ground strip the generator painted under the landform, then fade the new bottom edge out so
+    it melts into the mist instead of ending on a hard line."""
+    h = rgba.shape[0]
+    out = trim(rgba[: int(h * (1 - frac))]).astype(np.float32)
+    n = out.shape[0]
+    ramp = np.clip((n - 1 - np.arange(n)) / max(1.0, n * fade), 0, 1)
+    out[:, :, 3] *= (ramp * ramp * (3 - 2 * ramp))[:, None]
+    return out.astype(np.uint8)
+
+
+def key_blue(path):
+    """Clouds painted on flat blue: alpha = distance from the blue, colour un-mixed from it."""
+    rgb = np.asarray(Image.open(path).convert("RGB")).astype(np.float32)
+    bg = np.median(np.concatenate([rgb[:20].reshape(-1, 3), rgb[-20:].reshape(-1, 3)]), axis=0)
+    # How far toward white each pixel is from the background, along the blue->white axis.
+    span = np.array([255, 255, 255], np.float32) - bg
+    a = ((rgb - bg) * span).sum(axis=2) / (span * span).sum()
+    a = np.clip((a - 0.12) / 0.6, 0, 1)
+    col = np.where(a[..., None] > 0.02, (rgb - bg * (1 - a[..., None])) / np.maximum(a[..., None], 0.02), 255)
+    return np.dstack([col.clip(0, 255), a * 255]).astype(np.uint8)
+
+
+def import_ambience():
+    def pick(name):
+        return os.path.join(AMB, name)
+    ridges = crop_bottom_band(trim(cut_white(pick("FarRidges_A.png"))), 0.085)
+    save(haze(ridges, 0.62, blur=3), "CornRidges.png")
+    hills = crop_bottom_band(trim(cut_white(pick("NearHills_B.png"))), 0.05)
+    save(haze(hills, 0.22, blur=1), "CornHills.png")
+
+    clouds = key_blue(pick("Clouds.png"))
+    labels, n = ndimage.label(clouds[:, :, 3] > 20)
+    k = 0
+    for sl in ndimage.find_objects(labels):
+        if sl is None: continue
+        c = clouds[sl]
+        if c.shape[0] < 80 or c.shape[1] < 120: continue
+        save(trim(c, pad=6), f"Cloud_{k}.png"); k += 1
+
+    flower = trim(cut_white(pick("Sunflower_B.png")))
+    save(flower, "Sunflower.png")
+    bucket = cut_white(pick("Bucket.png"))
+    # The grey drop shadow under the tub: light, unsaturated pixels in the bottom rows go.
+    rgb = bucket[:, :, :3].astype(np.int16)
+    mn, mx = rgb.min(axis=2), rgb.max(axis=2)
+    ys = np.nonzero(bucket[:, :, 3] > 128)[0]
+    y0 = int(ys.max() - (ys.max() - ys.min()) * 0.12)
+    shadow = (mx - mn < 24) & (mn > 120)
+    shadow[:y0] = False
+    bucket[shadow, 3] = 0
+    bucket = trim(bucket)
+    save(bucket, "HoistBucket.png")
+
+    crane = trim(cut_white(pick("HoistCrane.png")))
+    save(crane, "HoistCrane.png")
+    a = crane[:, :, 3] > 128
+    h, w = a.shape
+    # Pulley: the lowest opaque pixels in the right-most fifth (the wheel's rim) — the rope leaves from there.
+    right = a[:, int(w * 0.8):]
+    ys, xs = np.nonzero(right)
+    bottom = ys.max()
+    wheel_x = (xs[ys >= bottom - 40].mean() + int(w * 0.8)) / w
+    # Post: the opaque run in the left half at 55% height.
+    row = a[int(h * 0.55), : w // 2]
+    px = np.nonzero(row)[0]
+    print(f"  HoistCrane pulley UV = ({wheel_x:.3f}, {(h - bottom) / h:.3f}), post centre x = {px.mean() / w:.3f}, aspect {w / h:.3f}")
+    ba = bucket[:, :, 3] > 128
+    print(f"  HoistBucket aspect {bucket.shape[1] / bucket.shape[0]:.3f}; tub top (rim) ~ handle measured by eye")
+
+    # Sunflower seed (procedural): a small dark striped teardrop.
+    N = 96
+    yy, xx = np.mgrid[0:N, 0:N].astype(np.float32) / N - 0.5
+    shape = (xx / 0.24) ** 2 + ((yy + 0.08 * np.sign(yy) * 0) / (0.44 - 0.18 * (yy + 0.5))) ** 2 <= 1.0
+    seed = np.zeros((N, N, 4), np.uint8)
+    stripe = (np.abs(xx) < 0.05) | (np.abs(np.abs(xx) - 0.15) < 0.03)
+    seed[shape] = (52, 44, 40, 255)
+    seed[shape & stripe] = (226, 222, 205, 255)
+    edge = shape & ~ndimage.binary_erosion(shape, iterations=4)
+    seed[edge] = (20, 16, 14, 255)
+    save(trim(seed), "SunflowerSeed.png")
+
+
 if __name__ == "__main__":
-    main()
-    import_mounts()
+    import sys as _sys
+    if "--ambience" not in _sys.argv:
+        main()
+        import_mounts()
+    import_ambience()
