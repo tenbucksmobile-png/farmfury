@@ -1,0 +1,197 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1966708deffe45949832dc573867a129, type: 3}
+  m_Name: W03_L21_SluiceGateFortress
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelId: W3_L21
+  levelName: Sluice Gate Fortress
+  parBirds: 3
+  world: 3
+  isBossLevel: 0
+  referenceFraming: 1
+  trimColliders: 0
+  birds: 030000000400000001000000
+  blocks:
+  - type: 1
+    position: {x: 9.6, y: -3.9}
+    size: {x: 0.4, y: 1.3}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 11.2, y: -3.9}
+    size: {x: 0.4, y: 1.3}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 12.8, y: -3.9}
+    size: {x: 0.4, y: 1.3}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 10.3, y: -3.1}
+    size: {x: 1.8, y: 0.3}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 12
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 1
+    position: {x: 12.1, y: -3.1}
+    size: {x: 1.8, y: 0.3}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 12
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 10.06, y: -2.375}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 12.34, y: -2.375}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.2, y: -1.675}
+    size: {x: 2.6, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 10.235, y: -0.975}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 12.165, y: -0.975}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.2, y: -0.275}
+    size: {x: 2.25, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 10.41, y: 0.425}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.99, y: 0.425}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.2, y: 1.125}
+    size: {x: 1.9, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  robots:
+  - robotType: 2
+    position: {x: 10.4, y: -4.1}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 2
+    position: {x: 12, y: -4.1}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 11.2, y: -2.5}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 2
+    position: {x: 11.2, y: 0.3}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 11.2, y: 1.7}
+    scale: {x: 5.5, y: 5.5}
+  platforms:
+  - x: 5.6
+    surfaceY: -3.766
+    width: 4.6
+    variant: 6
+    rolling: 0
+  - x: 11.2
+    surfaceY: -4.55
+    width: 5.2
+    variant: 0
+    rolling: 0
+  weather: 14
+  gadgets:
+  - type: 5
+    position: {x: 4.376, y: -3.766}
+    size: 0.95
+    ropeLength: 0
+    faceLeft: 0

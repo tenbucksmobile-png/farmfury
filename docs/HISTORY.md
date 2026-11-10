@@ -465,3 +465,60 @@ summary of what's still genuinely open. Newest entries first, same as they were 
   branch, which never applied `TrimInset`; every stacked pair overlapped ~0.021 u (probe OVERLAP lines) and pushed
   apart once awake. Fixed by insetting in that branch as well; all 40 World 1 + 2 levels then probe 100% intact.
 
+
+---
+
+## 2026-11-10 — World 3 Watermill Village on the World 1/2 template
+
+- **Art strategy:** existing art first. FarmFury_Stampede already had a full Watermill set: `WV_Parallax_Far` (sky
+  and river valley, = the old `World3_Backdrop.png`), `WV_Parallax_Mid` (the village band: watermill, cottages,
+  bridge), `WV_Parallax_Near` (bulrushes and ferns) and the Mill Stone Mauler boss (two facings + a dazed pose); the
+  WatermillVillage artwork folder had the FishingBoat (now the rolling mount) and the Millstone (rolling contraption and
+  hoist load, its background bricks removed with a Hough-circle mask). The World 3 robots (river-sub, harvester, scout)
+  were already imported in `Robot/W3/`.
+- **Kling (15 images, 30 credits):** kling-image-v3_0_omni i2i at 2K, image 1 = the World 1/2 counterpart (for shape,
+  so measurements and layouts carry over), image 2 = a style sheet of the WatermillVillage props, solid magenta
+  background: Mill Cannon, mill post, mill plank, cobble block, cobble pillar, stone lintel slab, flour sacks, sack-hoist
+  crane, water pump, river islet, bridge pier, fishing jetty, boat slipway, riverbank soil strip, distant hills.
+  The slab came back on crimson with a dark-magenta drop shadow (`defringe_red` in the import); the FishingBoat had a
+  grey drop shadow on white (`drop_shadow_grey`). Kling's query endpoint rate-limits ~8 parallel polls.
+- **Cannon:** fitted into Cannon.png's 566x512 canvas over its own bounding box at PPU 384 (like the cosmetic skins),
+  so FarmCannon's scale and the barrel / loaded-animal offsets are unchanged.
+- **Depth:** the Kling hills (church spire, windmill) first drew bigger than the village band in front of them —
+  inverted depth. Now 2.3 u tall from g+3.5 (`MillRidgesHeight/Base`), 50% hazed; the village band is lifted (sink
+  -0.9) so its rooftops clear the taller bulrush wall. The village band never sways; the bulrushes sway more than corn.
+- **Hoist:** the mill crane's rope anchor and post are measured per art (`MountMeasurementsW3.MillCraneAnchor/Post`,
+  passed to `HayHoist.Spawn`) rather than forcing the art onto World 1's 0.93/0.70.
+- **Water pump** = `Sunflower` in pump mode: a squash-and-stretch shudder, then two pulses of 5 droplets at 2-30 deg,
+  9-12.5 u/s, each a 0.45 u splash with push (`AbilityProjectile.burstPush`); it then darkens (run dry).
+- **Weather:** five profiles in `CornfieldAmbience` (SummerMorning: dragonflies over the reeds, river glints;
+  RiverMist: ground fog + blossom petals; SpringShower: light rain, petals and a procedural rainbow; LanternDusk:
+  fireflies; Thunderstorm: rain + lightning). New speck kinds 3 (petals) and 4 (dragonflies).
+- **Generators:** `WorldLevelGenerator` now skips world 3 and keeps `W03_*`; `MakeWorld3Framed` deletes the old
+  generated `W03_*` files (new names, same `W3_LNN` ids so saves carry over).
+- **Wiring order:** `EnsureMillMaulerPrefab` must run before `WireLevelLoader` (it sets `_worldRobots[3].boss`), or a
+  first Wire Scene References pass leaves World 3's boss as the generated W3_BossRobot.
+- **Probe:** all 22 World 3 levels 100% intact, 0 awake, 0 movement with no input. L20 first reported its end towers'
+  inner posts overlapping the stone hall by 0.28 u (stable, but touching) — towers moved out to x 7.25 / 12.75.
+- **Unverified in Play mode**, like Worlds 1-2's framed rebuilds.
+
+---
+
+## 2026-11-10 — Fixes, music/SFX, Cannonfire rename, one-strike physics
+
+- **Floating robot (W2 L02 screenshot):** a live robot is Dynamic-asleep; `MakeDynamicFromSupportLoss` returned early
+  for Dynamic bodies without waking it, and a robot placed slightly above its perch was frozen in mid-air by
+  `Freeze()` with no contacts to wake it. Now it wakes; blocks also wake neighbours in `OnDestroy` (after the 0.12 s
+  DestroyDelay); a 0.3 s watchdog wakes any sleeping live robot with nothing under its collider.
+- **Next animal never loaded:** Percy's Bounce Roll clears `IsInFlight` on each bounce; rolling on a floe it never got
+  a new collision, so the flight-time cap stopped and Percy rolled away forever. `AnimalBase` now caps time since
+  launch, checks |x| > 40 and destroys an animal at rest > 1.2 s.
+- **Next level:** Results' Next opened Level Select (Stampede behaviour); now the next level's Character Select.
+- **Character Select:** picked slots showed an empty disc — `UIKit.Picture` deactivates an image created without a
+  sprite and only the disc was re-shown.
+- **Music/SFX:** Arcade's tracks are byte-identical copies of Stampede's; Stampede's per-world mapping applied to
+  Worlds 2-9 (World 1 and the menus unchanged); Stampede's ability SFX on the ability tap.
+- **Rename:** Farm Fury Cannonfire (`com.farmfury.cannonfire`, Tenbucks Mobile, label "Cannonfire"); Editor
+  PlayerPrefs copied to the new registry key. Logo: two rejected rounds (a Stampede-like wooden sign, then a composed
+  blast-lettering logo); final = the user's own `Logo_C.png` cut and `ic.png` poster. Kling 26 credits.
+- **One strike:** see CLAUDE.md's entry; tuned by request, not by play-test.

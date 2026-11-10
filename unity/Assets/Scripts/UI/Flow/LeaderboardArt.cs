@@ -12,7 +12,7 @@ namespace FarmFury.UI
     {
         [Tooltip("Backdrop: Cluck bursting through the wooden sign (Environment/Settings_Canvas.png, widened by setup).")]
         public Sprite background;
-        [Tooltip("FarmFury logo, top-left of the world list (FF_Logo.png - not made yet, see docs/ART_REQUIREMENTS.md; null = no logo).")]
+        [Tooltip("Farm Fury Cannonfire logo, top-left of the world list (FF_Logo.png, tools/brand_cannonfire.py; null = no logo).")]
         public Sprite logo;
         [Tooltip("World names as lettering, in WorldType order, trimmed to their text by setup. (UI/MeadowRuins.png ...)")]
         public Sprite[] worldNames = new Sprite[0];

@@ -37,6 +37,8 @@ public class CornfieldAmbience : MonoBehaviour
         public bool  blizzard;     // rain streaks become driving white snow, nearly horizontal
         public float aurora;       // 0..1 shimmering aurora ribbons in the sky
         public float sparkle;      // 0..1 glints twinkling on the snow
+        // Watermill Village (2026-11-10)
+        public float rainbow;      // 0..1 a rainbow arc in the sky (spring shower)
     }
 
     static readonly Profile Golden = new()
@@ -112,8 +114,52 @@ public class CornfieldAmbience : MonoBehaviour
         groundFog = 0.25f, snow = 0.3f, aurora = 0.35f, sparkle = 1f,
     };
 
+    // ── Watermill Village (World 3, 2026-11-10) ─────────────────────────────────────────────────────────────────
+    // A river valley: swallows over the water, blossom petals off the willows, dragonflies over the reeds, sunlight
+    // glinting on the river, a rainbow after a spring shower, fireflies at lantern-lit dusk, a summer thunderstorm.
+    // speckKind 3 = blossom petals (tumbling pink/white), 4 = dragonflies (darting blue-green, low over the water).
+    static readonly Profile SummerMorning = new()
+    {
+        sky = Color.white, land = Color.white, haze = new Color(0.84f, 0.93f, 0.96f), hazeAlpha = 0.22f, mistAlpha = 0.45f,
+        grade = new Color(1f, 0.95f, 0.8f, 0.0f), wind = 0.7f, sun = 1f, sunColour = new Color(1f, 0.96f, 0.8f),
+        clouds = 4, cloudTint = Color.white, pollen = 0.55f, speckKind = 4, crows = true, groundFog = 0.08f, sparkle = 0.8f,
+    };
+    static readonly Profile RiverMist = new()
+    {
+        sky = new Color(0.92f, 0.96f, 0.98f), land = new Color(0.88f, 0.94f, 0.93f), haze = new Color(0.85f, 0.92f, 0.92f),
+        hazeAlpha = 0.45f, mistAlpha = 0.9f, grade = new Color(0.78f, 0.9f, 0.92f, 0.07f), wind = 0.35f, sun = 0.5f,
+        sunColour = new Color(1f, 0.97f, 0.88f), clouds = 2, cloudTint = new Color(0.96f, 0.98f, 1f), pollen = 0.5f,
+        speckKind = 3, crows = true, groundFog = 0.7f, sparkle = 0.3f,
+    };
+    static readonly Profile SpringShower = new()
+    {
+        sky = new Color(0.86f, 0.9f, 0.96f), land = new Color(0.9f, 0.95f, 0.92f), haze = new Color(0.8f, 0.86f, 0.92f),
+        hazeAlpha = 0.3f, mistAlpha = 0.6f, grade = new Color(0.5f, 0.6f, 0.8f, 0.06f), wind = 1.0f, rain = 0.5f,
+        sun = 0.7f, sunColour = new Color(1f, 0.95f, 0.82f), clouds = 5, cloudTint = new Color(0.86f, 0.88f, 0.94f),
+        pollen = 0.45f, speckKind = 3, crows = false, groundFog = 0.2f, sparkle = 0.6f, rainbow = 1f,
+    };
+    static readonly Profile LanternDusk = new()
+    {
+        sky = new Color(1f, 0.76f, 0.7f), land = new Color(0.9f, 0.76f, 0.74f), haze = new Color(0.95f, 0.64f, 0.58f),
+        hazeAlpha = 0.3f, mistAlpha = 0.6f, grade = new Color(0.45f, 0.2f, 0.4f, 0.14f), wind = 0.4f, sun = 0.9f,
+        sunColour = new Color(1f, 0.6f, 0.4f), clouds = 3, cloudTint = new Color(1f, 0.72f, 0.66f), pollen = 1f,
+        speckKind = 1, crows = true, groundFog = 0.3f, sparkle = 0.4f,
+    };
+    static readonly Profile Thunderstorm = new()
+    {
+        sky = new Color(0.5f, 0.56f, 0.64f), land = new Color(0.62f, 0.7f, 0.7f), haze = new Color(0.56f, 0.63f, 0.68f),
+        hazeAlpha = 0.45f, mistAlpha = 0.65f, grade = new Color(0.1f, 0.18f, 0.28f, 0.24f), wind = 2.0f, rain = 1f,
+        lightning = true, sun = 0f, sunColour = Color.white, clouds = 7, cloudTint = new Color(0.5f, 0.54f, 0.6f),
+        pollen = 0.35f, speckKind = 2, crows = false, groundFog = 0.35f,
+    };
+
     public static Profile For(LevelWeather w) => w switch
     {
+        LevelWeather.SummerMorning => SummerMorning,
+        LevelWeather.RiverMist     => RiverMist,
+        LevelWeather.SpringShower  => SpringShower,
+        LevelWeather.LanternDusk   => LanternDusk,
+        LevelWeather.Thunderstorm  => Thunderstorm,
         LevelWeather.MorningMist => MorningMist,
         LevelWeather.Overcast    => Overcast,
         LevelWeather.Rain        => Rain,
@@ -161,6 +207,7 @@ public class CornfieldAmbience : MonoBehaviour
     struct Glint { public SpriteRenderer sr; public Vector2 uv; public float phase, period, size; }
     readonly List<Glint> _glints = new();
     Sprite _ribbonSprite, _starSprite;
+    SpriteRenderer _rainbow;
     const int AuroraOrder = -38;    // with the clouds, behind the glaciers and the haze veil
     const int GlintOrder  = -29;    // on the frozen field, in front of the mid band (-30), behind the corn wall
 
@@ -180,6 +227,7 @@ public class CornfieldAmbience : MonoBehaviour
         _sun = NewRenderer("SunGlow", _disc, SunOrder);
         _ribbonSprite = MakeRibbon();
         _starSprite = MakeStar();
+        _rainbow = NewRenderer("Rainbow", MakeRainbow(), AuroraOrder);
         _grade = NewRenderer("WeatherGrade", _solid, GradeOrder);
         _flash = NewRenderer("LightningFlash", _solid, GradeOrder);
     }
@@ -215,9 +263,9 @@ public class CornfieldAmbience : MonoBehaviour
         {
             var s = _specks[i];
             s.sr.enabled = i < speckCount;
-            s.sr.sprite = _p.speckKind == 2 ? _streak : _disc;
+            s.sr.sprite = _p.speckKind == 2 || _p.speckKind == 4 ? _streak : _disc;
             s.uv = new Vector2((float)rng.NextDouble(), 0.08f + (float)rng.NextDouble() * 0.8f);
-            s.size = _p.speckKind switch { 1 => 0.014f, 2 => 0.02f, _ => 0.008f } * (0.6f + (float)rng.NextDouble() * 0.8f);
+            s.size = _p.speckKind switch { 1 => 0.014f, 2 => 0.02f, 3 => 0.011f, 4 => 0.016f, _ => 0.008f } * (0.6f + (float)rng.NextDouble() * 0.8f);
             s.phase = (float)rng.NextDouble() * 10f;
             s.speed = 0.01f + (float)rng.NextDouble() * 0.02f;
             s.spin = ((float)rng.NextDouble() - 0.5f) * 400f;
@@ -339,6 +387,16 @@ public class CornfieldAmbience : MonoBehaviour
             _sun.color = new Color(_p.sunColour.r, _p.sunColour.g, _p.sunColour.b, 0.45f * _p.sun * pulse);
         }
 
+        // Rainbow (spring shower): a faint arc over the valley, on the right (away from the sun), breathing slightly.
+        _rainbow.enabled = _p.rainbow > 0.01f;
+        if (_rainbow.enabled)
+        {
+            float rw = camH * 1.35f;
+            _rainbow.transform.position = Screen(0.68f, 0.42f);
+            _rainbow.transform.localScale = new Vector3(rw, rw, 1f);
+            _rainbow.color = new Color(1f, 1f, 1f, _p.rainbow * (0.32f + 0.06f * Mathf.Sin(_time * 0.25f)));
+        }
+
         // Clouds drift with the wind, screen-locked (they are far away), wrapping round.
         foreach (var cl in _clouds)
         {
@@ -382,7 +440,32 @@ public class CornfieldAmbience : MonoBehaviour
             if (_p.speckKind == 1) u = Mathf.Repeat(u + Mathf.Sin(_time * 0.5f + sp.phase * 2f) * 0.02f, 1f);
             sp.sr.transform.position = Screen(u, Mathf.Clamp(v, 0.04f, 0.95f));
             float size = sp.size * camH;
-            if (_p.speckKind == 2)
+            if (_p.speckKind == 3)
+            {
+                // Blossom petals off the willows: tumble (squash as they flip) while they drift and sink slowly.
+                float flip = Mathf.Abs(Mathf.Sin(_time * 2.4f + sp.phase * 4f));
+                float sink = Mathf.Repeat(sp.uv.y - _time * 0.02f * (0.5f + sp.speed * 30f), 0.9f) + 0.05f;
+                sp.sr.transform.position = Screen(u, sink);
+                sp.sr.transform.localScale = new Vector3(size, size * (0.25f + 0.75f * flip), 1f);
+                sp.sr.transform.rotation = Quaternion.Euler(0, 0, _time * sp.spin * 0.4f + sp.phase * 50f);
+                sp.sr.color = (sp.phase % 2f) < 1f ? new Color(1f, 0.82f, 0.88f, 0.85f) : new Color(1f, 0.97f, 0.95f, 0.85f);
+            }
+            else if (_p.speckKind == 4)
+            {
+                // Dragonflies over the reeds: hover, then dart to a new spot, low over the water band.
+                float hop = Mathf.Floor((_time + sp.phase) / 1.6f);
+                float t = Mathf.Repeat(_time + sp.phase, 1.6f) / 1.6f;
+                float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.75f) / 0.25f));
+                float h0 = Hash(hop, sp.phase), h1 = Hash(hop + 1f, sp.phase);
+                float du = Mathf.Lerp(h0, h1, k) * 0.12f - 0.06f;
+                float dv = Mathf.Lerp(Hash(h0 * 7.1f, sp.phase), Hash(h1 * 7.1f, sp.phase), k) * 0.08f;
+                float baseV = (_groundY + 0.6f - bottom) / camH;
+                sp.sr.transform.position = Screen(Mathf.Repeat(sp.uv.x + du, 1f), baseV + 0.02f + dv + Mathf.Sin(_time * 9f + sp.phase) * 0.003f);
+                sp.sr.transform.localScale = new Vector3(size * 0.22f, size, 1f);
+                sp.sr.transform.rotation = Quaternion.Euler(0, 0, 90f + (h1 > h0 ? -8f : 8f));
+                sp.sr.color = new Color(0.25f, 0.75f, 0.85f, 0.9f);
+            }
+            else if (_p.speckKind == 2)
             {
                 sp.sr.transform.localScale = new Vector3(size * 0.35f, size, 1f);
                 sp.sr.transform.rotation = Quaternion.Euler(0, 0, _time * sp.spin + sp.phase * 50f);
@@ -505,6 +588,33 @@ public class CornfieldAmbience : MonoBehaviour
             }
         tex.SetPixels(px); tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), W);   // 1 x 0.5 units
+    }
+
+    static float Hash(float a, float b) => Mathf.Repeat(Mathf.Sin(a * 12.9898f + b * 78.233f) * 43758.5453f, 1f);
+
+    // A rainbow arc: concentric hue bands on the upper half of a ring, soft edges, fading toward both feet.
+    static Sprite MakeRainbow()
+    {
+        const int W = 256, H = 128;
+        var tex = new Texture2D(W, H, TextureFormat.ARGB32, false) { wrapMode = TextureWrapMode.Clamp };
+        var px = new Color[W * H];
+        Color[] bands = { new(0.85f, 0.2f, 0.25f), new(1f, 0.55f, 0.15f), new(1f, 0.9f, 0.25f), new(0.35f, 0.85f, 0.35f),
+                          new(0.25f, 0.55f, 1f), new(0.45f, 0.3f, 0.85f) };
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
+            {
+                float dx = (x + 0.5f) / W * 2f - 1f, dy = (y + 0.5f) / H;   // centre at the bottom middle
+                float r = Mathf.Sqrt(dx * dx + dy * dy);
+                float t = (0.98f - r) / 0.16f;                               // 0 outer edge .. 1 inner edge
+                if (t <= 0f || t >= 1f) { px[y * W + x] = Color.clear; continue; }
+                float b = t * bands.Length - 0.5f;
+                int i0 = Mathf.Clamp(Mathf.FloorToInt(b), 0, bands.Length - 1), i1 = Mathf.Clamp(i0 + 1, 0, bands.Length - 1);
+                Color c = Color.Lerp(bands[i0], bands[i1], Mathf.Clamp01(b - i0));
+                c.a = Mathf.Clamp01(Mathf.Sin(t * Mathf.PI) * 1.3f) * Mathf.Clamp01(dy / 0.35f);
+                px[y * W + x] = c;
+            }
+        tex.SetPixels(px); tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0f), W);   // 1 x 0.5 units, pivot at the base
     }
 
     // A four-point twinkle star.

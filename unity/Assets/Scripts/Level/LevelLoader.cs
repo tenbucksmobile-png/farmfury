@@ -436,6 +436,9 @@ public class LevelLoader : MonoBehaviour
     // World 2 (2026-11-09): the same mount kinds, frozen — 0/1 ice floe, 2 (unused, floe), 3 ice pillar,
     // 4 frosted scaffold, 5 sled, 6 snow ramp. Measured by tools/import_frozen_art.py into MountMeasurementsW2.
     [SerializeField] private Sprite[] _platformSpritesW2 = new Sprite[MountCount];
+    // World 3 (2026-11-10): 0/1/2 grassy river islet, 3 stone bridge pier, 4 fishing jetty on stilts, 5 rowing boat (slides
+    // on its keel like the sled), 6 boat slipway. Measured by tools/import_watermill_art.py into MountMeasurementsW3.
+    [SerializeField] private Sprite[] _platformSpritesW3 = new Sprite[MountCount];
     const int PlatformSortingOrder = 1;   // decorative band (<= 1): behind blocks (2) and robots (3)
 
     // Mount kinds (LevelData.PlatformSpawnData.variant), 2026-11-08. surfaceUV = the walkable top's height from the
@@ -473,6 +476,16 @@ public class LevelLoader : MonoBehaviour
         new() { surfaceUV = MountMeasurementsW2.SledUV,          solids = MountMeasurementsW2.SledSolids },
         new() { surfaceUV = MountMeasurementsW2.SnowRampUV,      solids = MountMeasurementsW2.SnowRampSolids, poly = MountMeasurementsW2.SnowRampPoly },
     };
+    static readonly MountSpec[] MountsW3 =
+    {
+        new() { surfaceUV = MountMeasurementsW3.IsletUV,    solids = MountMeasurementsW3.IsletSolids },
+        new() { surfaceUV = MountMeasurementsW3.IsletUV,    solids = MountMeasurementsW3.IsletSolids },
+        new() { surfaceUV = MountMeasurementsW3.IsletUV,    solids = MountMeasurementsW3.IsletSolids },
+        new() { surfaceUV = MountMeasurementsW3.PierUV,     solids = MountMeasurementsW3.PierSolids },
+        new() { surfaceUV = MountMeasurementsW3.JettyUV,    solids = MountMeasurementsW3.JettySolids },
+        new() { surfaceUV = MountMeasurementsW3.BoatUV,     solids = MountMeasurementsW3.BoatSolids },
+        new() { surfaceUV = MountMeasurementsW3.SlipwayUV,  solids = MountMeasurementsW3.SlipwaySolids, poly = MountMeasurementsW3.SlipwayPoly },
+    };
     int _loadingWorld = 1;
 
     readonly List<GameObject> _spawnedPlatforms = new();
@@ -481,8 +494,9 @@ public class LevelLoader : MonoBehaviour
     {
         int v = Mathf.Clamp(data.variant, 0, Mounts.Length - 1);
         bool w2 = _loadingWorld == 2 && _platformSpritesW2 != null && v < _platformSpritesW2.Length && _platformSpritesW2[v] != null;
-        var spec = w2 ? MountsW2[v] : Mounts[v];
-        Sprite sprite = w2 ? _platformSpritesW2[v]
+        bool w3 = _loadingWorld == 3 && _platformSpritesW3 != null && v < _platformSpritesW3.Length && _platformSpritesW3[v] != null;
+        var spec = w2 ? MountsW2[v] : w3 ? MountsW3[v] : Mounts[v];
+        Sprite sprite = w2 ? _platformSpritesW2[v] : w3 ? _platformSpritesW3[v]
                       : _platformSprites != null && v < _platformSprites.Length ? _platformSprites[v] : null;
         var go = new GameObject($"Mount_{_spawnedPlatforms.Count}");
         go.transform.SetParent(_blockParent, false);
@@ -528,7 +542,7 @@ public class LevelLoader : MonoBehaviour
         {
             var slick = new PhysicsMaterial2D("WagonWheel") { friction = 0.02f, bounciness = 0f };
             // The World 2 sled slides on two runner skids (small circles at the runner ends) instead of wheels.
-            foreach (var w in w2 ? MountMeasurementsW2.SledSkids : WagonWheels)
+            foreach (var w in w2 ? MountMeasurementsW2.SledSkids : w3 ? MountMeasurementsW3.BoatSkids : WagonWheels)
             {
                 var cc = go.AddComponent<CircleCollider2D>();
                 cc.offset = new Vector2((w.x - 0.5f) * width / sc, (w.y - 0.5f) * height / sc);
@@ -560,13 +574,28 @@ public class LevelLoader : MonoBehaviour
     [SerializeField] private Sprite _frozenCraneSprite;
     [SerializeField] private Sprite _iceBlockLoadSprite;
     [SerializeField] private Sprite _iceBoulderSprite;
+    // World 3 (2026-11-10): village water pump + water droplet (Watermill/WaterPump.png, Abilities/WaterSwirl.png), the
+    // mill's sack hoist dangling a millstone (Watermill/MillCrane.png, Watermill/Millstone.png), a rolling millstone.
+    [SerializeField] private Sprite _waterPumpSprite;
+    [SerializeField] private Sprite _waterDropSprite;
+    [SerializeField] private Sprite _millCraneSprite;
+    [SerializeField] private Sprite _millstoneSprite;
     readonly List<GameObject> _spawnedGadgets = new();
 
     void SpawnGadget(LevelData.GadgetSpawnData data)
     {
         bool w2 = _loadingWorld == 2;
+        bool w3 = _loadingWorld == 3;
         GameObject go = data.type switch
         {
+            GadgetType.HayHoist when w3 && _millCraneSprite != null =>
+                HayHoist.Spawn(_blockParent, _millCraneSprite, _millstoneSprite, data.position,
+                               Mathf.Max(1f, data.size), data.ropeLength, data.faceLeft, 0.99f,
+                               MountMeasurementsW3.MillCraneAnchor, MountMeasurementsW3.MillCranePost).gameObject,
+            GadgetType.WaterPump => Sunflower.Spawn(_blockParent, _waterPumpSprite, _waterDropSprite, data.position,
+                                                    Mathf.Max(0.5f, data.size), pump: true).gameObject,
+            GadgetType.Millstone => RollingBoulder.Spawn(_blockParent, _millstoneSprite, data.position,
+                                                         Mathf.Max(0.5f, data.size)).gameObject,
             GadgetType.HayHoist when w2 && _frozenCraneSprite != null =>
                 HayHoist.Spawn(_blockParent, _frozenCraneSprite, _iceBlockLoadSprite, data.position,
                                Mathf.Max(1f, data.size), data.ropeLength, data.faceLeft, 0.99f).gameObject,

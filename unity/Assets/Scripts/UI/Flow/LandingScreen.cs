@@ -6,7 +6,7 @@ namespace FarmFury.UI
 {
     /// <summary>
     /// The first screen when the game opens (GameState.MainMenu) — ported from FarmFury_Stampede's LandingScreen
-    /// (franchise flow, 2026-11-02): the FarmFury poster (LandingPage.png: title + the eight animals) covering the
+    /// (franchise flow, 2026-11-02): the Farm Fury Cannonfire poster (LandingPage.png: the logo, the cannon firing Cluck at a tower, the gang; 2026-11-10) covering the
     /// screen (<see cref="ZoomedCover"/>, aspect kept, overflow cropped evenly top/bottom), a round play button
     /// bottom-left with Exit beside it (not on iOS), the settings cog bottom-right — all inside the safe area.
     /// Play -> World Select, Exit -> quit, cog -> the Settings / Shop menu hub. Without the poster: a plain title.
@@ -28,6 +28,7 @@ namespace FarmFury.UI
         private const float ButtonSize = UIKit.RoundButtonSize;
         private static readonly Vector2 ExitSize = new(ButtonSize * 552f / 256f, ButtonSize);
         private const float ButtonGap = 30f;
+        private const float PosterSidesBrightness = 0.8f;
         private const float BackdropPivotY = 0.5f;   // FarmFury's poster has the title on top and the animals at the bottom: crop evenly
 
         public LandingScreen(Transform canvas, Action onPlay, Action onExit, Action onSettings, MenuArt art)
@@ -40,7 +41,9 @@ namespace FarmFury.UI
             bg.color = UIKit.Dark;
             var backdrop = UIKit.Backdrop(root);
             backdrop.rectTransform.pivot = new Vector2(0.5f, BackdropPivotY);
-            UIKit.SetBackdrop(backdrop, null);
+            // Behind the poster: a heavily blurred copy, cover-filled, so the side gaps on screens wider than the
+            // poster (phones are ~2.2:1, the poster 16:9) read as soft colour instead of black bars or ghosted art.
+            UIKit.SetBackdrop(backdrop, art.landingPosterBlur, PosterSidesBrightness);
 
             if (art.landingPoster != null)
             {
@@ -48,7 +51,10 @@ namespace FarmFury.UI
                 poster.preserveAspect = false;
                 var fit = poster.gameObject.AddComponent<ZoomedCover>();
                 fit.aspect = art.landingPoster.rect.width / art.landingPoster.rect.height;
-                fit.zoom = 1f;   // nothing behind it: keep covering
+                // The whole poster always on screen (2026-11-10, user: "the sizing is too big"): covering a wide phone
+                // cropped the FARM FURY title off the top and put the CANNONFIRE sign under the Play/Exit buttons.
+                // zoom 0.5 = ZoomedCover's floor, i.e. contained.
+                fit.zoom = 0.5f;
                 fit.pivotY = BackdropPivotY;
             }
             else

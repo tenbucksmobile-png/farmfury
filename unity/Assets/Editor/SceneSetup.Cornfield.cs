@@ -47,6 +47,24 @@ public static partial class SceneSetup
         WireFrozenSprite(eds, "_sprFrozenSoil",   "FrozenSoil.png");
         WireFrozenSprite(eds, "_sprFrozenSilhouetteL", "FrozenSilhouetteL.png");
         WireFrozenSprite(eds, "_sprFrozenSilhouetteR", "FrozenSilhouetteR.png");
+
+        // World 3 Watermill Village framed stack (2026-11-10, tools/import_watermill_art.py).
+        WireMillSprite(eds, "_sprMillFar",    "MillFar.png", opaque: true);
+        WireMillSprite(eds, "_sprMillRidges", "MillRidges.png");
+        WireMillSprite(eds, "_sprMillMid",    "MillMid.png");
+        WireMillSprite(eds, "_sprMillWall",   "MillWall.png");
+        WireMillSprite(eds, "_sprMillSoil",   "MillSoil.png");
+        WireMillSprite(eds, "_sprMillSilhouetteL", "MillSilhouetteL.png");
+        WireMillSprite(eds, "_sprMillSilhouetteR", "MillSilhouetteR.png");
+    }
+
+    const string MillFolder = "Assets/Sprites/Environment/Watermill";
+
+    static void WireMillSprite(SerializedObject so, string field, string file, bool opaque = false)
+    {
+        var sp = LoadSpriteAt($"{MillFolder}/{file}", opaque);
+        var prop = so.FindProperty(field);
+        if (sp != null && prop != null) { prop.objectReferenceValue = sp; Debug.Log($"[FarmFury] Watermill: {field} -> {file}"); }
     }
 
     const string FrozenFolder = "Assets/Sprites/Environment/Frozen";
@@ -103,6 +121,21 @@ public static partial class SceneSetup
             if (prop != null) prop.objectReferenceValue = path.StartsWith(FrozenFolder)
                 ? LoadSpriteAt(path, opaque: false) : AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
+        // World 3 contraptions (2026-11-10): water pump + droplet, mill hoist + millstone (also the rolling millstone).
+        (string field, string path)[] w3 =
+        {
+            ("_waterPumpSprite", $"{MillFolder}/WaterPump.png"),
+            ("_millCraneSprite", $"{MillFolder}/MillCrane.png"),
+            ("_millstoneSprite", $"{MillFolder}/Millstone.png"),
+        };
+        foreach (var (field, path) in w3)
+        {
+            var prop = loader.FindProperty(field);
+            if (prop != null) prop.objectReferenceValue = LoadSpriteAt(path, opaque: false);
+        }
+        var drop = loader.FindProperty("_waterDropSprite");
+        if (drop != null) drop.objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Abilities/WaterSwirl.png");
+
         // Boss drop-in ship (every world's boss level).
         const string ship = "Assets/Sprites/Environment/BossMothership.png";
         EnsureSingleSprite(ship, 100);
@@ -126,6 +159,13 @@ public static partial class SceneSetup
         w2.arraySize = filesW2.Length;
         for (int i = 0; i < filesW2.Length; i++)
             w2.GetArrayElementAtIndex(i).objectReferenceValue = LoadSpriteAt($"{FrozenFolder}/{filesW2[i]}", opaque: false);
+        // World 3 mounts (2026-11-10): islet, islet, islet, bridge pier, fishing jetty, rowing boat, boat slipway.
+        var w3 = loader.FindProperty("_platformSpritesW3");
+        if (w3 == null) return;
+        string[] filesW3 = { "Mount_Islet.png", "Mount_Islet.png", "Mount_Islet.png", "Mount_Pier.png", "Mount_Jetty.png", "Mount_Boat.png", "Mount_Slipway.png" };
+        w3.arraySize = filesW3.Length;
+        for (int i = 0; i < filesW3.Length; i++)
+            w3.GetArrayElementAtIndex(i).objectReferenceValue = LoadSpriteAt($"{MillFolder}/{filesW3[i]}", opaque: false);
     }
 
     // Thrown-ability art (AbilityProjectile, 2026-11-08): Gerald's feather bombs, Woolly's wool balls, Billy's mud,

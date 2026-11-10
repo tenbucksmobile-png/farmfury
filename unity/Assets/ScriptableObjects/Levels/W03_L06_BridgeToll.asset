@@ -1,0 +1,179 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1966708deffe45949832dc573867a129, type: 3}
+  m_Name: W03_L06_BridgeToll
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelId: W3_L06
+  levelName: Bridge Toll
+  parBirds: 3
+  world: 3
+  isBossLevel: 0
+  referenceFraming: 1
+  trimColliders: 0
+  birds: 040000000300000001000000
+  blocks:
+  - type: 0
+    position: {x: 7.358, y: -2.502}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 8.038, y: -2.502}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 7.698, y: -1.802}
+    size: {x: 1, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 7.308, y: -1.102}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 8.088, y: -1.102}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 7.698, y: -0.402}
+    size: {x: 1.1, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.558, y: -2.502}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 12.238, y: -2.502}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.898, y: -1.802}
+    size: {x: 1, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.508, y: -1.102}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 12.288, y: -1.102}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.898, y: -0.402}
+    size: {x: 1.1, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 9.798, y: -0.152}
+    size: {x: 3.7, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  robots:
+  - robotType: 0
+    position: {x: 7.698, y: -2.627}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 11.898, y: -2.627}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 2
+    position: {x: 9.798, y: 0.423}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 1
+    position: {x: 9.7, y: -5.05}
+    scale: {x: 7.5, y: 7.5}
+  platforms:
+  - x: 7.6
+    surfaceY: -3.077
+    width: 1.8
+    variant: 3
+    rolling: 0
+  - x: 11.8
+    surfaceY: -3.077
+    width: 1.8
+    variant: 3
+    rolling: 0
+  weather: 10
+  gadgets: []

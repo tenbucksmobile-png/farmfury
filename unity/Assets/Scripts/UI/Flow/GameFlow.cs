@@ -295,8 +295,8 @@ namespace FarmFury.UI
         }
 
         /// <summary>
-        /// Level Complete's play button: back to Level Select, where the next level now shows as the question mark;
-        /// after a boss, World Select (which opens centred on the furthest unlocked world).
+        /// Level Complete's play button: on to the next level's Character Select (Level Select if there is none or
+        /// it is locked); after a boss, World Select (which opens centred on the furthest unlocked world).
         /// </summary>
         /// When the boss clear opened the next world, Stampede's World Unlocked page (the new world's badge revealed
         /// from a silhouette) comes first; it replaced the L18 -> Frozen Tundra transition video (2026-11-02).
@@ -317,7 +317,24 @@ namespace FarmFury.UI
         {
             var level = _gm.CurrentLevel;
             if (level == null) { EnterWorldSelect(); return; }
-            if (!level.isBossLevel) { QuitToLevelSelect(); return; }
+            if (!level.isBossLevel)
+            {
+                // Next goes straight on to the world's next level (its Character Select), 2026-11-10 — user: "the
+                // next levels dont open when level is complete" (it used to return to Level Select, Stampede-style).
+                // Falls back to Level Select when there is no next level or it is still locked (e.g. the boss).
+                var levels = DataManager.Instance != null ? DataManager.Instance.GetWorldLevels(level.WorldType) : null;
+                int i = levels != null ? levels.IndexOf(level) : -1;
+                var next = i >= 0 && i + 1 < levels.Count ? levels[i + 1] : null;
+                if (next != null && SaveManager.Instance != null && SaveManager.Instance.IsLevelUnlocked(next))
+                {
+                    CurrentWorld = next.WorldType;
+                    LeaveGameplay();
+                    PickLevel(next);
+                    return;
+                }
+                QuitToLevelSelect();
+                return;
+            }
 
             bool anyUnbought = IAPManager.PurchasableWorlds().Any(w => !SaveManager.Instance.IsWorldPurchased(w));
             if (_gm.RunState.firstClear && anyUnbought && _worldPromo != null)

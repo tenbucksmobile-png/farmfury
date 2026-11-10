@@ -7,7 +7,7 @@ using UnityEditor.iOS.Xcode;
 
 /// <summary>
 /// iOS post-build (ported from FarmFury_Stampede's StampedeIosBuild, 2026-11-02):
-///  - CFBundleDisplayName "Farm Fury" — the name under the home screen icon (productName is left alone; the App
+///  - CFBundleDisplayName "Cannonfire" — the name under the home screen icon (productName is left alone; the App
 ///    Store name is set in App Store Connect).
 ///  - ITSAppUsesNonExemptEncryption = false, so every TestFlight upload doesn't stop at export compliance.
 ///  - strips any "-ld64" from OTHER_LDFLAGS (the classic-linker flag an SDK may add; Xcode 26 rejects it — the
@@ -17,7 +17,7 @@ using UnityEditor.iOS.Xcode;
 /// </summary>
 public class FarmFuryIosBuild : IPostprocessBuildWithReport
 {
-    public const string HomeScreenName = "Farm Fury";
+    public const string HomeScreenName = "Cannonfire";   // franchise: the subtitle only, like "Stampede" / "Arcade" (2026-11-10)
 
     public int callbackOrder => 100;
 

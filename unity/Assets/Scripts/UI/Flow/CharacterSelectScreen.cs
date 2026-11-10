@@ -306,6 +306,9 @@ namespace FarmFury.UI
                 label.text = pick.HasValue && card == null ? pick.Value.ToString() : "";
                 var badge = _slotBadges[i];
                 badge.sprite = pick.HasValue ? _art.AbilityBadge(pick.Value) : null;
+                // The slot's icon was built empty, and UIKit.Picture deactivates an image created without a sprite —
+                // showing only the disc left a blank dark circle on every picked card (2026-11-10). Show both.
+                badge.gameObject.SetActive(badge.sprite != null);
                 badge.transform.parent.gameObject.SetActive(badge.sprite != null);
             }
             int open = _lineup.Count(a => !a.HasValue);

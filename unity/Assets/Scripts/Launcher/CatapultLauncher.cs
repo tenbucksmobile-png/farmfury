@@ -102,6 +102,10 @@ public class CatapultLauncher : MonoBehaviour
     // mechanic (angle + ricochet) is NOT implemented here, only the visual reskin; CatapultLauncher
     // is still a single static, non-rotating prop regardless of which sprite is showing.
     [SerializeField] private Sprite     _cannonSpriteW2;
+    // World 3 (Watermill Village, 2026-11-10): the Mill Cannon - oak-stave barrel in copper hoops, a little water-wheel
+    // for a rear wheel, a dripping copper pipe (Kling, tools/import_watermill_art.py). Drawn on Cannon.png's 566x512
+    // canvas in the same pose (like the cosmetic skins), so the barrel/loaded-animal offsets still fit.
+    [SerializeField] private Sprite     _cannonSpriteW3;
 
     // Cannon-relative offsets (world-space, added to the cannon's REST position — recoil never
     // affects the launch point or the loaded-bird position, only the cannon's own sprite).
@@ -463,8 +467,9 @@ public class CatapultLauncher : MonoBehaviour
         // World 2 reskin — falls back to the World 1 sprite whenever the W2 art isn't wired or
         // this isn't a World 2 level, so an unwired _cannonSpriteW2 never renders a blank cannon.
         if (_cannonSR != null)
-            _cannonSR.sprite = (data != null && data.world == 2 && _cannonSpriteW2 != null)
-                ? _cannonSpriteW2 : _cannonSprite;
+            _cannonSR.sprite = (data != null && data.world == 2 && _cannonSpriteW2 != null) ? _cannonSpriteW2
+                             : (data != null && data.world == 3 && _cannonSpriteW3 != null) ? _cannonSpriteW3
+                             : _cannonSprite;
         // Equipped cannon skin (cosmetic, 2026-11-08): same pose and canvas as Cannon.png, so it swaps in place.
         var skin = FarmFury.Core.CosmeticEffects.CannonSkin();
         if (_cannonSR != null && skin != null) _cannonSR.sprite = skin;
@@ -616,7 +621,10 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private Sprite _mountBaleSprite;   // Haybail.png, wired by SceneSetup.WireLauncher
     [SerializeField] private Sprite _mountBaleSpriteW2; // Frozen/FrozenBale.png — snow-capped bales (World 2, 2026-11-09)
     int _mountWorld = 1;
-    Sprite MountSprite => _mountWorld == 2 && _mountBaleSpriteW2 != null ? _mountBaleSpriteW2 : _mountBaleSprite;
+    [SerializeField] private Sprite _mountBaleSpriteW3; // Watermill/FlourSacks.png — stacked flour sacks (World 3, 2026-11-10)
+    Sprite MountSprite => _mountWorld == 2 && _mountBaleSpriteW2 != null ? _mountBaleSpriteW2
+                        : _mountWorld == 3 && _mountBaleSpriteW3 != null ? _mountBaleSpriteW3
+                        : _mountBaleSprite;
     const float MountBaleSize   = 1.15f;   // world units per bale (sprite is square)
     const float MountBaleBottom = 19f / 500f;   // transparent rows under the bale in Haybail.png
     const float MountBaleTop    = 63f / 500f;   // transparent rows above it

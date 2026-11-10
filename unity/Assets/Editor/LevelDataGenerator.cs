@@ -146,6 +146,7 @@ public static partial class LevelDataGenerator
         // Tyrant boss). Designed in tools/design_world2.py, which writes LevelDataGenerator.World2.cs. Level 1 keeps
         // its L19_FrostboundWatch file and W2_L01 id (save progress is keyed by levelId); the rest keep W2_LNN ids.
         MakeWorld2Framed(folder);
+        MakeWorld3Framed(folder);   // World 3 Watermill Village (tools/design_world3.py, 2026-11-10)
 
         // Worlds 3-9 (2026-11-02): built from the World 1 towers above — see WorldLevelGenerator (World 2 is designed).
         WorldLevelGenerator.GenerateAll();

@@ -76,6 +76,22 @@ public class EnvironmentDepthSystem : MonoBehaviour
     [SerializeField] Sprite _sprFrozenSilhouetteL;
     [SerializeField] Sprite _sprFrozenSilhouetteR;
 
+    // World 3 Watermill Village framed stack (2026-11-10). Mostly existing art (FarmFury_Stampede's Watermill set),
+    // cut by tools/import_watermill_art.py into Sprites/Environment/Watermill/:
+    //   Far    = MillFar.png     Stampede WV_Parallax_Far: sky, rolling hills, the river winding into the distance
+    //   Ridges = MillRidges.png  distant hills with a church spire, windmill and cottages (Kling), hazed
+    //   Mid    = MillMid.png     Stampede WV_Parallax_Mid: the village band - watermill, thatched cottages, bridge
+    //   Wall   = MillWall.png    Stampede WV_Parallax_Near: bulrushes and ferns along the riverbank (play depth)
+    //   Soil   = MillSoil.png    clover-and-pebble riverbank lip over dark loam (Kling)
+    //   Silhouettes = MillSilhouetteL/R.png, bulrush clumps baked to deep teal
+    [SerializeField] Sprite _sprMillFar;
+    [SerializeField] Sprite _sprMillRidges;
+    [SerializeField] Sprite _sprMillMid;
+    [SerializeField] Sprite _sprMillWall;
+    [SerializeField] Sprite _sprMillSoil;
+    [SerializeField] Sprite _sprMillSilhouetteL;
+    [SerializeField] Sprite _sprMillSilhouetteR;
+
     // Tunable per-layer reveal bands — the fraction (0-1) of EACH painting's own local UV height
     // that stays visible before the shader clips the rest to transparent. Exposed as live
     // Inspector sliders (not baked into the shared material) specifically so the split point can
@@ -182,7 +198,8 @@ public class EnvironmentDepthSystem : MonoBehaviour
         _currentWorld = data != null ? data.world : 1;
         // Framed World 1 levels pin the painted meadow to the shared ground line (ReferenceFraming) instead of
         // centring the paintings on the camera, so the scenery, blocks and painted grass all meet at one line.
-        _groundAnchored = ReferenceFraming.Active(data) && (_currentWorld == 1 || (_currentWorld == 2 && FrozenReady));
+        _groundAnchored = ReferenceFraming.Active(data) &&
+                          (_currentWorld == 1 || (_currentWorld == 2 && FrozenReady) || (_currentWorld == 3 && MillReady));
         _groundAnchorY  = _groundAnchored ? ReferenceFraming.GroundY(data) : 0f;
         _parallaxOriginPending = true;   // the launcher parks the camera after this handler; capture it next frame
         _weather = data != null ? data.weather : LevelWeather.Golden;
@@ -211,7 +228,7 @@ public class EnvironmentDepthSystem : MonoBehaviour
         TintStrip(_cornMid, land);
         TintStrip(_cornWall, ThemeWallTint * land);
         TintStrip(_cornSoil, Color.Lerp(Color.white, land, 0.7f));
-        if (_soilUnderfill != null) _soilUnderfill.color = SoilUnderfill * Color.Lerp(Color.white, land, 0.7f);
+        if (_soilUnderfill != null) _soilUnderfill.color = ThemeUnderfill * Color.Lerp(Color.white, land, 0.7f);
     }
 
     static void TintStrip(Strip s, Color c)
@@ -389,31 +406,49 @@ public class EnvironmentDepthSystem : MonoBehaviour
     bool _parallaxOriginPending;
     Vector3 _parallaxOrigin;
 
-    // The framed stack's art for the current world: World 1 cornfield, World 2 frozen (2026-11-09).
+    // The framed stack's art for the current world: World 1 cornfield, World 2 frozen (2026-11-09), World 3 watermill
+    // village (2026-11-10).
     bool Frozen => _currentWorld == 2;
+    bool Mill   => _currentWorld == 3;
     bool FrozenReady => _sprFarHillsW2 != null && _sprFrozenMid != null && _sprFrozenWall != null && _sprFrozenSoil != null;
-    Sprite ThemeFar    => Frozen ? _sprFarHillsW2        : _sprCornFar;
-    Sprite ThemeMid    => Frozen ? _sprFrozenMid         : _sprCornMid;
-    Sprite ThemeWall   => Frozen ? _sprFrozenWall        : _sprCornWall;
-    Sprite ThemeSoil   => Frozen ? _sprFrozenSoil        : _sprCornSoil;
-    Sprite ThemeRidges => Frozen ? _sprFrozenRidges      : _sprCornRidges;
-    Sprite ThemeHills  => Frozen ? _sprFrozenHills       : _sprCornHills;
-    Sprite ThemeSilL   => Frozen ? _sprFrozenSilhouetteL : _sprCornSilhouetteL;
-    Sprite ThemeSilR   => Frozen ? _sprFrozenSilhouetteR : _sprCornSilhouetteR;
+    bool MillReady   => _sprMillFar != null && _sprMillMid != null && _sprMillWall != null && _sprMillSoil != null;
+    Sprite ThemeFar    => Mill ? _sprMillFar         : Frozen ? _sprFarHillsW2        : _sprCornFar;
+    Sprite ThemeMid    => Mill ? _sprMillMid         : Frozen ? _sprFrozenMid         : _sprCornMid;
+    Sprite ThemeWall   => Mill ? _sprMillWall        : Frozen ? _sprFrozenWall        : _sprCornWall;
+    Sprite ThemeSoil   => Mill ? _sprMillSoil        : Frozen ? _sprFrozenSoil        : _sprCornSoil;
+    Sprite ThemeRidges => Mill ? _sprMillRidges      : Frozen ? _sprFrozenRidges      : _sprCornRidges;
+    // The village band is the watermill world's middle distance; it has no separate near-hills layer.
+    Sprite ThemeHills  => Mill ? null                : Frozen ? _sprFrozenHills       : _sprCornHills;
+    Sprite ThemeSilL   => Mill ? _sprMillSilhouetteL : Frozen ? _sprFrozenSilhouetteL : _sprCornSilhouetteL;
+    Sprite ThemeSilR   => Mill ? _sprMillSilhouetteR : Frozen ? _sprFrozenSilhouetteR : _sprCornSilhouetteR;
     // The aurora painting is all sky: its bottom edge sits behind the mid band (DistantBarn's barns sit at 0.052).
-    float ThemeFarAnchorUV  => Frozen ? 0f : CornFarAnchorUV;
-    float ThemeSoilGroundUV => Frozen ? FrozenSoilGroundUV : CornSoilGroundUV;
-    Color ThemeWallTint     => Frozen ? FrozenWallTint : CornWallTint;
+    // The valley painting's own near hills sit low: its bottom edge goes just behind the village band too.
+    float ThemeFarAnchorUV  => Mill ? 0f : Frozen ? 0f : CornFarAnchorUV;
+    float ThemeSoilGroundUV => Mill ? MillSoilGroundUV : Frozen ? FrozenSoilGroundUV : CornSoilGroundUV;
+    Color ThemeWallTint     => Mill ? MillWallTint : Frozen ? FrozenWallTint : CornWallTint;
+    Color ThemeUnderfill    => Mill ? MillUnderfill : SoilUnderfill;
+    // Band sizes: the village band stands on the far riverbank, lifted so its rooftops and the watermill's wheel clear
+    // the bulrushes in front (the bulrush art is taller and airier than the corn wall).
+    float ThemeMidHeight  => Mill ? MillMidHeight  : CornMidHeight;
+    float ThemeMidSink    => Mill ? MillMidSink    : CornMidSink;
+    float ThemeWallHeight => Mill ? MillWallHeight : CornWallHeight;
     const float FrozenSoilGroundUV = 0.851f;   // snow lip in FrozenSoil.png, from the bottom (measured)
     static readonly Color FrozenWallTint = new Color(0.82f, 0.88f, 0.98f, 1f);
-    // Frozen stalks are stiff: they barely sway.
-    float SwayMid  => Frozen ? 0.025f : 0.07f;
-    float SwayWall => Frozen ? 0.045f : 0.13f;
-    float SwaySil  => Frozen ? 0.08f  : 0.22f;
+    // MillSoil.png grass line from the bottom, measured by tools/import_watermill_art.py (keep in step).
+    const float MillSoilGroundUV = 0.697f;
+    static readonly Color MillWallTint  = new Color(0.86f, 0.92f, 0.86f, 1f);
+    static readonly Color MillUnderfill = new Color(0.24f, 0.16f, 0.09f);
+    const float MillMidHeight = 3.6f, MillMidSink = -0.9f, MillWallHeight = 2.4f;
+    // The distant hills (church spire, windmill) sit low and small on the horizon, behind the village's rooftops.
+    const float MillRidgesHeight = 2.3f, MillRidgesBase = 3.5f;
+    // Frozen stalks are stiff: they barely sway. Bulrushes bend easily; the village band (buildings) never sways.
+    float SwayMid  => Mill ? 0f    : Frozen ? 0.025f : 0.07f;
+    float SwayWall => Mill ? 0.15f : Frozen ? 0.045f : 0.13f;
+    float SwaySil  => Mill ? 0.24f : Frozen ? 0.08f  : 0.22f;
     int _builtWorld = -1;
 
     bool CornfieldActive =>
-        _groundAnchored && (_currentWorld == 1 || _currentWorld == 2) &&
+        _groundAnchored && (_currentWorld == 1 || _currentWorld == 2 || _currentWorld == 3) &&
         ThemeFar != null && ThemeMid != null && ThemeWall != null && ThemeSoil != null;
 
     void SetCornStripsActive(bool on)
@@ -436,13 +471,13 @@ public class EnvironmentDepthSystem : MonoBehaviour
             _cornRidges = MakeStrip("Corn_Ridges", ThemeRidges, RidgesParallax, RidgesOrder);
             _cornHills  = MakeStrip("Corn_Hills",  ThemeHills,  HillsParallax,  HillsOrder);
             _cornMid  = MakeStrip("Corn_Mid",  ThemeMid,  CornMidParallax, CornMidOrder);
-            _cornMid.material = SwayMaterial(SwayMid);
+            if (SwayMid > 0f) _cornMid.material = SwayMaterial(SwayMid);
             _cornWall = MakeStrip("Corn_Wall", ThemeWall, 0f,              CornWallOrder);
             _cornWall.material = SwayMaterial(SwayWall);
             _cornWall.tint = ThemeWallTint;
             _cornSoil = MakeStrip("Corn_Soil", ThemeSoil, 0f,              CornSoilOrder);
             _soilUnderfill = MakeChildRenderer(_cornRoot, "Corn_SoilUnderfill", MakeSolidSprite(), CornSoilOrder);
-            _soilUnderfill.color = SoilUnderfill;
+            _soilUnderfill.color = ThemeUnderfill;
             _silLeft  = MakeChildRenderer(_cornRoot, "Corn_SilhouetteLeft",  ThemeSilL, SilhouetteOrder);
             _silRight = MakeChildRenderer(_cornRoot, "Corn_SilhouetteRight", ThemeSilR, SilhouetteOrder);
             var silMat = SwayMaterial(SwaySil);
@@ -494,12 +529,12 @@ public class EnvironmentDepthSystem : MonoBehaviour
         float camBottom = c.y - camH * 0.5f;
 
         // Landforms behind the corn: far bluffs, then nearer wooded hills; their faded bottoms sink into the mist.
-        LayoutStrip(_cornRidges, RidgesHeight, g + RidgesBase, c, camW);
+        LayoutStrip(_cornRidges, Mill ? MillRidgesHeight : RidgesHeight, g + (Mill ? MillRidgesBase : RidgesBase), c, camW);
         LayoutStrip(_cornHills,  HillsHeight,  g + HillsBase,  c, camW);
         // Mid corn: bottom just under the ground line, drifting with the camera.
-        LayoutStrip(_cornMid, CornMidHeight, g - CornMidSink, c, camW);
+        LayoutStrip(_cornMid, ThemeMidHeight, g - ThemeMidSink, c, camW);
         // Corn wall at play depth.
-        LayoutStrip(_cornWall, CornWallHeight, g - CornWallSink, c, camW);
+        LayoutStrip(_cornWall, ThemeWallHeight, g - CornWallSink, c, camW);
         // Soil: fixed size from the parked camera (no rescaling while the camera follows a shot), grass line on g.
         float restBottom = _parallaxOrigin.y - camH * 0.5f;
         float soilH = Mathf.Max(CornSoilMinBelow, g - restBottom + 0.6f) / ThemeSoilGroundUV;
@@ -521,7 +556,7 @@ public class EnvironmentDepthSystem : MonoBehaviour
         PlaceClump(_silRight, 0.22f * camH, right - 0.06f * camW, rightEdge: false, camBottom - 0.02f * camH, slide);
 
         // Mist where the far hills meet the corn tops.
-        _cornMistY = g - CornMidSink + CornMidHeight * 0.85f;
+        _cornMistY = g - ThemeMidSink + ThemeMidHeight * (Mill ? 0.35f : 0.85f);   // village: mist on the far riverbank
     }
 
     static void PlaceClump(SpriteRenderer sr, float height, float edgeX, bool rightEdge, float bottom, float slide)
@@ -676,7 +711,7 @@ public class EnvironmentDepthSystem : MonoBehaviour
         {
             // Barn/silo bases just behind the mid corn's tassels; the corn and soil cover everything below, so
             // only the width and the top of the screen need covering.
-            float anchorY = _groundAnchorY - CornMidSink + CornMidHeight * 0.8f;
+            float anchorY = _groundAnchorY - ThemeMidSink + ThemeMidHeight * (Mill ? 0.3f : 0.8f);
             float camTop = camPos.y + camH * 0.5f;
             scale = Mathf.Max(camW / native.x, (camTop - anchorY) / ((1f - ThemeFarAnchorUV) * native.y));
             centreY = anchorY + (0.5f - ThemeFarAnchorUV) * scale * native.y;

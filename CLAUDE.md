@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Farm Fury** is an Angry Birds-style physics destruction game. Farm animals launch from a cannon to wreck robot fortresses and reclaim the farm.
+**Farm Fury Cannonfire** (renamed from "Farm Fury" 2026-11-10, to run with Farm Fury Arcade and Farm Fury Stampede)
+is an Angry Birds-style physics destruction game. Farm animals launch from a cannon to wreck robot fortresses and reclaim the farm.
 
 The repo contains two parallel codebases:
 - `index.html` — **Phaser 3.60 prototype** (frozen at Prompt 12, kept as a reference/physics-validation artifact only — not under active development)
@@ -61,14 +62,26 @@ needing a live pass before shipping.
   ids on the GameManager's AdManager (ads are inert until then); register the analytics events. No AdMob adapter is
   included until FarmFury has its own AdMob app id (the adapter crashes Android at launch without one; the id would
   go in the Android manifest and `FarmFuryIosBuild`).
-- **Identity not set:** bundle id is still `com.DefaultCompany.2D-URP`, company `DefaultCompany`. The other titles
-  use `com.farmfury.<game>` / "Tenbucks Mobile" — the user's call. productName stays "FarmFury" (changing it moves
-  the Editor's PlayerPrefs); the home-screen label is set to "Farm Fury" at build time (`FarmFuryAndroidBuild`,
-  `FarmFuryIosBuild` — neither compiled yet: batch checks build the Windows target only).
+- **Identity (2026-11-10):** productName "Farm Fury Cannonfire", company "Tenbucks Mobile", bundle id
+  `com.farmfury.cannonfire` (Android + iOS; Standalone still `com.DefaultCompany.2D-URP`). The home-screen label is
+  "Cannonfire" — subtitle only, like "Stampede" / "Arcade" — set at build time by `FarmFuryAndroidBuild` /
+  `FarmFuryIosBuild` (neither compiled yet: batch checks build the Windows target only). The Editor's PlayerPrefs moved
+  with the rename; they were copied once from `DefaultCompany\FarmFury` to `Tenbucks Mobile\Farm Fury Cannonfire`
+  (the old registry key is untouched). Store products keep their `farmfury_` ids (not player-visible).
+- **Branding (2026-11-10, final — user's pick):** the logo is `Cannonfire/Logo_C.png` (the user's transparent cut:
+  FARM FURY™ over a firing cannon and a wooden CANNONFIRE sign), the landing page is the user's own poster
+  `Cannonfire/ic.png` (1280x720, logo painted in) used as is, and the app icon is the generated one (cannon blasting
+  CANNONFIRE over red-orange rays, `Sprites/AppIcon.png`). `python tools/brand_cannonfire.py` (defaults: --logo
+  Logo_C.png --landing ic.png, icon untouched unless --icon) writes `Franchise/Menu/FF_Logo.png` (Leaderboard) and covers
+  the old FARM FURY mark on the 20 results/pause/new-character canvases (template-matched on the pre-rename originals
+  in `Cannonfire/originals/`, inpainted, logo at 1.4x the mark's width). Other attempts (Logo2_*, Logo_Cannonfire*,
+  Poster_*, Landing_*) stay in that folder; `tools/compose_cannonfire_logo.py` builds the blast-lettering variant. Kling
+  total for the rename 26 credits. The pale purple band at the canvases' left edge predates this (2026-11-02 inpaint).
 - **Not ported yet:** Stampede's Boot scene / Android AAB split + store build scripts, the iOS privacy manifest,
   the Character Story Cosmetics tab.
-- **World 2 (Frozen Tundra) was rebuilt 2026-11-09** as 22 framed designs (`tools/design_world2.py`) — probe-clean but
-  unseen in Play mode. **Worlds 3-9 levels (2026-11-02) are generated, not hand-built, and unseen in Play mode.** 120
+- **World 2 (Frozen Tundra) was rebuilt 2026-11-09** and **World 3 (Watermill Village) built 2026-11-10** as 22 framed
+  designs each (`tools/design_world2.py`, `tools/design_world3.py`) — probe-clean but unseen in Play mode. **Worlds 4-9
+  levels (2026-11-02) are generated, not hand-built, and unseen in Play mode.** 98
   levels from `WorldLevelGenerator` (see Recent work). Difficulty and solvability are inherited from World 1's towers but untested
   with the new animals' abilities; the Mothership backdrop has no painted ground (towers stand in space); prop placement
   (`SceneryBuilder.BuildWorldProps`) is code-placed and may crowd at wide zooms. Ducky/Horace/Gerald/Billy poses are
@@ -121,6 +134,59 @@ needing a live pass before shipping.
   place: this machine's disk — if lost, recovery means restoring `assets/` and re-running the art
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
+
+- **2026-11-10 (latest) — One strike, softer topple; logo + landing fit** (user: "structures are still too hard to
+  topple... a soft strike, with a slow topple that speeds up as gravity takes over... remove all second strike
+  requirements"; "the logo slightly smaller"; landing "sizing is too big"). Unverified in Play mode.
+  - **Blocks:** an animal hitting any block breaks it on the first hit (`BlockBase.OnCollisionEnter2D`, stone
+    included; Indestructible / stay-kinematic excepted). Stone base health 70 -> 30 so debris breaks it too.
+  - **Topple:** `LiveGravityScale` 0.42 -> 0.5, live angular damping 0.15 -> 0.04, `HitShove` 0.35/22 -> 0.6/36, and a
+    new `StackShove`: the strike also pushes every live block resting above / beside the struck one (high on its body,
+    35% of the shove, fading with height), so the stack leans as one, slowly first, then accelerating.
+  - **Robots:** `EggDamageFraction` 0.4 -> 1, `FallDamageFraction` 0.6 -> 1, any crush >= `CrushImpulse` kills (no half
+    tier). Bosses still scale by `_damageResistance` / `_structuralDamageResistance`.
+  - **Logo:** canvases' logo 1.4 -> 1.15x the old mark (`brand_cannonfire.py LOGO_SCALE`), Leaderboard `LogoBox`
+    190x134 -> 162x114.
+  - **Landing:** `LandingScreen` shows the whole poster (ZoomedCover zoom 0.5 = contained) over a blurred copy
+    (`MenuArt.landingPosterBlur` = `UI/LandingPage_Blur.png`, made by `brand_cannonfire.py`) filling the side gaps on
+    phones wider than 16:9 — covering had cropped FARM FURY and put CANNONFIRE under the Play/Exit buttons.
+  - **Probe (no input) after the change:** all 62 framed levels (Worlds 1-3) 100% intact, 0 awake; only the Frost
+    Tyrant settles 0.01 u. The one-strike feel itself is untested in Play mode.
+  - Also today: `NextLevel` on Results opens the next level's Character Select; Character Select slot ability icons;
+    floating-robot watchdog + stuck-cannon safety net (see the other 2026-11-10 entries / HISTORY).
+
+- **2026-11-10 — World music + ability sounds from Stampede** (user: "review the music from stampede and arcade for the
+  different worlds - apply, leave the theme as is ... SFX attached to ability"). `AudioManager._worldMusic` (index =
+  LevelData.world) plays Stampede's world track in Worlds 2-9 (`Assets/Audio/Worlds/`); World 1 keeps
+  SunriseMeadows_Background and the menus keep SunriseMeadows_TransitionMusic. Arcade's tracks are byte-identical
+  copies of Stampede's under other names, and Stampede itself reuses three files (Watermill = Sunken City, Sky Island =
+  Crop Factory, Dustbowl = its HarvestMoon). `AudioManager._abilityClips` (index = AnimalType, `Assets/Audio/Abilities/`)
+  plays on the ability tap (`AnimalBase.Kind` -> `AudioManager.PlayAbility`); Woolly has no franchise ability sound.
+  Wired by `SceneSetup.WireAudioArrays`. Unheard in Play mode.
+
+- **2026-11-10 (latest) — World 3 Watermill Village built on the World 1/2 template** (user: "utilise the same framework
+  ... be creative and build the third world ... specific to the world theme ... utilise artwork that is already
+  available ... produce a different cannon"). Unverified in Play mode; designer-checked and probe-checked (22/22 intact).
+  - **Levels:** `tools/design_world3.py` writes `Editor/LevelDataGenerator.World3.cs` (`MakeWorld3Framed`, which deletes
+    older `W03_*` files; ids stay `W3_L01..L22`). `design_world1.py` knows `world=3` (`SPRITE_W3`, `KIND_W3`, `HOIST_W`,
+    `GADGET_NAMES`). `WorldLevelGenerator` now skips worlds 2 and 3. Ducky leads most lineups.
+  - **Art:** `python tools/import_watermill_art.py` -> `Sprites/Environment/Watermill/`, `Launchers/MillCannon.png`,
+    `Enemies/Robot/MillMauler*.png`, `Scripts/Level/MountMeasurementsW3.cs`, `tools/mounts_w3.json`. Reused: Stampede's
+    WV_Parallax_Far/Mid/Near (far valley, village band, bulrushes), the Mill Stone Mauler poses, FishingBoat, Millstone.
+    Kling (15 images, 30 credits) in `FarmFury_Artwork/WatermillVillage/Framed/`.
+  - **Look:** `EnvironmentDepthSystem` theme 3 (`Mill*` fields; `ThemeMidHeight/Sink`, `ThemeWallHeight`,
+    `MillRidgesHeight/Base`); weathers SummerMorning / RiverMist / SpringShower / LanternDusk / Thunderstorm in
+    `CornfieldAmbience` (dragonflies, blossom petals, a rainbow, fireflies, storm).
+  - **Pieces:** `BlockBase._spr*W3` — mill timber post/plank (WoodBlock), cobble block / pillar / lintel slab (StoneBlock),
+    flour sacks (HaybaleBlock, also the cannon mount `CatapultLauncher._mountBaleSpriteW3`).
+  - **Cannon:** `CatapultLauncher._cannonSpriteW3` = the Mill Cannon (Kling, on Cannon.png's canvas, PPU 384).
+  - **Mounts:** `LevelLoader._platformSpritesW3` + `MountsW3`: river islet, bridge pier, fishing jetty, rowing boat
+    (rolling mount, slides on two keel skids), boat slipway.
+  - **Contraptions:** `GadgetType.WaterPump` (`Sunflower` pump mode: gushes a flat jet of splashing droplets),
+    `GadgetType.Millstone` (`RollingBoulder`), the mill hoist (`HayHoist` with the mill crane + a millstone load; the
+    crane's anchor/post are per-art params now).
+  - **Boss:** `MillMaulerRobot.prefab` (`EnsureMillMaulerPrefab`, before `WireLevelLoader`) on `_worldRobots[3].boss`;
+    dropped off by the mothership on L22.
 
 - **2026-11-09 (latest) — World 2 Frozen Tundra rebuilt on the World 1 template** (user: "take that template and build
   frozen tundra... creative... a new boss... fly in on the same mothership... flip the mothership"). Unverified in Play
@@ -679,7 +745,7 @@ All eight are scripted and art-wired; each leads the lineups of the world that i
 |---|---|---|---|
 | 1 — Meadow Ruins | Farm Cannon (drag angle+power) | Character weight affects range | 18 |
 | 2 — Frozen Tundra | Ice Cannon (angle + ricochet) | Freeze zones slow flight | 22 |
-| 3 — Watermill Village | Water Wheel (timing — tap to fire) | Fire spread on wood | 22 |
+| 3 — Watermill Village | Water Wheel (timing — tap to fire); Mill Cannon look built | Fire spread on wood | 22 |
 | 4 — Sky Islands | Airdrop Biplane (timing — tap to drop) | Updraft column steering | 24 |
 | 5 — Sunken City | Torpedo Tube (angle + bubble pop) | Current lanes + lever switches | 22 |
 | 6 — Robot Mothership | Gravity Sling (angle + gravity wells) | Zero-G ability modifiers | 16 |
@@ -687,7 +753,7 @@ All eight are scripted and art-wired; each leads the lineups of the world that i
 | 8 — Harvest Fairground (paid) | Farm Cannon | — | 12 |
 | 9 — Crop Factory (paid) | Farm Cannon | — | 12 |
 
-World 1 (L01-L18, `tools/design_world1.py`) and World 2 (W2_L01-L22, `tools/design_world2.py`, 2026-11-09) are designed framed levels; every level of Worlds 3-9 is generated from World 1's towers by `WorldLevelGenerator` (2026-11-02, see Recent work), with each world's own robots, boss, backdrop and props. None of it verified in Play mode.
+World 1 (L01-L18, `tools/design_world1.py`), World 2 (W2_L01-L22, `tools/design_world2.py`, 2026-11-09) and World 3 (W3_L01-L22, `tools/design_world3.py`, 2026-11-10) are designed framed levels; every level of Worlds 4-9 is generated from World 1's towers by `WorldLevelGenerator` (2026-11-02, see Recent work), with each world's own robots, boss, backdrop and props. None of it verified in Play mode.
 
 ### Star System
 - 1★ — all robots dead (progress gate)

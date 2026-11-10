@@ -16,6 +16,8 @@ namespace FarmFury.UI
         [Header("Landing")]
         [Tooltip("Landing poster, full-screen (LandingPage.png: FARM FURY title + the eight animals).")]
         public Sprite landingPoster;
+        [Tooltip("A heavily blurred copy of the poster (LandingPage_Blur.png, tools/brand_cannonfire.py): fills the side gaps on screens wider than the poster.")]
+        public Sprite landingPosterBlur;
         public Sprite playButton;
         [Tooltip("Exit, beside Play (hidden on iOS). (Franchise/Menu/Exit.png)")]
         public Sprite exitButton;

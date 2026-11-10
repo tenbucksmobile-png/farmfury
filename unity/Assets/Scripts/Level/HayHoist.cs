@@ -31,7 +31,7 @@ public class HayHoist : MonoBehaviour
     /// <param name="postHeight">height of the whole crane (the arm reaches about 0.68x this sideways)</param>
     /// <param name="faceLeft">mirror the crane so its arm reaches left (post standing right of the target)</param>
     public static HayHoist Spawn(Transform parent, Sprite crane, Sprite bucket, Vector2 basePos, float postHeight, float ropeLength, bool faceLeft = false,
-                                 float handleUV = BucketHandleUV)
+                                 float handleUV = BucketHandleUV, Vector2? anchorUV = null, float postUV = PostUV)
     {
         var go = new GameObject("HayHoist");
         go.transform.SetParent(parent, false);
@@ -51,12 +51,14 @@ public class HayHoist : MonoBehaviour
             craneW = b.size.x * s; craneH = postHeight;
             // basePos is the post's foot; the post sits at the left of the art (right when mirrored).
             sr.flipX = faceLeft;
-            craneMin = new Vector2(basePos.x - craneW * (faceLeft ? 1f - PostUV : PostUV), basePos.y);
+            craneMin = new Vector2(basePos.x - craneW * (faceLeft ? 1f - postUV : postUV), basePos.y);
             sr.transform.localScale = new Vector3(s, s, 1f);
             sr.transform.position = new Vector3(craneMin.x + craneW * 0.5f, craneMin.y + craneH * 0.5f, 0f);
         }
-        float ax = faceLeft ? 1f - RopeAnchorUV.x : RopeAnchorUV.x;
-        h._pulley = craneMin + new Vector2(craneW * ax, craneH * RopeAnchorUV.y);
+        // Other worlds' cranes (World 3's mill hoist, 2026-11-10) pass their own measured anchor and post.
+        Vector2 anchor = anchorUV ?? RopeAnchorUV;
+        float ax = faceLeft ? 1f - anchor.x : anchor.x;
+        h._pulley = craneMin + new Vector2(craneW * ax, craneH * anchor.y);
 
         // Bucket: dynamic, hanging still under the pulley.
         var bgo = new GameObject("HoistBucket");

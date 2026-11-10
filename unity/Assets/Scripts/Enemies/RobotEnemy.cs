@@ -49,8 +49,10 @@ public class RobotEnemy : MonoBehaviour
     // Raised 0.12 -> 0.16 (2026-07-12, user request: "give the eggs slightly stronger damage") —
     // still deliberately the weakest per-hit category (a Cluster Bomb supplement, not a solo-kill
     // weapon), just a bit more impactful now (~6-7 connecting eggs to kill instead of ~9).
-    private const float EggDamageFraction          = 0.4f;
-    private const float FallDamageFraction         = 0.6f;
+    // One strike (2026-11-10, user: "remove all second strike requirements"): one egg / ability hit, one fall and one
+    // crush each finish a robot. Bosses still divide every hit by their _damageResistance (a boss fight).
+    private const float EggDamageFraction          = 1.0f;
+    private const float FallDamageFraction         = 1.0f;
     [SerializeField] private float _robotContactDamage      = 18f;
 
     // Every Take*Damage() wrapper below computes its hit as `_maxHealth * fraction` — a
@@ -416,8 +418,36 @@ public class RobotEnemy : MonoBehaviour
     // starts asleep on its perch, so a collapsing structure carries it down; hard landings and debris crush it.
     const float LiveMass = 4f;
     // Scaled with the slower falls (LiveGravityScale 0.6 -> 0.42 cuts fall speeds ~16%), 2026-11-09: was 2.5 / 6.
-    const float CrushImpulse = 2.1f, SmashImpulse = 5f;   // half / all of its health
+    // A crush is a kill (2026-11-10: no "half" tier any more). SmashImpulse kept for reference/tuning.
+    const float CrushImpulse = 2.1f, SmashImpulse = 5f;
     bool _live;
+
+    // Floating-robot watchdog (2026-11-10, user screenshot: a robot left hanging in mid-air after its tower fell, W2
+    // L02). GoLive + Freeze put the robot to sleep where it was placed; if it sat even slightly above its perch, or
+    // the perch later went away without touching it, nothing ever woke it — a sleeping body with no contacts stays
+    // put forever. Every ~0.3 s: a live, sleeping robot with nothing solid just below its collider is woken.
+    const float SupportProbeInterval = 0.3f, SupportProbeDepth = 0.12f;
+    float _nextSupportProbe;
+
+    void FixedUpdate()
+    {
+        if (!_live || IsDestroyed || _rb == null || _rb.bodyType != RigidbodyType2D.Dynamic || _rb.IsAwake()) return;
+        if (Time.time < _nextSupportProbe) return;
+        _nextSupportProbe = Time.time + SupportProbeInterval;
+        if (!HasSupportBelow()) _rb.WakeUp();
+    }
+
+    bool HasSupportBelow()
+    {
+        var col = GetComponent<BoxCollider2D>();
+        if (col == null || !col.enabled) return true;
+        Bounds b = col.bounds;
+        var center = new Vector2(b.center.x, b.min.y - SupportProbeDepth * 0.5f);
+        var size   = new Vector2(b.size.x * 0.9f, SupportProbeDepth);
+        foreach (var hit in Physics2D.OverlapBoxAll(center, size, 0f))
+            if (hit != null && !hit.isTrigger && hit.attachedRigidbody != _rb) return true;
+        return false;
+    }
 
     public void Freeze()
     {
@@ -455,7 +485,14 @@ public class RobotEnemy : MonoBehaviour
         // non-lethal hits while a robot rests on it would otherwise call this once per hit. Once
         // truly falling (Dynamic), further disturbances to whatever's below don't matter — the
         // robot already left its perch.
-        if (_rb.bodyType == RigidbodyType2D.Dynamic) return;
+        if (_rb.bodyType == RigidbodyType2D.Dynamic)
+        {
+            // A live robot is already Dynamic but usually ASLEEP — and a sleeping body with nothing touching it is
+            // never woken by Box2D. Returning here left it hanging in mid-air once its perch was gone (2026-11-10,
+            // W2 L02 screenshot). Wake it so gravity takes over.
+            if (_live && !_rb.IsAwake()) _rb.WakeUp();
+            return;
+        }
         // Live-physics levels: until GoLive the robot's colliders are switched off (LevelReveal's pop). Going Dynamic
         // in that window dropped it straight through the ground (PhysicsProbe stress run, 2026-11-09) — GoLive makes
         // it a real body a moment later anyway.
@@ -557,7 +594,7 @@ public class RobotEnemy : MonoBehaviour
         {
             float damage = impulse * _impulseDamageMultiplier;
             // Live robots (Angry Birds pigs): falling debris or a hard landing crushes them.
-            if (_live) damage = Mathf.Max(damage, impulse >= SmashImpulse ? _maxHealth : impulse >= CrushImpulse ? _maxHealth * 0.5f : 0f);
+            if (_live && impulse >= CrushImpulse) damage = Mathf.Max(damage, _maxHealth * _structuralDamageResistance);
             TakeDamage(damage);
         }
     }

@@ -22,8 +22,13 @@ public class Sunflower : MonoBehaviour
     float _height;
     bool _fired;
     bool _crystal;   // World 2 ice crystal (2026-11-09): fires ice shards, shatters and fades instead of wilting
+    // World 3 village water pump (2026-11-10): the handle jerks, the pump shudders and gushes a flat, fast jet of water
+    // to the right — more droplets, lower and harder than the sunflower's fan, each one splashing (pushes + damages
+    // in a small radius). Afterwards the pump stays put, run dry (darker).
+    bool _pump;
 
-    public static Sunflower Spawn(Transform parent, Sprite flower, Sprite seed, Vector2 basePos, float height, bool crystal = false)
+    public static Sunflower Spawn(Transform parent, Sprite flower, Sprite seed, Vector2 basePos, float height, bool crystal = false,
+                                  bool pump = false)
     {
         var go = new GameObject("Sunflower");
         go.transform.SetParent(parent, false);
@@ -60,7 +65,9 @@ public class Sunflower : MonoBehaviour
         f._seedSprite = seed;
         f._height = height;
         f._crystal = crystal;
+        f._pump = pump;
         if (crystal) go.name = "IceCrystal";
+        if (pump) go.name = "WaterPump";
         return f;
     }
 
@@ -84,6 +91,7 @@ public class Sunflower : MonoBehaviour
 
     IEnumerator FireRoutine()
     {
+        if (_pump) { yield return PumpRoutine(); yield break; }
         // Wind-up: the head whips back, then snaps forward and spits the seeds.
         Quaternion rest = transform.rotation;
         yield return Rotate(rest, Quaternion.Euler(0, 0, 14f), 0.10f);
@@ -119,6 +127,49 @@ public class Sunflower : MonoBehaviour
         float t = 0f;
         Color c0 = _sr.color;
         while (t < 0.6f) { t += Time.deltaTime; _sr.color = Color.Lerp(c0, Wilted, t / 0.6f); yield return null; }
+    }
+
+    const int   PumpDrops = 10;
+    const float PumpAngleMin = 2f, PumpAngleMax = 30f, PumpSpeedMin = 9f, PumpSpeedMax = 12.5f;
+
+    IEnumerator PumpRoutine()
+    {
+        // Shudder (a quick squash-and-stretch about the base), then the gush: droplets in two quick pulses.
+        Vector3 s0 = transform.localScale, p0 = transform.position;
+        Vector3 basePos = p0 - transform.up * (_height * 0.5f);
+        for (float t = 0f; t < 0.12f; t += Time.deltaTime)
+        {
+            float k = Mathf.Sin(t / 0.12f * Mathf.PI);
+            transform.localScale = new Vector3(s0.x * (1f + 0.08f * k), s0.y * (1f - 0.1f * k), 1f);
+            transform.position = basePos + transform.up * (_height * 0.5f * (1f - 0.1f * k));
+            yield return null;
+        }
+        transform.localScale = s0; transform.position = p0;
+        // The spout: upper right of the pump (~0.7 of its height, a little right of centre).
+        Vector3 spout = basePos + transform.up * (_height * 0.7f) + transform.right * (_height * 0.18f);
+        var spec = new AbilityProjectile.Spec
+        {
+            sprite = _seedSprite, burstSprite = _seedSprite, size = 0.26f, mass = 0.9f, bounciness = 0.05f,
+            gravityScale = 0.5f, hits = 1, blockDamage = 16f, burstRadius = 0.45f, burstPush = 2.5f, robotHits = 1,
+            spin = 360f, life = 3f,
+        };
+        for (int pulse = 0; pulse < 2; pulse++)
+        {
+            for (int i = 0; i < PumpDrops / 2; i++)
+            {
+                float a = Mathf.Lerp(PumpAngleMin, PumpAngleMax, (i + Random.Range(-0.3f, 0.3f)) / (PumpDrops / 2 - 1)) * Mathf.Deg2Rad;
+                float v = Random.Range(PumpSpeedMin, PumpSpeedMax);
+                var p = AbilityProjectile.Spawn(spec, spout + new Vector3(0.1f, Random.Range(-0.06f, 0.06f), 0f),
+                                                new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * v, null, 7);
+                if (_seedSprite == null) p.GetComponent<SpriteRenderer>().sprite = MakeFallbackSprite();
+            }
+            AudioManager.Play(AudioManager.Sound.WoodHit);
+            CameraShake.Shake(0.07f, 0.1f);
+            yield return new WaitForSeconds(0.14f);
+        }
+        // Run dry: a little darker, as if the wet sheen is gone.
+        Color c0 = _sr.color, dry = new Color(0.72f, 0.72f, 0.76f);
+        for (float t = 0f; t < 0.5f; t += Time.deltaTime) { _sr.color = Color.Lerp(c0, dry, t / 0.5f); yield return null; }
     }
 
     IEnumerator Rotate(Quaternion from, Quaternion to, float seconds)

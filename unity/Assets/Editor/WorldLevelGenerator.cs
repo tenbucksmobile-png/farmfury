@@ -107,14 +107,15 @@ public static class WorldLevelGenerator
             string path = AssetDatabase.GUIDToAssetPath(guid);
             // Its own files only: World 2 ("W02_") is designed by tools/design_world2.py (2026-11-09).
             string fn = System.IO.Path.GetFileName(path);
-            if (fn.StartsWith("W") && !fn.StartsWith("W02_")) AssetDatabase.DeleteAsset(path);
+            if (fn.StartsWith("W") && !fn.StartsWith("W02_") && !fn.StartsWith("W03_")) AssetDatabase.DeleteAsset(path);
         }
 
         int made = 0;
         foreach (var spec in Worlds)
         {
             // World 2 is designed by hand on the framed template (tools/design_world2.py, 2026-11-09).
-            if (spec.world == 2) continue;
+            // World 3 likewise (tools/design_world3.py, 2026-11-10).
+            if (spec.world == 2 || spec.world == 3) continue;
             var names = LevelNames(spec);
             int regular = spec.levels - 1;
             for (int k = spec.firstLevel; k <= regular; k++)

@@ -126,8 +126,9 @@ public class LevelData : ScriptableObject
 public enum AnimalType    { Cluck, Bessie, Percy, Woolly, Ducky, Horace, Gerald, Billy }
 public enum BlockType     { Wood,  Stone,  Haybale, Barrel }
 // World 1 moods first; World 2 (Frozen Tundra, 2026-11-09) adds its own five.
-public enum LevelWeather  { Golden, MorningMist, Overcast, Rain, Dusk, AuroraNight, Snowfall, Blizzard, IceFog, PolarDawn }
-public enum GadgetType    { Sunflower, HayHoist, IceCrystal, IceBoulder }
+public enum LevelWeather  { Golden, MorningMist, Overcast, Rain, Dusk, AuroraNight, Snowfall, Blizzard, IceFog, PolarDawn,
+                            SummerMorning, RiverMist, SpringShower, LanternDusk, Thunderstorm }   // World 3 (2026-11-10)
+public enum GadgetType    { Sunflower, HayHoist, IceCrystal, IceBoulder, WaterPump, Millstone }   // World 3: pump, rolling millstone
 // Commander added 2026-07-12 for L18's boss level — Commander.png/Commander_Hit.png/
 // Commander_Explode.png art dropped in by the user, see SceneSetup.EnsureCommanderRobotPrefab().
 public enum RobotType     { Basic, Harvester, SemiHarvester, Commander }

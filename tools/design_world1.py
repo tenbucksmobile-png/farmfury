@@ -69,16 +69,38 @@ def _art_bounds(path):
     return (xs.min() / w, (xs.max() + 1) / w, (h - 1 - ys.max()) / h, (h - ys.min()) / h)
 
 
-ART_W = {1: ART, 2: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W2.items()}}
+# ── World 3 (Watermill Village, 2026-11-10) ──────────────────────────────────────────────────────────────────────
+# Iron-banded mill timber, river-stone masonry (cobble block / pillar / lintel slab) and flour sacks
+# (tools/import_watermill_art.py); crates and barrels keep their World 1 art. Mounts: river islet, stone bridge pier,
+# fishing jetty, rowing boat (the rolling mount), boat slipway. Contraptions: water pump, mill hoist with a millstone,
+# rolling millstone.
+SPRITE_W3 = {"post": "Environment/Watermill/MillPost", "plank": "Environment/Watermill/MillPlank",
+             "crate": "Environment/World1Props/Plank_Short", "sbox": "Environment/Watermill/MillStoneBlock",
+             "pillar": "Environment/Watermill/MillStonePillar", "slab": "Environment/Watermill/MillSlab",
+             "hay": "Environment/Watermill/FlourSacks", "barrel": "Environment/World1Props/Barrel_Dynamite"}
+ART_W = {1: ART, 2: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W2.items()},
+         3: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W3.items()}}
 # Frost robots: pawn/semi art is 426 px tall (World 1's is 256), scaled down so they fit a storey; vis = height.
 ROBOT_W = {1: ROBOT, 2: {"pawn": ("Basic", 4.4, 1.074, 0.0), "semi": ("SemiHarvester", 4.4, 1.074, 0.0),
-                         "harv": ("Harvester", 7.5, 1.099, 0.0), "boss": ("Commander", 7.0, 2.004, 0.06)}}
-MOUNTS_W = {1: MOUNTS, 2: _json.load(open(os.path.join(HERE, "mounts_w2.json")))}
+                         "harv": ("Harvester", 7.5, 1.099, 0.0), "boss": ("Commander", 7.0, 2.004, 0.06)},
+           # Watermill robots are Stampede's 256 px art like World 1's (the pawn is a wide river-sub); the boss is the
+           # Mill Stone Mauler, padded to the Commander's 500 px canvas.
+           3: ROBOT}
+MOUNTS_W = {1: MOUNTS, 2: _json.load(open(os.path.join(HERE, "mounts_w2.json"))),
+            3: _json.load(open(os.path.join(HERE, "mounts_w3.json")))}
 KIND_W2 = {"Mesa": "IcePillar", "Scaffold": "FrostScaffold", "Wagon": "Sled", "Ramp": "SnowRamp", "Hill": "Floe"}
 _W2_FLOE = MOUNTS_W[2]["Floe"]
-ISLAND_W = {1: ISLAND, 2: [(_W2_FLOE["uv"], _W2_FLOE["aspect"])] * 2}
-POST_W = {1: 0.276, 2: 0.34}       # visible post width (the frosted post's art is stockier)
-PILLAR_W = {1: 0.35, 2: 0.42}      # visible stone / ice pillar width
+KIND_W3 = {"Mesa": "Pier", "Scaffold": "Jetty", "Wagon": "Boat", "Ramp": "Slipway", "Hill": "Islet"}
+_W3_ISLET = MOUNTS_W[3]["Islet"]
+ISLAND_W = {1: ISLAND, 2: [(_W2_FLOE["uv"], _W2_FLOE["aspect"])] * 2, 3: [(_W3_ISLET["uv"], _W3_ISLET["aspect"])] * 2}
+POST_W = {1: 0.276, 2: 0.34, 3: 0.32}       # visible post width (the frosted post's art is stockier)
+PILLAR_W = {1: 0.35, 2: 0.42, 3: 0.40}      # visible stone / ice pillar width
+# Hoist crane + load per world: crane aspect w/h, post centre, rope anchor (x, y from the bottom), load w/h, knot height.
+_W3_CRANE = MOUNTS_W[3]["MillCrane"]
+HOIST_W = {1: HOIST, 2: HOIST,
+           3: dict(aspect=_W3_CRANE["aspect"], post=_W3_CRANE["post"], anchor=tuple(_W3_CRANE["anchor"]),
+                   bucket_aspect=506 / 512, handle=0.99)}
+GADGET_NAMES = {1: ("Sunflower", "IceBoulder"), 2: ("IceCrystal", "IceBoulder"), 3: ("WaterPump", "Millstone")}
 
 
 class Level:
@@ -118,7 +140,7 @@ class Level:
 
     def hut(self, xa, xb, b, h, stone=False, roof_stone=None):
         """Two posts at the ends and a roof across them; returns the roof's top."""
-        inset = {1: (0.14, 0.175), 2: (0.17, 0.21)}[self.world][1 if stone else 0]   # half the post width
+        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20)}[self.world][1 if stone else 0]   # half the post width
         top = self.post(xa + inset, b, h, stone)
         self.post(xb - inset, b, h, stone)
         return self.plank(xa, xb, top, stone if roof_stone is None else roof_stone)
@@ -138,7 +160,8 @@ class Level:
         return surface, cx - width / 2 + m["flat"][0] * width, cx - width / 2 + m["flat"][1] * width
 
     def _m(self, kind):
-        return MOUNTS_W[self.world][KIND_W2.get(kind, kind) if self.world == 2 else kind]
+        names = {2: KIND_W2, 3: KIND_W3}.get(self.world, {})
+        return MOUNTS_W[self.world][names.get(kind, kind)]
 
     def mount(self, kind, x, width):
         """A ground-standing mount (Hill/Mesa/Scaffold/Wagon). Returns (surface y, usable left x, usable right x)."""
@@ -153,24 +176,25 @@ class Level:
     # ── contraptions (2026-11-09) ───────────────────────────────────────────────────────────────────────
     def sunflower(self, x, surface, h=1.7):
         """A sunflower standing on surface; hit it and it sprays seeds to the right. Head ~0.72 h up."""
-        self.gadgets.append(dict(type="IceCrystal" if self.world == 2 else "Sunflower", x=x, y=surface, size=h, rope=0.0, left=False,
+        self.gadgets.append(dict(type=GADGET_NAMES[self.world][0], x=x, y=surface, size=h, rope=0.0, left=False,
                                  head=(x, surface + 0.72 * h), r=0.24 * h))
 
     def boulder(self, x, surface, d=1.2):
         """A rolling ice boulder (World 2) parked on a surface; hit it and it rolls right into whatever is there."""
-        self.gadgets.append(dict(type="IceBoulder", x=x, y=surface, size=d, rope=0.0, left=False,
+        self.gadgets.append(dict(type=GADGET_NAMES[self.world][1], x=x, y=surface, size=d, rope=0.0, left=False,
                                  head=(x, surface + d / 2), r=d / 2))
 
     def hoist(self, post_x, surface, h, rope, face_left=True):
         """A hay hoist: post foot at (post_x, surface), crane h tall, its arm reaching ~0.68 h sideways; a bucket hangs
         rope below the arm tip. Returns the bucket's (x, bottom y) so the target can be placed under it."""
-        cw = h * HOIST["aspect"]
-        left = post_x - cw * ((1 - HOIST["post"]) if face_left else HOIST["post"])
-        ax = left + cw * ((1 - HOIST["anchor"][0]) if face_left else HOIST["anchor"][0])
-        ay = surface + h * HOIST["anchor"][1]
-        bw = 0.75; bh = bw / HOIST["bucket_aspect"]
+        hs = HOIST_W[self.world]
+        cw = h * hs["aspect"]
+        left = post_x - cw * ((1 - hs["post"]) if face_left else hs["post"])
+        ax = left + cw * ((1 - hs["anchor"][0]) if face_left else hs["anchor"][0])
+        ay = surface + h * hs["anchor"][1]
+        bw = 0.75; bh = bw / hs["bucket_aspect"]
         handle = ay - rope
-        bottom = handle - HOIST["handle"] * bh
+        bottom = handle - hs["handle"] * bh
         self.gadgets.append(dict(type="HayHoist", x=post_x, y=surface, size=h, rope=rope, left=face_left,
                                  anchor=(ax, ay), bucket=(ax - bw / 2, ax + bw / 2, bottom, handle), cw=cw, cl=left))
         return ax, bottom
@@ -505,7 +529,7 @@ def check(L):
         if rb["y"] + rb["vis"] / 2 > G + 12.0: issues.append(f"robot {k} under the HUD (top {rb['y'] + rb['vis'] / 2 - G:.1f} u up)")
     # contraptions: reachable; a hoist's bucket hangs clear of everything and has a target below it
     for g in L.gadgets:
-        if g["type"] in ("Sunflower", "IceCrystal", "IceBoulder"):
+        if g["type"] in ("Sunflower", "IceCrystal", "IceBoulder", "WaterPump", "Millstone"):
             if not reachable(*g["head"]): issues.append(f"{g['type']} at x={g['x']:.2f} out of reach")
             continue
         bl, br, bb, bt = g["bucket"]

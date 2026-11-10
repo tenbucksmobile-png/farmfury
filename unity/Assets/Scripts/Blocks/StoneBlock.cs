@@ -6,7 +6,8 @@ public class StoneBlock : BlockBase
     {
         // 220 -> 70 (2026-11-08, user: "the game is too hard requiring multiple hits"): stone is the tough material,
         // as in Angry Birds, but a Cluck now cracks a stone box in ~2 hits and Bessie smashes it in one.
-        baseMaxHealth = 70f;
+        // 70 -> 30 (2026-11-10, "remove all second strike requirements"): falling debris breaks stone too.
+        baseMaxHealth = 30f;
         baseMass      = 8f;
         bounciness    = 0.1f;
         // Self-healing — 2026-08-09, same pattern as the fields above. An audit found this

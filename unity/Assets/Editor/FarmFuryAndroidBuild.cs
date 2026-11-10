@@ -5,14 +5,14 @@ using UnityEditor.Android;
 using UnityEngine;
 
 /// <summary>
-/// Sets the name under the Android home screen icon to "Farm Fury" (franchise convention, 2026-11-02: plain "Farm
-/// Fury" is reserved for this, the original game; Arcade shows "Arcade", Stampede "Stampede"). Only the label
-/// changes — productName stays as it is, because the Editor's PlayerPrefs location depends on it.
+/// Sets the name under the Android home screen icon to "Cannonfire" (2026-11-10: the game is Farm Fury Cannonfire;
+/// franchise convention is the subtitle only under the icon — Arcade shows "Arcade", Stampede "Stampede"). Only the
+/// label changes here; productName is "Farm Fury Cannonfire".
 /// Ported from FarmFury_Stampede's StampedeAndroidBuild.
 /// </summary>
 public class FarmFuryAndroidBuild : IPostGenerateGradleAndroidProject
 {
-    public const string HomeScreenName = "Farm Fury";
+    public const string HomeScreenName = "Cannonfire";   // franchise: the subtitle only, like "Stampede" / "Arcade" (2026-11-10)
 
     public int callbackOrder => 100;
 

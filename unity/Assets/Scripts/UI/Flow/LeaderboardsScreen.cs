@@ -34,7 +34,7 @@ namespace FarmFury.UI
             new(200f, 470f), new(500f, 530f), new(795f, 500f), new(1085f, 495f),
         };
         private const float NameWidth = 280f, NameHeight = 145f;
-        private static readonly Rect LogoBox = new(36f, 22f, 190f, 134f);
+        private static readonly Rect LogoBox = new(36f, 22f, 162f, 114f);   // 2026-11-10: the Cannonfire logo a touch smaller
         private static readonly Rect HintBox = new(100f, 652f, 700f, 40f);
         private static readonly Color LockedTint = new(0.55f, 0.55f, 0.55f, 0.8f);
 

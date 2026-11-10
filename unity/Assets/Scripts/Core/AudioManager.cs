@@ -21,6 +21,17 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip _bessieFallingClip; // Bessie_falling.mp3, loops while Bessie is airborne —
                                                           // see PlayFalling(AnimalType). Impact/landing still goes
                                                           // through the same StopFallingFade() fade-out either way.
+    // Per-world gameplay music (2026-11-10, user: "review the music from stampede and arcade for the different worlds -
+    // apply, leave the theme as is"), indexed by LevelData.world (1-9). The franchise tracks from FarmFury_Stampede's
+    // AudioManager.worldMusic (Arcade's are the same files under other names). World 1 keeps its own Sunrise Meadows
+    // track (_musicClip) and the menus keep the Sunrise Meadows theme (_menuMusicClip); an empty slot falls back to
+    // _musicClip. Files in Assets/Audio/Worlds/, wired by SceneSetup.EnsureAudioManager.
+    [SerializeField] private AudioClip[] _worldMusic = new AudioClip[10];
+    // Ability sounds (2026-11-10): Stampede's per-character ability SFX, indexed by AnimalType, played on the tap that
+    // triggers the ability (AnimalBase.Update). Woolly has none in the franchise (empty slot = silent). Files in
+    // Assets/Audio/Abilities/.
+    [SerializeField] private AudioClip[] _abilityClips = new AudioClip[8];
+    private const float AbilityVolume = 0.9f;
 
     private AudioSource _src;
     private AudioSource _musicSrc;
@@ -194,6 +205,15 @@ public class AudioManager : MonoBehaviour
 
         if (state == GameState.Playing)
         {
+            // The level's world picks the track; a different world's track replaces the one playing (same world:
+            // it keeps playing across levels and back from Pause, as before).
+            var track = MusicForWorld(GameManager.Instance != null && GameManager.Instance.CurrentLevel != null
+                ? GameManager.Instance.CurrentLevel.world : 1);
+            if (_musicSrc != null && track != null && _musicSrc.clip != track)
+            {
+                _musicSrc.Stop();
+                _musicSrc.clip = track;
+            }
             if (_musicSrc != null) _musicSrc.UnPause();   // back from Pause: continue, don't restart the track
             if (_menuMusicSrc != null && _menuMusicSrc.isPlaying) _menuMusicSrc.Stop();
             if (_musicSrc != null && _musicSrc.clip != null && !_musicSrc.isPlaying)
@@ -225,6 +245,19 @@ public class AudioManager : MonoBehaviour
     {
         if (Instance?._musicSrc != null && Instance._musicSrc.clip != null && !Instance._musicSrc.isPlaying)
             Instance._musicSrc.UnPause();
+    }
+
+    AudioClip MusicForWorld(int world) =>
+        _worldMusic != null && world > 1 && world < _worldMusic.Length && _worldMusic[world] != null
+            ? _worldMusic[world] : _musicClip;
+
+    /// <summary>The animal's ability sound (tap in flight); silent when it has none.</summary>
+    public static void PlayAbility(AnimalType animal)
+    {
+        if (Instance == null || Instance._abilityClips == null) return;
+        int i = (int)animal;
+        if (i < 0 || i >= Instance._abilityClips.Length) return;
+        PlayClip(Instance._abilityClips[i], AbilityVolume);
     }
 
     // cooldown: ignore the call if this sound played within the last N seconds

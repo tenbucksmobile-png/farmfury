@@ -64,6 +64,14 @@ public abstract class BlockBase : MonoBehaviour
     [SerializeField] protected Sprite _sprShortW2;
     // World 2 death burst (2026-11-09): ice shatters into splinters (World2Props/IceSplinters.png) instead of rubble.
     [SerializeField] protected Sprite _sprExplodeW2;
+    // World 3 (Watermill Village, 2026-11-10): mill timber (iron-banded oak post and plank) and river-stone masonry
+    // (cobble block, pillar, lintel slab) instead of stone; flour sacks for hay (tools/import_watermill_art.py).
+    // Same shape slots as World 2's; a stone box is the cobble block, a stone slab the lintel.
+    [SerializeField] protected Sprite _sprNormalW3;
+    [SerializeField] protected Sprite _sprVerticalW3;
+    [SerializeField] protected Sprite _sprHorizontalW3;
+    [SerializeField] protected Sprite _sprShortW3;
+    [SerializeField] protected Sprite _sprExplodeW3;
 
     // Optional hit-reaction art (e.g. Haybail_Damaged.png) — null on block types that don't
     // have one wired, in which case TakeDamage() only does the existing colour-tint/crack
@@ -114,10 +122,16 @@ public abstract class BlockBase : MonoBehaviour
     // 0.6 -> 0.42 (2026-11-09, user: "topples slower, so it increases the drastic fall"): every collapse plays out
     // about 20% slower, so a tower visibly leans, tips and comes down storey by storey. Robots, the hoist bucket and
     // rolling wagons share it, so everything in a collapse falls at the same pace.
-    public const float LiveGravityScale = 0.42f;
+    // 0.42 -> 0.5 (2026-11-10, user: "a soft strike, with a slow topple that speeds up as gravity takes over"): the lean
+    // still starts slowly (a tower near upright has little torque) but the fall now visibly accelerates.
+    public const float LiveGravityScale = 0.5f;
     // Struck blocks get an extra shove at the contact point (fraction of the striker's momentum) so the hit part
     // tips easily even under the lower gravity — the "topples easier when struck" half of the same request.
-    const float HitShoveFraction = 0.35f, HitShoveMax = 22f;
+    // 2026-11-10 ("remove all second strike requirements"): one soft strike must start the topple, so the shove is
+    // stronger and also leans the stack resting on and beside the struck block (StackShove), not only the block itself.
+    const float HitShoveFraction = 0.6f, HitShoveMax = 36f;
+    const float StackShoveFraction = 0.35f;   // of the shove, given to each block in the struck stack (above / touching)
+    const float StackShoveHeight = 6f;        // how far up the stack the lean reaches (world units)
     // No bounce: bouncy contacts made an awake stack jiggle and creep until it toppled (PhysicsProbe, 2026-11-08).
     static PhysicsMaterial2D _liveMaterial;
     // Friction 0.9 -> 0.6 and angular damping 0.6 -> 0.15 (2026-11-09, user: structures must "topple easier"): a hit
@@ -137,7 +151,7 @@ public abstract class BlockBase : MonoBehaviour
         _rb.linearVelocity = Vector2.zero;
         _rb.angularVelocity = 0f;
         _rb.linearDamping = 0.05f;
-        _rb.angularDamping = 0.15f;
+        _rb.angularDamping = 0.04f;   // 0.15 -> 0.04 (2026-11-10): the lean builds up instead of being braked
         if (_col != null) _col.sharedMaterial = LiveMaterial;
         _rb.Sleep();
         _graceUntil = Time.time + LiveGraceSeconds;
@@ -166,6 +180,37 @@ public abstract class BlockBase : MonoBehaviour
         Vector2 at = col.contactCount > 0 ? col.GetContact(0).point : (Vector2)transform.position;
         _rb.WakeUp();
         _rb.AddForceAtPosition(new Vector2(side, 0.12f).normalized * push, at, ForceMode2D.Impulse);
+        StackShove(side, push);
+    }
+
+    // The rest of the struck stack leans the same way: every live block whose footprint overlaps this one's (widened a
+    // little) and that rests above it, up to StackShoveHeight, gets a gentle push applied high on its body — a torque
+    // that tips it rather than sliding it — falling off with height so the top lags and the tower leans as one.
+    void StackShove(float side, float push)
+    {
+        if (_col == null) return;
+        Bounds b = _col.bounds;
+        var centre = new Vector2(b.center.x, b.min.y + StackShoveHeight * 0.5f);
+        var size = new Vector2(b.size.x + 0.6f, StackShoveHeight);
+        foreach (var hit in Physics2D.OverlapBoxAll(centre, size, 0f, 1 << 8))
+        {
+            var other = hit != null ? hit.GetComponentInParent<BlockBase>() : null;
+            if (other == null || other == this || !other.IsLive || other.IsDestroyed || other._rb == null) continue;
+            if (other._rb.bodyType != RigidbodyType2D.Dynamic) continue;
+            Bounds ob = hit.bounds;
+            if (ob.center.y < b.min.y) continue;   // below the strike: stays put
+            float k = StackShoveFraction * Mathf.Lerp(1f, 0.4f, Mathf.Clamp01((ob.center.y - b.center.y) / StackShoveHeight));
+            other._rb.WakeUp();
+            other._rb.AddForceAtPosition(new Vector2(side, 0f) * push * k, new Vector2(ob.center.x, ob.max.y), ForceMode2D.Impulse);
+        }
+    }
+
+    // DestroyBlock wakes the neighbours, but the block's collider lingers for DestroyDelay (0.12 s) — long enough for
+    // something resting on it to be put back to sleep on top of a body that is about to vanish. Wake them again as it
+    // actually goes (2026-11-10, floating-robot report).
+    void OnDestroy()
+    {
+        if (IsLive && IsDestroyed) WakeNeighbours();
     }
 
     // Wakes everything resting on or against this block (a destroyed body doesn't reliably wake its neighbours).
@@ -318,11 +363,13 @@ public abstract class BlockBase : MonoBehaviour
         // directly) via its own `?? ` chain, so e.g. a Skew block on a World 2 level correctly
         // falls back to the ice "normal" tile rather than always landing on wood/stone art.
         bool   isW2       = world == 2;
-        Sprite normal     = (isW2 && _sprNormalW2     != null) ? _sprNormalW2     : _sprNormal;
-        Sprite vertical   = (isW2 && _sprVerticalW2   != null) ? _sprVerticalW2   : _sprVertical;
-        Sprite horizontal = (isW2 && _sprHorizontalW2 != null) ? _sprHorizontalW2 : _sprHorizontal;
+        bool   isW3       = world == 3;
+        Sprite normal     = (isW2 && _sprNormalW2     != null) ? _sprNormalW2     : (isW3 && _sprNormalW3     != null) ? _sprNormalW3     : _sprNormal;
+        Sprite vertical   = (isW2 && _sprVerticalW2   != null) ? _sprVerticalW2   : (isW3 && _sprVerticalW3   != null) ? _sprVerticalW3   : _sprVertical;
+        Sprite horizontal = (isW2 && _sprHorizontalW2 != null) ? _sprHorizontalW2 : (isW3 && _sprHorizontalW3 != null) ? _sprHorizontalW3 : _sprHorizontal;
         Sprite diagonal   = (isW2 && _sprDiagonalW2   != null) ? _sprDiagonalW2   : _sprDiagonal;
-        Sprite shortSpr   = (isW2 && _sprShortW2      != null) ? _sprShortW2      : _sprShort;
+        Sprite shortSpr   = (isW2 && _sprShortW2      != null) ? _sprShortW2      : (isW3 && _sprShortW3      != null) ? _sprShortW3      : _sprShort;
+        bool   themed     = isW2 || (isW3 && _sprNormalW3 != null);
 
         // Select art sprite: an explicit artVariant (set by LevelLayoutDumper directly from the
         // design-time sprite's own filename) always wins over the aspect-ratio guess below —
@@ -345,8 +392,8 @@ public abstract class BlockBase : MonoBehaviour
             WoodArtVariant.Cart          => _sprCart          ?? normal,
             WoodArtVariant.Barrel        => _sprBarrelProp    ?? normal,
             // Frozen Tundra framed towers (2026-11-09): a stone box is an ice block, a stone slab a long ice slab.
-            WoodArtVariant.Square        => isW2 ? normal : _sprSquare ?? normal,
-            WoodArtVariant.Block         => isW2 ? horizontal ?? normal : _sprBlock ?? normal,
+            WoodArtVariant.Square        => themed ? normal : _sprSquare ?? normal,
+            WoodArtVariant.Block         => themed ? horizontal ?? normal : _sprBlock ?? normal,
             WoodArtVariant.RuinedWall    => _sprRuinedWall    ?? normal,
             WoodArtVariant.Tower         => _sprTower         ?? normal,
             WoodArtVariant.Skew          => _sprSkew          ?? normal,
@@ -356,6 +403,7 @@ public abstract class BlockBase : MonoBehaviour
                : normal,
         };
         if (isW2 && _sprExplodeW2 != null) _sprExplode = _sprExplodeW2;
+        if (isW3 && _sprExplodeW3 != null) _sprExplode = _sprExplodeW3;
         if (chosen != null)
         {
             _sr.sprite = chosen;
@@ -550,6 +598,13 @@ public abstract class BlockBase : MonoBehaviour
             col.rigidbody.bodyType == RigidbodyType2D.Static)
             return;
 
+        // One strike (2026-11-10, user: "remove all second strike requirements"): a launched animal breaks any block it
+        // hits, stone included, on the first hit. (Its shove above has already started the stack's topple.)
+        if (col.rigidbody != null && col.rigidbody.GetComponent<AnimalBase>() != null && !NeverFalls && !Indestructible)
+        {
+            TakeDamage(MaxHealth);
+            return;
+        }
         float effMass = CalculateEffectiveMass(col.rigidbody);
         float impulse = col.relativeVelocity.magnitude * effMass;
         if (impulse < minDamageImpulse) return;

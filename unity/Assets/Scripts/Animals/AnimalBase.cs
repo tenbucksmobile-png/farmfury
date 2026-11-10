@@ -147,6 +147,7 @@ public abstract class AnimalBase : MonoBehaviour
         {
             _abilityUsed = true;
             TriggerAbility();
+            AudioManager.PlayAbility(Kind);   // the franchise ability sound (2026-11-10)
             if (_sprAbility != null)
             {
                 _sr.sprite = _sprAbility;
@@ -161,14 +162,29 @@ public abstract class AnimalBase : MonoBehaviour
             return;
         }
 
-        // See the _flightTimer field comment above — stuck-cannon safety net.
-        if (IsInFlight)
+        // See the _flightTimer field comment above — stuck-cannon safety net. Counted for the whole time since
+        // launch, not only while IsInFlight (2026-11-10, user report: the next animal never loaded): Percy's Bounce
+        // Roll clears IsInFlight on each bounce and, once rolling along the ground or a floe, never gets a new
+        // collision-enter or exit — so the timer stopped, Percy rolled off-screen (friction 0) and the cannon waited
+        // forever. Also ends a launched animal that has left the play area or has come to rest without a "real" hit.
+        _flightTimer += Time.deltaTime;
+        Vector2 p = transform.position;
+        if (_flightTimer >= MaxFlightSeconds || p.y <= MaxFallY || Mathf.Abs(p.x) > MaxAbsX)
         {
-            _flightTimer += Time.deltaTime;
-            if (_flightTimer >= MaxFlightSeconds || transform.position.y <= MaxFallY)
-                DestroyAnimal();
+            DestroyAnimal();
+            return;
         }
+        if (_rb != null && _rb.bodyType == RigidbodyType2D.Dynamic && _rb.linearVelocity.sqrMagnitude < RestSpeedSqr)
+        {
+            _restTimer += Time.deltaTime;
+            if (_restTimer >= RestSeconds) DestroyAnimal();
+        }
+        else _restTimer = 0f;
     }
+
+    const float MaxAbsX = 40f;               // the ground collider is 60 u wide, centred on x = 0
+    const float RestSpeedSqr = 0.15f * 0.15f, RestSeconds = 1.2f;
+    float _restTimer;
 
     // How long the ability-trigger pose (e.g. Cluck_Trigger1.png) stays up before reverting —
     // 2026-07-10, user report: "cluck should not stay in trigger but once eggs have been shot to
@@ -224,6 +240,19 @@ public abstract class AnimalBase : MonoBehaviour
     }
 
     protected abstract void TriggerAbility();
+
+    /// <summary>Which animal this is (picks its ability sound).</summary>
+    public AnimalType Kind => this switch
+    {
+        BessieAnimal => AnimalType.Bessie,
+        PercyAnimal  => AnimalType.Percy,
+        WoollyAnimal => AnimalType.Woolly,
+        DuckyAnimal  => AnimalType.Ducky,
+        HoraceAnimal => AnimalType.Horace,
+        GeraldAnimal => AnimalType.Gerald,
+        BillyAnimal  => AnimalType.Billy,
+        _            => AnimalType.Cluck,
+    };
 
     protected virtual void OnCollisionEnter2D(Collision2D col)
     {

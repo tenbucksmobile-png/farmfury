@@ -61,6 +61,7 @@ public static partial class SceneSetup
         WireGameManager();      // _levels array
         EnsureAppIcon();            // Sprites/AppIcon.png -> default app icon (SceneSetup.Worlds.cs)
         EnsureWorldRobotPrefabs();  // Worlds 3-9: W<N>_<Tier>Robot prefabs from Stampede art (SceneSetup.Worlds.cs)
+        EnsureMillMaulerPrefab();   // MillMaulerRobot.prefab (World 3 boss, 2026-11-10) — before WireLevelLoader wires it
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
         WireAbilityProjectiles(); // Gerald/Woolly/Billy thrown-ability art (SceneSetup.Cornfield.cs)
         WireBessieAudio();      // BessieAnimal.prefab: _earthquakeClip <- Bessie_Earthquake.mp3
@@ -866,6 +867,7 @@ public static partial class SceneSetup
         const string icon = "Assets/Sprites/UI/Icon";
         const string fa = FranchiseArt;
         WireSprite(so, "_menuArt.landingPoster",   "Assets/Sprites/UI/LandingPage.png");
+        WireSprite(so, "_menuArt.landingPosterBlur", "Assets/Sprites/UI/LandingPage_Blur.png");
         WireSprite(so, "_menuArt.playButton",      icon + "/Btn_play.png");
         WireSprite(so, "_menuArt.exitButton",      fa + "/Menu/Exit.png");
         WireSprite(so, "_menuArt.settingsButton",  icon + "/Btn_settings.png");
@@ -1075,6 +1077,39 @@ public static partial class SceneSetup
         // Landing page + Sunrise Meadows world map (GameState.Idle) — separate track/AudioSource
         // from the gameplay loop above, see AudioManager.OnStateChanged.
         WireAudioClip(go, "_menuMusicClip",  "Assets/Audio/SunriseMeadows_TransitionMusic.mp3");
+        WireAudioArrays(go);
+    }
+
+    // Per-world gameplay music (index = LevelData.world; World 1 keeps _musicClip) and per-animal ability sounds
+    // (index = AnimalType), both from FarmFury_Stampede (2026-11-10).
+    static void WireAudioArrays(GameObject go)
+    {
+        var am = go.GetComponent<AudioManager>();
+        if (am == null) return;
+        var so = new SerializedObject(am);
+        string[] worlds = { null, null, "FrozenTundra", "WatermillVillage", "SkyIsland", "SunkenCity", "Mothership",
+                            "DustbowlCanyon", "HarvestFairground", "CropFactory" };
+        var wm = so.FindProperty("_worldMusic");
+        wm.arraySize = worlds.Length;
+        int n = 0;
+        for (int i = 0; i < worlds.Length; i++)
+        {
+            var clip = worlds[i] == null ? null : AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/Audio/Worlds/{worlds[i]}.mp3");
+            wm.GetArrayElementAtIndex(i).objectReferenceValue = clip;
+            if (clip != null) n++;
+        }
+        var ab = so.FindProperty("_abilityClips");
+        var animals = System.Enum.GetNames(typeof(AnimalType));
+        ab.arraySize = animals.Length;
+        int k = 0;
+        for (int i = 0; i < animals.Length; i++)
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/Audio/Abilities/{animals[i]}_Ability.mp3");
+            ab.GetArrayElementAtIndex(i).objectReferenceValue = clip;
+            if (clip != null) k++;
+        }
+        so.ApplyModifiedProperties();
+        Debug.Log($"[FarmFury] AudioManager: {n} world tracks, {k} ability sounds wired.");
     }
 
     static void WireAudioClip(GameObject go, string fieldName, string path)
@@ -1340,6 +1375,17 @@ public static partial class SceneSetup
         var baleW2 = AssetDatabase.LoadAssetAtPath<Sprite>(frozenBale);
         if (baleW2 != null) so.FindProperty("_mountBaleSpriteW2").objectReferenceValue = baleW2;
 
+        // World 3 (Watermill Village, 2026-11-10): the Mill Cannon on Cannon.png's canvas at Cannon.png's PPU (384), so
+        // FarmCannon's scale and the barrel offsets carry over; flour sacks for the mount (Haybail.png's canvas).
+        const string millCannon = "Assets/Sprites/Environment/Launchers/MillCannon.png";
+        EnsureSingleSprite(millCannon, 384);
+        var millCannonSprite = AssetDatabase.LoadAssetAtPath<Sprite>(millCannon);
+        if (millCannonSprite != null) so.FindProperty("_cannonSpriteW3").objectReferenceValue = millCannonSprite;
+        const string flourSacks = "Assets/Sprites/Environment/Watermill/FlourSacks.png";
+        EnsureSingleSprite(flourSacks, 500);
+        var sacks = AssetDatabase.LoadAssetAtPath<Sprite>(flourSacks);
+        if (sacks != null) so.FindProperty("_mountBaleSpriteW3").objectReferenceValue = sacks;
+
         so.FindProperty("_cannonGO").objectReferenceValue = cannonGO;
 
         so.ApplyModifiedProperties();
@@ -1487,6 +1533,26 @@ public static partial class SceneSetup
         WireBlockPrefab("Assets/Prefabs/Blocks/ExplodingBarrelBlock.prefab", folderW2, new[]
         {
             ("_sprNormalW2", "Barrel_Dynamite.png"), ("_sprHorizontalW2", "Barrel_Dynamite.png"), ("_sprVerticalW2", "Barrel_Dynamite.png"),
+        });
+
+        // World 3 Watermill Village (2026-11-10, tools/import_watermill_art.py): iron-banded mill timber, river-stone
+        // masonry (cobble block, pillar, lintel slab) and flour sacks. Crates and barrels keep their World 1 art.
+        const string millFolder = "Assets/Sprites/Environment/Watermill";
+        WireBlockPrefab("Assets/Prefabs/Blocks/WoodBlock.prefab", millFolder, new[]
+        {
+            ("_sprVerticalW3",   "MillPost.png"),
+            ("_sprHorizontalW3", "MillPlank.png"),
+        });
+        WireBlockPrefab("Assets/Prefabs/Blocks/StoneBlock.prefab", millFolder, new[]
+        {
+            ("_sprNormalW3",     "MillStoneBlock.png"),
+            ("_sprShortW3",      "MillStoneBlock.png"),
+            ("_sprVerticalW3",   "MillStonePillar.png"),
+            ("_sprHorizontalW3", "MillSlab.png"),
+        });
+        WireBlockPrefab("Assets/Prefabs/Blocks/HaybaleBlock.prefab", millFolder, new[]
+        {
+            ("_sprNormalW3", "FlourSacks.png"), ("_sprHorizontalW3", "FlourSacks.png"), ("_sprVerticalW3", "FlourSacks.png"),
         });
     }
 
@@ -2163,6 +2229,11 @@ public static partial class SceneSetup
     // (FrostTyrant.png / _Alert / _Hit / _Explode, from tools/import_frozen_art.py).
     static void EnsureFrostTyrantPrefab() =>
         EnsureBossRobotPrefab("FrostTyrantRobot", "Assets/Sprites/Enemies/Robot/FrostTyrant");
+
+    // World 3's boss (2026-11-10): the Mill Stone Mauler (Stampede's Watermill boss; MillMauler.png / _Alert / _Hit from
+    // tools/import_watermill_art.py — no _Explode pose, so the death burst is the generic Explosion.png).
+    static void EnsureMillMaulerPrefab() =>
+        EnsureBossRobotPrefab("MillMaulerRobot", "Assets/Sprites/Enemies/Robot/MillMauler");
 
     static void EnsureBossRobotPrefab(string prefabName, string spriteBase)
     {

@@ -1,4 +1,6 @@
-# FARM FURY — Game Design Document
+# FARM FURY CANNONFIRE — Game Design Document
+
+*Renamed from "Farm Fury" on 2026-11-10 to run with Farm Fury Arcade and Farm Fury Stampede. Under the phone icon: "Cannonfire".*
 
 **v3.3** (9 November 2026) · "Physics Destruction · Nine Worlds · One Farm to Save" · A Farm Fury Universe Game
 Physics Puzzle · Casual · Free-to-Play · iOS & Android · Unity 6.5
@@ -44,8 +46,9 @@ level rewards the player who spots the clever shot.
 3. **Aim and fire the Farm Cannon:** drag back from the cannon — drag *direction* sets the launch angle (20°–80°),
    drag *distance* sets the power. A dotted arc previews the shot (fades on later levels).
 4. **Tap mid-flight** to trigger the animal's ability (from World 1 level 4 on).
-5. Destroy every robot. Structures stand still until something hits them, then topple storey by storey under
-   live physics (slowed gravity so the collapse reads); robots get crushed by falling pieces; explosive props
+5. Destroy every robot. Structures stand still until something hits them; **one soft strike** is enough — the
+   struck piece breaks and the stack above leans, slowly at first, then faster as gravity takes over (live physics,
+   slightly reduced gravity); robots get crushed by falling pieces; explosive props
    (hay bales, dynamite barrels) chain; parked wagons roll off ramps and ledges into the structures below.
    A **switch** button (under the Locker) reopens Character Select between shots to swap the animals still to fire
    — never more than are left.
@@ -91,16 +94,17 @@ Three robot tiers plus a boss in every world; each world has its own look for ea
 | Semi-Harvester | 26 | Most common guard |
 | Boss | 90 | One per world, resists direct hits (structural collapse hurts it most) |
 
-**Damage model (Angry Birds feel, Nov 2026):** a direct animal hit kills any regular robot (bosses still resist);
-an egg or thrown-ability hit takes 40% of its health; falling when its support is destroyed takes 60%; being
-crushed by a falling piece takes half (heavy impact) or all of it (very heavy). Exploding blocks never damage robots
+**Damage model (one strike, 10 Nov 2026 — no second hits):** a direct animal hit kills any regular robot and
+breaks any block it touches (stone included); one egg or thrown-ability hit, one fall from a destroyed support, or
+one crush from a falling piece each kill a robot. Bosses are the exception: they still divide every hit by their
+resistance (a boss fight). Debris landing on a block can break it (stone is no longer much tougher than wood). Exploding blocks never damage robots
 directly. Robots stand still on live-physics levels (patrolling would shove the structure) and flash when hit.
 
 | World | Basic | Harvester | Semi-Harvester | Boss |
 |---|---|---|---|---|
 | 1 Meadow Ruins | Pawn | Harvester | Semi-Harvester | **The Commander** |
 | 2 Frozen Tundra | Frost Robot | Ice Harvestor | Glacier Harvestor | The Commander (own boss planned) |
-| 3 Watermill Village | Water Robot | Harvester | Scout | **Milestone Mauler** |
+| 3 Watermill Village | Water Robot | Harvester | Scout | **Mill Stone Mauler** |
 | 4 Sky Islands | Drift Robot | Harvester | Drone | **Storm Baron** |
 | 5 Sunken City | Shrimp | Crab | Jellyfish | **Deep Dredger** |
 | 6 Robot Mothership | Patrol Tank | Harvestor | Drone | **Factory Machine** (Robot Overlord planned) |
@@ -116,7 +120,7 @@ Six free story worlds in order, then three paid worlds (bought separately, playa
 |---|---|---|---|---|
 | 1 Meadow Ruins | 18 (hand-built) | Rolling hills, ruined walls, golden light | Farm Cannon | Cluck, Bessie |
 | 2 Frozen Tundra | 22 | Aurora skies, ice fortresses, ice/snow blocks | Ice Cannon (look) | Percy, Woolly |
-| 3 Watermill Village | 22 | Riverside village, mills, willows | Farm Cannon | Ducky |
+| 3 Watermill Village | 22 | River valley, watermill village, bulrushes | Mill Cannon (look) | Ducky |
 | 4 Sky Islands | 24 | Floating islands, clouds, balloons | Farm Cannon | Horace |
 | 5 Sunken City | 22 | Flooded ruins, coral, fish | Farm Cannon | Gerald |
 | 6 Robot Mothership | 16 | Deep space, the Mothership | Farm Cannon | Billy |
@@ -164,7 +168,19 @@ contraptions: **ice crystals** that fire a fan of ice shards, **frosted hoists**
 boulders** that roll off ledges and ramps. Percy and Woolly lead the lineups. The boss is the **Frost Tyrant** — an
 ice-armoured war robot with a freeze-ray arm, dropped onto his keep by the robot mothership.
 
-**Worlds 3–9** are generated from World 1's towers (`WorldLevelGenerator`), so the physics is the already-tuned
+**World 3 — Watermill Village** (built Nov 2026 on the same template, `tools/design_world3.py`): 22 framed levels in
+a river valley the robots have taken over — summer mornings, river mist, spring showers (with a rainbow), lantern-lit
+dusk with fireflies, and a summer thunderstorm. Structures are iron-banded mill timber with **river-stone masonry**
+where World 1 has stone, and **flour sacks** instead of hay. Mounts are grassy river islets, stone bridge piers and
+fishing jetties on stilts; a **rowing boat** replaces the wagon and slides down a **boat slipway**. Village
+contraptions: **water pumps** that gush a flat jet of water into the structure, the mill's **sack hoist** dangling a
+**millstone**, and **millstones** that roll off ledges and slipways. Ducky leads most lineups. The cannon is the **Mill
+Cannon** (oak staves in copper hoops, a dripping copper pipe) on a stack of flour sacks. The boss is the **Mill Stone
+Mauler** — a steam-and-waterwheel brute, dropped onto his keep by the robot mothership. Level ideas: the weir's
+stepping stones, a toll bridge with a troll-Harvester underneath, a flour store on sack stilts, a market on a long
+islet, the miller's manor, the sluice-gate fortress.
+
+**Worlds 4–9** are generated from World 1's towers (`WorldLevelGenerator`), so the physics is the already-tuned
 physics:
 - levels walk through World 1's towers 1–17 in order, so every world ramps up like World 1;
 - every other level mirrors the tower left-right; towers shift slightly;
@@ -243,8 +259,9 @@ loot boxes, every level completable without spending. The model now matches the 
   painting each (shared with Stampede).
 - **Effects:** wood/stone debris bursts, explosions, egg splats, dust — every burst sized from the visible art of
   what broke (about 1.5x a block's or robot's size), never bigger than the action.
-- **Audio:** World 1 gameplay and menu music; cannon shot; falling screams for Cluck and Bessie; robot hit/death SFX.
-  **Planned:** music per world (Suno), falling loops for the other six animals.
+- **Audio:** the menu theme and World 1's Sunrise Meadows track; Worlds 2-9 play the franchise world tracks from
+  Farm Fury Stampede; each animal's franchise ability sound on the ability tap (Woolly has none yet); cannon shot;
+  falling screams for Cluck and Bessie; robot hit/death SFX. **Planned:** falling loops for the other six animals.
 - The win/lose celebration videos and the World 1 → 2 transition video were **removed** (November 2026).
 
 ## 11. Technical Specifications (Built)
@@ -295,4 +312,4 @@ leaderboards on the "Perfect" goal, seasonal cosmetics.
 
 ---
 
-*Farm Fury — Game Design Document v3.1. Built by one developer, powered by AI. One farm to save.*
+*Farm Fury Cannonfire — Game Design Document v3.2. Built by one developer, powered by AI. One farm to save.*

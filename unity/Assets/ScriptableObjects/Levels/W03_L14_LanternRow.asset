@@ -1,0 +1,124 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1966708deffe45949832dc573867a129, type: 3}
+  m_Name: W03_L14_LanternRow
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelId: W3_L14
+  levelName: Lantern Row
+  parBirds: 3
+  world: 3
+  isBossLevel: 0
+  referenceFraming: 1
+  trimColliders: 0
+  birds: 030000000400000001000000
+  blocks:
+  - type: 0
+    position: {x: 7.4, y: -4.95}
+    size: {x: 0.32, y: 1.3}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 9.4, y: -4.95}
+    size: {x: 0.32, y: 1.3}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 11.4, y: -4.95}
+    size: {x: 0.32, y: 1.3}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 8.315, y: -4.175}
+    size: {x: 2.17, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 10.485, y: -4.175}
+    size: {x: 2.17, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 8.06, y: -3.475}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 10.74, y: -3.475}
+    size: {x: 0.32, y: 1.15}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+  - type: 0
+    position: {x: 9.4, y: -2.775}
+    size: {x: 3, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+  robots:
+  - robotType: 2
+    position: {x: 8.4, y: -5.15}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 2
+    position: {x: 10.4, y: -5.15}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 8.7, y: -3.6}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 10.1, y: -3.6}
+    scale: {x: 5.5, y: 5.5}
+  platforms: []
+  weather: 13
+  gadgets:
+  - type: 1
+    position: {x: 13.9, y: -5.6}
+    size: 6.4
+    ropeLength: 0.3
+    faceLeft: 1

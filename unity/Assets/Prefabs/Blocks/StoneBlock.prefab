@@ -208,6 +208,11 @@ MonoBehaviour:
   _sprDiagonalW2: {fileID: 21300000, guid: b73590b427a026649b89c79ed573ad76, type: 3}
   _sprShortW2: {fileID: 21300000, guid: 1c949f3237f9b2d44b0ba4f61948579b, type: 3}
   _sprExplodeW2: {fileID: 21300000, guid: f22d08b9bec47164aa1709607cf6749e, type: 3}
+  _sprNormalW3: {fileID: 21300000, guid: 980110d9b82bbe14b99d1b9db1a1bc5d, type: 3}
+  _sprVerticalW3: {fileID: 21300000, guid: 55cdfaf9bea86824190a35930ec50c43, type: 3}
+  _sprHorizontalW3: {fileID: 21300000, guid: a7f77a2db94e9b04d8b2c045d322497b, type: 3}
+  _sprShortW3: {fileID: 21300000, guid: 980110d9b82bbe14b99d1b9db1a1bc5d, type: 3}
+  _sprExplodeW3: {fileID: 0}
   _sprDamaged: {fileID: 21300000, guid: 317666c944aed66459393cad8273dc5e, type: 3}
   _sprExplode: {fileID: 21300000, guid: 317666c944aed66459393cad8273dc5e, type: 3}
   _explodeSizeMultiplier: 1

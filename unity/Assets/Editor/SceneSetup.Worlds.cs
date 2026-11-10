@@ -143,6 +143,12 @@ public static partial class SceneSetup
             set.FindPropertyRelative("harvester").objectReferenceValue     = LoadRobotPrefab(world, "Harvester");
             set.FindPropertyRelative("semiHarvester").objectReferenceValue = LoadRobotPrefab(world, "SemiHarvester");
             set.FindPropertyRelative("boss").objectReferenceValue          = LoadRobotPrefab(world, "Boss");
+            // World 3's framed boss levels use the Mill Stone Mauler (taunt poses + the mothership drop-in), 2026-11-10.
+            if (world == 3)
+            {
+                var mauler = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/MillMaulerRobot.prefab");
+                if (mauler != null) set.FindPropertyRelative("boss").objectReferenceValue = mauler.GetComponent<RobotEnemy>();
+            }
         }
     }
 
@@ -185,8 +191,8 @@ public static partial class SceneSetup
     }
 
     // ── App icon ──────────────────────────────────────────────────────────────
-    // Sprites/AppIcon.png (1024x1024: Cluck thumbs-up + FF_Logo over the World 1 sky, composed 2026-11-02 from
-    // existing art) as the default icon for every platform. A platform-specific icon set in Player Settings wins.
+    // Sprites/AppIcon.png (1024x1024: the Farm Fury Cannonfire logo on orange sunburst rings, Kling 2026-11-10 in
+    // Stampede's icon style; tools/brand_cannonfire.py) as the default icon for every platform. A platform-specific icon set in Player Settings wins.
     static void EnsureAppIcon()
     {
         const string path = "Assets/Sprites/AppIcon.png";
