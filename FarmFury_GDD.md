@@ -46,10 +46,13 @@ level rewards the player who spots the clever shot.
 3. **Aim and fire the Farm Cannon:** drag back from the cannon — drag *direction* sets the launch angle (20°–80°),
    drag *distance* sets the power. A dotted arc previews the shot (fades on later levels).
 4. **Tap mid-flight** to trigger the animal's ability (from World 1 level 4 on).
-5. Destroy every robot. Structures stand still until something hits them; **one soft strike** is enough — the
-   struck piece breaks and the stack above leans, slowly at first, then faster as gravity takes over (live physics,
-   slightly reduced gravity); robots get crushed by falling pieces; explosive props
-   (hay bales, dynamite barrels) chain; parked wagons roll off ramps and ledges into the structures below.
+5. Destroy every robot. Structures are built the way robots would build them — wonky, top-heavy, on single posts,
+   leaning, upside down — and stand still until something hits them; **one soft strike** is enough — nothing breaks
+   or explodes, the struck piece is shoved and the stack leans, slowly at first, then faster as gravity takes over
+   (live physics, slightly reduced gravity), knocking everything below down with it; a robot caught under falling
+   pieces explodes (fire burst, dust clouds). The **dynamite barrel** is the only thing that explodes: on its first
+   hit, and its blast throws the structure over rather than destroying it. Parked wagons roll off ramps and ledges
+   into the structures below. The animal itself doesn't burst on impact: it tumbles on through the wreck, then fades.
    A **switch** button (under the Locker) reopens Character Select between shots to swap the animals still to fire
    — never more than are left.
 6. Run out of animals with robots left → **revive** offer (+1 animal) or Level Failed.
@@ -94,11 +97,10 @@ Three robot tiers plus a boss in every world; each world has its own look for ea
 | Semi-Harvester | 26 | Most common guard |
 | Boss | 90 | One per world, resists direct hits (structural collapse hurts it most) |
 
-**Damage model (one strike, 10 Nov 2026 — no second hits):** a direct animal hit kills any regular robot and
-breaks any block it touches (stone included); one egg or thrown-ability hit, one fall from a destroyed support, or
-one crush from a falling piece each kill a robot. Bosses are the exception: they still divide every hit by their
-resistance (a boss fight). Debris landing on a block can break it (stone is no longer much tougher than wood). Exploding blocks never damage robots
-directly. Robots stand still on live-physics levels (patrolling would shove the structure) and flash when hit.
+**Damage model (topple, don't break — 11 Nov 2026):** blocks never break; a hit shoves them over. A direct animal
+hit, one egg or thrown-ability hit, or one crush from a falling piece kills a regular robot. Bosses still divide every
+hit by their resistance (a boss fight). The dynamite blast blows up robots right beside it and throws everything else.
+Thrown abilities always leave forward and down (into the structure, never over it), faster than the animal. Robots stand still on live-physics levels (patrolling would shove the structure) and flash when hit.
 
 | World | Basic | Harvester | Semi-Harvester | Boss |
 |---|---|---|---|---|

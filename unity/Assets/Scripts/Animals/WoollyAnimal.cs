@@ -32,15 +32,12 @@ public class WoollyAnimal : AnimalBase
 
     protected override void TriggerAbility()
     {
-        Vector2 vel = _rb.linearVelocity;
-        float angle = Mathf.Atan2(vel.y, vel.x) * Mathf.Rad2Deg;
-        float speed = Mathf.Max(5f, vel.magnitude * SpeedBoost);
+        float speed = AbilitySpeed(8f);   // forward-and-down, faster than Woolly (2026-11-11)
         var spec = BallSpec(_woolBallSprite);
         for (int i = 0; i < BallCount; i++)
         {
             float t = BallCount > 1 ? i / (float)(BallCount - 1) : 0.5f;
-            float rad = (angle + Mathf.Lerp(-FanSpread * 0.5f, FanSpread * 0.5f, t)) * Mathf.Deg2Rad;
-            var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+            var dir = AbilityAim(40f, Mathf.Lerp(-FanSpread * 0.5f, FanSpread * 0.5f, t));
             AbilityProjectile.Spawn(spec, transform.position + (Vector3)(dir * 0.55f), dir * speed, _col);
         }
     }

@@ -180,53 +180,60 @@ public class AudioManager : MonoBehaviour
             GameManager.Instance.OnStateChanged -= OnStateChanged;
     }
 
-    void OnStateChanged(GameState state)
+    void OnStateChanged(GameState state) => SyncMusic();
+
+    void Update() => SyncMusic();
+
+    private bool _gameMusicPaused;
+    private bool _menuMusicPaused;
+
+    /// <summary>
+    /// User (2026-11-11): "theme music must play on every page outside of gameplay". The world's gameplay track plays
+    /// only while a level is actually being played (Playing, unfrozen, no revive prompt). Every other page (Landing,
+    /// World / Level / Character Select, Pause, the Locker and in-level character switch, the revive prompt, Level
+    /// Complete / Failed) plays the menu theme. The gameplay track is paused (not restarted) behind an in-level page
+    /// and resumes where it left off; the theme likewise resumes rather than restarting.
+    /// </summary>
+    private void SyncMusic()
     {
-        // Level Complete/Failed now play their own celebration/taunt clip's accompanying audio
-        // (see VideoChromaKey.Play's audioClip param) — the procedural Win/Fail jingle used to
-        // play right on top of it, and gameplay music kept looping underneath both. Stop the
-        // music here so the video's own sound is the only thing heard during that sequence.
-        if (state == GameState.LevelComplete || state == GameState.LevelFailed)
-        {
-            if (_musicSrc != null && _musicSrc.isPlaying) _musicSrc.Stop();
-        }
+        var gm = GameManager.Instance;
+        if (gm == null || _musicSrc == null || _menuMusicSrc == null) return;
+        var s = gm.State;
+        bool gameplay = s == GameState.Playing && Time.timeScale > 0f && !gm.ReviveDecisionPending;
+        bool inLevel = s == GameState.Playing || s == GameState.Paused;
 
-        // Starts once on the first Playing transition and simply keeps looping across
-        // levels (isPlaying guard below means later transitions back to Playing don't
-        // restart it) — "continuously playing while the user is playing the game".
-        // Untouched by the menu-music addition below: gameplay music, cannon fire, and the
-        // Cluck falling loop all keep their exact existing behaviour.
-        // Pause screen (franchise flow): freeze the gameplay loop where it is; resuming unpauses it.
-        if (state == GameState.Paused)
+        if (gameplay)
         {
-            PauseGameplayMusic();
-            return;
-        }
-
-        if (state == GameState.Playing)
-        {
-            // The level's world picks the track; a different world's track replaces the one playing (same world:
-            // it keeps playing across levels and back from Pause, as before).
-            var track = MusicForWorld(GameManager.Instance != null && GameManager.Instance.CurrentLevel != null
-                ? GameManager.Instance.CurrentLevel.world : 1);
-            if (_musicSrc != null && track != null && _musicSrc.clip != track)
+            if (_menuMusicSrc.isPlaying) { _menuMusicSrc.Pause(); _menuMusicPaused = true; }
+            var track = MusicForWorld(gm.CurrentLevel != null ? gm.CurrentLevel.world : 1);
+            if (track != null && _musicSrc.clip != track)
             {
                 _musicSrc.Stop();
                 _musicSrc.clip = track;
+                _gameMusicPaused = false;
             }
-            if (_musicSrc != null) _musicSrc.UnPause();   // back from Pause: continue, don't restart the track
-            if (_menuMusicSrc != null && _menuMusicSrc.isPlaying) _menuMusicSrc.Stop();
-            if (_musicSrc != null && _musicSrc.clip != null && !_musicSrc.isPlaying)
-                _musicSrc.Play();
+            if (_musicSrc.clip != null && !_musicSrc.isPlaying)
+            {
+                if (_gameMusicPaused) _musicSrc.UnPause(); else _musicSrc.Play();
+                _gameMusicPaused = false;
+            }
+            return;
         }
-        // Any menu screen (Landing, World Select, Level Select, Character Select — franchise flow, 2026-11-02)
-        // plays the menu track; it keeps playing as the player moves between them.
-        else if (state == GameState.MainMenu || state == GameState.WorldSelect
-              || state == GameState.LevelSelect || state == GameState.CharacterSelect)
+
+        if (inLevel)
         {
-            if (_musicSrc != null && _musicSrc.isPlaying) _musicSrc.Stop();
-            if (_menuMusicSrc != null && _menuMusicSrc.clip != null && !_menuMusicSrc.isPlaying)
-                _menuMusicSrc.Play();
+            if (_musicSrc.isPlaying) { _musicSrc.Pause(); _gameMusicPaused = true; }
+        }
+        else if (_musicSrc.isPlaying || _gameMusicPaused)
+        {
+            _musicSrc.Stop();          // left the level (results / menus): the next level starts its track afresh
+            _gameMusicPaused = false;
+        }
+
+        if (_menuMusicSrc.clip != null && !_menuMusicSrc.isPlaying)
+        {
+            if (_menuMusicPaused) _menuMusicSrc.UnPause(); else _menuMusicSrc.Play();
+            _menuMusicPaused = false;
         }
     }
 
@@ -236,16 +243,10 @@ public class AudioManager : MonoBehaviour
     // LevelCompleteManager's celebration clips can play during that freeze). Without this, the
     // gameplay music kept looping right through a paused game. HUDController.SetPaused() calls
     // these in lockstep with the Time.timeScale flip.
-    public static void PauseGameplayMusic()
-    {
-        if (Instance?._musicSrc != null && Instance._musicSrc.isPlaying) Instance._musicSrc.Pause();
-    }
+    // Kept for callers; SyncMusic() (every frame) owns the switching now.
+    public static void PauseGameplayMusic() => Instance?.SyncMusic();
 
-    public static void ResumeGameplayMusic()
-    {
-        if (Instance?._musicSrc != null && Instance._musicSrc.clip != null && !Instance._musicSrc.isPlaying)
-            Instance._musicSrc.UnPause();
-    }
+    public static void ResumeGameplayMusic() => Instance?.SyncMusic();
 
     AudioClip MusicForWorld(int world) =>
         _worldMusic != null && world > 1 && world < _worldMusic.Length && _worldMusic[world] != null

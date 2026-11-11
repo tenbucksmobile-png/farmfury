@@ -247,7 +247,7 @@ s = L.island(10.8, G + 2.0, 5.4, 0)
 top = L.post(9.4, s, 1.5, stone=True); L.post(12.2, s, 1.5, stone=True)
 r = L.plank(9.1, 12.5, top, stone=True)
 L.robot(10.8, s, "semi"); L.barrel(8.6, s); L.barrel(13.0, s)
-t = tower(L, 10.8, r, 3, width=2.4, h=1.15, taper=0.2, robots=["pawn", None, "semi"])
+t = tower(L, 10.8, r, 3, width=2.4, h=1.15, taper=0.2, robots=["pawn", None, "semi"], wonky=False)   # the boss lands on it
 L.robot(10.8, t, "boss")
 t = L.box(6.6, G, 0.8)
 for _ in range(3): t = L.box(6.6, t, 0.8)

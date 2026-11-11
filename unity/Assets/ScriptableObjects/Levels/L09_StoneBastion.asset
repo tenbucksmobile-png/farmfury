@@ -31,6 +31,7 @@ MonoBehaviour:
     artVariant: 0
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 3
     position: {x: 5.011, y: -2.408}
     size: {x: 0.977, y: 0.977}
@@ -41,6 +42,7 @@ MonoBehaviour:
     artVariant: 0
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 1
     position: {x: 9.661, y: -5.185}
     size: {x: 1.189, y: 1.342}
@@ -51,6 +53,7 @@ MonoBehaviour:
     artVariant: 11
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 1
     position: {x: 9.661, y: -4.385}
     size: {x: 1.189, y: 1.342}
@@ -61,6 +64,7 @@ MonoBehaviour:
     artVariant: 11
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 1
     position: {x: 12.461, y: -5.185}
     size: {x: 1.189, y: 1.342}
@@ -71,6 +75,7 @@ MonoBehaviour:
     artVariant: 11
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 1
     position: {x: 12.461, y: -4.385}
     size: {x: 1.189, y: 1.342}
@@ -81,6 +86,7 @@ MonoBehaviour:
     artVariant: 11
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 1
     position: {x: 10.96, y: -3.884}
     size: {x: 5.034, y: 0.578}
@@ -91,6 +97,7 @@ MonoBehaviour:
     artVariant: 12
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
     position: {x: 10.374, y: -3.142}
     size: {x: 1, y: 1.301}
@@ -101,6 +108,7 @@ MonoBehaviour:
     artVariant: 3
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
     position: {x: 11.894, y: -3.142}
     size: {x: 1, y: 1.301}
@@ -111,6 +119,7 @@ MonoBehaviour:
     artVariant: 3
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
     position: {x: 11.032, y: -2.391}
     size: {x: 2.009, y: 0.496}
@@ -121,6 +130,40 @@ MonoBehaviour:
     artVariant: 2
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
+  - type: 0
+    position: {x: 12.634, y: -3.263}
+    size: {x: 1, y: 1.018}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - type: 0
+    position: {x: 12.897, y: -2.641}
+    size: {x: 1.451, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - type: 3
+    position: {x: 13.191, y: -2.128}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
   - type: 0
     position: {x: 10.524, y: -1.79}
     size: {x: 1, y: 1.188}
@@ -131,6 +174,7 @@ MonoBehaviour:
     artVariant: 3
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
     position: {x: 11.744, y: -1.79}
     size: {x: 1, y: 1.188}
@@ -141,9 +185,10 @@ MonoBehaviour:
     artVariant: 3
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
-    position: {x: 11.041, y: -1.091}
-    size: {x: 1.674, y: 0.496}
+    position: {x: 11.326, y: -1.091}
+    size: {x: 2.353, y: 0.496}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
@@ -151,6 +196,7 @@ MonoBehaviour:
     artVariant: 2
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
     position: {x: 10.584, y: -0.49}
     size: {x: 1, y: 1.188}
@@ -161,6 +207,7 @@ MonoBehaviour:
     artVariant: 3
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
     position: {x: 11.684, y: -0.49}
     size: {x: 1, y: 1.188}
@@ -171,9 +218,10 @@ MonoBehaviour:
     artVariant: 3
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
-    position: {x: 11.045, y: 0.209}
-    size: {x: 1.54, y: 0.496}
+    position: {x: 11.049, y: -0.507}
+    size: {x: 1.207, y: 0.357}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
@@ -181,6 +229,18 @@ MonoBehaviour:
     artVariant: 2
     forceStayKinematic: 0
     flipX: 0
+    rotation: 57
+  - type: 0
+    position: {x: 10.641, y: 0.209}
+    size: {x: 2.389, y: 0.496}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
   robots:
   - robotType: 1
     position: {x: 11.088, y: -5.05}

@@ -17,7 +17,7 @@ public class GeraldAnimal : AnimalBase
     static AbilityProjectile.Spec BombSpec(Sprite bomb, Sprite burst) => new AbilityProjectile.Spec
     {
         sprite = bomb, burstSprite = burst, size = 0.55f, mass = 1.5f, bounciness = 0f, gravityScale = 0.6f,
-        hits = 1, blockDamage = 30f, burstRadius = 0.9f, robotHits = 2, spin = 360f, life = 4f,
+        hits = 1, blockDamage = 30f, burstRadius = 0.9f, burstPush = 5f, robotHits = 2, spin = 360f, life = 4f,
     };
 
     protected override void Awake()
@@ -33,15 +33,13 @@ public class GeraldAnimal : AnimalBase
 
     protected override void TriggerAbility()
     {
-        Vector2 vel = _rb.linearVelocity;
-        float sign = vel.x >= 0f ? 1f : -1f;
+        float speed = AbilitySpeed(BombSpeed + 2f);   // forward-and-down, faster than Gerald (2026-11-11)
         var spec = BombSpec(_bombSprite, _burstSprite);
         for (int i = 0; i < BombCount; i++)
         {
             float t = BombCount > 1 ? i / (float)(BombCount - 1) : 0.5f;
-            float rad = (FanCentre + Mathf.Lerp(-FanSpread * 0.5f, FanSpread * 0.5f, t)) * Mathf.Deg2Rad;
-            var dir = new Vector2(Mathf.Cos(rad) * sign, Mathf.Sin(rad));
-            AbilityProjectile.Spawn(spec, transform.position + (Vector3)(dir * 0.5f), vel * 0.5f + dir * BombSpeed, _col);
+            var dir = AbilityAim(-FanCentre, Mathf.Lerp(-FanSpread * 0.5f, FanSpread * 0.5f, t));
+            AbilityProjectile.Spawn(spec, transform.position + (Vector3)(dir * 0.5f), dir * speed, _col);
         }
     }
 }

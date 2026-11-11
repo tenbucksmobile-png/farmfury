@@ -19,7 +19,7 @@ namespace FarmFury.UI
         public static readonly Color Muted = new Color(0.55f, 0.58f, 0.65f, 1f);
 
         /// <summary>Every round menu button (play, settings, home, back) is this size; Exit is scaled to the same height.</summary>
-        public const float RoundButtonSize = 160f;   // Arcade's StandardIconButtonSize (was 120 until 2026-10-30: too small on an iPhone)
+        public const float RoundButtonSize = 136f;   // 160 (Arcade StandardIconButtonSize) -> 136 2026-11-11, user: "slightly shrink the button sizes"; was 120 until 2026-10-30 (too small on an iPhone)
 
         private static Font _font;
 

@@ -135,7 +135,55 @@ needing a live pass before shipping.
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
-- **2026-11-10 (latest) — One strike, softer topple; logo + landing fit** (user: "structures are still too hard to
+- **2026-11-11 (latest) — Topple, don't break; "robots don't know how to build"; menu music + UI sizing** (user: theme on
+  every non-gameplay page; smaller "Character" header and buttons; AB-style precarious structures; "structures should
+  not explode - they should topple"; only the dynamite explodes and even that topples; a robot crushed by a falling
+  structure explodes with dust clouds + fire burst + SFX; nothing left floating; animals don't explode on impact;
+  abilities not slower than the flight and angled down). Unverified in Play mode. PhysicsProbe (no input, all 62
+  framed levels, `unity/Logs/probe_2026-11-11.log`): 59 stand untouched (0 awake, 0 movement); 3 failed —
+  W2_L22 (Frost Tyrant landing on the now-crooked keep: keep set `wonky=False` in design_world2/3 boss levels),
+  W2_L17 Whiteout and W3_L15 Thunderhead (towers on frozen-bale / flour-sack stilts fall by themselves ~0.9 s in,
+  i.e. when the new block watchdog starts; its probe depth was raised 0.1 -> 0.25 u and it now logs
+  `[Probe] WATCHDOG woke ...`). **Pending:** those three fixes are committed in source; the
+  user is regenerating the level data in the open Editor (Generate All Level Data + Wire Scene References). Still to
+  re-probe: `FF_PROBE_LEVELS=34,39` and `54,54` (batch needs the Editor closed; the probe menu item covers World 1
+  only). If W2_L17 / W3_L15 still fall, the `[Probe] WATCHDOG` line names the block the watchdog thought unsupported.
+  - **Music:** `AudioManager.SyncMusic()` (every frame): the world track only while actually playing (Playing,
+    unfrozen, no revive prompt); every other page (menus, Pause, Locker, character switch, revive, Results) plays the
+    menu theme. The world track pauses behind in-level pages and resumes; the theme resumes rather than restarting.
+  - **UI:** `UIKit.RoundButtonSize` 160 -> 136 (every round button incl. the HUD). The "Character" lettering baked
+    into the 9 `*Character_Canvas_Wide.png` canvases shrunk to 72% by `tools/shrink_character_header.py` (originals in
+    `Sprites/UI/Franchise/Canvas_originals~/`, always the source; `--scale` to retune; a soft inpaint smudge where the
+    old lettering was).
+  - **Blocks never break** (`BlockBase.BreaksOnHit` false): a hit wakes + shoves (`ShoveOnHit`/`StackShove`, eggs too)
+    and `Disturb()`s (static blocks on unframed levels turn Dynamic and cascade); `TakeDamage` on a plain block is a
+    Disturb. A block scores once it has toppled (> 40 deg or dropped 0.6 u). Hay no longer explodes; Cluck's hay
+    pass-through removed. `ForceDestroy` (boss keep) is the only scripted exception. Floating watchdog:
+    a live block asleep with nothing under its lowest corner is woken (`HasSupportBelow`, every ~0.35 s).
+  - **Dynamite** (`ExplodingBarrelBlock`, `BreaksOnHit` true): goes off on its first hit (animal / ability / egg /
+    debris impulse >= 2); the blast (3 u) shoves and wakes everything outward-and-up (never destroys blocks), sets
+    other dynamite off 0.15 s later, blows up robots within 1.15 u and throws the rest.
+  - **Robot death:** `RobotEnemy._fireBurstSprite` (World1Props/Explosion.png) + `_dustCloudSprite`
+    (`Sprites/Effects/DustCloud.png`, from FarmFury_Artwork/Rough_Effects) — a fire burst in a ring of 5 billowing dust
+    clouds (`BillowFade`), Explosion_Robot.mp3; bosses also show their exploding pose. Wired by `WireRobotDeathFx`.
+    Crush rule unchanged (impulse >= 2.1 kills).
+  - **Animals:** no star burst, no freeze on impact — the animal stays physical, keeps tumbling and pushing, then
+    fades out once settled (0.5 s) or 3 s after impact. Bessie's shockwave fires once.
+  - **Abilities:** `AnimalBase.AbilityAim(minDownDeg, offset)` / `AbilitySpeed(min)`: forward-and-down (at least
+    minDown below the horizon and 12 deg steeper than the flight), 1.25x the animal's speed. Eggs 50 deg, Woolly 40,
+    Ducky 35, Horace 30, Gerald 60, Billy 40; Percy dives at 30 then bounces. Gerald/Billy bursts now push (5 / 8).
+  - **Angled pieces:** `BlockSpawnData.rotation` (deg, CCW; `B(..., rot:)`; mirrored levels negate it).
+  - **Designer (`tools/design_world1.py`):** `_rpiece`/`beam` (rotated pieces), polygon support check, collider
+    overlap check, robot-in-block / robot-on-nothing checks, rotated previews. `tower()` is **wonky** by default
+    (seeded per level): storeys drift onto lopsided overhanging roofs; empty storeys on one post (T), with a diagonal
+    `brace`, on crate-stack legs or stilts (`stilts=False` keeps heights equal, `room=(l, r)` bounds the overhangs).
+    Set pieces: `aframe` (plank tent), `lean`, `upside_pyramid`, `wobble_stack`, `stilt_house`, `cantilever`,
+    `balanced_rock`, `barrel_deck`. All 17 World 1 levels rebuilt around them (ids, mounts, wagons, gadgets kept);
+    Worlds 2-3 get the wonky towers (W3_L12 needed `room`); Worlds 4-9 inherit World 1's new towers via the generator.
+    Pre-existing checker notes (not from this change, probe-clean before): W2_L07/L08 frost robots flagged inside
+    narrow huts, W2_L10/L19 ice box vs barrel/post, W3_L04 robot by a crate.
+
+- **2026-11-10 — One strike, softer topple; logo + landing fit** (superseded 2026-11-11: blocks no longer break at all) (user: "structures are still too hard to
   topple... a soft strike, with a slow topple that speeds up as gravity takes over... remove all second strike
   requirements"; "the logo slightly smaller"; landing "sizing is too big"). Unverified in Play mode.
   - **Blocks:** an animal hitting any block breaks it on the first hit (`BlockBase.OnCollisionEnter2D`, stone

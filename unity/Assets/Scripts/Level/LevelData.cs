@@ -112,6 +112,9 @@ public class LevelData : ScriptableObject
         // Mirror the block's art horizontally. Set by WorldLevelGenerator when it mirrors a World 1
         // tower for another world, so skewed/diagonal planks still lean the way the structure does.
         public bool flipX;
+        // Tilt in degrees, counter-clockwise (2026-11-11, playful "robots don't know how to build" structures: leaning
+        // planks, braces, tilted decks). The collider tilts with the art.
+        public float rotation;
     }
 
     [Serializable]

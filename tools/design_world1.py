@@ -103,6 +103,39 @@ HOIST_W = {1: HOIST, 2: HOIST,
 GADGET_NAMES = {1: ("Sunflower", "IceBoulder"), 2: ("IceCrystal", "IceBoulder"), 3: ("WaterPump", "Millstone")}
 
 
+def _rect_poly(cx, cy, w, h, rot):
+    c, s_ = math.cos(math.radians(rot)), math.sin(math.radians(rot))
+    return [(cx + c * dx - s_ * dy, cy + s_ * dx + c * dy) for dx, dy in ((-w / 2, -h / 2), (w / 2, -h / 2), (w / 2, h / 2), (-w / 2, h / 2))]
+
+
+def _sat_overlap(a, b):
+    """Penetration depth of two convex polygons (0 when apart)."""
+    depth = 1e9
+    for poly in (a, b):
+        for i in range(len(poly)):
+            x1, y1 = poly[i]; x2, y2 = poly[(i + 1) % len(poly)]
+            nx, ny = y2 - y1, x1 - x2
+            ln = math.hypot(nx, ny) or 1.0
+            nx, ny = nx / ln, ny / ln
+            pa = [px * nx + py * ny for px, py in a]; pb = [px * nx + py * ny for px, py in b]
+            d = min(max(pa), max(pb)) - max(min(pa), min(pb))
+            if d <= 0: return 0.0
+            depth = min(depth, d)
+    return depth
+
+
+def _shrink(poly, by):
+    """Pull a rectangle's edges in by `by` (the trimmed collider sits ~0.02 inside the visible art)."""
+    cx = sum(p[0] for p in poly) / 4; cy = sum(p[1] for p in poly) / 4
+    out = []
+    for i, (x, y) in enumerate(poly):
+        ex, ey = poly[(i + 1) % 4]; wx, wy = poly[(i - 1) % 4]
+        ux, uy = ex - x, ey - y; lu = math.hypot(ux, uy) or 1
+        vx, vy = wx - x, wy - y; lv = math.hypot(vx, vy) or 1
+        out.append((x + ux / lu * by + vx / lv * by, y + uy / lu * by + vy / lv * by))
+    return out
+
+
 class Level:
     def __init__(self, file, lid, name, par, birds, comment, boss=False, world=1):
         self.file, self.id, self.name, self.par, self.birds, self.comment, self.boss = file, lid, name, par, birds, comment, boss
@@ -112,12 +145,29 @@ class Level:
 
     # ── pieces (all take the VISIBLE bottom; return the visible top) ─────────────────────────────────────
     def _piece(self, kind, cx, bottom, vis_w, vis_h):
+        self._rpiece(kind, cx, bottom + vis_h / 2, vis_w, vis_h, 0.0)
+        return bottom + vis_h
+
+    def _rpiece(self, kind, vcx, vcy, vis_w, vis_h, rot):
+        """A piece by its VISIBLE centre / size, tilted rot degrees counter-clockwise about that centre (2026-11-11)."""
         x0, x1, y0, y1 = ART_W[self.world][kind]
         w, h = vis_w / (x1 - x0), vis_h / (y1 - y0)
-        fx = cx - ((x0 + x1) / 2 - 0.5) * w
-        fy = bottom - y0 * h + h / 2
-        self.blocks.append(dict(kind=kind, x=fx, y=fy, w=w, h=h, vis=(cx - vis_w / 2, cx + vis_w / 2, bottom, bottom + vis_h)))
-        return bottom + vis_h
+        ox, oy = ((x0 + x1) / 2 - 0.5) * w, ((y0 + y1) / 2 - 0.5) * h   # visible centre, relative to the rect centre
+        c, s_ = math.cos(math.radians(rot)), math.sin(math.radians(rot))
+        fx, fy = vcx - (c * ox - s_ * oy), vcy - (s_ * ox + c * oy)
+        poly = _rect_poly(vcx, vcy, vis_w, vis_h, rot)
+        xs, ys = [p[0] for p in poly], [p[1] for p in poly]
+        self.blocks.append(dict(kind=kind, x=fx, y=fy, w=w, h=h, rot=rot, poly=poly, vc=(vcx, vcy), vs=(vis_w, vis_h),
+                                vis=(min(xs), max(xs), min(ys), max(ys))))
+
+    def beam(self, ax, ay, bx, by, stone=False, thick=None):
+        """A plank whose LOWER face runs from (ax, ay) to (bx, by) — leaning planks, braces, ramps (2026-11-11)."""
+        t = thick or (STONE_T if stone else WOOD_T)
+        length = math.hypot(bx - ax, by - ay)
+        rot = math.degrees(math.atan2(by - ay, bx - ax))
+        nx, ny = -math.sin(math.radians(rot)), math.cos(math.radians(rot))   # the face's upward normal
+        if ny < 0: nx, ny = -nx, -ny
+        self._rpiece("slab" if stone else "plank", (ax + bx) / 2 + nx * t / 2, (ay + by) / 2 + ny * t / 2, length, t, rot)
 
     def post(self, x, b, h, stone=False):
         return self._piece("pillar", x, b, PILLAR_W[self.world], h) if stone else self._piece("post", x, b, POST_W[self.world], h)
@@ -216,7 +266,8 @@ class Level:
         for b in self.blocks:
             t, v, extra = CS[b["kind"]]
             art = f", artVariant: WoodArtVariant.{v}" if v else ""
-            out.append(f"                B(BlockType.{t}, {f(b['x'])}, {f(b['y'])}, {f(b['w'])}, {f(b['h'])}{art}{extra}),")
+            rot = f", rot: {f(b['rot'])}" if abs(b.get("rot", 0.0)) > 0.01 else ""
+            out.append(f"                B(BlockType.{t}, {f(b['x'])}, {f(b['y'])}, {f(b['w'])}, {f(b['h'])}{art}{extra}{rot}),")
         out += ["            },", "            robots: new[]", "            {"]
         for r in self.robots:
             out.append(f"                R({f(r['x'])}, {f(r['y'])}, {f(r['s'])}, {f(r['s'])}, RobotType.{r['type']}),")
@@ -258,17 +309,163 @@ def level(*a, **k):
     return L
 
 
-def tower(L, xc, base, floors, width=1.9, h=1.15, taper=0.12, stone_floors=0, robots=None, top=None):
-    """A multi-storey timber tower (posts + floor planks), narrowing as it rises. robots: kind per floor or None."""
-    b, w = base, width
+def _rng(L, *key):
+    import random, zlib
+    return random.Random(zlib.crc32(("%s|" % L.id + "|".join("%.2f" % k if isinstance(k, float) else str(k) for k in key)).encode()))
+
+
+def brace(L, xa, xb, b, h, flip=False, thick=0.18):
+    """A diagonal brace standing in a bay between two posts (inner faces xa..xb, floor b, height h): one corner rests
+    on the floor, the rest clears the posts and the roof — the AB lattice look."""
+    W, H, m = xb - xa - 0.08, h - 0.04, 0.0
+    best = None
+    for deg in range(20, 75):
+        th = math.radians(deg)
+        lb = min((W - thick * math.sin(th)) / math.cos(th), (H - thick * math.cos(th)) / math.sin(th))
+        if lb > 0.3 and (best is None or lb > best[1]): best = (deg, lb)
+    if best is None: return
+    deg, lb = best
+    th = math.radians(deg)
+    ext_h = lb * math.sin(th) + thick * math.cos(th)
+    L._rpiece("plank", (xa + xb) / 2, b + ext_h / 2 + 0.005, lb, thick, -deg if flip else deg)
+
+
+def tower(L, xc, base, floors, width=1.9, h=1.15, taper=0.12, stone_floors=0, robots=None, top=None, wonky=True, stilts=True, room=None):
+    """A multi-storey timber tower (posts + floor planks), narrowing as it rises. robots: kind per floor or None.
+
+    wonky (2026-11-11, user: "structures dont follow real world physics - they utilise singular, angles, etc etc to make
+    strange and easily toppled structures... robots dont know how to build structures"): each storey is built a little
+    wrong, seeded per level so it is stable from run to run: storeys drift sideways onto lopsided overhanging roofs,
+    empty storeys stand on a single post (a T), carry a diagonal brace, stand on stacked-crate legs or on tall stilts.
+    Nothing has to balance — live blocks start asleep, so it stands until it is hit, then everything goes.
+    room: (left x, right x) the roofs' overhangs must stay inside (a neighbouring structure); None = free."""
+    rng = _rng(L, "tower", xc, base)
+    pw = POST_W[L.world]
+    b, w, c = base, width, xc
+    sa, sb = None, None                      # the span the next storey must stand inside (the roof below)
     for i in range(floors):
-        if robots and i < len(robots) and robots[i]:
-            L.robot(xc, b, robots[i])
-        b = L.hut(xc - w / 2, xc + w / 2, b, h, stone=i < stone_floors, roof_stone=i < stone_floors)
+        rk = robots[i] if robots and i < len(robots) else None
+        stone = i < stone_floors
+        if sa is not None:                   # drift within the roof below (onto its overhang, if any)
+            lo, hi = sa + w / 2 + 0.02, sb - w / 2 - 0.02
+            if wonky and hi > lo: c = rng.uniform(lo, hi) if rng.random() < 0.75 else min(max(c, lo), hi)
+            elif hi > lo: c = min(max(c, lo), hi)
+            else: c = (sa + sb) / 2
+        xa, xb = c - w / 2, c + w / 2
+        style = "hut"
+        if wonky and not stone:
+            if rk is None and i > 0:
+                style = rng.choices(["hut", "tee", "brace", "stilts", "crates"], [2, 3, 3, 1.5 if stilts else 0, 1.5])[0]
+            elif rk is None:
+                style = rng.choices(["hut", "brace", "crates"], [2, 3, 2])[0]
+            elif w >= 1.6:
+                style = rng.choices(["hut", "crates"], [3, 1])[0]
+        ov_l = ov_r = 0.0
+        if wonky and rng.random() < 0.65:    # a lopsided roof that sticks out on one side
+            if rng.random() < 0.5: ov_l = rng.uniform(0.3, 0.85)
+            else: ov_r = rng.uniform(0.3, 0.85)
+        if rk: L.robot(c, b, rk)
+        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20)}[L.world][1 if stone else 0]
+        if style == "tee":
+            px = c + rng.uniform(-0.18, 0.18) * w
+            if sa is not None: px = min(max(px, sa + pw), sb - pw)
+            t = L.post(px, b, h)
+        elif style == "crates":
+            n = max(2, round(h / 0.5)); cs_ = h / n
+            for lx in (xa + cs_ / 2 + 0.02, xb - cs_ / 2 - 0.02):
+                tt = b
+                for _ in range(n): tt = L.box(lx, tt, cs_, stone=False)
+            t = tt
+        else:
+            hh = h * (1.45 if style == "stilts" else 1.0)
+            t = L.post(xa + inset, b, hh, stone)
+            L.post(xb - inset, b, hh, stone)
+            if style == "brace": brace(L, xa + 2 * inset, xb - 2 * inset, b, hh, flip=rng.random() < 0.5)
+        sa, sb = xa - ov_l, xb + ov_r
+        if room:
+            sa, sb = max(sa, min(xa, room[0])), min(sb, max(xb, room[1]))
+        b = L.plank(sa, sb, t, stone)
         w = max(1.1, w - taper)
+    L.last_top_x = c
     if top:
-        L.robot(xc, b, top)
+        L.robot(c, b, top)
     return b
+
+
+def aframe(L, x, b, h=1.1, half=0.75, robot=None):
+    """A tent of two planks leaning on each other (nearly touching at the apex) with a robot sheltering inside."""
+    if robot: L.robot(x, b, robot)
+    L.beam(x - half, b, x - 0.03, b + h)
+    L.beam(x + 0.03, b + h, x + half, b)
+
+
+def lean(L, foot_x, b, top_x, top_y):
+    """A plank leaning from the floor against something: lower face from (foot_x, b) to (top_x, top_y)."""
+    L.beam(foot_x, b, top_x, top_y)
+
+
+def upside_pyramid(L, x, b, rows=(1, 2, 3), s=0.62, stone=False, robots=None, gap=0.06):
+    """An upside-down pyramid of crates (or stone boxes): each row wider than the one under it, every piece only just
+    touching the one below. robots: kinds stood on the top row (left to right). Returns the top."""
+    t = b
+    for n in rows:
+        for k in range(n):
+            L.box(x + (k - (n - 1) / 2) * (s + gap), t, s, stone=stone)
+        t += s
+    if robots:
+        n = rows[-1]
+        for k, rk in enumerate(robots[:n]):
+            if rk: L.robot(x + (k - (n - 1) / 2) * (s + gap), t, rk)
+    return t
+
+
+def wobble_stack(L, x, b, n=4, s=0.62, lean_by=0.22, stone=False, top=None):
+    """Crates stacked off-centre, each step further over — a leaning tower held up by nothing but luck."""
+    t, cx = b, x
+    for k in range(n):
+        t = L.box(cx, t, s, stone=stone)
+        cx += lean_by * s * (1 if k % 3 != 2 else -0.6)
+    if top: L.robot(cx - lean_by * s, t, top)
+    return t
+
+
+def stilt_house(L, x, b, legs_h=2.4, w=1.7, robot=None, top=None, room_h=1.05):
+    """A hut perched on two tall skinny stilts and a deck much wider than them — top-heavy."""
+    t = L.post(x - 0.32, b, legs_h); L.post(x + 0.32, b, legs_h)
+    d = L.plank(x - w / 2 - 0.3, x + w / 2 + 0.3, t)
+    if robot: L.robot(x, d, robot)
+    r = L.hut(x - w / 2, x + w / 2, d, room_h)
+    if top: L.robot(x, r, top)
+    return r
+
+
+def cantilever(L, post_x, b, h, left, right, tip=None, stone=False):
+    """One post, a plank stuck on it lopsided (left / right lengths from the post); tip: what sits on the long end
+    (robot kind, 'barrel', 'crate', 'rock'). Returns (plank top, tip x)."""
+    t = L.post(post_x, b, h, stone)
+    t = L.plank(post_x - left, post_x + right, t, stone)
+    tx = post_x + right - 0.4 if right >= left else post_x - left + 0.4
+    if tip == "barrel": L.barrel(tx, t)
+    elif tip == "crate": L.box(tx, t, 0.55, stone=False)
+    elif tip == "rock": L.box(tx, t, 0.6, stone=True)
+    elif tip: L.robot(tx, t, tip)
+    return t, tx
+
+
+def balanced_rock(L, x, b, h=1.6, s=1.0, top="pawn"):
+    """A big stone block balanced on one thin post, a robot on top."""
+    t = L.post(x, b, h)
+    t = L.box(x, t, s, stone=True)
+    if top: L.robot(x, t, top)
+    return t
+
+
+def barrel_deck(L, xa, xb, b, n=3):
+    """A plank deck standing on dynamite barrels instead of legs. Returns the deck top."""
+    t = b
+    for k in range(n):
+        t = L.barrel(xa + 0.35 + k * (xb - xa - 0.7) / max(1, n - 1), b)
+    return L.plank(xa, xb, t)
 
 
 def seesaw(L, xc, base, post_h, beam, left=None, right=None):
@@ -303,57 +500,57 @@ def edge_wagon(L, surface, edge_r, wagon_w=2.0):
 # 2026-11-09 v4 (user: "the structures must be built higher, multiple stories and topple easier"; plus weather and the
 # farm contraptions): most towers gained one to three storeys (4-6 now), robots every other floor so a toppled tower
 # takes several down with it; each level has a weather mood; sunflowers (seed spray) and hay hoists (dropping bucket).
+# 2026-11-11 v5 (user: "review the AG videos again - structures dont follow real world physics - they utilise singular,
+# angles, etc etc to make strange and easily toppled structures - do the same, be creative and inventive (dont follow
+# physics) - playful - 'robots dont know how to build structures'"): towers are built wonky (see tower()), and every
+# level gets AB-style set pieces: tents of leaning planks, upside-down pyramids, leaning crate stacks, huts on stilts,
+# lopsided cantilevers, rocks balanced on one post, decks standing on dynamite. Nothing has to balance: it all starts
+# asleep, stands until it is hit, then goes.
 L = level("L02_StoneWall", "W1_L02", "Harvest Yard", 2, [C, C, C], """
-Warm-up: a three-storey timber shed with robots inside and on the roof, a see-saw beam with a robot balanced on one
-end, and a sunflower in front: hit it and it sprays seeds into the shed.""")
-tower(L, 7.6, G, 3, width=1.8, robots=["semi", None, "pawn"], top="pawn")
-seesaw(L, 10.9, G, 1.0, 2.6, left="crate", right="pawn")
-L.sunflower(5.7, G)
+Warm-up: a crooked three-storey shed, a robot hiding in a tent of two leaning planks, a see-saw beam with a robot
+balanced on one end, and a sunflower in front: hit it and it sprays seeds into the shed.""")
+tower(L, 8.0, G, 3, width=1.8, robots=["semi", None, "pawn"], top="pawn")
+aframe(L, 10.4, G, h=1.2, half=0.8, robot="pawn")
+seesaw(L, 12.3, G, 1.0, 2.2, left="crate", right="pawn")
+L.sunflower(5.9, G)
 
 L = level("L03_TheTower", "W1_L03", "The Tower", 2, [C, C, C], """
-A six-storey tapering timber tower, a robot every other floor and one on top. Hit it low and it leans, topples
-and breaks apart on the way down.""")
-tower(L, 9.4, G, 6, width=2.1, h=1.2, taper=0.16, robots=["semi", None, "pawn", None, "pawn", None], top="semi")
-L.hay(7.4, G)
+A six-storey tower the robots built themselves: crate legs, a storey on one post, stilts, lopsided roofs. Next to it a
+stack of crates leans further over with every crate, a robot on top. Hit either low and it all comes down.""")
+tower(L, 9.6, G, 6, width=2.1, h=1.2, taper=0.16, robots=["semi", None, "pawn", None, "pawn", None], top="semi")
+wobble_stack(L, 7.0, G, n=4, top="pawn")
 
 L = level("L04_EggPractice", "W1_L04", "Egg Practice", 2, [C, C, C], """
-Robots under lean-tos along a raised island, two of them two storeys high: spread Cluck's eggs across them. A hay
-hoist hangs a bucket over the middle one: cut its rope.""")
+A raised island: a hut perched on two skinny stilts, an upside-down pyramid of crates with robots on top, a hut,
+and a plank stuck lopsided on one post with a robot out on its far end.""")
 L.weather = "MorningMist"
 s = L.island(9.8, G + 1.8, 6.6, 0)
-for x, two in ((7.5, True), (9.35, False), (11.1, True)):
-    r = L.hut(x - 0.6, x + 0.6, s, 1.05)
-    L.robot(x, s, "pawn")
-    if two:
-        L.hut(x - 0.5, x + 0.5, r, 0.95)
-        L.robot(x, r, "pawn")
-L.hoist(12.5, s, 4.6, 0.7)
+stilt_house(L, 7.5, s, legs_h=1.5, w=1.3, robot="pawn", top="pawn")
+upside_pyramid(L, 9.65, s, rows=(1, 2, 3), robots=["pawn", None, "pawn"])
+r = L.hut(10.85, 11.85, s, 1.05); L.robot(11.35, s, "pawn")
+cantilever(L, 12.45, s, 1.0, 0.3, 1.05, tip="pawn")
 
 L = level("L05_TheGauntlet", "W1_L05", "Runaway Wagon", 2, [C, C, C], """
-A loaded hay wagon is parked at the top of a ramp. Knock it and it rolls down the slope straight into the
+A loaded hay wagon is parked at the top of a ramp. Knock it and it rolls down the slope straight into the crooked
 five-storey tower at the bottom.""")
 deck, dl, dr, end = ramp_wagon(L, 6.4)
 L.box(dl + 0.35, deck, 0.5, stone=False); L.robot(dl + 1.05, deck, "pawn")
 tower(L, end + 1.25, G, 5, width=2.0, taper=0.15, robots=["semi", None, "pawn", None, "semi"], top="pawn")
 
 L = level("L06_DoubleBarrel", "W1_L06", "Double Barrel", 2, [C, C, C], """
-A three-storey farmhouse: dynamite beside each ground-floor robot, a lookout room and an attic above. A hay hoist on
-the right dangles a bucket over the first floor; a sunflower stands at the front door.""")
+A farmhouse built on a deck that stands on four dynamite barrels instead of legs: set one off and the whole house
+drops. A hay hoist on the right dangles a bucket over a robot by the door; a sunflower stands at the front.""")
 L.weather = "Overcast"
-for x in (7.0, 8.9, 10.8):
-    top = L.post(x, G, 1.4)
-L.plank(6.86, 8.9, top); f1 = L.plank(8.9, 10.94, top)
-L.robot(7.6, G, "semi"); L.barrel(8.45, G)
-L.robot(10.25, G, "semi"); L.barrel(9.4, G)
-r = L.hut(7.9, 9.9, f1, 1.15); L.robot(8.9, f1, "pawn")
-r2 = L.hut(8.2, 9.6, r, 1.05); L.robot(8.9, r, "pawn")
-L.robot(8.9, r2, "pawn")
-L.hoist(14.1, G, 5.2, 0.5)
+d = barrel_deck(L, 7.0, 10.8, G, n=4)
+r = L.hut(7.3, 10.5, d, 1.15); L.robot(8.2, d, "semi"); L.robot(9.6, d, "semi")
+tower(L, 8.9, r, 2, width=1.9, h=1.05, taper=0.2, robots=["pawn", None], top="pawn")
+L.robot(11.4, G, "pawn")
+L.hoist(14.1, G, 4.0, 0.3)
 L.sunflower(6.0, G)
 
 L = level("L07_BarrelRow", "W1_L07", "Barrel Row", 2, [C, C, C], """
 A wagon carrying dynamite is parked on the edge of a high island. Knock it off and it drops onto the stone bridge
-over a row of barrels, a robot on the bridge and a four-storey lookout tower at the end.""")
+over a row of barrels, a robot on the bridge and a crooked lookout tower at the end.""")
 L.weather = "Dusk"
 s = L.island(10.0, G + 1.2, 6.0, 0)
 for x in (8.4, 9.3, 10.2):
@@ -367,19 +564,21 @@ deck, dl, dr = edge_wagon(L, hi, 6.0 + 1.5 * 0.92, 2.2)
 L.barrel(dl + 0.5, deck); L.robot(dl + 1.25, deck, "pawn")
 
 L = level("L08_FortressAssault", "W1_L08", "Fortress Assault", 3, [C, C, C], """
-Five storeys in the rain: a stone ground floor with two rooms and a four-storey timber tower rising from it. A
-sunflower stands guard at the gate.""")
+Rain: a stone ground floor with two rooms and a crooked four-storey timber tower rising from it, a plank leaning on
+its wall like a ramp, and a robot sheltering in a plank tent at the back. A sunflower stands guard at the gate.""")
 L.weather = "Rain"
 for x in (8.2, 10.0, 11.8):
     top = L.post(x, G, 1.4, stone=True)
 L.plank(8.025, 10.0, top, stone=True); f1 = L.plank(10.0, 11.975, top, stone=True)
 L.robot(9.1, G, "semi"); L.robot(10.9, G, "semi")
 tower(L, 10.0, f1, 4, width=2.6, taper=0.35, robots=["pawn", None, "semi", None], top="pawn")
-L.sunflower(7.2, G)
+lean(L, 6.9, G, 7.98, G + 1.25)
+aframe(L, 13.0, G, h=1.2, half=0.8, robot="pawn")
+L.sunflower(6.0, G)
 
 L = level("L09_StoneBastion", "W1_L09", "Downhill Demolition", 3, [C, C, C], """
 A wagon loaded with dynamite waits at the top of a ramp. Send it rolling into the stone bunker at the bottom, which
-carries a timber house and a lookout tower on its roof.""")
+carries a lopsided timber house, a plank cantilevered off its roof with a barrel on the end, and a lookout.""")
 deck, dl, dr, end = ramp_wagon(L, 6.2)
 L.barrel(dl + 0.45, deck); L.barrel(dl + 1.15, deck)
 x0 = end + 0.4
@@ -388,47 +587,49 @@ t = L.box(x0 + 3.2, G, 0.8); top = L.box(x0 + 3.2, t, 0.8)
 r = L.plank(x0 - 0.05, x0 + 3.65, top, stone=True)
 L.robot(x0 + 1.8, G, "harv")
 r2 = L.hut(x0 + 0.9, x0 + 2.7, r, 1.15); L.robot(x0 + 1.8, r, "pawn")
+cantilever(L, x0 + 3.3, r, 0.9, 0.3, 1.0, tip="barrel")
 tower(L, x0 + 1.8, r2, 2, width=1.5, h=1.05, robots=["semi", None], top="pawn")
 
 L = level("L10_BessiesDebut", "W1_L10", "Bessie's Debut", 2, [C, C, B], """
-Bessie's first level: a stone pyramid carrying a two-storey timber lookout, flanked by two see-saw beams.""")
+Bessie's first level: an upside-down stone pyramid (the robots built it wrong way up) carrying a two-storey lookout,
+robots sheltering under its overhangs, and two see-saw beams.""")
 L.weather = "MorningMist"
-for row, n in enumerate((4, 3, 2)):
-    b = G + row * 0.8
-    for k in range(n):
-        top = L.box(9.6 + (k - (n - 1) / 2) * 0.8, b, 0.8)
-tower(L, 9.6, top, 2, width=1.6, h=1.1, taper=0.1, robots=["semi", "pawn"], top="pawn")
-seesaw(L, 6.9, G, 0.9, 2.2, left="crate", right="pawn")
-seesaw(L, 12.4, G, 0.9, 2.2, left="pawn", right="barrel")
+top = upside_pyramid(L, 9.6, G, rows=(1, 2, 3, 4), s=0.66, stone=True)
+L.robot(8.2, G, "pawn"); L.robot(11.0, G, "pawn")
+tower(L, 9.6, top, 2, width=1.9, h=1.1, taper=0.2, robots=["semi", "pawn"], top="pawn")
+seesaw(L, 6.6, G, 0.9, 2.2, left="crate", right="pawn")
+seesaw(L, 12.9, G, 0.9, 2.2, left="pawn", right="barrel")
 
 L = level("L11_FullRoster", "W1_L11", "Mesa Drop", 3, [C, C, B], """
 A wagon with a robot aboard is parked on top of a tall rock mesa. Tip it over the edge and it slides down the
-mesa's side into the five-storey tower below; a three-storey tower stands on a low island behind.""")
+mesa's side into the crooked five-storey tower below; on a low island behind, crates lean over a robot.""")
 L.weather = "Dusk"
 s, l, r = L.mount("Mesa", 7.2, 3.6)
 deck, dl, dr = edge_wagon(L, s, r, 2.0)
 L.box(dl + 0.3, deck, 0.5, stone=False); L.robot(dl + 0.95, deck, "pawn")
 tower(L, 10.4, G, 5, width=2.0, taper=0.15, robots=["semi", None, "pawn", None, "semi"], top="pawn")
 s2 = L.island(12.9, G + 1.2, 2.4, 0)
-tower(L, 12.9, s2, 3, width=1.6, taper=0.1, robots=["pawn", None, "semi"])
+wobble_stack(L, 12.5, s2, n=4, lean_by=0.25, top="pawn")
+L.robot(13.6, s2, "semi")
 
 L = level("L12_HeavyGuard", "W1_L12", "Heavy Guard", 2, [C, C, B], """
-A Harvester inside a stone keep with a two-storey timber watch-house on its roof and a see-saw on top balancing a
-pawn against a barrel. High on an island to the left a wagon waits at the edge, right above the dynamite barrel at
-the keep's door.""")
+A Harvester inside a stone keep with a crooked watch-house on its roof and a see-saw on top balancing a pawn against
+a barrel; a big rock balanced on one post with a robot on it. High on an island to the left a wagon waits at the
+edge, right above the dynamite barrel at the keep's door.""")
 L.weather = "Rain"
 top = L.post(8.6, G, 1.6, stone=True); L.post(11.0, G, 1.6, stone=True)
 r = L.plank(8.4, 11.2, top, stone=True)
 L.robot(9.8, G, "harv"); L.barrel(7.8, G)
 t = tower(L, 9.8, r, 2, width=2.2, h=1.05, taper=0.3, robots=["pawn", None])
 seesaw(L, 9.8, t, 0.7, 2.4, left="pawn", right="barrel")
-L.robot(12.4, G, "pawn"); L.box(13.1, G, 0.6, stone=False)
+balanced_rock(L, 12.7, G, h=1.5, s=0.9, top="pawn")
 hi = L.island(6.4, G + 4.2, 2.8, 0)
 deck, dl, dr = edge_wagon(L, hi, 6.4 + 1.4 * 0.92, 2.0)
 L.box(dl + 0.35, deck, 0.5, stone=False); L.robot(dl + 1.0, deck, "pawn")
 
 L = level("L13_TenStrong", "W1_L13", "Hay Ride", 3, [C, C, B], """
-A hay wagon with a robot riding on top waits on the ramp; below it stands a five-storey tower on haybale stilts.""")
+A hay wagon with a robot riding on top waits on the ramp; below it stands a crooked five-storey tower on haybale
+stilts.""")
 deck, dl, dr, end = ramp_wagon(L, 6.0)
 t = L.hay(dl + 0.55, deck); L.robot(dl + 1.3, deck, "pawn")
 x0 = end + 1.6
@@ -438,43 +639,46 @@ f = L.plank(x0 - 1.5, x0 + 1.5, t)
 tower(L, x0, f, 5, width=2.2, h=1.1, taper=0.2, robots=["semi", "pawn", None, "semi", None], top="pawn")
 
 L = level("L14_StoneAndPawns", "W1_L14", "Stone And Pawns", 3, [C, B, B], """
-A stone staircase on a low island with a pawn on every step, and a two-storey timber lookout on the top step.""")
+Three stacks of stone blocks on a low island, each one leaning further than the last, a robot on every top, and a
+hut on stilts at the end.""")
 L.weather = "Overcast"
 s = L.island(9.8, G + 1.0, 5.6, 1)
-for row in range(4):
-    for k in range(5 - row):
-        top = L.box(7.6 + (row + k) * 0.8, s + row * 0.8, 0.8)
-    if row < 3: L.robot(7.6 + row * 0.8, s + (row + 1) * 0.8, "pawn")
-tower(L, 10.4, s + 3.2, 2, width=1.6, h=1.05, taper=0.1, robots=["semi", None], top="pawn")
+wobble_stack(L, 7.6, s, n=2, s=0.7, lean_by=0.2, stone=True, top="pawn")
+wobble_stack(L, 8.75, s, n=3, s=0.7, lean_by=0.2, stone=True, top="pawn")
+wobble_stack(L, 9.9, s, n=4, s=0.7, lean_by=0.2, stone=True, top="semi")
+stilt_house(L, 11.8, s, legs_h=1.4, w=1.2, robot="pawn", top="pawn")
 
 L = level("L15_FiveStones", "W1_L15", "Five Stones", 2, [C, B, C], """
-Five stone pillars hold a slab on a high island with a three-storey timber house on top; a Harvester guards the
-edge.""")
+On a high island: two rocks balanced on single posts with robots on top, a crooked three-storey timber house on a
+row of stone pillars, and a Harvester guarding the edge.""")
 L.weather = "MorningMist"
 s = L.island(10.4, G + 2.4, 6.4, 0)
-for x in (8.6, 9.6, 10.6, 11.6, 12.6):
+balanced_rock(L, 8.7, s, h=1.1, s=0.8, top="pawn")
+for x in (10.2, 11.2, 12.2):
     top = L.post(x, s, 1.0, stone=True)
-L.plank(8.4, 10.6, top, stone=True); r = L.plank(10.6, 12.8, top, stone=True)
-tower(L, 10.6, r, 3, width=2.6, h=1.1, taper=0.45, robots=["semi", None, "pawn"], top="semi")
+r = L.plank(9.95, 12.45, top, stone=True)
+tower(L, 11.2, r, 3, width=2.2, h=1.1, taper=0.3, robots=["semi", None, "pawn"], top="semi")
+balanced_rock(L, 13.2, s, h=0.9, s=0.7, top="pawn")
 L.robot(7.7, s, "harv")
 
 L = level("L16_TwinTowers", "W1_L16", "Twin Towers", 3, [C, C, B], """
-Two four-storey timber towers on scaffolds joined by a plank bridge at the top, robots inside and one on the bridge.
-A sunflower stands in front of the left tower.""")
+Two crooked four-storey timber towers on scaffolds joined by a plank bridge at the top, robots inside and one on the
+bridge. A sunflower stands in front of the left tower.""")
 L.weather = "Rain"
 cs = []
 for xc in (8.0, 11.9):
     s_, l, r = L.mount("Scaffold", xc, 2.4)
     c = (l + r) / 2
     cs.append(c)
-    top = tower(L, c, s_, 4, width=1.8, h=1.05, taper=0.12, robots=["semi", None, "pawn", None])
+    top = tower(L, c, s_, 4, width=1.8, h=1.05, taper=0.12, robots=["semi", None, "pawn", None], stilts=False)
 br = L.plank(cs[0] + 0.3, cs[1] - 0.3, top)
 L.robot((cs[0] + cs[1]) / 2, br, "semi")
+aframe(L, (cs[0] + cs[1]) / 2, G, h=1.2, half=0.8, robot="pawn")
 L.sunflower(6.3, G)
 
 L = level("L17_EightStrong", "W1_L17", "Wagon Train", 3, [C, C, B], """
-A wagon carrying a little hut rolls off the ramp into a stone-and-timber fortress: a stone hall with a four-storey
-timber tower above; dynamite waits by the walls.""")
+A wagon carrying a little hut rolls off the ramp into a stone-and-timber fortress: a stone hall with a crooked
+four-storey timber tower above; dynamite waits by the walls.""")
 L.weather = "Dusk"
 deck, dl, dr, end = ramp_wagon(L, 5.8)
 r = L.hut(dl + 0.15, dl + 1.25, deck, 0.9); L.robot(dl + 0.7, deck, "pawn")
@@ -485,18 +689,16 @@ f = L.hut(x0 + 2.0, x0 + 4.2, G, 1.3, stone=True, roof_stone=True); L.robot(x0 +
 tower(L, x0 + 3.1, f, 4, width=1.9, h=1.05, taper=0.12, robots=["pawn", None, "semi", None], top="harv")
 
 L = level("L18_CaptainsLastStand", "W1_L18", "Captain's Last Stand", 3, [C, B, B], """
-Boss, in a thunderstorm: the Commander stands on top of a four-storey stone-and-timber keep on a high island; a
-guard watches from a stone tower below.""", boss=True)
+Boss, in a thunderstorm: the Commander stands on top of a crooked stone-and-timber keep on a high island; a guard
+watches from a leaning stack of stone below.""", boss=True)
 L.weather = "Rain"
 s = L.island(10.8, G + 2.0, 5.4, 1)
 top = L.post(9.4, s, 1.5, stone=True); L.post(12.2, s, 1.5, stone=True)
 r = L.plank(9.1, 12.5, top, stone=True)
 L.robot(10.8, s, "semi"); L.barrel(8.6, s); L.barrel(13.0, s)
 t = tower(L, 10.8, r, 3, width=2.4, h=1.1, taper=0.2, robots=["pawn", None, "semi"])
-L.robot(10.8, t, "boss")
-t = L.box(6.6, G, 0.8)
-for _ in range(3): t = L.box(6.6, t, 0.8)
-L.robot(6.6, t, "pawn")
+L.robot(L.last_top_x, t, "boss")
+wobble_stack(L, 6.4, G, n=4, s=0.8, lean_by=0.15, stone=True, top="pawn")
 
 
 # ═══════════════════════════════════════════ checks ═══════════════════════════════════════════════════════
@@ -506,22 +708,37 @@ GRAV, VMIN, VMAX = 8.0, 5.6, 13.6
 
 def check(L):
     issues = []
-    # support: 0.08 u probe under 90% of each block's (trimmed) collider, against ground/islands/other blocks
+    # support (2026-11-11, polygons so tilted pieces count): each block's collider, dropped 0.1 u, must touch the
+    # ground, a mount's solid or a block whose centre is lower. Balance is NOT checked on purpose: structures start
+    # asleep and only need to touch ("robots don't know how to build" — precarious is the point).
+    solids = []
+    for isl in L.islands:
+        base = isl["s"] - isl["uv"] * isl["h"]
+        for (x0, x1, y0, y1) in isl["solids"]:
+            sl, sr = isl["x"] - isl["w"] / 2 + x0 * isl["w"], isl["x"] - isl["w"] / 2 + x1 * isl["w"]
+            solids.append([(sl, base + y0 * isl["h"]), (sr, base + y0 * isl["h"]), (sr, base + y1 * isl["h"]), (sl, base + y1 * isl["h"])])
+    cols = [_shrink(b["poly"], 0.02) for b in L.blocks]
     for i, b in enumerate(L.blocks):
-        l, r, bot, top = b["vis"]
-        cx, hw = (l + r) / 2, (r - l) * 0.45
-        ok = bot <= G + 0.08
-        for isl in L.islands:
-            base = isl["s"] - isl["uv"] * isl["h"]
-            for (x0, x1, y0, y1) in isl["solids"]:
-                sl, sr = isl["x"] - isl["w"] / 2 + x0 * isl["w"], isl["x"] - isl["w"] / 2 + x1 * isl["w"]
-                st = base + y1 * isl["h"]
-                if sl < cx + hw and sr > cx - hw and st - 0.6 < bot <= st + 0.08: ok = True
-        for j, o in enumerate(L.blocks):
-            if j != i:
-                l2, r2, b2, t2 = o["vis"]
-                if l2 < cx + hw and r2 > cx - hw and b2 < bot and t2 > bot - 0.08: ok = True
-        if not ok: issues.append(f"block {i} ({b['kind']}) unsupported at x={cx:.2f} y={bot:.2f}")
+        low = [(x, y - 0.1) for x, y in cols[i]]
+        ok = min(y for _, y in low) <= G + 0.001
+        ok = ok or any(_sat_overlap(low, sp) > 0 for sp in solids)
+        ok = ok or any(j != i and L.blocks[j]["vc"][1] < b["vc"][1] and _sat_overlap(low, cols[j]) > 0 for j in range(len(cols)))
+        if not ok: issues.append(f"block {i} ({b['kind']}) unsupported at x={b['vc'][0]:.2f} y={b['vis'][2]:.2f}")
+    # overlap: colliders that start inside each other burst apart the moment the stack wakes
+    for i in range(len(cols)):
+        for j in range(i + 1, len(cols)):
+            d = _sat_overlap(cols[i], cols[j])
+            if d > 0.004:
+                issues.append(f"blocks {i} ({L.blocks[i]['kind']}) and {j} ({L.blocks[j]['kind']}) overlap {d:.3f} at x={L.blocks[i]['vc'][0]:.2f}")
+    # robots: standing on something, not inside a block
+    for k, rb in enumerate(L.robots):
+        w = 0.5 * rb["vis"]; bot = rb["surface"]
+        box = [(rb["x"] - w / 2, bot + 0.03), (rb["x"] + w / 2, bot + 0.03), (rb["x"] + w / 2, bot + 0.85 * rb["vis"]), (rb["x"] - w / 2, bot + 0.85 * rb["vis"])]
+        for j, c in enumerate(cols):
+            if _sat_overlap(box, c) > 0.03: issues.append(f"robot {k} at x={rb['x']:.2f} inside block {j} ({L.blocks[j]['kind']})")
+        foot = [(rb["x"] - 0.15, bot - 0.1), (rb["x"] + 0.15, bot - 0.1), (rb["x"] + 0.15, bot + 0.02), (rb["x"] - 0.15, bot + 0.02)]
+        if not (bot <= G + 0.01 or any(_sat_overlap(foot, c) > 0 for c in cols) or any(_sat_overlap(foot, sp) > 0 for sp in solids)):
+            issues.append(f"robot {k} at x={rb['x']:.2f} y={bot:.2f} standing on nothing")
     # reach: some angle/power passes within 0.45 u of each robot (obstacles ignored)
     for k, rb in enumerate(L.robots):
         if not reachable(rb["x"], rb["y"]): issues.append(f"robot {k} at ({rb['x']:.2f},{rb['y']:.2f}) out of reach")
@@ -668,7 +885,12 @@ def render(outdir):
             im = load(f"Environment/Cornfield/{name}.png"); h = isl["h"]
             put(c, im, isl["x"], isl["s"] - isl["uv"] * h + h / 2, isl["w"], h)
         for b in L.blocks:
-            put(c, load("Environment/World1Props/" + SPRITE[b["kind"]] + ".png"), b["x"], b["y"], b["w"], b["h"])
+            im = load("Environment/World1Props/" + SPRITE[b["kind"]] + ".png")
+            if abs(b.get("rot", 0)) > 0.01:
+                im = im.resize((max(1, int(b["w"] * PX)), max(1, int(b["h"] * PX)))).rotate(b["rot"], expand=True, resample=Image.BICUBIC)
+                put(c, im, b["x"], b["y"], im.size[0] / PX, im.size[1] / PX)
+            else:
+                put(c, im, b["x"], b["y"], b["w"], b["h"])
         for r in L.robots:
             im = load(robots[r["kind"]]); w = r["s"] * im.size[0] / (1746 if r["kind"] != "boss" else 1746); h = r["s"] * im.size[1] / 1746
             put(c, im, r["x"], r["y"], w, h)

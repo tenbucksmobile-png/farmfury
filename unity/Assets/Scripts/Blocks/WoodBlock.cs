@@ -83,16 +83,6 @@ public class WoodBlock : BlockBase
     // detonates the block itself (no robot damage results, per the 2026-08-03 change above) — it
     // exists purely so a robot's weight can still trigger the prop's own chain reaction into
     // nearby blocks.
-    protected override void OnCollisionEnter2D(Collision2D col)
-    {
-        if (_isExplosive && !IsDestroyed && col.gameObject.GetComponentInParent<RobotEnemy>() != null)
-        {
-            TakeDamage(MaxHealth);
-            return;
-        }
-        base.OnCollisionEnter2D(col);
-    }
-
     protected override void DestroyBlock()
     {
         if (IsDestroyed) return; // BlockBase also guards this, but DamageNearby() must run exactly once
@@ -121,7 +111,7 @@ public class WoodBlock : BlockBase
         // SettleUnsupportedBlocksNextFrame and BlockBase's own impulse-driven TakeDamage). Every
         // remaining block in a structure now only dies from being hit directly or from a genuine
         // physics collapse, not from a neighbour's death alone.
-        if (_isExplosive) DamageNearby();
+        if (_isExplosive && !BreaksOnHit) DamageNearby();   // the barrel does its own blast (ExplodingBarrelBlock.Blast)
     }
 
     // Damage against another explosive prop caught in this blast is reduced by this fraction —

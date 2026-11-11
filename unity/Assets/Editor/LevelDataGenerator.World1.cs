@@ -7,121 +7,127 @@ public static partial class LevelDataGenerator
     static void MakeWorld1Rebuilt(string folder)
     {
         // ── W1_L02  Harvest Yard ────────────────────────────────────────────────
-        // Warm-up: a three-storey timber shed with robots inside and on the roof, a see-saw beam with a robot balanced on one
-        // end, and a sunflower in front: hit it and it sprays seeds into the shed.
+        // Warm-up: a crooked three-storey shed, a robot hiding in a tent of two leaning planks, a see-saw beam with a robot
+        // balanced on one end, and a sunflower in front: hit it and it sprays seeds into the shed.
         Make(folder, "L02_StoneWall",
             id: "W1_L02", name: "Harvest Yard", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood, 6.886f, -5.042f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.406f, -5.042f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 7.544f, -4.291f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 6.946f, -3.642f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.346f, -3.642f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 7.547f, -2.891f, 1.875f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 7.006f, -2.242f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.286f, -2.242f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 7.551f, -1.491f, 1.741f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 10.946f, -5.115f, 1.000f, 1.131f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.819f, -4.441f, 2.902f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 10.056f, -4.045f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 7.286f, -5.042f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.806f, -5.042f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 7.944f, -4.291f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 7.383f, -3.642f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.783f, -3.642f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.160f, -2.891f, 2.293f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 7.433f, -2.242f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.713f, -2.242f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.244f, -1.491f, 2.375f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.827f, -4.952f, 1.591f, 0.496f, artVariant: WoodArtVariant.Horizontal, rot: 57.313f),
+                B(BlockType.Wood, 10.925f, -4.877f, 1.591f, 0.496f, artVariant: WoodArtVariant.Horizontal, rot: -57.313f),
+                B(BlockType.Wood, 12.346f, -5.115f, 1.000f, 1.131f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.231f, -4.441f, 2.455f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 11.656f, -4.045f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
             },
             robots: new[]
             {
-                R(7.600f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(7.600f, -2.350f, 5.500f, 5.500f, RobotType.Basic),
-                R(7.600f, -0.950f, 5.500f, 5.500f, RobotType.Basic),
-                R(11.750f, -3.900f, 5.500f, 5.500f, RobotType.Basic),
+                R(8.000f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(8.027f, -2.350f, 5.500f, 5.500f, RobotType.Basic),
+                R(8.027f, -0.950f, 5.500f, 5.500f, RobotType.Basic),
+                R(10.400f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
+                R(12.950f, -3.900f, 5.500f, 5.500f, RobotType.Basic),
             },
             gadgets: new[]
             {
-                Gd(GadgetType.Sunflower, 5.700f, -5.600f, 1.700f),
+                Gd(GadgetType.Sunflower, 5.900f, -5.600f, 1.700f),
             },
             referenceFraming: true);
 
         // ── W1_L03  The Tower ───────────────────────────────────────────────────
-        // A six-storey tapering timber tower, a robot every other floor and one on top. Hit it low and it leans, topples
-        // and breaks apart on the way down.
+        // A six-storey tower the robots built themselves: crate legs, a storey on one post, stilts, lopsided roofs. Next to it a
+        // stack of crates leans further over with every crate, a robot on top. Hit either low and it all comes down.
         Make(folder, "L03_TheTower",
             id: "W1_L03", name: "The Tower", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood, 8.536f, -5.018f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.356f, -5.018f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.334f, -4.241f, 2.344f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 8.616f, -3.568f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.276f, -3.568f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.339f, -2.791f, 2.165f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 8.696f, -2.118f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.196f, -2.118f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.344f, -1.341f, 1.987f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 8.776f, -0.668f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.116f, -0.668f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.349f, 0.109f, 1.808f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 8.856f, 0.782f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.036f, 0.782f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.354f, 1.559f, 1.629f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 8.936f, 2.232f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.956f, 2.232f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.359f, 3.009f, 1.451f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Haybale, 7.400f, -5.147f, 0.977f, 0.977f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Wood, 8.736f, -5.018f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.556f, -5.018f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.235f, -4.241f, 2.973f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 8.365f, -3.568f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.025f, -3.568f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.096f, -3.578f, 1.742f, 0.357f, artVariant: WoodArtVariant.Horizontal, rot: 41.000f),
+                B(BlockType.Wood, 9.088f, -2.791f, 2.165f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 8.445f, -2.118f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.945f, -2.118f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.253f, -1.341f, 2.367f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.474f, -0.668f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.549f, 0.109f, 2.497f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 8.904f, 0.782f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.084f, 0.782f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.703f, 1.559f, 2.346f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 8.937f, 2.232f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.957f, 2.232f, 1.000f, 1.357f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.034f, 3.009f, 2.136f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 7.007f, -5.256f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 7.143f, -4.636f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 7.280f, -4.016f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 7.198f, -3.396f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
             },
             robots: new[]
             {
-                R(9.400f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(9.400f, -2.250f, 5.500f, 5.500f, RobotType.Basic),
-                R(9.400f, 0.650f, 5.500f, 5.500f, RobotType.Basic),
-                R(9.400f, 3.550f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(9.600f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(9.149f, -2.250f, 5.500f, 5.500f, RobotType.Basic),
+                R(9.448f, 0.650f, 5.500f, 5.500f, RobotType.Basic),
+                R(9.401f, 3.550f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(7.191f, -2.670f, 5.500f, 5.500f, RobotType.Basic),
             },
             referenceFraming: true);
 
         // ── W1_L04  Egg Practice ────────────────────────────────────────────────
-        // Robots under lean-tos along a raised island, two of them two storeys high: spread Cluck's eggs across them. A hay
-        // hoist hangs a bucket over the middle one: cut its rope.
+        // A raised island: a hut perched on two skinny stilts, an upside-down pyramid of crates with robots on top, a hut,
+        // and a plank stuck lopsided on one post with a robot out on its far end.
         Make(folder, "L04_EggPractice",
             id: "W1_L04", name: "Egg Practice", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood, 7.086f, -3.290f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.006f, -3.290f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 7.463f, -2.591f, 1.339f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 7.186f, -2.039f, 1.000f, 1.075f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 7.906f, -2.039f, 1.000f, 1.075f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 7.469f, -1.391f, 1.116f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 8.936f, -3.290f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.856f, -3.290f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.312f, -2.591f, 1.339f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 10.686f, -3.290f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.606f, -3.290f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.062f, -2.591f, 1.339f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 10.786f, -2.039f, 1.000f, 1.075f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.506f, -2.039f, 1.000f, 1.075f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.069f, -1.391f, 1.116f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 7.226f, -3.072f, 1.000f, 1.697f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 7.866f, -3.072f, 1.000f, 1.697f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 7.441f, -2.141f, 2.121f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 7.036f, -1.540f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.056f, -1.540f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 7.459f, -0.841f, 1.451f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.657f, -3.456f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 9.317f, -2.836f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 9.997f, -2.836f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 8.977f, -2.216f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 9.657f, -2.216f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 10.337f, -2.216f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 11.036f, -3.290f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.756f, -3.290f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.319f, -2.591f, 1.116f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 12.496f, -3.315f, 1.000f, 1.131f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.783f, -2.641f, 1.507f, 0.496f, artVariant: WoodArtVariant.Horizontal),
             },
             robots: new[]
             {
-                R(7.500f, -3.350f, 5.500f, 5.500f, RobotType.Basic),
-                R(7.500f, -2.050f, 5.500f, 5.500f, RobotType.Basic),
-                R(9.350f, -3.350f, 5.500f, 5.500f, RobotType.Basic),
-                R(11.100f, -3.350f, 5.500f, 5.500f, RobotType.Basic),
-                R(11.100f, -2.050f, 5.500f, 5.500f, RobotType.Basic),
+                R(7.500f, -1.600f, 5.500f, 5.500f, RobotType.Basic),
+                R(7.500f, -0.300f, 5.500f, 5.500f, RobotType.Basic),
+                R(8.970f, -1.490f, 5.500f, 5.500f, RobotType.Basic),
+                R(10.330f, -1.490f, 5.500f, 5.500f, RobotType.Basic),
+                R(11.350f, -3.350f, 5.500f, 5.500f, RobotType.Basic),
+                R(13.100f, -2.100f, 5.500f, 5.500f, RobotType.Basic),
             },
             platforms: new[]
             {
                 P(9.800f, -3.800f, 6.600f, variant: 0),
             },
-            gadgets: new[]
-            {
-                Gd(GadgetType.HayHoist, 12.500f, -3.800f, 4.600f, ropeLength: 0.700f, faceLeft: true),
-            },
             weather: LevelWeather.MorningMist,
             referenceFraming: true);
 
         // ── W1_L05  Runaway Wagon ───────────────────────────────────────────────
-        // A loaded hay wagon is parked at the top of a ramp. Knock it and it rolls down the slope straight into the
+        // A loaded hay wagon is parked at the top of a ramp. Knock it and it rolls down the slope straight into the crooked
         // five-storey tower at the bottom.
         Make(folder, "L05_TheGauntlet",
             id: "W1_L05", name: "Runaway Wagon", par: 2,
@@ -131,27 +137,28 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 4.414f, -2.553f, 0.789f, 0.664f, artVariant: WoodArtVariant.Short),
                 B(BlockType.Wood, 9.524f, -5.042f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.244f, -5.042f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.276f, -4.291f, 2.232f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.599f, -3.642f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.169f, -3.642f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.280f, -2.891f, 2.065f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.674f, -2.242f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.094f, -2.242f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.285f, -1.491f, 1.897f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.749f, -0.842f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.019f, -0.842f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.290f, -0.091f, 1.730f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.824f, 0.558f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.944f, 0.558f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.294f, 1.309f, 1.562f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 10.506f, -4.291f, 2.780f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.599f, -3.391f, 1.000f, 1.886f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.169f, -3.391f, 1.000f, 1.886f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.569f, -2.373f, 2.753f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.787f, -1.724f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.207f, -1.724f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.398f, -0.973f, 1.897f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.845f, -0.324f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.115f, -0.324f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.430f, -0.276f, 1.400f, 0.357f, artVariant: WoodArtVariant.Horizontal, rot: -53.000f),
+                B(BlockType.Wood, 10.627f, 0.427f, 2.305f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.920f, 1.076f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.040f, 1.076f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.391f, 1.827f, 1.562f, 0.496f, artVariant: WoodArtVariant.Horizontal),
             },
             robots: new[]
             {
                 R(5.108f, -2.380f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.338f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.338f, -2.350f, 5.500f, 5.500f, RobotType.Basic),
-                R(10.338f, 0.450f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.338f, 1.850f, 5.500f, 5.500f, RobotType.Basic),
+                R(10.451f, -1.832f, 5.500f, 5.500f, RobotType.Basic),
+                R(10.434f, 0.968f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(10.434f, 2.368f, 5.500f, 5.500f, RobotType.Basic),
             },
             platforms: new[]
             {
@@ -161,38 +168,38 @@ public static partial class LevelDataGenerator
             referenceFraming: true);
 
         // ── W1_L06  Double Barrel ───────────────────────────────────────────────
-        // A three-storey farmhouse: dynamite beside each ground-floor robot, a lookout room and an attic above. A hay hoist on
-        // the right dangles a bucket over the first floor; a sunflower stands at the front door.
+        // A farmhouse built on a deck that stands on four dynamite barrels instead of legs: set one off and the whole house
+        // drops. A hay hoist on the right dangles a bucket over a robot by the door; a sunflower stands at the front.
         Make(folder, "L06_DoubleBarrel",
             id: "W1_L06", name: "Double Barrel", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Wood, 7.046f, -4.921f, 1.000f, 1.584f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.946f, -4.921f, 1.000f, 1.584f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.846f, -4.921f, 1.000f, 1.584f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 7.816f, -4.041f, 2.277f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.856f, -4.041f, 2.277f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Barrel, 8.453f, -5.178f, 0.977f, 0.977f),
-                B(BlockType.Barrel, 9.403f, -5.178f, 0.977f, 0.977f),
-                B(BlockType.Wood, 8.086f, -3.392f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.806f, -3.392f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.838f, -2.641f, 2.232f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 8.386f, -2.040f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.506f, -2.040f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.856f, -1.341f, 1.563f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Barrel, 7.353f, -5.178f, 0.977f, 0.977f),
+                B(BlockType.Barrel, 8.386f, -5.178f, 0.977f, 0.977f),
+                B(BlockType.Barrel, 9.420f, -5.178f, 0.977f, 0.977f),
+                B(BlockType.Barrel, 10.453f, -5.178f, 0.977f, 0.977f),
+                B(BlockType.Wood, 8.781f, -4.620f, 4.241f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 7.486f, -3.971f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.406f, -3.971f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.800f, -3.220f, 3.571f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 8.136f, -2.620f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.756f, -2.620f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.223f, -1.920f, 3.032f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.376f, -1.320f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.607f, -0.620f, 2.786f, 0.496f, artVariant: WoodArtVariant.Horizontal),
             },
             robots: new[]
             {
-                R(7.600f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.250f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(8.900f, -3.500f, 5.500f, 5.500f, RobotType.Basic),
-                R(8.900f, -2.100f, 5.500f, 5.500f, RobotType.Basic),
-                R(8.900f, -0.800f, 5.500f, 5.500f, RobotType.Basic),
+                R(8.200f, -4.079f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(9.600f, -4.079f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(8.900f, -2.679f, 5.500f, 5.500f, RobotType.Basic),
+                R(9.084f, -0.079f, 5.500f, 5.500f, RobotType.Basic),
+                R(11.400f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
             },
             gadgets: new[]
             {
-                Gd(GadgetType.HayHoist, 14.100f, -5.600f, 5.200f, ropeLength: 0.500f, faceLeft: true),
+                Gd(GadgetType.HayHoist, 14.100f, -5.600f, 4.000f, ropeLength: 0.300f, faceLeft: true),
                 Gd(GadgetType.Sunflower, 6.000f, -5.600f, 1.700f),
             },
             weather: LevelWeather.Overcast,
@@ -200,7 +207,7 @@ public static partial class LevelDataGenerator
 
         // ── W1_L07  Barrel Row ──────────────────────────────────────────────────
         // A wagon carrying dynamite is parked on the edge of a high island. Knock it off and it drops onto the stone bridge
-        // over a row of barrels, a robot on the bridge and a four-storey lookout tower at the end.
+        // over a row of barrels, a robot on the bridge and a crooked lookout tower at the end.
         Make(folder, "L07_BarrelRow",
             id: "W1_L07", name: "Barrel Row", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
@@ -215,23 +222,23 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 11.686f, -3.866f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 12.806f, -3.866f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 12.156f, -3.141f, 1.562f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 11.726f, -2.516f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.766f, -2.516f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.159f, -1.791f, 1.473f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 11.766f, -1.166f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.726f, -1.166f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.161f, -0.441f, 1.384f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 11.806f, 0.184f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.686f, 0.184f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.164f, 0.909f, 1.295f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 12.187f, -2.516f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.915f, -1.791f, 1.964f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 11.672f, -1.166f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.632f, -1.166f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.458f, -0.441f, 2.315f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 12.453f, 0.184f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 13.333f, 0.184f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.859f, 0.224f, 1.182f, 0.357f, artVariant: WoodArtVariant.Horizontal, rot: -71.000f),
+                B(BlockType.Wood, 13.207f, 0.909f, 2.239f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Barrel, 6.554f, -0.889f, 0.977f, 0.977f),
             },
             robots: new[]
             {
                 R(9.300f, -2.700f, 5.500f, 5.500f, RobotType.Basic),
                 R(12.200f, -3.950f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(12.200f, -1.250f, 5.500f, 5.500f, RobotType.Basic),
-                R(12.200f, 1.450f, 5.500f, 5.500f, RobotType.Basic),
+                R(12.106f, -1.250f, 5.500f, 5.500f, RobotType.Basic),
+                R(12.847f, 1.450f, 5.500f, 5.500f, RobotType.Basic),
                 R(7.301f, -0.861f, 5.500f, 5.500f, RobotType.Basic),
             },
             platforms: new[]
@@ -244,8 +251,8 @@ public static partial class LevelDataGenerator
             referenceFraming: true);
 
         // ── W1_L08  Fortress Assault ────────────────────────────────────────────
-        // Five storeys in the rain: a stone ground floor with two rooms and a four-storey timber tower rising from it. A
-        // sunflower stands guard at the gate.
+        // Rain: a stone ground floor with two rooms and a crooked four-storey timber tower rising from it, a plank leaning on
+        // its wall like a ramp, and a robot sheltering in a plank tent at the back. A sunflower stands guard at the gate.
         Make(folder, "L08_FortressAssault",
             id: "W1_L08", name: "Fortress Assault", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
@@ -258,16 +265,20 @@ public static partial class LevelDataGenerator
                 B(BlockType.Stone, 10.919f, -4.084f, 2.687f, 0.578f, artVariant: WoodArtVariant.Block),
                 B(BlockType.Wood, 8.886f, -3.342f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.206f, -3.342f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.919f, -2.591f, 2.902f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 10.231f, -2.591f, 3.644f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 9.061f, -1.942f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.031f, -1.942f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.930f, -1.191f, 2.511f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 10.148f, -1.191f, 3.032f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 9.236f, -0.542f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.856f, -0.542f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 9.941f, 0.209f, 2.121f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.411f, 0.858f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.681f, 0.858f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.952f, 1.609f, 1.730f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.415f, 0.858f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.685f, 0.858f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.961f, 0.844f, 1.400f, 0.357f, artVariant: WoodArtVariant.Horizontal, rot: 53.000f),
+                B(BlockType.Wood, 9.956f, 1.609f, 1.730f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 7.286f, -4.910f, 1.844f, 0.496f, artVariant: WoodArtVariant.Horizontal, rot: 49.173f),
+                B(BlockType.Wood, 12.427f, -4.952f, 1.591f, 0.496f, artVariant: WoodArtVariant.Horizontal, rot: 57.313f),
+                B(BlockType.Wood, 13.525f, -4.877f, 1.591f, 0.496f, artVariant: WoodArtVariant.Horizontal, rot: -57.313f),
             },
             robots: new[]
             {
@@ -275,18 +286,19 @@ public static partial class LevelDataGenerator
                 R(10.900f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(10.000f, -3.450f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.000f, -0.650f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.000f, 2.150f, 5.500f, 5.500f, RobotType.Basic),
+                R(10.004f, 2.150f, 5.500f, 5.500f, RobotType.Basic),
+                R(13.000f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
             },
             gadgets: new[]
             {
-                Gd(GadgetType.Sunflower, 7.200f, -5.600f, 1.700f),
+                Gd(GadgetType.Sunflower, 6.000f, -5.600f, 1.700f),
             },
             weather: LevelWeather.Rain,
             referenceFraming: true);
 
         // ── W1_L09  Downhill Demolition ─────────────────────────────────────────
         // A wagon loaded with dynamite waits at the top of a ramp. Send it rolling into the stone bunker at the bottom, which
-        // carries a timber house and a lookout tower on its roof.
+        // carries a lopsided timber house, a plank cantilevered off its roof with a barrel on the end, and a lookout.
         Make(folder, "L09_StoneBastion",
             id: "W1_L09", name: "Downhill Demolition", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Cluck },
@@ -302,12 +314,16 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 10.374f, -3.142f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.894f, -3.142f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.032f, -2.391f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 12.634f, -3.263f, 1.000f, 1.018f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.897f, -2.641f, 1.451f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Barrel, 13.191f, -2.128f, 0.977f, 0.977f),
                 B(BlockType.Wood, 10.524f, -1.790f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.744f, -1.790f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.041f, -1.091f, 1.674f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 11.326f, -1.091f, 2.353f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 10.584f, -0.490f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.684f, -0.490f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.045f, 0.209f, 1.540f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 11.049f, -0.507f, 1.207f, 0.357f, artVariant: WoodArtVariant.Horizontal, rot: 57.000f),
+                B(BlockType.Wood, 10.641f, 0.209f, 2.389f, 0.496f, artVariant: WoodArtVariant.Horizontal),
             },
             robots: new[]
             {
@@ -324,48 +340,54 @@ public static partial class LevelDataGenerator
             referenceFraming: true);
 
         // ── W1_L10  Bessie's Debut ──────────────────────────────────────────────
-        // Bessie's first level: a stone pyramid carrying a two-storey timber lookout, flanked by two see-saw beams.
+        // Bessie's first level: an upside-down stone pyramid (the robots built it wrong way up) carrying a two-storey lookout,
+        // robots sheltering under its overhangs, and two see-saw beams.
         Make(folder, "L10_BessiesDebut",
             id: "W1_L10", name: "Bessie's Debut", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
             blocks: new[]
             {
-                B(BlockType.Stone, 8.373f, -5.185f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.173f, -5.185f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.973f, -5.185f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 10.773f, -5.185f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 8.773f, -4.385f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.573f, -4.385f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 10.373f, -4.385f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.173f, -3.585f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.973f, -3.585f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Wood, 8.986f, -2.666f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.306f, -2.666f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.550f, -1.941f, 1.786f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.036f, -1.316f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.256f, -1.316f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.553f, -0.591f, 1.674f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 6.946f, -5.163f, 1.000f, 1.018f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 6.831f, -4.541f, 2.455f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 6.256f, -4.145f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
-                B(BlockType.Wood, 12.446f, -5.163f, 1.000f, 1.018f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.331f, -4.541f, 2.455f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Barrel, 13.053f, -4.028f, 0.977f, 0.977f),
+                B(BlockType.Stone, 9.578f, -5.258f, 0.981f, 1.107f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 9.218f, -4.598f, 0.981f, 1.107f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 9.938f, -4.598f, 0.981f, 1.107f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 8.858f, -3.938f, 0.981f, 1.107f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 9.578f, -3.938f, 0.981f, 1.107f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 10.298f, -3.938f, 0.981f, 1.107f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 8.498f, -3.278f, 0.981f, 1.107f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 9.218f, -3.278f, 0.981f, 1.107f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 9.938f, -3.278f, 0.981f, 1.107f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 10.658f, -3.278f, 0.981f, 1.107f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Wood, 8.951f, -2.655f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 8.951f, -2.105f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 10.261f, -2.655f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 10.261f, -2.105f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 9.380f, -1.701f, 2.458f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 8.703f, -1.076f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.123f, -1.076f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.314f, -0.351f, 1.897f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 6.646f, -5.163f, 1.000f, 1.018f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 6.531f, -4.541f, 2.455f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 5.956f, -4.145f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 12.946f, -5.163f, 1.000f, 1.018f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.831f, -4.541f, 2.455f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Barrel, 13.553f, -4.028f, 0.977f, 0.977f),
             },
             robots: new[]
             {
-                R(9.600f, -2.750f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(9.600f, -1.400f, 5.500f, 5.500f, RobotType.Basic),
-                R(9.600f, -0.050f, 5.500f, 5.500f, RobotType.Basic),
-                R(7.550f, -4.000f, 5.500f, 5.500f, RobotType.Basic),
-                R(11.750f, -4.000f, 5.500f, 5.500f, RobotType.Basic),
+                R(8.200f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
+                R(11.000f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
+                R(9.600f, -2.510f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(9.367f, -1.160f, 5.500f, 5.500f, RobotType.Basic),
+                R(9.367f, 0.190f, 5.500f, 5.500f, RobotType.Basic),
+                R(7.250f, -4.000f, 5.500f, 5.500f, RobotType.Basic),
+                R(12.250f, -4.000f, 5.500f, 5.500f, RobotType.Basic),
             },
             weather: LevelWeather.MorningMist,
             referenceFraming: true);
 
         // ── W1_L11  Mesa Drop ───────────────────────────────────────────────────
         // A wagon with a robot aboard is parked on top of a tall rock mesa. Tip it over the edge and it slides down the
-        // mesa's side into the five-storey tower below; a three-storey tower stands on a low island behind.
+        // mesa's side into the crooked five-storey tower below; on a low island behind, crates lean over a robot.
         Make(folder, "L11_FullRoster",
             id: "W1_L11", name: "Mesa Drop", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
@@ -374,38 +396,36 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 7.014f, -0.105f, 0.789f, 0.664f, artVariant: WoodArtVariant.Short),
                 B(BlockType.Wood, 9.586f, -5.042f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.306f, -5.042f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.338f, -4.291f, 2.232f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.661f, -3.642f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.231f, -3.642f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.342f, -2.891f, 2.065f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.736f, -2.242f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.156f, -2.242f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.347f, -1.491f, 1.897f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.811f, -0.842f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.081f, -0.842f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.352f, -0.091f, 1.730f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.886f, 0.558f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.006f, 0.558f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.356f, 1.309f, 1.563f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 12.286f, -3.842f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 13.606f, -3.842f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.850f, -3.091f, 1.786f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 12.336f, -2.442f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 13.556f, -2.442f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.853f, -1.691f, 1.674f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 12.386f, -1.042f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 13.506f, -1.042f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.856f, -0.291f, 1.562f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.973f, -4.291f, 2.999f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.308f, -3.881f, 0.907f, 0.764f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 9.308f, -3.306f, 0.907f, 0.764f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 10.543f, -3.881f, 0.907f, 0.764f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 10.543f, -3.306f, 0.907f, 0.764f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 9.862f, -2.891f, 2.065f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.280f, -2.242f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.700f, -2.242f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.891f, -1.491f, 1.897f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.325f, -0.842f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.595f, -0.842f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.910f, -0.794f, 1.400f, 0.357f, artVariant: WoodArtVariant.Horizontal, rot: -53.000f),
+                B(BlockType.Wood, 10.016f, -0.091f, 2.089f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.698f, 0.558f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.818f, 0.558f, 1.000f, 1.301f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.168f, 1.309f, 1.563f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 12.507f, -4.056f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 12.662f, -3.436f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 12.817f, -2.816f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 12.724f, -2.196f, 0.978f, 0.823f, artVariant: WoodArtVariant.Short),
             },
             robots: new[]
             {
                 R(7.659f, 0.067f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.400f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.400f, -2.350f, 5.500f, 5.500f, RobotType.Basic),
-                R(10.400f, 0.450f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.400f, 1.850f, 5.500f, 5.500f, RobotType.Basic),
-                R(12.900f, -3.950f, 5.500f, 5.500f, RobotType.Basic),
-                R(12.900f, -1.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(9.944f, -2.350f, 5.500f, 5.500f, RobotType.Basic),
+                R(10.212f, 0.450f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(10.212f, 1.850f, 5.500f, 5.500f, RobotType.Basic),
+                R(12.717f, -1.470f, 5.500f, 5.500f, RobotType.Basic),
+                R(13.600f, -3.950f, 5.500f, 5.500f, RobotType.SemiHarvester),
             },
             platforms: new[]
             {
@@ -417,9 +437,9 @@ public static partial class LevelDataGenerator
             referenceFraming: true);
 
         // ── W1_L12  Heavy Guard ─────────────────────────────────────────────────
-        // A Harvester inside a stone keep with a two-storey timber watch-house on its roof and a see-saw on top balancing a
-        // pawn against a barrel. High on an island to the left a wagon waits at the edge, right above the dynamite barrel at
-        // the keep's door.
+        // A Harvester inside a stone keep with a crooked watch-house on its roof and a see-saw on top balancing a pawn against
+        // a barrel; a big rock balanced on one post with a robot on it. High on an island to the left a wagon waits at the
+        // edge, right above the dynamite barrel at the keep's door.
         Make(folder, "L12_HeavyGuard",
             id: "W1_L12", name: "Heavy Guard", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
@@ -431,14 +451,16 @@ public static partial class LevelDataGenerator
                 B(BlockType.Barrel, 7.803f, -5.178f, 0.977f, 0.977f),
                 B(BlockType.Wood, 8.886f, -3.190f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.806f, -3.190f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.731f, -2.491f, 2.455f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.945f, -2.491f, 2.964f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 9.036f, -1.890f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.656f, -1.890f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 9.741f, -1.191f, 2.121f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.749f, -1.897f, 1.606f, 0.357f, artVariant: WoodArtVariant.Horizontal, rot: 37.000f),
+                B(BlockType.Wood, 10.007f, -1.191f, 2.755f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 9.846f, -0.760f, 1.000f, 0.792f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 9.725f, -0.241f, 2.679f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Barrel, 10.553f, 0.272f, 0.977f, 0.977f),
-                B(BlockType.Wood, 13.107f, -5.267f, 0.946f, 0.797f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 12.746f, -4.872f, 1.000f, 1.697f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Stone, 12.670f, -3.633f, 1.337f, 1.510f, artVariant: WoodArtVariant.Square),
                 B(BlockType.Wood, 6.831f, -0.678f, 0.789f, 0.664f, artVariant: WoodArtVariant.Short),
             },
             robots: new[]
@@ -446,7 +468,7 @@ public static partial class LevelDataGenerator
                 R(9.800f, -5.050f, 7.500f, 7.500f, RobotType.Harvester),
                 R(9.800f, -3.250f, 5.500f, 5.500f, RobotType.Basic),
                 R(9.050f, 0.300f, 5.500f, 5.500f, RobotType.Basic),
-                R(12.400f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
+                R(12.700f, -2.750f, 5.500f, 5.500f, RobotType.Basic),
                 R(7.475f, -0.506f, 5.500f, 5.500f, RobotType.Basic),
             },
             platforms: new[]
@@ -458,7 +480,8 @@ public static partial class LevelDataGenerator
             referenceFraming: true);
 
         // ── W1_L13  Hay Ride ────────────────────────────────────────────────────
-        // A hay wagon with a robot riding on top waits on the ramp; below it stands a five-storey tower on haybale stilts.
+        // A hay wagon with a robot riding on top waits on the ramp; below it stands a crooked five-storey tower on haybale
+        // stilts.
         Make(folder, "L13_TenStrong",
             id: "W1_L13", name: "Hay Ride", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
@@ -475,23 +498,24 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 9.474f, -2.647f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.194f, -2.647f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.225f, -1.922f, 2.232f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.574f, -1.297f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.094f, -1.297f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.232f, -0.572f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.674f, 0.053f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.994f, 0.053f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.238f, 0.778f, 1.786f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.774f, 1.403f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.894f, 1.403f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.244f, 2.128f, 1.562f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.523f, -1.057f, 1.000f, 1.804f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.043f, -1.057f, 1.000f, 1.804f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.427f, -0.077f, 2.596f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 10.194f, 0.548f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.514f, 0.548f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.758f, 1.273f, 1.786f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 10.237f, 1.898f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.357f, 1.898f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.712f, 1.882f, 1.269f, 0.357f, artVariant: WoodArtVariant.Horizontal, rot: 58.000f),
+                B(BlockType.Wood, 10.440f, 2.623f, 2.126f, 0.496f, artVariant: WoodArtVariant.Horizontal),
             },
             robots: new[]
             {
                 R(4.958f, -2.380f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.288f, -4.081f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(10.288f, -2.731f, 5.500f, 5.500f, RobotType.Basic),
-                R(10.288f, -0.031f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.288f, 2.669f, 5.500f, 5.500f, RobotType.Basic),
+                R(10.808f, 0.464f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(10.751f, 3.164f, 5.500f, 5.500f, RobotType.Basic),
             },
             platforms: new[]
             {
@@ -501,40 +525,36 @@ public static partial class LevelDataGenerator
             referenceFraming: true);
 
         // ── W1_L14  Stone And Pawns ─────────────────────────────────────────────
-        // A stone staircase on a low island with a pawn on every step, and a two-storey timber lookout on the top step.
+        // Three stacks of stone blocks on a low island, each one leaning further than the last, a robot on every top, and a
+        // hut on stilts at the end.
         Make(folder, "L14_StoneAndPawns",
             id: "W1_L14", name: "Stone And Pawns", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Bessie, AnimalType.Bessie },
             blocks: new[]
             {
-                B(BlockType.Stone, 7.573f, -4.185f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 8.373f, -4.185f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.173f, -4.185f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.973f, -4.185f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 10.773f, -4.185f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 8.373f, -3.385f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.173f, -3.385f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.973f, -3.385f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 10.773f, -3.385f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.173f, -2.585f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.973f, -2.585f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 10.773f, -2.585f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 9.973f, -1.785f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 10.773f, -1.785f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Wood, 9.786f, -0.890f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.106f, -0.890f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.350f, -0.191f, 1.786f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.836f, 0.410f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.056f, 0.410f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.353f, 1.109f, 1.674f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Stone, 7.577f, -4.237f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 7.717f, -3.537f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 8.727f, -4.237f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 8.867f, -3.537f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 9.007f, -2.837f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 9.877f, -4.237f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 10.017f, -3.537f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 10.157f, -2.837f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 10.073f, -2.137f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Wood, 11.526f, -3.921f, 1.000f, 1.584f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.166f, -3.921f, 1.000f, 1.584f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.744f, -3.041f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 11.386f, -2.440f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.306f, -2.440f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.763f, -1.741f, 1.339f, 0.496f, artVariant: WoodArtVariant.Horizontal),
             },
             robots: new[]
             {
-                R(7.600f, -3.350f, 5.500f, 5.500f, RobotType.Basic),
-                R(8.400f, -2.550f, 5.500f, 5.500f, RobotType.Basic),
-                R(9.200f, -1.750f, 5.500f, 5.500f, RobotType.Basic),
-                R(10.400f, -0.950f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.400f, 1.650f, 5.500f, 5.500f, RobotType.Basic),
+                R(7.740f, -2.750f, 5.500f, 5.500f, RobotType.Basic),
+                R(8.806f, -2.050f, 5.500f, 5.500f, RobotType.Basic),
+                R(10.096f, -1.350f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(11.800f, -2.500f, 5.500f, 5.500f, RobotType.Basic),
+                R(11.800f, -1.200f, 5.500f, 5.500f, RobotType.Basic),
             },
             platforms: new[]
             {
@@ -544,35 +564,39 @@ public static partial class LevelDataGenerator
             referenceFraming: true);
 
         // ── W1_L15  Five Stones ─────────────────────────────────────────────────
-        // Five stone pillars hold a slab on a high island with a three-storey timber house on top; a Harvester guards the
-        // edge.
+        // On a high island: two rocks balanced on single posts with robots on top, a crooked three-storey timber house on a
+        // row of stone pillars, and a Harvester guarding the edge.
         Make(folder, "L15_FiveStones",
             id: "W1_L15", name: "Five Stones", par: 2,
             birds: new[] { AnimalType.Cluck, AnimalType.Bessie, AnimalType.Cluck },
             blocks: new[]
             {
-                B(BlockType.Stone, 8.656f, -2.763f, 0.463f, 1.374f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Stone, 9.656f, -2.763f, 0.463f, 1.374f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Stone, 10.656f, -2.763f, 0.463f, 1.374f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Stone, 11.656f, -2.763f, 0.463f, 1.374f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Stone, 12.656f, -2.763f, 0.463f, 1.374f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Stone, 9.424f, -2.084f, 2.993f, 0.578f, artVariant: WoodArtVariant.Block),
-                B(BlockType.Stone, 11.624f, -2.084f, 2.993f, 0.578f, artVariant: WoodArtVariant.Block),
-                B(BlockType.Wood, 9.486f, -1.366f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.806f, -1.366f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.519f, -0.641f, 2.902f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.711f, -0.016f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.581f, -0.016f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.533f, 0.709f, 2.400f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.936f, 1.334f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.356f, 1.334f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.547f, 2.059f, 1.897f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 8.746f, -2.666f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Stone, 8.673f, -1.685f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 10.256f, -2.763f, 0.463f, 1.374f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Stone, 11.256f, -2.763f, 0.463f, 1.374f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Stone, 12.256f, -2.763f, 0.463f, 1.374f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Stone, 11.113f, -2.084f, 3.401f, 0.578f, artVariant: WoodArtVariant.Block),
+                B(BlockType.Wood, 10.286f, -1.366f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.206f, -1.366f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.131f, -0.641f, 2.455f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 10.416f, -0.016f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.036f, -0.016f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.129f, -0.025f, 1.632f, 0.357f, artVariant: WoodArtVariant.Horizontal, rot: 39.000f),
+                B(BlockType.Wood, 10.756f, 0.709f, 2.886f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 10.211f, 1.334f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.531f, 1.334f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.974f, 2.059f, 2.261f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 13.246f, -2.763f, 1.000f, 1.018f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Stone, 13.177f, -1.937f, 1.040f, 1.174f, artVariant: WoodArtVariant.Square),
             },
             robots: new[]
             {
-                R(10.600f, -1.450f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.600f, 1.250f, 5.500f, 5.500f, RobotType.Basic),
-                R(10.600f, 2.600f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(8.700f, -0.850f, 5.500f, 5.500f, RobotType.Basic),
+                R(11.200f, -1.450f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(10.825f, 1.250f, 5.500f, 5.500f, RobotType.Basic),
+                R(10.825f, 2.600f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(13.200f, -1.150f, 5.500f, 5.500f, RobotType.Basic),
                 R(7.700f, -2.650f, 7.500f, 7.500f, RobotType.Harvester),
             },
             platforms: new[]
@@ -583,8 +607,8 @@ public static partial class LevelDataGenerator
             referenceFraming: true);
 
         // ── W1_L16  Twin Towers ─────────────────────────────────────────────────
-        // Two four-storey timber towers on scaffolds joined by a plank bridge at the top, robots inside and one on the bridge.
-        // A sunflower stands in front of the left tower.
+        // Two crooked four-storey timber towers on scaffolds joined by a plank bridge at the top, robots inside and one on the
+        // bridge. A sunflower stands in front of the left tower.
         Make(folder, "L16_TwinTowers",
             id: "W1_L16", name: "Twin Towers", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
@@ -593,36 +617,37 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 7.245f, -3.114f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 8.765f, -3.114f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 7.903f, -2.415f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 7.305f, -1.814f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.705f, -1.814f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 7.907f, -1.115f, 1.875f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 7.365f, -0.514f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.645f, -0.514f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 7.910f, 0.185f, 1.741f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 7.425f, 0.786f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 8.585f, 0.786f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 7.914f, 1.485f, 1.607f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 7.270f, -1.814f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.670f, -1.814f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 7.913f, -1.769f, 1.415f, 0.357f, artVariant: WoodArtVariant.Horizontal, rot: -44.000f),
+                B(BlockType.Wood, 8.213f, -1.115f, 2.688f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 7.767f, -0.514f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 9.047f, -0.514f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 7.908f, 0.185f, 2.591f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 8.201f, 0.786f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 8.109f, 1.485f, 1.961f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 11.145f, -3.114f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 12.665f, -3.114f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.803f, -2.415f, 2.009f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 11.205f, -1.814f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.605f, -1.814f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.807f, -1.115f, 1.875f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 11.265f, -0.514f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.545f, -0.514f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.810f, 0.185f, 1.741f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 11.325f, 0.786f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.485f, 0.786f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.814f, 1.485f, 1.607f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 11.746f, -1.814f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.106f, -1.115f, 2.630f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 11.247f, -0.514f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.527f, -0.514f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.050f, 0.185f, 2.354f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 12.008f, 0.786f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.127f, 1.485f, 2.395f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 9.806f, 1.735f, 3.683f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.336f, -4.952f, 1.591f, 0.496f, artVariant: WoodArtVariant.Horizontal, rot: 57.313f),
+                B(BlockType.Wood, 10.434f, -4.877f, 1.591f, 0.496f, artVariant: WoodArtVariant.Horizontal, rot: -57.313f),
             },
             robots: new[]
             {
                 R(7.959f, -3.174f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(7.959f, -0.574f, 5.500f, 5.500f, RobotType.Basic),
+                R(8.361f, -0.574f, 5.500f, 5.500f, RobotType.Basic),
                 R(11.859f, -3.174f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(11.859f, -0.574f, 5.500f, 5.500f, RobotType.Basic),
+                R(11.841f, -0.574f, 5.500f, 5.500f, RobotType.Basic),
                 R(9.909f, 2.276f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(9.909f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
             },
             platforms: new[]
             {
@@ -637,8 +662,8 @@ public static partial class LevelDataGenerator
             referenceFraming: true);
 
         // ── W1_L17  Wagon Train ─────────────────────────────────────────────────
-        // A wagon carrying a little hut rolls off the ramp into a stone-and-timber fortress: a stone hall with a four-storey
-        // timber tower above; dynamite waits by the walls.
+        // A wagon carrying a little hut rolls off the ramp into a stone-and-timber fortress: a stone hall with a crooked
+        // four-storey timber tower above; dynamite waits by the walls.
         Make(folder, "L17_EightStrong",
             id: "W1_L17", name: "Wagon Train", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Cluck, AnimalType.Bessie },
@@ -656,15 +681,15 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 11.124f, -3.490f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 12.744f, -3.490f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.829f, -2.791f, 2.121f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 11.184f, -2.190f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.684f, -2.190f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.832f, -1.491f, 1.987f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 11.174f, -2.190f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.674f, -2.190f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.862f, -2.151f, 1.492f, 0.357f, artVariant: WoodArtVariant.Horizontal, rot: -40.000f),
+                B(BlockType.Wood, 11.823f, -1.491f, 1.987f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 11.244f, -0.890f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 12.624f, -0.890f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.836f, -0.191f, 1.853f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 11.304f, 0.410f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 12.564f, 0.410f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.840f, 1.109f, 1.719f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 12.018f, -0.191f, 2.285f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 12.157f, 0.410f, 1.000f, 1.188f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 12.205f, 1.109f, 1.719f, 0.496f, artVariant: WoodArtVariant.Horizontal),
             },
             robots: new[]
             {
@@ -673,7 +698,7 @@ public static partial class LevelDataGenerator
                 R(11.888f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(11.888f, -3.550f, 5.500f, 5.500f, RobotType.Basic),
                 R(11.888f, -0.950f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(11.888f, 1.749f, 7.500f, 7.500f, RobotType.Harvester),
+                R(12.253f, 1.749f, 7.500f, 7.500f, RobotType.Harvester),
             },
             platforms: new[]
             {
@@ -684,8 +709,8 @@ public static partial class LevelDataGenerator
             referenceFraming: true);
 
         // ── W1_L18  Captain's Last Stand ────────────────────────────────────────
-        // Boss, in a thunderstorm: the Commander stands on top of a four-storey stone-and-timber keep on a high island; a
-        // guard watches from a stone tower below.
+        // Boss, in a thunderstorm: the Commander stands on top of a crooked stone-and-timber keep on a high island; a guard
+        // watches from a leaning stack of stone below.
         Make(folder, "L18_CaptainsLastStand",
             id: "W1_L18", name: "Captain's Last Stand", par: 3,
             birds: new[] { AnimalType.Cluck, AnimalType.Bessie, AnimalType.Bessie },
@@ -701,22 +726,22 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 10.725f, -0.541f, 2.679f, 0.496f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 9.886f, 0.084f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.806f, 0.084f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.731f, 0.809f, 2.455f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.986f, 1.434f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.706f, 1.434f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.738f, 2.159f, 2.232f, 0.496f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Stone, 6.573f, -5.185f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 6.573f, -4.385f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 6.573f, -3.585f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 6.573f, -2.785f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Wood, 10.383f, 0.809f, 3.187f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.481f, 1.434f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.201f, 1.434f, 1.000f, 1.244f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 10.441f, 2.159f, 2.729f, 0.496f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Stone, 6.373f, -5.185f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 6.493f, -4.385f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 6.613f, -3.585f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Stone, 6.541f, -2.785f, 1.189f, 1.342f, artVariant: WoodArtVariant.Square),
             },
             robots: new[]
             {
                 R(10.800f, -3.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(10.800f, -1.350f, 5.500f, 5.500f, RobotType.Basic),
-                R(10.800f, 1.350f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.800f, 3.132f, 7.000f, 7.000f, RobotType.Commander),
-                R(6.600f, -1.950f, 5.500f, 5.500f, RobotType.Basic),
+                R(10.295f, 1.350f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(10.295f, 3.132f, 7.000f, 7.000f, RobotType.Commander),
+                R(6.568f, -1.950f, 5.500f, 5.500f, RobotType.Basic),
             },
             platforms: new[]
             {

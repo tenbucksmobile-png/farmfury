@@ -172,6 +172,7 @@ public static class WorldLevelGenerator
             b.position.x = MapX(b.position.x);
             b.position.y += dy;
             b.flipX = mirror;
+            if (mirror) b.rotation = -b.rotation;   // a mirrored tower leans the other way
             if (!boss && b.type == BlockType.Wood && StoneHasShape(b.artVariant) && rng.NextDouble() < stoneChance)
                 b.type = BlockType.Stone;
             blocks[i] = b;

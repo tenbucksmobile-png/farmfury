@@ -16,7 +16,7 @@ public class BillyAnimal : AnimalBase
     static AbilityProjectile.Spec MudSpec(Sprite ball, Sprite splat) => new AbilityProjectile.Spec
     {
         sprite = ball, burstSprite = splat, size = 0.65f, mass = 4f, bounciness = 0f, gravityScale = 0.6f,
-        hits = 1, blockDamage = 22f, burstRadius = 1.3f, robotHits = 2, spin = 200f, life = 4f,
+        hits = 1, blockDamage = 22f, burstRadius = 1.3f, burstPush = 8f, robotHits = 2, spin = 200f, life = 4f,
     };
 
     protected override void Awake()
@@ -32,10 +32,8 @@ public class BillyAnimal : AnimalBase
 
     protected override void TriggerAbility()
     {
-        Vector2 vel = _rb.linearVelocity;
-        float rad = (Mathf.Atan2(vel.y, vel.x) * Mathf.Rad2Deg + ThrowDownDeg * Mathf.Sign(vel.x == 0 ? 1 : vel.x)) * Mathf.Deg2Rad;
-        var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+        var dir = AbilityAim(40f);   // forward-and-down, faster than Billy (2026-11-11)
         AbilityProjectile.Spawn(MudSpec(_mudBallSprite, _mudSplatSprite), transform.position + (Vector3)(dir * 0.6f),
-            dir * Mathf.Max(6f, vel.magnitude * ThrowSpeed), _col);
+            dir * AbilitySpeed(8f), _col);
     }
 }

@@ -31,6 +31,7 @@ public class CluckAnimal : AnimalBase
     // Cached pre-impact velocity — recorded every FixedUpdate so OnCollisionEnter2D
     // can restore the correct direction and speed after the physics response fires.
     private Vector2 _lastVelocity;
+    private const float EggDownDeg = 50f, EggSpreadDeg = 36f;   // fan centre below the horizon / width (2026-11-11)
 
     protected override void Awake()
     {
@@ -59,25 +60,7 @@ public class CluckAnimal : AnimalBase
     // impulse math (2026-07-06 fix — user reported it taking all 3 birds to clear one pile).
     protected override void OnCollisionEnter2D(Collision2D col)
     {
-        if (IsInFlight)
-        {
-            var wood = col.gameObject.GetComponent<WoodBlock>();
-            if (wood != null && wood._passThrough)
-            {
-                // Restore direction at 70 % pre-impact speed.
-                float preSpeed = _lastVelocity.magnitude;
-                if (preSpeed > 0.01f)
-                    _rb.linearVelocity = _lastVelocity.normalized * (preSpeed * 0.7f);
-
-                // Stop Physics2D from resolving further contacts with this block.
-                Physics2D.IgnoreCollision(_col, col.collider, true);
-
-                wood.TakeDamage(wood.MaxHealth); // guaranteed one-hit kill, regardless of impact speed
-
-                StartCoroutine(FlashPassThrough());
-                return; // skip base stop-and-hide
-            }
-        }
+        // Hay pass-through removed (2026-11-11): hay is a light block that topples like the rest, it no longer pops.
         base.OnCollisionEnter2D(col);
     }
 
@@ -99,20 +82,12 @@ public class CluckAnimal : AnimalBase
 
     void SpawnEggs()
     {
-        Vector2 vel   = _rb.linearVelocity;
-        // "Forward" is always the launch direction's horizontal sign (in practice always +1 —
-        // the cannon only ever fires rightward — but Sign() keeps this correct if that ever
-        // changes) rather than the exact current velocity angle; only the sign is used, the
-        // cone's actual shape is fixed by _coneCenterDeg/_spreadDeg above.
-        float forwardSign = vel.x >= 0f ? 1f : -1f;
-        float speed       = Mathf.Max(vel.magnitude * 0.6f, _minEggSpeed);
-
+        // Forward-and-down at 1.25x the flight speed (AnimalBase.AbilityAim / AbilitySpeed, 2026-11-11).
+        float speed = AbilitySpeed(Mathf.Max(8f, _minEggSpeed));
         for (int i = 0; i < _eggCount; i++)
         {
             float t      = _eggCount > 1 ? i / (float)(_eggCount - 1) : 0.5f;
-            float angle  = _coneCenterDeg + Mathf.Lerp(-_spreadDeg * 0.5f, _spreadDeg * 0.5f, t);
-            float rad    = angle * Mathf.Deg2Rad;
-            var   dir    = new Vector2(Mathf.Cos(rad) * forwardSign, Mathf.Sin(rad));
+            var   dir    = AbilityAim(EggDownDeg, Mathf.Lerp(-EggSpreadDeg * 0.5f, EggSpreadDeg * 0.5f, t));
 
             // Spawn slightly forward along the egg's own direction rather than exactly at
             // Cluck's position (2026-07-13 user report: "eggs disappear before striking

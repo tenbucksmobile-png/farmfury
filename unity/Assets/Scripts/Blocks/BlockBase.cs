@@ -155,6 +155,7 @@ public abstract class BlockBase : MonoBehaviour
         if (_col != null) _col.sharedMaterial = LiveMaterial;
         _rb.Sleep();
         _graceUntil = Time.time + LiveGraceSeconds;
+        RememberRestPose();
     }
 
     /// <summary>Zeroes any settling motion and puts the (live) body back to sleep.</summary>
@@ -172,7 +173,8 @@ public abstract class BlockBase : MonoBehaviour
     {
         if (!IsLive || IsDestroyed || _rb == null || _rb.bodyType != RigidbodyType2D.Dynamic) return;
         var other = col.rigidbody;
-        if (other == null || (other.GetComponent<AnimalBase>() == null && other.GetComponent<AbilityProjectile>() == null)) return;
+        if (other == null || (other.GetComponent<AnimalBase>() == null && other.GetComponent<AbilityProjectile>() == null
+                              && other.GetComponent<EggProjectile>() == null)) return;
         float push = Mathf.Min(HitShoveMax, HitShoveFraction * other.mass * col.relativeVelocity.magnitude);
         if (push < 0.5f) return;
         float side = Mathf.Sign(transform.position.x - other.position.x);
@@ -466,6 +468,7 @@ public abstract class BlockBase : MonoBehaviour
         var mat = new PhysicsMaterial2D("BlockMat") { bounciness = bounciness, friction = 0.8f };
         _col.sharedMaterial = mat;
         _rb.bodyType = RigidbodyType2D.Static;
+        RememberRestPose();
     }
 
     /// <summary>The authored (width, height) from LevelData — the art's full rect, padding included.</summary>
@@ -542,6 +545,8 @@ public abstract class BlockBase : MonoBehaviour
     public void TakeDamage(float amount)
     {
         if (IsDestroyed || Indestructible) return;
+        // Abilities, eggs, Bessie's slam and the barrel blast all call this: a plain block topples, it doesn't break.
+        if (!BreaksOnHit) { Disturb(); return; }
         if (ProbeLog)
             Debug.Log($"[Probe] DAMAGE {name}@{transform.position} amount={amount:F2} health={Health:F2} t={Time.time:F2} " +
                       $"awake={(_rb != null && _rb.IsAwake())} via {new System.Diagnostics.StackTrace(1, false).ToString().Replace(System.Environment.NewLine, " | ")}");
@@ -588,6 +593,15 @@ public abstract class BlockBase : MonoBehaviour
         _damageFlashRoutine = null;
     }
 
+    // ── Topple, don't break (2026-11-11, user: "structures should not explode - they should topple over when struck,
+    // slow and then gravity takes over - knocking everything down... the only explosion is that of the dynamite barrel
+    // - on first hit") ─────────────────────────────────────────────────────────────────────────────────────────────
+    // A plain block (wood, stone, hay) is never destroyed by a hit any more: a strike wakes it and shoves it over
+    // (ShoveOnHit / StackShove), and the collapse does the rest. Only a block that BreaksOnHit (the dynamite barrel)
+    // goes off, on its first real hit. ForceDestroy (a boss crumbling its keep) is the one scripted exception.
+    protected virtual bool BreaksOnHit => false;
+    const float BarrelTriggerImpulse = 2f;   // falling debris this hard sets the dynamite off too
+
     protected virtual void OnCollisionEnter2D(Collision2D col)
     {
         if (IsDestroyed) return;
@@ -598,19 +612,94 @@ public abstract class BlockBase : MonoBehaviour
             col.rigidbody.bodyType == RigidbodyType2D.Static)
             return;
 
-        // One strike (2026-11-10, user: "remove all second strike requirements"): a launched animal breaks any block it
-        // hits, stone included, on the first hit. (Its shove above has already started the stack's topple.)
-        if (col.rigidbody != null && col.rigidbody.GetComponent<AnimalBase>() != null && !NeverFalls && !Indestructible)
+        var other = col.rigidbody;
+        bool struck = other != null && (other.GetComponent<AnimalBase>() != null || other.GetComponent<AbilityProjectile>() != null
+                                        || other.GetComponent<EggProjectile>() != null);
+        float impulse = col.relativeVelocity.magnitude * CalculateEffectiveMass(other);
+        if (!struck && impulse < minDamageImpulse) return;
+        if (ProbeLog) Debug.Log($"[Probe] HIT {name}@{transform.position} by {col.gameObject.name}@{col.transform.position} " +
+                                $"relVel={col.relativeVelocity.magnitude:F2} otherType={(other != null ? other.bodyType.ToString() : "none")}");
+        if (BreaksOnHit && !NeverFalls && !Indestructible && (struck || impulse >= BarrelTriggerImpulse))
         {
             TakeDamage(MaxHealth);
             return;
         }
-        float effMass = CalculateEffectiveMass(col.rigidbody);
-        float impulse = col.relativeVelocity.magnitude * effMass;
-        if (impulse < minDamageImpulse) return;
-        if (ProbeLog) Debug.Log($"[Probe] HIT {name}@{transform.position} by {col.gameObject.name}@{col.transform.position} " +
-                                $"relVel={col.relativeVelocity.magnitude:F2} otherType={(col.rigidbody != null ? col.rigidbody.bodyType.ToString() : "none")}");
-        TakeDamage(impulse * impulseDamageMultiplier);
+        Disturb();
+    }
+
+    /// <summary>
+    /// A hit that doesn't break the block: it wakes (a static block on an unframed level turns Dynamic) and whatever
+    /// rests on it is told its support moved, so the collapse carries on under gravity. Hit sound, rate-limited.
+    /// </summary>
+    public void Disturb()
+    {
+        if (IsDestroyed || Indestructible) return;
+        if (!_stayKinematic && _rb.bodyType == RigidbodyType2D.Static)
+        {
+            RememberRestPose();
+            _rb.bodyType = RigidbodyType2D.Dynamic;
+            CheckForRobotsOnTop();
+            CheckForBlocksOnTop();
+        }
+        else if (_rb.bodyType == RigidbodyType2D.Dynamic) _rb.WakeUp();
+        if (!_silentHit) PlayHitSound();
+    }
+
+    // ── Toppled score + floating watchdog ─────────────────────────────────────────────────────────────────────────
+    // Blocks no longer break, so a block scores once it has visibly toppled (turned > 40 deg or dropped > 0.6 u).
+    // And a live block left asleep with nothing under it (its support slid away without touching it again) is woken so
+    // it falls (user: "structures that topple should not remain in the air randomly ... everything falls down").
+    const float ToppleAngle = 40f, ToppleDrop = 0.6f, SupportProbeInterval = 0.35f, SupportProbeDepth = 0.25f;
+    bool _toppleScored;
+    Vector2 _restPos;
+    float _restAngle, _nextSupportProbe;
+
+    void FixedUpdate()
+    {
+        if (IsDestroyed || _rb == null || _rb.bodyType != RigidbodyType2D.Dynamic) return;
+        if (!_toppleScored && _restPosSet)
+        {
+            float turned = Mathf.Abs(Mathf.DeltaAngle(_rb.rotation, _restAngle));
+            if (turned > ToppleAngle || _restPos.y - _rb.position.y > ToppleDrop)
+            {
+                _toppleScored = true;
+                ScoreManager.Instance?.AddBlockScore(this);
+                FarmFury.Core.HighlightMarkers.BlockDestroyed(GetType().Name);
+            }
+        }
+        if (!IsLive || _rb.IsAwake() || Time.time < _nextSupportProbe || Time.time < _graceUntil) return;
+        _nextSupportProbe = Time.time + SupportProbeInterval + UnityEngine.Random.value * 0.1f;
+        if (HasSupportBelow()) return;
+        if (ProbeLog) Debug.Log($"[Probe] WATCHDOG woke {name}@{transform.position} t={Time.time:F2}");
+        _rb.WakeUp();
+    }
+
+    bool _restPosSet;
+    void RememberRestPose()
+    {
+        if (_rb == null) return;
+        _restPos = _rb.position;
+        _restAngle = _rb.rotation;
+        _restPosSet = true;
+    }
+
+    bool HasSupportBelow()
+    {
+        if (_col == null || !_col.enabled) return true;
+        // Probe just under the collider's lowest edge (works for tilted pieces too: the four corners' lowest point).
+        Vector2 half = _col.size * 0.5f;
+        float lowest = float.MaxValue, lx = 0f;
+        for (int i = 0; i < 4; i++)
+        {
+            var corner = (Vector2)transform.TransformPoint(_col.offset + new Vector2(i < 2 ? -half.x : half.x, (i & 1) == 0 ? -half.y : half.y));
+            if (corner.y < lowest) { lowest = corner.y; lx = corner.x; }
+        }
+        Bounds b = _col.bounds;
+        var centre = new Vector2(b.center.x, lowest - SupportProbeDepth * 0.5f);
+        var size = new Vector2(b.size.x * 0.9f, SupportProbeDepth + 0.04f);
+        foreach (var hit in Physics2D.OverlapBoxAll(centre, size, 0f))
+            if (hit != null && !hit.isTrigger && hit.attachedRigidbody != _rb && hit != _col) return true;
+        return false;
     }
 
     protected virtual void PlayHitSound()

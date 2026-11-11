@@ -1,32 +1,27 @@
 using UnityEngine;
 
-// "Exploding barrel" — a WoodBlock variant that deals bigger area damage to nearby blocks when
-// destroyed, instead of just disappearing quietly like a normal plank. Introduced at L03 "The
-// Tower" (2026-07-10, user-requested "gradually introduce the exploding barrel") using
-// WoodenBarrel.png art, which existed on disk but had no dedicated gameplay behaviour before —
-// levels previously using that art rendered it as a plain wood plank.
+// Dynamite barrel — the ONLY thing in a structure that explodes (2026-11-11, user: "the only explosion is that of the
+// dynamite barrel - on first hit - and even then exploding topples structure not explode"). It goes off on its first
+// real hit (an animal, an ability, an egg, or debris landing on it hard — BlockBase.BreaksOnHit), shows the blast, and
+// the blast SHOVES everything around it outward and up: blocks are woken and pushed over (never destroyed), other
+// dynamite in reach goes off a beat later, and robots right beside it are blown up; robots further out are thrown and
+// usually finished by the fall or the debris (RobotEnemy's crush rule).
 public class ExplodingBarrelBlock : WoodBlock
 {
+    const float BlastRadius = 3.0f;      // world units: everything in here is shoved
+    const float KillRadius  = 1.15f;     // robots this close are blown up outright
+    const float BlastImpulse = 26f;      // at the centre, falling off to ~25% at the edge
+    const float ChainDelay  = 0.15f;
+
+    protected override bool BreaksOnHit => true;
+
     protected override void Awake()
     {
         base.Awake();
-        // Lowered 40 -> 5 (2026-07-10, user request: "wood, haybale, barrel all provide one hit
-        // damage" — matches WoodBlock's own fix the same day; see that class for the exact
-        // area-scaling math). A barrel should pop in one hit just as reliably as a haybale, not
-        // survive multiple impacts before its explosion actually triggers.
         baseMaxHealth = 5f;
 
-        // A barrel is a genuine explosive prop — unlike plain Wood (see WoodBlock's
-        // _isExplosive comment), it's marked explosive so its own chain can freely detonate any
-        // nearby block (including other explosive props), while plain Wood/Stone breaking near
-        // IT can never trigger its explosion — only a direct hit from a character/ability can
-        // (2026-08-03). Block-to-block chain damage stays bigger than plain Wood's default too,
-        // matching a barrel's "dramatic explosion, not a nick" identity. Never damages robots
-        // directly — see RobotEnemy.cs's damage-model comment.
         _isExplosive = true;
         _areaDamage  = 55f;
-        // Explicit, not just inherited from WoodBlock.Awake()'s _isExplosive branch — 2026-08-09,
-        // same reduction (2.2 -> 1.0, "reduce the 4x radius to only two") as StoneBlock/Haybale.
         _explodeSizeMultiplier = 2.2f;   // EffectSizing k (2026-11-09): the barrel's blast reads bigger than its body
     }
 
@@ -34,6 +29,44 @@ public class ExplodingBarrelBlock : WoodBlock
     {
         if (IsDestroyed) return; // BlockBase also guards this, but must run exactly once
         CameraShake.Shake(0.30f, 0.28f);
-        base.DestroyBlock(); // WoodBlock.DestroyBlock() -> DamageNearby() chains into nearby blocks
+        Vector2 at = transform.position;
+        base.DestroyBlock();     // the blast art + sound; WoodBlock no longer chain-damages (see Blast)
+        Blast(at);
+    }
+
+    void Blast(Vector2 at)
+    {
+        var shoved = new System.Collections.Generic.HashSet<Rigidbody2D>();
+        foreach (var hit in Physics2D.OverlapCircleAll(at, BlastRadius))
+        {
+            if (hit == null || hit.isTrigger || hit.gameObject == gameObject) continue;
+            var rb = hit.attachedRigidbody;
+            Vector2 away = (Vector2)hit.bounds.center - at;
+            float falloff = Mathf.Lerp(1f, 0.25f, Mathf.Clamp01(away.magnitude / BlastRadius));
+            Vector2 dir = (away.sqrMagnitude < 0.0001f ? Vector2.up : away.normalized) + Vector2.up * 0.35f;
+
+            var block = hit.GetComponentInParent<BlockBase>();
+            if (block != null && !block.IsDestroyed)
+            {
+                if (block is ExplodingBarrelBlock other) { other.Invoke(nameof(GoOff), ChainDelay); continue; }
+                block.Disturb();
+            }
+            var robot = hit.GetComponentInParent<RobotEnemy>();
+            if (robot != null && !robot.IsDestroyed)
+            {
+                if (away.magnitude <= KillRadius) { robot.TakeFallDamage(); continue; }
+                robot.MakeDynamicFromSupportLoss();
+            }
+            if (rb == null || rb.bodyType != RigidbodyType2D.Dynamic || !shoved.Add(rb)) continue;
+            rb.WakeUp();
+            // Pushed at a point above the centre so tall pieces tip over rather than slide.
+            Vector2 point = (Vector2)hit.bounds.center + Vector2.up * hit.bounds.extents.y * 0.5f;
+            rb.AddForceAtPosition(dir.normalized * BlastImpulse * falloff * Mathf.Clamp(rb.mass / 4f, 0.4f, 2.5f), point, ForceMode2D.Impulse);
+        }
+    }
+
+    void GoOff()
+    {
+        if (this != null && !IsDestroyed) TakeDamage(MaxHealth);
     }
 }

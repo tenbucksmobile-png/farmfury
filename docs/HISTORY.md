@@ -522,3 +522,41 @@ summary of what's still genuinely open. Newest entries first, same as they were 
   PlayerPrefs copied to the new registry key. Logo: two rejected rounds (a Stampede-like wooden sign, then a composed
   blast-lettering logo); final = the user's own `Logo_C.png` cut and `ic.png` poster. Kling 26 credits.
 - **One strike:** see CLAUDE.md's entry; tuned by request, not by play-test.
+
+## 2026-11-11 — Topple, don't break; wonky "robot-built" structures; music on every page; UI sizing
+
+User review (verbatim points): theme music must play on every page outside gameplay; the "Character" header and the
+buttons slightly too big; structures — review the AB videos again: "structures dont follow real world physics - they
+utilise singular, angles, etc etc to make strange and easily toppled structures - do the same, be creative and
+inventive (dont follow physics) - playful - 'robots dont know how to build structures'"; "structures should not
+explode - they should topple over when struck, slow and then gravity takes over"; "the only explosion is that of the
+dynamite barrel - on first hit - and even then exploding topples structure not explode"; a robot under a falling
+structure explodes (dust clouds, fire burst, SFX); nothing left in the air; the animal should not explode on impact;
+abilities not slower than the flight and angled down ("otherwise it shoots over the structure").
+
+**Reference re-read.** Stills pulled from `tools/review/sessions/ref-angrybirds-20261108-141802/video.mp4` at 195 s
+(storm), 240 s (boss room), 309.8 s (tutorial), 35.4 s: boxes on X-braced lattice stilts, a wide roof on single
+posts, planks cantilevered past their support with boulders and a pig on the overhang, loose stone stacked on top,
+a stall roof hanging off a tower, a cart on wheels. None of it balances; it stands because it starts asleep.
+
+**Why blocks no longer break.** The 2026-11-10 one-strike rule broke whatever the animal touched, so a strike read as
+an explosion and the pieces vanished instead of falling onto what was below. Now the strike only shoves (the
+existing ShoveOnHit/StackShove impulses) and the collapse does the work; robots die from the crush rule. Box2D wakes
+a sleeping body when a touching body in its contact island moves, so with no destruction the "floating after support
+vanished" case mostly disappears; the block support watchdog (mirroring the robot one from 2026-11-10) covers what's
+left. Haybales were `_isExplosive` (popped on contact with a robot via a WoodBlock override that also bypassed the
+live grace period) — removed.
+
+**Designer.** The checker's support test used axis-aligned "visible" boxes; with tilted pieces it moved to polygons
+(SAT), plus a collider-overlap test (two colliders starting inside each other push apart violently the moment the
+stack wakes — the 2026-11-08 self-collapse cause) and robot-inside-block / robot-on-nothing tests. Calibrated on the
+existing levels first: World 1 0 issues; World 2 shows the same 12 notes with the wonky towers switched off, i.e.
+pre-existing (frost art proportions), and World 2 was probe-clean on 2026-11-09. The braces are sized by scanning
+20-75 deg for the longest plank that fits the bay with one corner on the floor (so the support probe and watchdog see
+it supported).
+
+**Header shrink.** First tried a per-pixel agreement mask across the nine canvases (the lettering is the same
+Stampede art) — failed: the canvases aren't pixel-identical, the drop shadow was missed and the inpaint left a dark
+ghost. Working version: orange-face + dark-near-face mask voted on the bright-sky canvases, OR-ed with each canvas's
+own mask (thresholded at 0.62 of its sky's brightness — W1 and Frozen Tundra sit a few px off), dilated 15 px,
+OpenCV Telea inpaint, lettering re-pasted from the black-sky canvas (its rim blends to black like the outline).

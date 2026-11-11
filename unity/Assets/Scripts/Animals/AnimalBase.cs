@@ -157,8 +157,13 @@ public abstract class AnimalBase : MonoBehaviour
 
         if (_contactStarted)
         {
+            if (_fading) return;
             _contactTimer -= Time.deltaTime;
-            if (_contactTimer <= 0f) DestroyAnimal();
+            bool still = _rb == null || _rb.linearVelocity.sqrMagnitude < RestSpeedSqr * 4f;
+            _settledTimer = still ? _settledTimer + Time.deltaTime : 0f;
+            Vector2 cp = transform.position;
+            if (_contactTimer <= 0f || _settledTimer >= SettledSeconds || cp.y <= MaxFallY || Mathf.Abs(cp.x) > MaxAbsX)
+                StartCoroutine(FadeOutAndDestroy());
             return;
         }
 
@@ -241,6 +246,26 @@ public abstract class AnimalBase : MonoBehaviour
 
     protected abstract void TriggerAbility();
 
+    // -- Ability aim (2026-11-11, user: "there ability should not be slower than the flight"; "ability should be angled
+    // down and not ahead, otherwise it shoots over the structure") ----------------------------------------------------
+    // Every thrown ability leaves forward (the way the animal is travelling) and DOWN: at least minDownDeg below the
+    // horizon and always at least 12 deg steeper than the animal's own path, so it drops into the structure instead of
+    // sailing over it; offsetDeg fans several projectiles around that line. Speed: 1.25x the animal's, never below min.
+    const float AbilitySpeedFactor = 1.25f, AbilitySteeperBy = 12f, AbilityMaxDownDeg = 80f;
+
+    protected Vector2 AbilityAim(float minDownDeg, float offsetDeg = 0f)
+    {
+        Vector2 v = _rb != null ? _rb.linearVelocity : Vector2.right;
+        float sign = v.x >= 0f ? 1f : -1f;
+        float flight = Mathf.Atan2(v.y, Mathf.Abs(v.x) + 0.0001f) * Mathf.Rad2Deg;   // + up, - down
+        float centre = Mathf.Clamp(Mathf.Min(flight - AbilitySteeperBy, -minDownDeg), -AbilityMaxDownDeg, -minDownDeg);
+        float a = Mathf.Clamp(centre + offsetDeg, -88f, -5f) * Mathf.Deg2Rad;
+        return new Vector2(Mathf.Cos(a) * sign, Mathf.Sin(a));
+    }
+
+    protected float AbilitySpeed(float min) =>
+        Mathf.Max(min, (_rb != null ? _rb.linearVelocity.magnitude : 0f) * AbilitySpeedFactor);
+
     /// <summary>Which animal this is (picks its ability sound).</summary>
     public AnimalType Kind => this switch
     {
@@ -257,46 +282,36 @@ public abstract class AnimalBase : MonoBehaviour
     protected virtual void OnCollisionEnter2D(Collision2D col)
     {
         IsInFlight = false;
-        // Show the impact pose (e.g. Cluck_Impact.png) for the remaining _contactTimeout window
-        // instead of hiding instantly — fixed 2026-07-26: _sprImpact used to get assigned then
-        // hidden in the very next line, so the reaction art was never actually visible before
-        // DestroyAnimal() removed the whole GameObject. Only fall back to the old instant-hide
-        // when no impact art is wired at all (procedural fallback circle — "no dead bird lying
-        // on the ground").
+        // No burst, no freeze (2026-11-11, user: "the farm character should also not explode upon impact"): the animal
+        // stays a physical body, shows its impact pose and keeps tumbling through the structure — its momentum is what
+        // shoves the blocks over (BlockBase.ShoveOnHit) — then fades out once it settles (Update, AfterImpactSeconds cap).
+        if (_contactStarted) return;
+        _contactStarted = true;
+        _contactTimer   = AfterImpactSeconds;
         if (_sprImpact != null) _sr.sprite = _sprImpact;
-        else                    _sr.enabled = false;
-        // Only on the actual first impact, not every subsequent roll/bounce contact — a rolling
-        // or bouncing animal fires OnCollisionEnter2D repeatedly, and re-bursting the stars each
-        // time read as spammy (user-reported 2026-07-09: "should not appear everytime cluck
-        // rolls — perhaps only once upon impact").
-        if (!_contactStarted) SpawnImpactStars();
         OnAnimalImpact?.Invoke(this);
-        if (!_contactStarted)
-        {
-            // Freeze in place immediately instead of letting physics carry it rolling/bouncing
-            // across the screen for the rest of the _contactTimeout window — user-reported
-            // 2026-07-09: "the sprite should disappear immediately - currently it rolls off
-            // screen then disappears." Kinematic so nothing can push it further either. Done
-            // here (not by immediately calling DestroyAnimal()) because BessieAnimal.
-            // OnCollisionEnter2D calls base.OnCollisionEnter2D() THEN starts its Shockwave()
-            // coroutine on this same GameObject — destroying it synchronously here would risk
-            // that coroutine never running.
-            _rb.linearVelocity  = Vector2.zero;
-            _rb.angularVelocity = 0f;
-            _rb.bodyType        = RigidbodyType2D.Kinematic;
-
-            _contactStarted = true;
-            _contactTimer   = _contactTimeout;
-        }
     }
 
-    // Quick VFX burst at the impact point — reuses FragmentFader (defined in BlockBase.cs, same
-    // assembly) for the fade-out, same pattern as BlockBase.SpawnImpactFlash()/SpawnExplosion().
-    // Sized off this animal's own collider diameter (world-space, accounts for both the per-
-    // character collider radius set in each subclass's Awake() and any parent scale) rather than
-    // a fixed scale — user-reported 2026-07-09 the burst needs to read as sized to whichever
-    // animal got dazed (Bessie's collider is ~1.4x Cluck's, see SpriteWiring's CharPPU comments),
-    // not the same size regardless of which animal was hit.
+    const float AfterImpactSeconds = 3f, SettledSeconds = 0.5f, FadeSeconds = 0.35f;
+    float _settledTimer;
+    bool _fading;
+
+    // Once settled (or after AfterImpactSeconds) the animal shrinks a little and fades away, then the next one loads.
+    System.Collections.IEnumerator FadeOutAndDestroy()
+    {
+        _fading = true;
+        Vector3 s0 = transform.localScale;
+        Color c0 = _sr != null ? _sr.color : Color.white;
+        for (float t = 0f; t < FadeSeconds; t += Time.deltaTime)
+        {
+            float p = t / FadeSeconds;
+            transform.localScale = s0 * Mathf.Lerp(1f, 0.75f, p);
+            if (_sr != null) _sr.color = new Color(c0.r, c0.g, c0.b, c0.a * (1f - p));
+            yield return null;
+        }
+        DestroyAnimal();
+    }
+
     void SpawnImpactStars()
     {
         if (_sprImpactStars == null) return;

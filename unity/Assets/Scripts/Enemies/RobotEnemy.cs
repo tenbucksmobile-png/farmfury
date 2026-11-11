@@ -141,6 +141,12 @@ public class RobotEnemy : MonoBehaviour
     // falls back to the existing procedural fragments (SpawnDeathParticles) and the
     // AudioManager.Sound.RobotDeath DSP jingle — user-requested 2026-07-09.
     [SerializeField] private Sprite     _deathExplosionSprite;
+    // Death effect (2026-11-11, user: "when structure falls onto robot the robot explodes (effect artwork - dustclouds,
+    // fireburst, SFX sound)"): a fire burst (World1Props/Explosion.png) in a ring of dust clouds (Effects/DustCloud.png)
+    // that billow outward and fade. Separate from _deathExplosionSprite, which bosses use for their own exploding pose.
+    // Wired by SceneSetup.WireRobotDeathFx.
+    [SerializeField] private Sprite     _fireBurstSprite;
+    [SerializeField] private Sprite     _dustCloudSprite;
     [SerializeField] private AudioClip  _deathSoundOverride;
 
     // Hit SFX — wired on all 3 robot prefabs from Assets/Audio/Robot_Hit.mp3 (2026-07-10, user
@@ -650,7 +656,8 @@ public class RobotEnemy : MonoBehaviour
         else                              AudioManager.Play(AudioManager.Sound.RobotDeath);
         CameraShake.Shake(0.35f, 0.30f);
         SpawnDeathParticles();
-        SpawnDeathExplosion();
+        if (_fireBurstSprite != null || _dustCloudSprite != null) SpawnFireAndDust();
+        else SpawnDeathExplosion();
 
         // Squish: flatten robot into the ground, then disappear
         Vector3 startScale = transform.localScale;   // (0.7, 0.8, 1)
@@ -703,6 +710,40 @@ public class RobotEnemy : MonoBehaviour
         go.AddComponent<FragmentFader>();
     }
 
+    // Fire burst in the middle, dust clouds billowing out around it (2026-11-11). Sized from the robot's visible art.
+    void SpawnFireAndDust()
+    {
+        Vector2 vis = EffectSizing.VisibleSize(_sr, out Vector3 centre);
+        float size = Mathf.Clamp(Mathf.Max(vis.x, vis.y), 0.5f, 2.6f);
+        if (_isTauntLoop && _deathExplosionSprite != null) SpawnDeathExplosion();   // the boss's own exploding pose
+        if (_fireBurstSprite != null)
+        {
+            var fire = new GameObject("RobotFireBurst");
+            var sr = fire.AddComponent<SpriteRenderer>();
+            sr.sprite = _fireBurstSprite;
+            sr.sortingOrder = 11;
+            fire.transform.position = new Vector3(centre.x, centre.y, 0f);
+            fire.transform.rotation = Quaternion.Euler(0f, 0f, Random.Range(-25f, 25f));
+            fire.AddComponent<BillowFade>().Init(EffectSizing.ScaleFor(_fireBurstSprite, 1.3f * size), 1.25f, Vector2.zero, 0.45f);
+        }
+        if (_dustCloudSprite == null) return;
+        const int puffs = 5;
+        for (int i = 0; i < puffs; i++)
+        {
+            float a = (i / (float)puffs) * Mathf.PI * 2f + Random.Range(-0.4f, 0.4f);
+            var dir = new Vector2(Mathf.Cos(a), Mathf.Sin(a) * 0.6f + 0.25f);
+            var dust = new GameObject("RobotDust");
+            var sr = dust.AddComponent<SpriteRenderer>();
+            sr.sprite = _dustCloudSprite;
+            sr.sortingOrder = i % 2 == 0 ? 10 : 12;
+            sr.color = new Color(0.92f, 0.88f, 0.8f, 0.95f);
+            sr.flipX = Random.value > 0.5f;
+            dust.transform.position = new Vector3(centre.x, centre.y, 0f) + (Vector3)(dir * 0.15f * size);
+            float s = EffectSizing.ScaleFor(_dustCloudSprite, Random.Range(0.45f, 0.65f) * size);
+            dust.AddComponent<BillowFade>().Init(s, 1.6f, dir * 0.9f * size, Random.Range(0.6f, 0.85f));
+        }
+    }
+
     void SpawnDeathParticles()
     {
         int count = Random.Range(12, 18);
@@ -744,5 +785,33 @@ public class RobotEnemy : MonoBehaviour
         tex.SetPixels(px);
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
+    }
+}
+
+// A death-effect sprite that pops in, grows (grow x its start scale), drifts and fades out over `life` seconds.
+sealed class BillowFade : MonoBehaviour
+{
+    float _scale, _grow, _life, _t;
+    Vector2 _drift;
+    SpriteRenderer _sr;
+    Color _c;
+
+    public void Init(float scale, float grow, Vector2 drift, float life)
+    {
+        _scale = scale; _grow = grow; _drift = drift; _life = Mathf.Max(0.1f, life);
+        _sr = GetComponent<SpriteRenderer>();
+        _c = _sr != null ? _sr.color : Color.white;
+        transform.localScale = Vector3.one * scale * 0.4f;
+    }
+
+    void Update()
+    {
+        _t += Time.deltaTime;
+        float p = Mathf.Clamp01(_t / _life);
+        float pop = p < 0.15f ? Mathf.Lerp(0.4f, 1f, p / 0.15f) : Mathf.Lerp(1f, _grow, (p - 0.15f) / 0.85f);
+        transform.localScale = Vector3.one * _scale * pop;
+        transform.position += (Vector3)(_drift * Time.deltaTime * (1f - p));
+        if (_sr != null) _sr.color = new Color(_c.r, _c.g, _c.b, _c.a * (p < 0.5f ? 1f : 1f - (p - 0.5f) / 0.5f));
+        if (p >= 1f) Destroy(gameObject);
     }
 }

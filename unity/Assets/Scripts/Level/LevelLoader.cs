@@ -322,7 +322,7 @@ public class LevelLoader : MonoBehaviour
         if (prefab == null) { Debug.LogWarning("[LevelLoader] Block prefab null — run Wire Scene References."); return; }
         var block  = Instantiate(prefab,
             new Vector3(data.position.x, data.position.y, 0f),
-            Quaternion.identity,
+            Quaternion.Euler(0f, 0f, data.rotation),
             _blockParent);
         block.Initialise(data.size.x, data.size.y, data.artVariant, world, trimCollider);
         block.ApplyOverrides(data.healthOverride, data.massOverride);

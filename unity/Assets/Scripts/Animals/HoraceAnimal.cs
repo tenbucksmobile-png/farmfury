@@ -35,17 +35,12 @@ public class HoraceAnimal : AnimalBase
 
     protected override void TriggerAbility()
     {
-        Vector2 vel = _rb.linearVelocity;
-        float sign = vel.x >= 0f ? 1f : -1f;
-        // Thrown level-ish whatever Horace is doing: a flat line into the structure, not into the ground.
-        Vector2 fwd = vel.sqrMagnitude > 0.01f ? vel.normalized : Vector2.right;
-        float angle = Mathf.Clamp(Mathf.Atan2(fwd.y, Mathf.Abs(fwd.x)) * Mathf.Rad2Deg, -15f, 20f);
+        float speed = AbilitySpeed(ShoeSpeed);   // forward-and-down, faster than Horace (2026-11-11)
         var spec = ShoeSpec(_horseshoeSprite);
         for (int i = 0; i < ShoeCount; i++)
         {
-            float a = (angle + (i - (ShoeCount - 1) * 0.5f) * ShoeSpread) * Mathf.Deg2Rad;
-            var dir = new Vector2(Mathf.Cos(a) * sign, Mathf.Sin(a));
-            AbilityProjectile.Spawn(spec, transform.position + (Vector3)(dir * 0.5f), dir * ShoeSpeed, _col);
+            var dir = AbilityAim(30f, (i - (ShoeCount - 1) * 0.5f) * ShoeSpread);
+            AbilityProjectile.Spawn(spec, transform.position + (Vector3)(dir * 0.5f), dir * speed, _col);
         }
         AudioManager.Play(AudioManager.Sound.Launch);
     }

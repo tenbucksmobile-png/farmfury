@@ -161,9 +161,9 @@ tower below; a three-storey tower stands on an islet behind.""")
 s_, l, r = L.mount("Mesa", 6.9, 1.9)
 deck, dl, dr = edge_wagon(L, s_, r, 1.7)
 L.robot((dl + dr) / 2, deck, "pawn")
-tower(L, 10.2, G, 5, width=2.0, taper=0.15, robots=["semi", None, "pawn", None, "semi"], top="pawn")
+tower(L, 10.2, G, 5, width=2.0, taper=0.15, robots=["semi", None, "pawn", None, "semi"], top="pawn", room=(8.0, 11.9))
 s2 = islet(L, 13.0, 2.2)
-tower(L, 13.0, s2, 3, width=1.5, h=1.15, taper=0.1, robots=["pawn", None, "semi"])
+tower(L, 13.0, s2, 3, width=1.5, h=1.15, taper=0.1, robots=["pawn", None, "semi"], room=(12.0, 14.2))
 
 L = level(13, "Twin Mills", 3, [D, P, W], """
 Two four-storey mill towers on fishing jetties, joined at the top by a plank bridge with a robot on it — after the
@@ -269,7 +269,7 @@ s = islet(L, 10.9, 5.4)
 top = L.post(9.5, s, 1.5, stone=True); L.post(12.3, s, 1.5, stone=True)
 rf = L.plank(9.2, 12.6, top, stone=True)
 L.robot(10.9, s, "semi"); L.barrel(8.8, s); L.barrel(13.0, s)
-t = tower(L, 10.9, rf, 3, width=2.4, h=1.15, taper=0.2, robots=["pawn", None, "semi"])
+t = tower(L, 10.9, rf, 3, width=2.4, h=1.15, taper=0.2, robots=["pawn", None, "semi"], wonky=False)   # the boss lands on it
 L.robot(10.9, t, "boss")
 t = L.box(6.4, G, 0.8)
 for _ in range(3): t = L.box(6.4, t, 0.8)

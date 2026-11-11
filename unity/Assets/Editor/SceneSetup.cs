@@ -1870,6 +1870,11 @@ public static partial class SceneSetup
     {
         var explosion = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Environment/World1Props/Explosion.png");
         if (explosion != null) so.FindProperty("_deathExplosionSprite").objectReferenceValue = explosion;
+        // Fire burst + dust clouds on every robot's death (2026-11-11), bosses included.
+        if (explosion != null) so.FindProperty("_fireBurstSprite").objectReferenceValue = explosion;
+        var dust = LoadSpriteAt("Assets/Sprites/Effects/DustCloud.png", false);
+        if (dust != null) so.FindProperty("_dustCloudSprite").objectReferenceValue = dust;
+        else Debug.LogWarning("[FarmFury] Assets/Sprites/Effects/DustCloud.png not found (robot death dust clouds).");
 
         var deathClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Explosion_Robot.mp3");
         if (deathClip != null) so.FindProperty("_deathSoundOverride").objectReferenceValue = deathClip;

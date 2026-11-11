@@ -30,6 +30,8 @@ public class PercyAnimal : AnimalBase
     protected override void TriggerAbility()
     {
         _rolling      = true;
+        // Dives forward-and-down into the structure, faster than the flight (2026-11-11), then bounces on.
+        _rb.linearVelocity = AbilityAim(30f) * AbilitySpeed(8f);
         _bouncesLeft  = _maxBounces;
         _rb.linearDamping = _rollDrag;
         _col.sharedMaterial = _rollMat;

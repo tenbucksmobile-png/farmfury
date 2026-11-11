@@ -39,18 +39,13 @@ public class DuckyAnimal : AnimalBase
 
     protected override void TriggerAbility()
     {
-        Vector2 vel = _rb.linearVelocity;
-        Vector2 fwd = vel.sqrMagnitude > 0.01f ? vel.normalized : Vector2.right;
-        // Aim level-ish even on a steep dive, so the swirls reach the structure rather than the ground.
-        if (fwd.y < -0.35f) fwd = new Vector2(Mathf.Sign(fwd.x == 0f ? 1f : fwd.x) * 0.94f, -0.35f).normalized;
-        float baseAngle = Mathf.Atan2(fwd.y, fwd.x) * Mathf.Rad2Deg;
+        float speed = AbilitySpeed(SwirlSpeed);   // forward-and-down, faster than Ducky (2026-11-11)
         var spec = SwirlSpec(_swirlSprite);
         for (int i = 0; i < SwirlCount; i++)
         {
             float t = SwirlCount > 1 ? i / (float)(SwirlCount - 1) : 0.5f;
-            float rad = (baseAngle + Mathf.Lerp(-FanSpread * 0.5f, FanSpread * 0.5f, t)) * Mathf.Deg2Rad;
-            var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
-            AbilityProjectile.Spawn(spec, transform.position + (Vector3)(dir * 0.45f), dir * SwirlSpeed, _col);
+            var dir = AbilityAim(35f, Mathf.Lerp(-FanSpread * 0.5f, FanSpread * 0.5f, t));
+            AbilityProjectile.Spawn(spec, transform.position + (Vector3)(dir * 0.45f), dir * speed, _col);
         }
         AudioManager.Play(AudioManager.Sound.Launch);
     }

@@ -31,6 +31,7 @@ MonoBehaviour:
     artVariant: 3
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
     position: {x: 9.09, y: -5.025}
     size: {x: 0.32, y: 1.15}
@@ -41,9 +42,10 @@ MonoBehaviour:
     artVariant: 3
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
-    position: {x: 8.3, y: -4.325}
-    size: {x: 1.9, y: 0.25}
+    position: {x: 7.923, y: -4.325}
+    size: {x: 2.653, y: 0.25}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
@@ -51,29 +53,54 @@ MonoBehaviour:
     artVariant: 2
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
-    position: {x: 7.57, y: -3.625}
-    size: {x: 0.32, y: 1.15}
+    position: {x: 7.724, y: -3.881}
+    size: {x: 0.908, y: 0.764}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 3
+    artVariant: 4
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
-    position: {x: 9.03, y: -3.625}
-    size: {x: 0.32, y: 1.15}
+    position: {x: 7.724, y: -3.306}
+    size: {x: 0.908, y: 0.764}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
     indestructible: 0
-    artVariant: 3
+    artVariant: 4
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   - type: 0
-    position: {x: 8.3, y: -2.925}
-    size: {x: 1.78, y: 0.25}
+    position: {x: 8.889, y: -3.881}
+    size: {x: 0.908, y: 0.764}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 4
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - type: 0
+    position: {x: 8.889, y: -3.306}
+    size: {x: 0.908, y: 0.764}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 4
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - type: 0
+    position: {x: 8.524, y: -2.925}
+    size: {x: 2.229, y: 0.25}
     passThrough: 0
     healthOverride: 0
     massOverride: 0
@@ -81,6 +108,7 @@ MonoBehaviour:
     artVariant: 2
     forceStayKinematic: 0
     flipX: 0
+    rotation: 0
   robots:
   - robotType: 0
     position: {x: 8.3, y: -5.15}

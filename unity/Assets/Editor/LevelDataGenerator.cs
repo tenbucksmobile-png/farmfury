@@ -222,11 +222,11 @@ public static partial class LevelDataGenerator
                                       bool passThrough = false, float hp = 0f, float mass = 0f,
                                       WoodArtVariant artVariant = WoodArtVariant.Auto,
                                       bool indestructible = false,
-                                      bool forceStayKinematic = false) =>
+                                      bool forceStayKinematic = false, float rot = 0f) =>
         new() { type = type, position = new Vector2(x, y), size = new Vector2(w, h),
                 passThrough = passThrough, healthOverride = hp, massOverride = mass,
                 artVariant = artVariant, indestructible = indestructible,
-                forceStayKinematic = forceStayKinematic };
+                forceStayKinematic = forceStayKinematic, rotation = rot };
 
     static LevelData.PlatformSpawnData P(float x, float surfaceY, float width, int variant = 0, bool rolling = false) =>
         new LevelData.PlatformSpawnData { x = x, surfaceY = surfaceY, width = width, variant = variant, rolling = rolling };

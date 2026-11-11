@@ -28,6 +28,7 @@ public class BessieAnimal : AnimalBase
     private const float InstantKillDamage = 999999f;
 
     private bool _slammed;
+    private bool _shockwaveFired;
 
     protected override void Awake()
     {
@@ -81,8 +82,12 @@ public class BessieAnimal : AnimalBase
 
         bool hitGround    = col.gameObject.CompareTag("Ground");
         bool hitStructure  = col.gameObject.TryGetComponent<BlockBase>(out _);
-        if (hitGround || hitStructure)
+        // Once: the animal now keeps bouncing after impact (2026-11-11), so later contacts must not re-fire the slam.
+        if ((hitGround || hitStructure) && !_shockwaveFired)
+        {
+            _shockwaveFired = true;
             StartCoroutine(Shockwave());
+        }
 
         if (col.gameObject.TryGetComponent<RobotEnemy>(out var robot))
             robot.TakeDamage(InstantKillDamage);
