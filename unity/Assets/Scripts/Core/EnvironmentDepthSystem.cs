@@ -444,12 +444,15 @@ public class EnvironmentDepthSystem : MonoBehaviour
     bool Frozen => _currentWorld == 2;
     bool Mill   => _currentWorld == 3;
     bool Sky    => _currentWorld == 4;
-    bool SkyReady => _sprSkyFar != null && _sprSkyMid != null && _sprSkyWall != null && _sprSkySoil != null;
+    bool SkyReady => _sprSkyFar != null && _sprSkyWall != null && _sprSkySoil != null;
     bool FrozenReady => _sprFarHillsW2 != null && _sprFrozenMid != null && _sprFrozenWall != null && _sprFrozenSoil != null;
     bool MillReady   => _sprMillFar != null && _sprMillMid != null && _sprMillWall != null && _sprMillSoil != null;
     Sprite ThemeFar    => Sky ? _sprSkyFar : Mill ? _sprMillFar         : Frozen ? _sprFarHillsW2        : _sprCornFar;
-    Sprite ThemeMid    => Sky ? _sprSkyMid : Mill ? _sprMillMid         : Frozen ? _sprFrozenMid         : _sprCornMid;
-    Sprite ThemeWall   => Sky ? _sprSkyWall : Mill ? _sprMillWall        : Frozen ? _sprFrozenWall        : _sprCornWall;
+    // Sky: no isles band (2026-11-11, user: "a row of windmills and other items in the background that we should remove");
+    // _sprSkyMid stays wired but unused.
+    Sprite ThemeMid    => Sky ? null : Mill ? _sprMillMid         : Frozen ? _sprFrozenMid         : _sprCornMid;
+    // Sky: no cloud-bank wall since the cloud floor (2026-11-11) — it read as a dashed fence along the ground.
+    Sprite ThemeWall   => Sky ? null : Mill ? _sprMillWall        : Frozen ? _sprFrozenWall        : _sprCornWall;
     Sprite ThemeSoil   => Sky ? _sprSkySoil : Mill ? _sprMillSoil        : Frozen ? _sprFrozenSoil        : _sprCornSoil;
     // Sky: one isles band only — the mid band. A second, smaller far copy read as a repeating border (2026-11-11);
     // _sprSkyRidges stays wired for a future dedicated far-isles painting.
@@ -478,7 +481,7 @@ public class EnvironmentDepthSystem : MonoBehaviour
     const float MillMidHeight = 3.6f, MillMidSink = -0.9f, MillWallHeight = 2.4f;
     // SkySoil.png grass line from the bottom, measured by tools/import_sky_art.py (keep in step). The isles band rides
     // well above the cloud bank so the islands read; the far isles hang high in the sky, small and hazed.
-    const float SkySoilGroundUV = 0.749f;
+    const float SkySoilGroundUV = 0.929f;   // cloud floor (W4CloudFloor) since 2026-11-11; was 0.749 on the grass strip
     static readonly Color SkyWallTint  = new Color(0.94f, 0.97f, 1f, 1f);
     static readonly Color SkyUnderfill = new Color(0.86f, 0.92f, 0.99f);   // cloud below the island's rock
     const float SkyMidHeight = 1.9f, SkyMidSink = -3.4f, SkyWallHeight = 1.5f;   // a distant row of isles high over the cloud horizon
@@ -492,8 +495,10 @@ public class EnvironmentDepthSystem : MonoBehaviour
     int _builtWorld = -1;
 
     bool CornfieldActive =>
-        _groundAnchored && (_currentWorld == 1 || _currentWorld == 2 || _currentWorld == 3) &&
-        ThemeFar != null && ThemeMid != null && ThemeWall != null && ThemeSoil != null;
+        // World 4 was missing here until 2026-11-11 (late): its whole framed sky stack (cloud bank, isle soil, isles band,
+        // silhouettes, ambience, SkyDecor) never switched on and World 4 showed only the plain fallback painting.
+        _groundAnchored && _currentWorld >= 1 && _currentWorld <= 4 &&
+        ThemeFar != null && (ThemeMid != null || Sky) && (ThemeWall != null || Sky) && ThemeSoil != null;
 
     void SetCornStripsActive(bool on)
     {

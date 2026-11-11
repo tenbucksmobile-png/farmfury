@@ -107,7 +107,7 @@ _W2_FLOE = MOUNTS_W[2]["Floe"]
 KIND_W3 = {"Mesa": "Pier", "Scaffold": "Jetty", "Wagon": "Boat", "Ramp": "Slipway", "Hill": "Islet"}
 _W3_ISLET = MOUNTS_W[3]["Islet"]
 KIND_W4 = {"Mesa": "Pillar", "Scaffold": "Dock", "Ramp": "Ramp", "Hill": "Rock"}
-_W4_ISLE = MOUNTS_W[4]["Isle"]
+_W4_ISLE = MOUNTS_W[4]["CloudLow"]   # World 4 islands are cloud mountains (design_world4.cloud) since 2026-11-11
 ISLAND_W = {1: ISLAND, 2: [(_W2_FLOE["uv"], _W2_FLOE["aspect"])] * 2, 3: [(_W3_ISLET["uv"], _W3_ISLET["aspect"])] * 2,
             4: [(_W4_ISLE["uv"], _W4_ISLE["aspect"])] * 2}
 POST_W = {1: 0.276, 2: 0.34, 3: 0.32, 4: 0.30}       # visible post width (the frosted post's art is stockier)
@@ -295,7 +295,8 @@ class Level:
         if self.islands:
             out += ["            platforms: new[]", "            {"]
             out += [f"                P({f(i['x'])}, {f(i['s'])}, {f(i['w'])}, variant: {i['v']}"
-                    + (", rolling: true" if i.get("rolling") else "") + ")," for i in self.islands]
+                    + (", rolling: true" if i.get("rolling") else "")
+                    + (f", height: {f(i['h'])}" if i.get("stretch") else "") + ")," for i in self.islands]
             out.append("            },")
         if self.gadgets:
             out += ["            gadgets: new[]", "            {"]

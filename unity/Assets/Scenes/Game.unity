@@ -742,7 +742,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
+  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -1024,7 +1024,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
+  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -2306,7 +2306,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
+  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -5049,9 +5049,9 @@ MonoBehaviour:
   - {fileID: 21300000, guid: aef26159b47f33349afac39e60d8b15a, type: 3}
   - {fileID: 21300000, guid: 344876f9e5f31974288ff674adb1c184, type: 3}
   _platformSpritesW4:
-  - {fileID: 21300000, guid: 8ba40a299040a6246b218f92d37bc95d, type: 3}
-  - {fileID: 21300000, guid: 8ba40a299040a6246b218f92d37bc95d, type: 3}
-  - {fileID: 21300000, guid: 05629e842ca3c1048ab79989ba857e1a, type: 3}
+  - {fileID: 21300000, guid: 6a05b29da84eb27499ef6ab7bad4551b, type: 3}
+  - {fileID: 21300000, guid: 75310dc389a64f845a02f8b1e7313d81, type: 3}
+  - {fileID: 21300000, guid: fc497d2e6fe45de48b21bf4b8a1b1573, type: 3}
   - {fileID: 21300000, guid: bfcc249601ff4e94abf3b2fa247dc05f, type: 3}
   - {fileID: 21300000, guid: 397d6bdda6e99864caac3250f62ada11, type: 3}
   - {fileID: 0}

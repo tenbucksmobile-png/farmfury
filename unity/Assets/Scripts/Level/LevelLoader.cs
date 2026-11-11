@@ -213,6 +213,12 @@ public class LevelLoader : MonoBehaviour
         // More solver iterations: tall thin stacks stay put instead of creeping apart.
         Physics2D.velocityIterations = Mathf.Max(Physics2D.velocityIterations, 24);
         Physics2D.positionIterations = Mathf.Max(Physics2D.positionIterations, 12);
+        // Robot colliders off BEFORE the blocks go live (2026-11-11). Otherwise each robot's collider touches its
+        // perch, the reveal pop then switches it off, and in Box2D ending a touching contact wakes both bodies: every
+        // pop woke the piece under its robot mid-reveal, and the unbalanced sky-city pieces (caps on one stem,
+        // balconies) tipped over before the player fired. RobotEnemy.GoLive switches them back on after the reveal.
+        foreach (var robot in _spawnedRobots)
+            if (robot != null) foreach (var c in robot.GetComponentsInChildren<Collider2D>(true)) c.enabled = false;
         yield return new WaitForFixedUpdate();
         foreach (var block in _spawnedBlocks) if (block != null) block.GoLive();
         // Going Dynamic creates the stack's contacts, and a new contact wakes both bodies — so a structure that
@@ -439,7 +445,8 @@ public class LevelLoader : MonoBehaviour
     // World 3 (2026-11-10): 0/1/2 grassy river islet, 3 stone bridge pier, 4 fishing jetty on stilts, 5 rowing boat (slides
     // on its keel like the sled), 6 boat slipway. Measured by tools/import_watermill_art.py into MountMeasurementsW3.
     [SerializeField] private Sprite[] _platformSpritesW3 = new Sprite[MountCount];
-    // World 4 (Sky Islands, 2026-11-11): 0/1 wide floating isle, 2 small floating rock, 3 cloud-wrapped stone pillar,
+    // World 4 (Sky Islands, 2026-11-11): 0/1/2 cloud mountains rising from the cloud sea - low and wide / medium / tall
+    // (replaced the floating isle and rock the same day; stretched to height by PlatformSpawnData.height), 3 cloud-wrapped stone pillar,
     // 4 sky dock, 5 (none - falls back to World 1's wagon), 6 slide ramp. Measured by tools/import_sky_art.py.
     [SerializeField] private Sprite[] _platformSpritesW4 = new Sprite[MountCount];
     const int PlatformSortingOrder = 1;   // decorative band (<= 1): behind blocks (2) and robots (3)
@@ -491,9 +498,9 @@ public class LevelLoader : MonoBehaviour
     };
     static readonly MountSpec[] MountsW4 =
     {
-        new() { surfaceUV = MountMeasurementsW4.IsleUV,   solids = MountMeasurementsW4.IsleSolids },
-        new() { surfaceUV = MountMeasurementsW4.IsleUV,   solids = MountMeasurementsW4.IsleSolids },
-        new() { surfaceUV = MountMeasurementsW4.RockUV,   solids = MountMeasurementsW4.RockSolids },
+        new() { surfaceUV = MountMeasurementsW4.CloudLowUV,  solids = MountMeasurementsW4.CloudLowSolids },
+        new() { surfaceUV = MountMeasurementsW4.CloudMidUV,  solids = MountMeasurementsW4.CloudMidSolids },
+        new() { surfaceUV = MountMeasurementsW4.CloudTallUV, solids = MountMeasurementsW4.CloudTallSolids },
         new() { surfaceUV = MountMeasurementsW4.PillarUV, solids = MountMeasurementsW4.PillarSolids },
         new() { surfaceUV = MountMeasurementsW4.DockUV,   solids = MountMeasurementsW4.DockSolids },
         default,
@@ -523,11 +530,12 @@ public class LevelLoader : MonoBehaviour
         {
             Vector2 native = sprite.bounds.size;
             float s = width / native.x;
-            height = native.y * s;
+            float sy = data.height > 0f ? data.height / native.y : s;   // optional vertical stretch (cloud mountains)
+            height = native.y * sy;
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
             sr.sortingOrder = PlatformSortingOrder;
-            go.transform.localScale = new Vector3(s, s, 1f);
+            go.transform.localScale = new Vector3(s, sy, 1f);
         }
         else height = width * 0.3f;
 
@@ -536,20 +544,21 @@ public class LevelLoader : MonoBehaviour
         go.transform.position = new Vector3(data.x, bottom + height * 0.5f, 0f);
 
         float sc = Mathf.Max(0.0001f, go.transform.localScale.x);
+        float scY = Mathf.Max(0.0001f, go.transform.localScale.y);
         foreach (var b in spec.solids)
         {
             var col = go.AddComponent<BoxCollider2D>();
             float w = (b.y - b.x) * width, h = (b.w - b.z) * height;
             float cx = ((b.x + b.y) * 0.5f - 0.5f) * width, cy = ((b.z + b.w) * 0.5f - 0.5f) * height;
-            col.size   = new Vector2(w / sc, h / sc);
-            col.offset = new Vector2(cx / sc, cy / sc);
+            col.size   = new Vector2(w / sc, h / scY);
+            col.offset = new Vector2(cx / sc, cy / scY);
         }
         if (spec.poly != null && spec.poly.Length >= 3)
         {
             var pc = go.AddComponent<PolygonCollider2D>();
             var pts = new Vector2[spec.poly.Length];
             for (int i = 0; i < pts.Length; i++)
-                pts[i] = new Vector2((spec.poly[i].x - 0.5f) * width / sc, (spec.poly[i].y - 0.5f) * height / sc);
+                pts[i] = new Vector2((spec.poly[i].x - 0.5f) * width / sc, (spec.poly[i].y - 0.5f) * height / scY);
             pc.points = pts;
         }
         if (data.rolling && v == 5)

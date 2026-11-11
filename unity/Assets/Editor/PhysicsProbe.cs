@@ -107,7 +107,28 @@ public class PhysicsProbeRunner : MonoBehaviour
             int awakeAtStart = CountAwake(blocks, robots);
             Debug.Log($"[Probe] LEVEL {i} {gm.CurrentLevel?.levelId} blocks={blocks.Length} robots={robots.Length} awakeAfterReveal={awakeAtStart}");
 
+            // Test shot (2026-11-11): FF_PROBE_SHOT=high|low fires one animal (FF_PROBE_ANIMAL, default Cluck) straight
+            // at the front piece of the structure (high or low on it) at FF_PROBE_SPEED (default 10 u/s, a typical
+            // impact speed) and reports what it did: pieces toppled, pieces thrown > 3 u, top piece speed, robots lost.
+            string shot = System.Environment.GetEnvironmentVariable("FF_PROBE_SHOT");
+            float topSpeed = 0f;
+            if (!string.IsNullOrEmpty(shot)) yield return Shoot(blocks, shot, v => topSpeed = Mathf.Max(topSpeed, v));
             yield return new WaitForSeconds(6f);
+            if (!string.IsNullOrEmpty(shot))
+            {
+                int toppled = 0, thrown = 0, robotsLost = 0;
+                foreach (var b in blocks)
+                {
+                    if (b == null) { toppled++; continue; }
+                    float d = Vector3.Distance(start[b], b.transform.position);
+                    float turned = Mathf.Abs(Mathf.DeltaAngle(b.transform.eulerAngles.z, _startAngle.TryGetValue(b, out var a0) ? a0 : 0f));
+                    if (d > 0.6f || turned > 40f) toppled++;
+                    if (d > 3f) thrown++;
+                }
+                foreach (var r in robots) if (r == null || r.IsDestroyed) robotsLost++;
+                Debug.Log($"[Probe] SHOT {i} {gm.CurrentLevel?.levelId} {shot} target={_shotTarget}: toppled {toppled}/{blocks.Length}, " +
+                          $"thrown>3u {thrown}, topSpeed {topSpeed:F1} u/s, robots lost {robotsLost}/{robots.Length}");
+            }
 
             int blocksLeft = 0, robotsLeft = 0, awake = 0;
             float maxMove = 0f; string mover = "";
@@ -131,6 +152,46 @@ public class PhysicsProbeRunner : MonoBehaviour
                       $"stillAwake={awake}, maxMove={maxMove:F2} ({mover})");
         }
         _done();
+    }
+
+    readonly Dictionary<Object, float> _startAngle = new();
+    string _shotTarget = "";
+
+    IEnumerator Shoot(BlockBase[] blocks, string mode, System.Action<float> speedSample)
+    {
+        _startAngle.Clear();
+        foreach (var b in blocks) _startAngle[b] = b.transform.eulerAngles.z;
+        BlockBase front = null;
+        foreach (var b in blocks) if (b.IsLive && (front == null || b.GetComponent<Collider2D>().bounds.min.x < front.GetComponent<Collider2D>().bounds.min.x)) front = b;
+        if (front == null) { _shotTarget = "none"; yield break; }
+        // Front stack: pieces within 1 u of the front piece; "high" = its top piece, "low" = its bottom piece.
+        float fx = front.GetComponent<Collider2D>().bounds.min.x;
+        BlockBase target = front;
+        foreach (var b in blocks)
+        {
+            if (!b.IsLive || b.GetComponent<Collider2D>().bounds.min.x > fx + 1f) continue;
+            float y = b.GetComponent<Collider2D>().bounds.center.y, ty = target.GetComponent<Collider2D>().bounds.center.y;
+            if (mode == "high" ? y > ty : y < ty) target = b;
+        }
+        var bb = target.GetComponent<Collider2D>().bounds;
+        float aimY = bb.center.y + (mode == "high" ? 0.3f : -0.3f) * bb.extents.y;
+        string animal = System.Environment.GetEnvironmentVariable("FF_PROBE_ANIMAL");
+        if (string.IsNullOrEmpty(animal)) animal = "Cluck";
+        float speed = float.TryParse(System.Environment.GetEnvironmentVariable("FF_PROBE_SPEED"), out var sp) ? sp : 10f;
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Prefabs/Animals/{animal}Animal.prefab");
+        _shotTarget = $"{target.GetType().Name} {target.name}@({bb.center.x:F1},{bb.center.y:F1}) by {animal}";
+        if (prefab == null) { _shotTarget += " (no prefab)"; yield break; }
+        var go = Object.Instantiate(prefab, new Vector3(bb.min.x - 0.9f, aimY, 0f), Quaternion.identity);
+        var ab = go.GetComponent<AnimalBase>();
+        yield return null;
+        ab.Launch(new Vector2(speed, 0f), 0f);   // straight in, no drop, so the contact point is the aimed one
+        float t0 = Time.time;
+        while (Time.time - t0 < 1.5f)
+        {
+            yield return new WaitForFixedUpdate();
+            foreach (var b in blocks)
+                if (b != null && b.TryGetComponent<Rigidbody2D>(out var rb)) speedSample(rb.linearVelocity.magnitude);
+        }
     }
 
     static int CountAwake(BlockBase[] blocks, RobotEnemy[] robots)

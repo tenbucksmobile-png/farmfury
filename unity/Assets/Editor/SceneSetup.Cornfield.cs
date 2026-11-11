@@ -207,7 +207,7 @@ public static partial class SceneSetup
         // World 4 mounts (2026-11-11): isle, isle, floating rock, stone pillar, sky dock, (no wagon), slide ramp.
         var w4 = loader.FindProperty("_platformSpritesW4");
         if (w4 == null) return;
-        string[] filesW4 = { "Mount_Isle.png", "Mount_Isle.png", "Mount_Rock.png", "Mount_Pillar.png", "Mount_Dock.png", null, "Mount_Ramp.png" };
+        string[] filesW4 = { "Mount_CloudLow.png", "Mount_CloudMid.png", "Mount_CloudTall.png", "Mount_Pillar.png", "Mount_Dock.png", null, "Mount_Ramp.png" };
         w4.arraySize = filesW4.Length;
         for (int i = 0; i < filesW4.Length; i++)
             w4.GetArrayElementAtIndex(i).objectReferenceValue = filesW4[i] == null ? null : LoadSpriteAt($"{SkyFolder}/{filesW4[i]}", opaque: false);

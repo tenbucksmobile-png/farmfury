@@ -335,5 +335,6 @@ MonoBehaviour:
     width: 7
     variant: 0
     rolling: 0
+    height: 0
   weather: 13
   gadgets: []

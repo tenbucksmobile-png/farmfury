@@ -13,13 +13,17 @@ using UnityEngine;
 public class SkyDecor : MonoBehaviour
 {
     // Between the haze veil (-35) and the isles band (-30): visible, but clearly behind the play layer.
-    const int SkyOrder = -34, LanternOrder = -33, VaneOrder = 1;
+    // Far items sit just behind the haze veil (-35) so it hazes them; near items in front of the isles band (-30).
+    const int FarOrder = -36, SkyOrder = -34, LanternOrder = -33, NearOrder = -29, VaneOrder = 1;
+    static readonly Color FarHaze = new Color(0.86f, 0.93f, 1f, 1f);
 
     enum Kind { Balloon, Kite, Lantern, Plum }
+    enum Depth { Far, Mid, Near }
 
     class Item
     {
         public Kind kind;
+        public Depth depth;
         public SpriteRenderer sr;
         public float heightSh, xSh, ySh, speed, phase;
     }
@@ -42,13 +46,25 @@ public class SkyDecor : MonoBehaviour
         _tint = skyTint; _glow = glow;
         foreach (var it in _items) if (it.sr != null) Destroy(it.sr.gameObject);
         _items.Clear();
-        Add(Kind.Balloon, _balloon, 0.11f, 0.18f, 0.70f, 1f / 55f);
-        Add(Kind.Balloon, _balloon, 0.075f, 0.62f, 0.80f, 1f / 75f);
-        Add(Kind.Kite, _kite, 0.09f, 0.42f, 0.84f, 0f);
-        Add(Kind.Kite, _kite, 0.065f, 0.86f, 0.74f, 0f);
-        Add(Kind.Plum, _plum, 0.07f, 0.74f, 0.58f, 0f);
-        for (int i = 0; i < 3; i++)
-            Add(Kind.Lantern, _lantern, 0.035f + 0.01f * i, 0.30f + 0.22f * i, 0.30f + 0.18f * i, 1f / (26f + 6f * i));
+        // A busy sky in three depth bands (2026-11-11, user: "visible at various sizes so the skies look busy"):
+        // far = small, hazed toward the horizon, behind the haze veil's front; mid = medium; near = large, in front of
+        // the isles band but still behind every play-layer sprite. Sizes are screen-height fractions, x/y screen
+        // fractions; speed in screen widths per second (negative drifts right-to-left).
+        //   kind, depth, height, x, y, speed
+        Add(Kind.Balloon, Depth.Far,  0.045f, 0.08f, 0.66f,  1f / 140f);
+        Add(Kind.Balloon, Depth.Far,  0.055f, 0.55f, 0.90f, -1f / 120f);
+        Add(Kind.Balloon, Depth.Mid,  0.085f, 0.30f, 0.76f,  1f / 80f);
+        Add(Kind.Balloon, Depth.Mid,  0.10f,  0.82f, 0.64f, -1f / 95f);
+        Add(Kind.Balloon, Depth.Near, 0.15f,  0.66f, 0.80f,  1f / 60f);
+        Add(Kind.Kite, Depth.Far,  0.045f, 0.20f, 0.88f, 0f);
+        Add(Kind.Kite, Depth.Mid,  0.07f,  0.45f, 0.70f, 0f);
+        Add(Kind.Kite, Depth.Mid,  0.08f,  0.93f, 0.86f, 0f);
+        Add(Kind.Kite, Depth.Near, 0.12f,  0.40f, 0.90f, 0f);
+        Add(Kind.Plum, Depth.Far, 0.05f,  0.95f, 0.56f, 0f);
+        Add(Kind.Plum, Depth.Mid, 0.075f, 0.14f, 0.80f, 0f);
+        for (int i = 0; i < 7; i++)   // lanterns, small to medium, staggered up the screen
+            Add(Kind.Lantern, i % 3 == 0 ? Depth.Far : Depth.Mid, 0.02f + 0.006f * (i % 4), 0.12f + 0.125f * i,
+                0.22f + 0.11f * ((i * 3) % 7), 1f / (24f + 5f * (i % 4)));
 
         if (_vane != null)
         {
@@ -62,12 +78,15 @@ public class SkyDecor : MonoBehaviour
         }
     }
 
-    void Add(Kind kind, Sprite sprite, float heightSh, float xSh, float ySh, float speed)
+    void Add(Kind kind, Depth depth, float heightSh, float xSh, float ySh, float speed)
     {
+        Sprite sprite = kind switch { Kind.Balloon => _balloon, Kind.Kite => _kite, Kind.Lantern => _lantern, _ => _plum };
         if (sprite == null) return;
-        var sr = NewRenderer(kind.ToString(), sprite, kind == Kind.Lantern ? LanternOrder : SkyOrder);
-        _items.Add(new Item { kind = kind, sr = sr, heightSh = heightSh, xSh = xSh, ySh = ySh, speed = speed,
-                              phase = Random.Range(0f, 10f) });
+        int order = depth == Depth.Far ? FarOrder : depth == Depth.Near ? NearOrder : kind == Kind.Lantern ? LanternOrder : SkyOrder;
+        var sr = NewRenderer($"{kind}_{depth}", sprite, order);
+        sr.flipX = kind == Kind.Kite && (_items.Count & 1) == 1;
+        _items.Add(new Item { kind = kind, depth = depth, sr = sr, heightSh = heightSh, xSh = xSh, ySh = ySh,
+                              speed = speed, phase = Random.Range(0f, 10f) });
     }
 
     SpriteRenderer NewRenderer(string name, Sprite sprite, int order)
@@ -98,6 +117,7 @@ public class SkyDecor : MonoBehaviour
                 case Kind.Balloon:   // drifts left to right, wrapping, bobbing gently
                     it.xSh += it.speed * dt;
                     if (it.xSh > 1.15f) it.xSh = -0.15f;
+                    else if (it.xSh < -0.15f) it.xSh = 1.15f;
                     bob = Mathf.Sin(time * 0.6f + it.phase) * 0.012f;
                     col.a = 0.92f;
                     break;
@@ -107,7 +127,7 @@ public class SkyDecor : MonoBehaviour
                     break;
                 case Kind.Lantern:   // rises slowly, drifting a little, then starts again from below
                     it.ySh += it.speed * dt;
-                    if (it.ySh > 1.05f) { it.ySh = 0.18f; it.xSh = Random.Range(0.15f, 0.9f); }
+                    if (it.ySh > 1.05f) { it.ySh = 0.18f; it.xSh = Random.Range(0.05f, 0.95f); }
                     it.xSh += Mathf.Sin(time * 0.5f + it.phase) * 0.004f * dt;
                     float glow = _glow ? 1.15f + 0.15f * Mathf.Sin(time * 3f + it.phase) : 1f;
                     col = new Color(glow, glow * 0.95f, glow * 0.8f, _glow ? 1f : 0.85f);
@@ -116,6 +136,11 @@ public class SkyDecor : MonoBehaviour
                     bob = Mathf.Sin(time * 0.7f + it.phase) * 0.018f;
                     rot = Mathf.Sin(time * 0.5f + it.phase) * 3f;
                     break;
+            }
+            if (it.depth == Depth.Far)   // far away: washed toward the horizon haze and a little see-through
+            {
+                col = Color.Lerp(col, FarHaze * _tint, 0.45f);
+                col.a *= 0.8f;
             }
             it.sr.transform.position = new Vector3(left + it.xSh * camW, bottom + (it.ySh + bob) * camH, 0f);
             it.sr.transform.localScale = new Vector3(scale, scale, 1f);

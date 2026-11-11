@@ -191,10 +191,12 @@ MonoBehaviour:
     width: 1.7
     variant: 3
     rolling: 0
+    height: 0
   - x: 5.908
     surfaceY: -2.258
     width: 1.6
     variant: 5
     rolling: 1
+    height: 0
   weather: 14
   gadgets: []

@@ -588,3 +588,46 @@ OpenCV Telea inpaint, lettering re-pasted from the black-sky canvas (its rim ble
   two volleys of 4 lightning bolts at -55..10 deg, each a 0.5 u burst with a shove); the sky crane hoists a thunder
   wheel; the rolling thunder wheel is `RollingBoulder`.
 - **Unverified in Play mode**, like Worlds 1-3's framed rebuilds.
+
+## 2026-11-11 (late) — World 4 cloud mountains, busy sky, the backdrop switch that was never on
+
+User: "lets insert bigger floating clouds that sit like mountains on which the robot structures are built. also
+review your extra floating items - I dont see them". Answers to the questions asked: rise from the cloud sea (not
+floating), replace every isle/rock, Kling up to ~12 credits.
+
+- **Why the floating items were invisible:** `EnvironmentDepthSystem.CornfieldActive` (the gate for the whole framed
+  stack) still read `world == 1 || 2 || 3` after World 4 was added; `_groundAnchored` had World 4 and `SkyReady`, so the
+  sky art was wired and the code paths existed but nothing ran. `SkyDecor` is only activated with
+  `Sky && CornfieldActive`, and `SceneryBuilder` skips framed World 4 levels, so the world looked empty — the previous
+  "a little empty" feedback was probably about the fallback painting too. Fixed to worlds 1-4.
+- **Kling, three tries (6 credits):** text-only prompt 1 gave blue ice/rock mesas sitting on a cloud skirt (the tall one
+  a spike); prompt 2 ("ENTIRELY cloud, flat top, flat bottom") gave flat-bottomed clouds upside down (flat band in the
+  middle, puffs on top). A hand-drawn template of three flat-topped trapezoids on magenta as image 1 + the StormCloud /
+  CloudTile style sheet as image 2 ("repaint these silhouettes as cloud") worked first time. Misses kept as
+  `W4CloudMountains_miss1.png` / `_miss2.png`. Lesson: for a specific silhouette, give Kling the silhouette.
+- **Sizing:** the plateau is only ~52-56% of the base width, so sizing from the old isle widths made 9-10 u wide flat
+  pancakes. `fit_clouds` sizes from the pieces actually standing on each plateau, then raises clouds flatter than 0.85
+  of the art's proportion (cap G + 4; uncapped, L22/L24's towers reached the HUD and the boss went out of reach).
+- **Probe:** 24/24 World 4 levels intact, 0 awake, 0 movement, no exceptions with the sky stack now live.
+- **Follow-up, same evening (no grass in the sky):** the ground strip and the slide ramp were the only grass (dock,
+  pillar and cloud bales have none). Kling: a cloud-floor strip (style ref = the accepted cloud-mountain sheet) and the
+  ramp edited to a cloud plateau with the slide kept (2 credits each, both first try). The floor came with gaps
+  between its hanging puffs and one puff above its flat band, so the import clears above the band and fills below.
+  With the floor in, the CloudTile wall (`SkyWall`) sat above it as a dashed fence line and was dropped with the
+  isles band. Batch compile/probe blocked: the user had the Editor open (project lock).
+
+## 2026-11-11 (night) — Softer impacts, World 4 sky cities, the robot-pop wake
+
+- **Impact:** baseline measured first with a new PhysicsProbe test shot (Cluck at 10 u/s, high on each World 1 level's
+  front piece): pieces flew at 15-29 u/s, 3-15 pieces thrown > 3 u, seven levels wiped out by one hit. Cause: animals
+  2-6x a block's mass at ~10 u/s, plus a scripted shove of 0.6 x momentum (max 36) and a StackShove on every block
+  above. Fix: ImpactMassScale 0.4, stone density x2, shoves reduced to a tip nudge for light pieces hit high, linear
+  damping 0.3. After: 1-9 u/s, mostly 0-3 thrown, stone hits do nothing.
+- **Sky cities:** hand-written absurd levels were still sparse, so World 4 became a seeded generator that retries until
+  the designer passes. Two name-shadowing bugs (`H()` and `P` overwrote Horace / Percy in the bird lists) produced
+  invalid C# — the helpers are `AT()` / `INSET` now.
+- **Why cities fell by themselves (10/24, varying run to run):** not the layouts. LevelReveal's robot pop disables
+  the robot's colliders; the robot had been touching its perch since spawn, and Box2D wakes both bodies when a
+  touching contact ends. Old balanced roofs survived the wake; unbalanced caps did not. The designer's robot box was
+  also too small (0.4 wide, 0.69 tall vs the real 0.6 x 0.9), which let a robot be placed under a cap 0.88 u above.
+  Both fixed (robot colliders off before blocks go live; generator uses the real box).

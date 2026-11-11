@@ -229,8 +229,8 @@ public static partial class LevelDataGenerator
                 artVariant = artVariant, indestructible = indestructible,
                 forceStayKinematic = forceStayKinematic, rotation = rot };
 
-    static LevelData.PlatformSpawnData P(float x, float surfaceY, float width, int variant = 0, bool rolling = false) =>
-        new LevelData.PlatformSpawnData { x = x, surfaceY = surfaceY, width = width, variant = variant, rolling = rolling };
+    static LevelData.PlatformSpawnData P(float x, float surfaceY, float width, int variant = 0, bool rolling = false, float height = 0f) =>
+        new LevelData.PlatformSpawnData { x = x, surfaceY = surfaceY, width = width, variant = variant, rolling = rolling, height = height };
 
     static LevelData.GadgetSpawnData Gd(GadgetType type, float x, float y, float size, float ropeLength = 0f, bool faceLeft = false) =>
         new LevelData.GadgetSpawnData { type = type, position = new Vector2(x, y), size = size, ropeLength = ropeLength, faceLeft = faceLeft };

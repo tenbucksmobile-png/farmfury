@@ -8,7 +8,7 @@ public class StoneBlock : BlockBase
         // as in Angry Birds, but a Cluck now cracks a stone box in ~2 hits and Bessie smashes it in one.
         // 70 -> 30 (2026-11-10, "remove all second strike requirements"): falling debris breaks stone too.
         baseMaxHealth = 30f;
-        baseMass      = 8f;
+        baseMass      = 16f;   // 8 -> 16 (2026-11-11): stone is heavy - a strike on stone barely moves it
         bounciness    = 0.1f;
         // Self-healing — 2026-08-09, same pattern as the fields above. An audit found this
         // prefab still serialized at 2.2 (over 4x wood's own 0.5 death-burst size) — the pre-

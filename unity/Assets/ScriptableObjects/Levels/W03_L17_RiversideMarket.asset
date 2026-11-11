@@ -208,6 +208,7 @@ MonoBehaviour:
     width: 6.6
     variant: 0
     rolling: 0
+    height: 0
   weather: 10
   gadgets:
   - type: 1

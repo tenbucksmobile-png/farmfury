@@ -244,5 +244,6 @@ MonoBehaviour:
     width: 6.4
     variant: 0
     rolling: 0
+    height: 0
   weather: 1
   gadgets: []

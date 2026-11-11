@@ -57,7 +57,7 @@ public class AbilityProjectile : MonoBehaviour
         if (spec.sprite == null) sr.color = new Color(0.55f, 0.35f, 0.2f);
 
         var rb = go.AddComponent<Rigidbody2D>();
-        rb.mass = Mathf.Max(0.1f, spec.mass);
+        rb.mass = Mathf.Max(0.1f, spec.mass * AnimalBase.ImpactMassScale);
         rb.gravityScale = spec.gravityScale;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         rb.linearVelocity = velocity;

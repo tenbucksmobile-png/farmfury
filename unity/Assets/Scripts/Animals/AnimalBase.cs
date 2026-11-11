@@ -8,6 +8,10 @@ using UnityEngine.InputSystem;
 public abstract class AnimalBase : MonoBehaviour
 {
     [Header("Physics")]
+    // Share of an animal's design mass its body carries into a hit (2026-11-11, user: impacts "too high and shoot the
+    // structure apart"). Cluck 8 -> 3.2, Bessie 28 -> 11.2: about a block's weight, enough to tip a well-struck piece,
+    // not to blast a tower apart. Flight is unaffected (gravity doesn't depend on mass). Ability projectiles share it.
+    public const float ImpactMassScale = 0.4f;
     [SerializeField] protected float mass       = 8f;
     [SerializeField] protected float bounciness = 0.4f;
     [SerializeField] protected float linearDrag = 0.008f;
@@ -115,7 +119,7 @@ public abstract class AnimalBase : MonoBehaviour
                                  // so animals moved to 6 and smoke took 5 rather than leaving no
                                  // slot between the cannon and the bird.
 
-        _rb.mass                   = mass;
+        _rb.mass                   = mass * ImpactMassScale;
         _rb.linearDamping          = linearDrag;
         _rb.gravityScale           = 1f;
         _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;

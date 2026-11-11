@@ -81,8 +81,6 @@ needing a live pass before shipping.
   shows it contained with blurred side bars. Fix = a 2400x1080 (20:9) poster with the title / CANNONFIRE sign /
   characters inside the centre 1920x1080 and the bottom-left (Play/Exit) and bottom-right (cog) corners clear; then
   switch LandingScreen's ZoomedCover to cover. Not done yet (needs the art; Kling outpaint ~2 credits is an option).
-- **W2_L17 Whiteout:** its tower is `wonky=False` in `design_world2.py` but the level data hasn't been regenerated /
-  re-probed since (two runs stopped for low memory) — run `.\Run-Unity.ps1 levels`, then probe `FF_PROBE_LEVELS=34,34`.
 - **Not ported yet:** Stampede's Boot scene / Android AAB split + store build scripts, the iOS privacy manifest,
   the Character Story Cosmetics tab.
 - **World 2 (Frozen Tundra) was rebuilt 2026-11-09** and **World 3 (Watermill Village) built 2026-11-10** as 22 framed
@@ -141,7 +139,67 @@ needing a live pass before shipping.
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
-- **2026-11-11 (latest) — World 4 Sky Islands built on the World 1-3 template** (user: "build the next world utilising
+- **2026-11-11 (latest) — Softer impacts; World 4 rebuilt as generated sky cities** (user: impact "too high and shoots
+  the structure apart... just enough to topple should it hit correctly - if it doesnt nothing should happen - for
+  example hitting a stone"; then "make your structures wilder, more absurd... almost like cities of elevation"; chose
+  World 4 first, big & dense). Unverified in Play mode.
+  - **Impact:** `AnimalBase.ImpactMassScale` 0.4 (animal body mass in hits: Cluck 8 -> 3.2, Bessie 28 -> 11.2; ability
+    projectiles too, `AbilityProjectile`); `StoneBlock` baseMass 8 -> 16; the 0.6 x momentum `HitShove` (max 36) and
+    `StackShove` removed — `ShoveOnHit` is now a small tip nudge (0.08 x momentum, max 3) only for a non-stone piece
+    struck above its centre; live block linear damping 0.05 -> 0.3. `PhysicsProbe` gained a test shot
+    (`FF_PROBE_SHOT=high|low`, `FF_PROBE_ANIMAL`, `FF_PROBE_SPEED`; logs `[Probe] SHOT`: toppled / thrown > 3 u / top
+    piece speed / robots lost). World 1, Cluck at 10 u/s, high on the front piece: top speed 15-29 -> 1-9 u/s, thrown
+    pieces 3-15 -> mostly 0-3; stone targets (L14/L15/L18) no longer move; low hits on solid bases do ~nothing, low
+    hits on stilts / legs still bring towers down. All 86 framed levels still stand untouched (no-input probe).
+  - **Sky cities (`tools/design_world4.py`):** absurd pieces (`lollipop`, `upturned` (widens as it rises), `spire`
+    (zig-zag), `balcony`, `teeter_town`, `slab_on_point`, `chimney`, `stone_crown`, `pylon` + `walkway`) and a seeded
+    generator `city()` / `city_level()`: 3-5 peaks per level on a skyline profile (rise / fall / valley / mount /
+    random), a piece on each (sometimes a second stacked on top), walkways between neighbours, robots last
+    (`settle_robots` drops any whose real 0.6 x 0.9 collider would overlap wood, trims to the level's range). A level is
+    the first seed that passes every designer check (`skip=` passes over ones that fell in Unity). Fixed parts per
+    level: thunderclouds, the slide + wheel (L04/L12/L20), the crane (L06), the Storm Baron's keep (L24). Cloud mounts
+    are solid only in their plateau band now (`import_sky_art`: `boxes[:1]` for Cloud*), so peaks overlap like a range;
+    `fit_clouds` no longer lifts clouds (`LIFT_CLOUDS`) and sizes only from pieces touching the plateau. Helpers are
+    named `AT()`/`INSET` — `H`/`P` are Horace/Percy (shadowing them broke the generated C# once).
+  - **Reveal fix (`LevelLoader.GoLiveAfterReveal`):** robot colliders are switched off before the blocks go live.
+    Each robot's pop used to switch its collider off mid-reveal, and ending a touching contact wakes both bodies in
+    Box2D — every pop woke the piece under its robot; balanced roofs shrugged it off, the sky cities' caps and
+    balconies tipped (10 of 24 fell by themselves, non-deterministically). After: 24/24 World 4 cities stand untouched.
+  - Open: solvability with 3 animals against 4-8 robots spread over several peaks is unchecked; Worlds 1-3 not yet
+    rebuilt in the city style (user wants World 4 reviewed first).
+
+- **2026-11-11 — World 4: cloud-mountain mounts, busy sky, backdrop actually on** (user: "insert bigger
+  floating clouds that sit like mountains on which the robot structures are built... your extra floating items - I
+  dont see them"). Unverified in Play mode; designer 24/24 0 issues, PhysicsProbe (no input, `unity/Logs/probe_clouds.log`)
+  all 24 World 4 levels 100% intact, 0 awake, 0 movement, no exceptions.
+  - **Root cause of "I don't see them":** `EnvironmentDepthSystem.CornfieldActive` listed worlds 1-3 only, so World 4's
+    whole framed stack (cloud bank, isle soil, isles band, silhouettes, `CornfieldAmbience` weather, `SkyDecor`) never
+    switched on — World 4 showed only the plain fallback painting. Now worlds 1-4.
+  - **SkyDecor** is three depth bands: far (small, hazed toward the horizon, order -36 behind the haze veil), mid (-34 /
+    lanterns -33), near (large, -29, in front of the isles band, behind the play layer): 5 balloons drifting both ways,
+    4 kites, 2 floating plums, 7 lanterns, 0.02-0.15 of the screen height.
+  - **Cloud mountains** replace the floating isle and rock as World 4 mounts 0/1/2 (`Mount_CloudLow/Mid/Tall.png`,
+    `MountMeasurementsW4.Cloud*`): all-cloud mesas with a flat plateau, standing on the ground, split from one Kling
+    sheet (`SkyIsland/Framed/W4CloudMountains.png`, guided by a hand-drawn flat-top mesa template + StormCloud.png as
+    style; two text-only misses kept as `W4CloudMountains_miss1/2.png`; 6 credits). Base cropped flat (grows out of the
+    cloud floor). New `PlatformSpawnData.height` (0 = art aspect; `P(..., height:)`) stretches a mount vertically
+    (LevelLoader scales colliders by x and y separately).
+  - **Designer:** `design_world4.isle()/rock()` now call `cloud()`; `fit_clouds()` sizes each cloud to what stands on
+    its plateau (+0.35 u), picks the shape, stretches <= 1.3x, and raises a too-flat cloud (< 0.85 of its art's
+    proportion, capped at G + 4) lifting everything on it. `cloud_checks()` flags pieces / robots / gadgets inside a
+    cloud. Moved to clear the wider bases: thunderclouds on L01/L11/L23, L10's right rock (13.3), L24's stone stack (5.4).
+  - **No grass in the sky (follow-up, user: "theres no grass in the sky... a row of windmills and other items in the
+    background that we should remove"):** the ground strip `SkySoil.png` is now a cloud floor (Kling `W4CloudFloor.png`;
+    `import_sky_art.cloud_floor` clears the puff poking above the flat band and fills the gaps below with cloud blue
+    fading to `SkyUnderfill`; `SkySoilGroundUV` 0.749 -> 0.929); the slide ramp's grassy rock is a cloud plateau
+    (`W4RampCloud.png`, Ramp surfaceUV 0.997, aspect 2.424). The isles band (`SkyMid`, the windmill/temple row) and the
+    cloud-bank wall (`SkyWall`, read as a dashed fence over the new floor) are off for World 4 (`ThemeMid`/`ThemeWall`
+    null for Sky; still wired). Kling 4 more credits (10 total for this round). Compiled / probed: NOT yet — the Editor
+    was open; run Generate All Level Data (the ramp levels L04/L12/L20 moved with the new ramp measurements).
+  - The same `levels` run finally regenerated W2_L17 Whiteout / W3_L15 Thunderhead (`wonky=False`): both probe clean
+    (`unity/Logs/probe_w2w3.log`).
+
+- **2026-11-11 — World 4 Sky Islands built on the World 1-3 template** (user: "build the next world utilising
   the exact process you have used for every world build... use the artwork available, but access kling AI for new art
   required, like the cannon and scenery (use credits most efficiently)"). Unverified in Play mode; designer-checked
   (24/24, 0 issues) and PhysicsProbe-checked (no input, `unity/Logs/probe_w4.log`): all 24 World 4 levels 100% intact, 0 awake, 0 movement
@@ -165,7 +223,8 @@ needing a live pass before shipping.
   - **Pieces:** `BlockBase._spr*W4` — sky timber post/plank (WoodBlock), marble block / column / slab (StoneBlock),
     cloud bales (HaybaleBlock, also the cannon mount `CatapultLauncher._mountBaleSpriteW4`).
   - **Cannon:** `CatapultLauncher._cannonSpriteW4` = the Sky Cannon (Cannon.png's canvas, PPU 384).
-  - **Mounts:** `LevelLoader._platformSpritesW4` + `MountsW4`: wide isle (0/1), floating rock (2), stone pillar (3), sky
+  - **Mounts:** `LevelLoader._platformSpritesW4` + `MountsW4`: cloud mountains low / mid / tall (0/1/2, were the wide isle
+    and floating rock until the cloud-mountain change above), stone pillar (3), sky
     dock (4), none (5, falls back to World 1's wagon - unused), slide ramp (6).
   - **Contraptions:** `GadgetType.StormCloud` (`Sunflower` storm mode: three white flashes, two volleys of lightning
     bolts at -55..10 deg, each bursting and shoving), `GadgetType.ThunderWheel` (`RollingBoulder`), the sky crane

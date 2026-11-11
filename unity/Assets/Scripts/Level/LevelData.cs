@@ -75,6 +75,9 @@ public class LevelData : ScriptableObject
         // Wagon only: parked (static) until something hits it, then rolls (RollingWagon) — e.g. off a ramp's plateau
         // and down into a structure below. surfaceY is then the wagon bed's top.
         public bool  rolling;
+        // Visual height in world units (2026-11-11, World 4 cloud mountains): stretches the art vertically so a ground-
+        // standing mount reaches a chosen surface height. 0 = keep the art's own aspect (every older asset).
+        public float height;
     }
 
     [Serializable]

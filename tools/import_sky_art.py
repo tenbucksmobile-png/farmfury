@@ -85,6 +85,27 @@ def split_pieces(path):
                 block=square[0]["img"], bale=square[1]["img"])
 
 
+def cloud_floor(rgba):
+    """The Kling cloud floor is a flat packed-cloud band with puffs hanging below and gaps between them, and one puff
+    poking above the band. Make it a solid floor: clear everything above the band's top edge, then fill the gaps below
+    with cloud blue that matches EnvironmentDepthSystem.SkyUnderfill at the bottom (so it runs on into the underfill)."""
+    out = rgba.astype(np.float32)
+    a = out[:, :, 3] > 128
+    h, w = a.shape
+    rows = a[:, int(w * 0.05):int(w * 0.95)].mean(axis=1)
+    top = int(np.nonzero(rows >= 0.9)[0][0])               # the band's top outline: first nearly full-width row
+    out[: max(0, top - 2), :, 3] = 0
+    fill_top = np.array([236, 244, 253], np.float32)
+    fill_bot = np.array([219, 235, 252], np.float32)       # = SkyUnderfill (0.86, 0.92, 0.99)
+    for y in range(top + 4, h):
+        t = (y - top) / max(1, h - top)
+        col = fill_top * (1 - t) + fill_bot * t
+        k = out[y, :, 3:4] / 255.0
+        out[y, :, :3] = out[y, :, :3] * k + col * (1 - k)
+        out[y, :, 3] = 255
+    return out.clip(0, 255).astype(np.uint8)
+
+
 def bolt_sprite(w=96, h=220):
     """A cartoon lightning bolt (the storm cloud's projectile), drawn here rather than generated."""
     im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -112,7 +133,10 @@ def main():
     save(wall, OUT, "SkyWall.png")
 
     # Ground: the floating-island strip; the grass line is the top of the solid grass band under the clover leaves.
-    soil = trim(keep_main(strip_ground_line(key_magenta(p("W4Soil.png"))), frac=0.3))
+    # 2026-11-11: a cloud floor (W4CloudFloor.png) replaced the grassy island top W4Soil.png (user: "theres no grass in
+    # the sky"); the "grass line" is now the flat top of the packed cloud.
+    soil = trim(keep_main(strip_ground_line(key_magenta(p("W4CloudFloor.png"))), frac=0.3))
+    soil = cloud_floor(soil)
     sh, sw = soil.shape[:2]
     soil = soil[:, int(sw * 0.06):int(sw * 0.94)]        # shave the rounded ends so mirrored tiles meet
     sh, sw = soil.shape[:2]
@@ -215,31 +239,53 @@ def main():
 # Sky mounts (LevelLoader mount variants for World 4 levels): 0/1 wide floating isle, 2 hill = small floating rock,
 # 3 mesa = cloud-wrapped stone pillar, 4 scaffold = sky dock, 6 ramp = the slide ramp. No rolling wagon (variant 5).
 MOUNTS = {  # name -> (source, kind, keyer)
-    "Isle":   ("W4Soil.png", "island", "magenta"),
-    "Rock":   ("W4Island.png", "island", "magenta"),
+    # Cloud mountains (2026-11-11, user: "bigger floating clouds that sit like mountains on which the robot structures
+    # are built"): three shapes split from one Kling sheet (W4CloudMountains.png, guided by a flat-top mesa template),
+    # standing on the ground. They replaced the floating isle (W4Soil) and rock (W4Island) as mounts 0/1/2.
+    "CloudLow":  ("W4CloudMountains.png#0", "solid", "magenta"),
+    "CloudMid":  ("W4CloudMountains.png#1", "solid", "magenta"),
+    "CloudTall": ("W4CloudMountains.png#2", "solid", "magenta"),
     "Pillar": (os.path.join(SKY_UI, "StonePillar.png"), "solid", "alpha"),
     "Dock":   ("W4Dock.png", "deck", "magenta"),
-    "Ramp":   ("W4Ramp.png", "profile", "magenta"),
+    "Ramp":   ("W4RampCloud.png", "profile", "magenta"),   # cloud plateau + slide (was the grassy rock, W4Ramp.png)
 }
+
+
+def sheet_part(rgba, index, count=3):
+    """The index-th (left to right) of the `count` largest separate shapes on a sheet."""
+    solid = rgba[:, :, 3] > 40
+    lab, n = ndimage.label(solid)
+    area = ndimage.sum(solid, lab, index=np.arange(1, n + 1))
+    big = sorted(np.argsort(area)[::-1][:count] + 1, key=lambda i: np.nonzero(lab == i)[1].mean())
+    out = rgba.copy()
+    out[lab != big[index], 3] = 0
+    return trim(out)
 
 
 def import_mounts(crane_meas):
     data, cs = {}, []
     for name, (src, kind, keyer) in MOUNTS.items():
+        part = None
+        if "#" in src: src, part = src.split("#"); part = int(part)
         path = src if os.path.isabs(src) else os.path.join(SRC, src)
         rgba = load_rgba(path) if keyer == "alpha" else key_magenta(path)
+        if part is not None: rgba = sheet_part(rgba, part)
         rgba = trim(keep_main(strip_ground_line(rgba), frac=0.3))
         if name == "Isle":
             rgba = rgba[:, int(rgba.shape[1] * 0.02):int(rgba.shape[1] * 0.98)].copy()
+        if name.startswith("Cloud"):   # cut the rounded bottom puffs flat: the mountain grows out of the cloud floor
+            rgba = trim(rgba[: int(rgba.shape[0] * 0.95)].copy())
         rgba = downsize(rgba, 1600)
         save(rgba, OUT, f"Mount_{name}.png")
         h, w = rgba.shape[:2]
-        if kind == "island":
+        if kind == "island" and not name.startswith("Cloud"):
             top = solid_top(rgba[: int(h * 0.6)], int(w * 0.25), int(w * 0.75), frac=0.99)
             uv = (h - (top + 10)) / h
             boxes, flat, poly = [(0.04, 0.96, 0.25, uv)], (0.04, 0.96), None
         else:
             uv, boxes, flat, poly = measure_mount(rgba, kind)
+            if name.startswith("Cloud"):   # only the plateau band is solid: the cloud body below is soft (2026-11-11 sky
+                boxes = boxes[:1]          # cities: neighbouring peaks overlap like a range, debris sinks into the fog)
         data[name] = dict(uv=uv, aspect=w / h, boxes=boxes, flat=flat, poly=poly)
         print(f"  {name}: surfaceUV {uv:.3f}, flat top x {flat[0]:.2f}-{flat[1]:.2f}, {len(boxes)} solids, aspect {w / h:.3f}")
         v4 = ", ".join(f"new Vector4({b[0]:.3f}f, {b[1]:.3f}f, {b[2]:.3f}f, {b[3]:.3f}f)" for b in boxes)

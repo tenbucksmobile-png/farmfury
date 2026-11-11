@@ -135,9 +135,14 @@ public abstract class BlockBase : MonoBehaviour
     // tips easily even under the lower gravity — the "topples easier when struck" half of the same request.
     // 2026-11-10 ("remove all second strike requirements"): one soft strike must start the topple, so the shove is
     // stronger and also leans the stack resting on and beside the struck block (StackShove), not only the block itself.
-    const float HitShoveFraction = 0.6f, HitShoveMax = 36f;
-    const float StackShoveFraction = 0.35f;   // of the shove, given to each block in the struck stack (above / touching)
-    const float StackShoveHeight = 6f;        // how far up the stack the lean reaches (world units)
+    // 2026-11-11 (user: "the impact ... is too high and shoots the structure apart - striking the structure is just
+    // enough to topple should it hit correctly - if it doesnt nothing should happen - for example hitting a stone"):
+    // the 0.6 x momentum shove (max 36) and the StackShove that pushed every block above the struck one are gone. What
+    // is left is a small tipping nudge for a LIGHT piece (wood / hay / barrel, not stone) struck ABOVE its middle — the
+    // "hit it right" case; a low hit or a hit on stone gets only the real collision. Animals now carry
+    // AnimalBase.ImpactMassScale of their mass into hits and stone is twice as dense (StoneBlock), so the collision
+    // itself no longer throws pieces across the level.
+    const float TipNudgeFraction = 0.08f, TipNudgeMax = 3f;
     // No bounce: bouncy contacts made an awake stack jiggle and creep until it toppled (PhysicsProbe, 2026-11-08).
     static PhysicsMaterial2D _liveMaterial;
     // Friction 0.9 -> 0.6 and angular damping 0.6 -> 0.15 (2026-11-09, user: structures must "topple easier"): a hit
@@ -156,7 +161,7 @@ public abstract class BlockBase : MonoBehaviour
         _rb.gravityScale = LiveGravityScale;
         _rb.linearVelocity = Vector2.zero;
         _rb.angularVelocity = 0f;
-        _rb.linearDamping = 0.05f;
+        _rb.linearDamping = 0.3f;     // 0.05 -> 0.3 (2026-11-11): loose pieces drop rather than fly across the level
         _rb.angularDamping = 0.04f;   // 0.15 -> 0.04 (2026-11-10): the lean builds up instead of being braked
         if (_col != null) _col.sharedMaterial = LiveMaterial;
         _rb.Sleep();
@@ -173,44 +178,23 @@ public abstract class BlockBase : MonoBehaviour
         _rb.Sleep();
     }
 
-    // An animal or a thrown ability projectile striking a live block pushes it over at the point of contact (torque),
-    // on top of the ordinary collision response.
+    // An animal or a thrown ability projectile striking a light live block high up tips it a little further (see
+    // TipNudgeFraction): a gentle torque at the contact point, never a throw. Stone and low hits: nothing extra.
     void ShoveOnHit(Collision2D col)
     {
-        if (!IsLive || IsDestroyed || _rb == null || _rb.bodyType != RigidbodyType2D.Dynamic) return;
+        if (!IsLive || IsDestroyed || _rb == null || _rb.bodyType != RigidbodyType2D.Dynamic || _col == null) return;
+        if (this is StoneBlock) return;
         var other = col.rigidbody;
         if (other == null || (other.GetComponent<AnimalBase>() == null && other.GetComponent<AbilityProjectile>() == null
                               && other.GetComponent<EggProjectile>() == null)) return;
-        float push = Mathf.Min(HitShoveMax, HitShoveFraction * other.mass * col.relativeVelocity.magnitude);
-        if (push < 0.5f) return;
+        Vector2 at = col.contactCount > 0 ? col.GetContact(0).point : (Vector2)transform.position;
+        if (at.y <= _col.bounds.center.y) return;            // struck low: no tipping help
+        float push = Mathf.Min(TipNudgeMax, TipNudgeFraction * other.mass * col.relativeVelocity.magnitude);
+        if (push < 0.2f) return;
         float side = Mathf.Sign(transform.position.x - other.position.x);
         if (side == 0f) side = 1f;
-        Vector2 at = col.contactCount > 0 ? col.GetContact(0).point : (Vector2)transform.position;
         _rb.WakeUp();
-        _rb.AddForceAtPosition(new Vector2(side, 0.12f).normalized * push, at, ForceMode2D.Impulse);
-        StackShove(side, push);
-    }
-
-    // The rest of the struck stack leans the same way: every live block whose footprint overlaps this one's (widened a
-    // little) and that rests above it, up to StackShoveHeight, gets a gentle push applied high on its body — a torque
-    // that tips it rather than sliding it — falling off with height so the top lags and the tower leans as one.
-    void StackShove(float side, float push)
-    {
-        if (_col == null) return;
-        Bounds b = _col.bounds;
-        var centre = new Vector2(b.center.x, b.min.y + StackShoveHeight * 0.5f);
-        var size = new Vector2(b.size.x + 0.6f, StackShoveHeight);
-        foreach (var hit in Physics2D.OverlapBoxAll(centre, size, 0f, 1 << 8))
-        {
-            var other = hit != null ? hit.GetComponentInParent<BlockBase>() : null;
-            if (other == null || other == this || !other.IsLive || other.IsDestroyed || other._rb == null) continue;
-            if (other._rb.bodyType != RigidbodyType2D.Dynamic) continue;
-            Bounds ob = hit.bounds;
-            if (ob.center.y < b.min.y) continue;   // below the strike: stays put
-            float k = StackShoveFraction * Mathf.Lerp(1f, 0.4f, Mathf.Clamp01((ob.center.y - b.center.y) / StackShoveHeight));
-            other._rb.WakeUp();
-            other._rb.AddForceAtPosition(new Vector2(side, 0f) * push * k, new Vector2(ob.center.x, ob.max.y), ForceMode2D.Impulse);
-        }
+        _rb.AddForceAtPosition(new Vector2(side, 0f) * push, at, ForceMode2D.Impulse);
     }
 
     // DestroyBlock wakes the neighbours, but the block's collider lingers for DestroyDelay (0.12 s) — long enough for

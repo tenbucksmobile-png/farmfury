@@ -3,17 +3,19 @@ using UnityEngine;
 
 public static class MountMeasurementsW4
 {
-    public const float IsleUV = 0.743f;
-    public static readonly Vector4[] IsleSolids = { new Vector4(0.040f, 0.960f, 0.250f, 0.743f) };
-    public const float RockUV = 0.880f;
-    public static readonly Vector4[] RockSolids = { new Vector4(0.040f, 0.960f, 0.250f, 0.880f) };
+    public const float CloudLowUV = 0.991f;
+    public static readonly Vector4[] CloudLowSolids = { new Vector4(0.243f, 0.779f, 0.665f, 0.991f) };
+    public const float CloudMidUV = 0.992f;
+    public static readonly Vector4[] CloudMidSolids = { new Vector4(0.255f, 0.750f, 0.665f, 0.992f) };
+    public const float CloudTallUV = 0.992f;
+    public static readonly Vector4[] CloudTallSolids = { new Vector4(0.286f, 0.762f, 0.664f, 0.992f) };
     public const float PillarUV = 0.946f;
     public static readonly Vector4[] PillarSolids = { new Vector4(0.209f, 0.712f, 0.634f, 0.946f), new Vector4(0.143f, 0.854f, 0.317f, 0.634f), new Vector4(0.450f, 0.550f, 0.000f, 0.317f) };
     public const float DockUV = 0.985f;
     public static readonly Vector4[] DockSolids = { new Vector4(0.014f, 0.961f, 0.851f, 0.985f) };
-    public const float RampUV = 0.960f;
+    public const float RampUV = 0.997f;
     public static readonly Vector4[] RampSolids = {  };
-    public static readonly Vector2[] RampPoly = { new Vector2(0.020f, 0.000f), new Vector2(0.020f, 0.843f), new Vector2(0.060f, 0.923f), new Vector2(0.100f, 0.960f), new Vector2(0.139f, 0.960f), new Vector2(0.180f, 0.956f), new Vector2(0.219f, 0.957f), new Vector2(0.260f, 0.960f), new Vector2(0.300f, 0.960f), new Vector2(0.340f, 0.960f), new Vector2(0.380f, 0.944f), new Vector2(0.420f, 0.883f), new Vector2(0.460f, 0.821f), new Vector2(0.500f, 0.769f), new Vector2(0.540f, 0.714f), new Vector2(0.579f, 0.661f), new Vector2(0.620f, 0.605f), new Vector2(0.660f, 0.550f), new Vector2(0.700f, 0.493f), new Vector2(0.740f, 0.437f), new Vector2(0.779f, 0.380f), new Vector2(0.820f, 0.322f), new Vector2(0.860f, 0.264f), new Vector2(0.899f, 0.214f), new Vector2(0.940f, 0.194f), new Vector2(0.980f, 0.162f), new Vector2(0.980f, 0.000f) };
+    public static readonly Vector2[] RampPoly = { new Vector2(0.020f, 0.000f), new Vector2(0.020f, 0.353f), new Vector2(0.060f, 0.688f), new Vector2(0.100f, 0.961f), new Vector2(0.139f, 0.997f), new Vector2(0.180f, 0.997f), new Vector2(0.219f, 0.997f), new Vector2(0.260f, 0.997f), new Vector2(0.300f, 0.997f), new Vector2(0.340f, 0.985f), new Vector2(0.380f, 0.950f), new Vector2(0.420f, 0.917f), new Vector2(0.460f, 0.864f), new Vector2(0.500f, 0.806f), new Vector2(0.540f, 0.748f), new Vector2(0.579f, 0.691f), new Vector2(0.620f, 0.632f), new Vector2(0.660f, 0.573f), new Vector2(0.700f, 0.514f), new Vector2(0.740f, 0.455f), new Vector2(0.779f, 0.395f), new Vector2(0.820f, 0.333f), new Vector2(0.860f, 0.271f), new Vector2(0.899f, 0.221f), new Vector2(0.940f, 0.202f), new Vector2(0.980f, 0.165f), new Vector2(0.980f, 0.000f) };
     // The sky crane (HayHoist on World 4): rope anchor under the jib's tip and the post centre.
     public static readonly Vector2 SkyCraneAnchor = new Vector2(0.948f, 0.682f);
     public const float SkyCranePost = 0.307f;
