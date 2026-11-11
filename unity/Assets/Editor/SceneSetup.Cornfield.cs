@@ -56,6 +56,31 @@ public static partial class SceneSetup
         WireMillSprite(eds, "_sprMillSoil",   "MillSoil.png");
         WireMillSprite(eds, "_sprMillSilhouetteL", "MillSilhouetteL.png");
         WireMillSprite(eds, "_sprMillSilhouetteR", "MillSilhouetteR.png");
+
+        // World 4 Sky Islands framed stack (2026-11-11, tools/import_sky_art.py).
+        WireSkySprite(eds, "_sprSkyFar",    "SkyFar.png", opaque: true);
+        WireSkySprite(eds, "_sprSkyRidges", "SkyRidges.png");
+        WireSkySprite(eds, "_sprSkyMid",    "SkyMid.png");
+        WireSkySprite(eds, "_sprSkyWall",   "SkyWall.png");
+        WireSkySprite(eds, "_sprSkySoil",   "SkySoil.png");
+        WireSkySprite(eds, "_sprSkySilhouetteL", "SkySilhouetteL.png");
+        WireSkySprite(eds, "_sprSkySilhouetteR", "SkySilhouetteR.png");
+        // Sky decor (SkyDecor, 2026-11-11): Stampede Sky Island props copied by tools/import_sky_art.py.
+        WireSkySprite(eds, "_sprSkyBalloon", "Decor_Balloon.png");
+        WireSkySprite(eds, "_sprSkyKite",    "Decor_Kite.png");
+        WireSkySprite(eds, "_sprSkyLantern", "Decor_Lantern.png");
+        WireSkySprite(eds, "_sprSkyPlum",    "Decor_Plum.png");
+        WireSkySprite(eds, "_sprSkyVane",    "Decor_Windvane.png");
+    }
+
+    const string SkyFolder = "Assets/Sprites/Environment/Sky";
+
+    static void WireSkySprite(SerializedObject so, string field, string file, bool opaque = false)
+    {
+        var sp = LoadSpriteAt($"{SkyFolder}/{file}", opaque);
+        var prop = so.FindProperty(field);
+        if (sp != null && prop != null) { prop.objectReferenceValue = sp; Debug.Log($"[FarmFury] Sky: {field} -> {file}"); }
+        else Debug.LogWarning($"[FarmFury] Sky: {field} not wired ({SkyFolder}/{file} missing?)");
     }
 
     const string MillFolder = "Assets/Sprites/Environment/Watermill";
@@ -133,6 +158,19 @@ public static partial class SceneSetup
             var prop = loader.FindProperty(field);
             if (prop != null) prop.objectReferenceValue = LoadSpriteAt(path, opaque: false);
         }
+        // World 4 contraptions (2026-11-11): thundercloud + bolt, sky crane + thunder wheel (also the rolling wheel).
+        (string field, string path)[] w4 =
+        {
+            ("_stormCloudSprite",   $"{SkyFolder}/StormCloud.png"),
+            ("_boltSprite",         $"{SkyFolder}/Bolt.png"),
+            ("_skyCraneSprite",     $"{SkyFolder}/SkyCrane.png"),
+            ("_thunderWheelSprite", $"{SkyFolder}/ThunderWheel.png"),
+        };
+        foreach (var (field, path) in w4)
+        {
+            var prop = loader.FindProperty(field);
+            if (prop != null) prop.objectReferenceValue = LoadSpriteAt(path, opaque: false);
+        }
         var drop = loader.FindProperty("_waterDropSprite");
         if (drop != null) drop.objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Abilities/WaterSwirl.png");
 
@@ -166,6 +204,13 @@ public static partial class SceneSetup
         w3.arraySize = filesW3.Length;
         for (int i = 0; i < filesW3.Length; i++)
             w3.GetArrayElementAtIndex(i).objectReferenceValue = LoadSpriteAt($"{MillFolder}/{filesW3[i]}", opaque: false);
+        // World 4 mounts (2026-11-11): isle, isle, floating rock, stone pillar, sky dock, (no wagon), slide ramp.
+        var w4 = loader.FindProperty("_platformSpritesW4");
+        if (w4 == null) return;
+        string[] filesW4 = { "Mount_Isle.png", "Mount_Isle.png", "Mount_Rock.png", "Mount_Pillar.png", "Mount_Dock.png", null, "Mount_Ramp.png" };
+        w4.arraySize = filesW4.Length;
+        for (int i = 0; i < filesW4.Length; i++)
+            w4.GetArrayElementAtIndex(i).objectReferenceValue = filesW4[i] == null ? null : LoadSpriteAt($"{SkyFolder}/{filesW4[i]}", opaque: false);
     }
 
     // Thrown-ability art (AbilityProjectile, 2026-11-08): Gerald's feather bombs, Woolly's wool balls, Billy's mud,

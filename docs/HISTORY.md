@@ -560,3 +560,31 @@ Stampede art) — failed: the canvases aren't pixel-identical, the drop shadow w
 ghost. Working version: orange-face + dark-near-face mask voted on the bright-sky canvases, OR-ed with each canvas's
 own mask (thresholded at 0.62 of its sky's brightness — W1 and Frozen Tundra sit a few px off), dilated 15 px,
 OpenCV Telea inpaint, lettering re-pasted from the black-sky canvas (its rim blends to black like the outline).
+
+## 2026-11-11 — World 4 Sky Islands on the World 1-3 template
+
+- **Art strategy:** existing art first. FarmFury_Stampede's Sky Island set supplied the far painting
+  (`SI_Parallax_Far`), the cloud bank (`CloudTile`), the cloud-wrapped stone pillar (tall "mesa" mount), the
+  AnchorCloud (thundercloud contraption), the giant mushroom (corner silhouettes) and the Storm Baron airship boss
+  (two facings + a wrecked pose). The World 4 robots were already imported in `Robot/W4/`.
+- **Kling (10 images, 20 credits; World 3 used 15 / 30):** kling-image-v3_0_omni i2i at 2K, image 1 = the World 3
+  counterpart (shape), image 2 = a style sheet of the Sky Island props, solid magenta. The saving: all six construction
+  pieces (post, plank, marble block / column / slab, cloud bale) were asked for as ONE sheet laid out like World 3's
+  pieces; it came back clean and `split_pieces` cuts it by connected component and shape. Short post / pillar art is
+  stretched by repeating its middle (`lengthen_v`) to World 3's proportions.
+- **Misses (kept, worked around rather than re-generated):** the skiff came back as a rounded blimp with no deck, so
+  World 4 has no rolling-wagon mount — the "runaway" levels roll a thunder wheel down the slide ramp instead; the wide
+  island came back as a boxy rock (used as the small floating rock) — the ground strip (a wide floating-island top
+  with a flat clover line) doubles as the wide isle; the thunder "ball" came back as a ring (fine: the collider is a
+  circle). Kling added stray background clouds on several images — `keep_main` keeps only components >= 15% of the
+  largest. The query endpoint rate-limited one of ~8 parallel polls, as on World 3.
+- **Depth:** the distant-isles strip, tiled small twice (ridges + mid), read as a repeating border of little icons;
+  shown large it competed with the structures. Final: one hazed row high over the cloud horizon, no ridges band, and
+  the far painting anchored just above the ground so its sea of clouds meets the cloud bank (anchoring it to the mid
+  band left a flat pale gap).
+- **Floating rocks:** the rock art hangs ~0.9 x its width below its grass; the first layouts dipped through the
+  ground, so `rock()` asserts the underside clears it.
+- **Contraptions:** the thundercloud is `Sunflower` in storm mode (pump routine's shudder, three white flashes, then
+  two volleys of 4 lightning bolts at -55..10 deg, each a 0.5 u burst with a shove); the sky crane hoists a thunder
+  wheel; the rolling thunder wheel is `RollingBoulder`.
+- **Unverified in Play mode**, like Worlds 1-3's framed rebuilds.

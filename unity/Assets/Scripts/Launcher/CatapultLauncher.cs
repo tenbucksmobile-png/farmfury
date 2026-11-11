@@ -106,6 +106,9 @@ public class CatapultLauncher : MonoBehaviour
     // for a rear wheel, a dripping copper pipe (Kling, tools/import_watermill_art.py). Drawn on Cannon.png's 566x512
     // canvas in the same pose (like the cosmetic skins), so the barrel/loaded-animal offsets still fit.
     [SerializeField] private Sprite     _cannonSpriteW3;
+    // World 4 (Sky Islands, 2026-11-11): the Sky Cannon - striped brass barrel under a little cloud balloon, propeller,
+    // sky-blue carriage (Kling, fitted onto Cannon.png's canvas at PPU 384 so every offset carries over).
+    [SerializeField] private Sprite     _cannonSpriteW4;
 
     // Cannon-relative offsets (world-space, added to the cannon's REST position — recoil never
     // affects the launch point or the loaded-bird position, only the cannon's own sprite).
@@ -418,8 +421,7 @@ public class CatapultLauncher : MonoBehaviour
         FarmFury.Core.HighlightMarkers.Shot(_activeAnimal, birdType, velocity,
             Mathf.InverseLerp(_minSpeedNow, _maxSpeedNow, velocity.magnitude));
         AudioManager.Play(AudioManager.Sound.Launch);
-        if (birdType == AnimalType.Cluck || birdType == AnimalType.Bessie)
-            AudioManager.Instance?.PlayFalling(birdType);
+        AudioManager.Instance?.PlayFalling(birdType);   // every animal's own launch scream (silent if it has none)
 
         if (_fireRoutine != null) StopCoroutine(_fireRoutine);
         _fireRoutine = StartCoroutine(CannonFireSequence());
@@ -469,6 +471,7 @@ public class CatapultLauncher : MonoBehaviour
         if (_cannonSR != null)
             _cannonSR.sprite = (data != null && data.world == 2 && _cannonSpriteW2 != null) ? _cannonSpriteW2
                              : (data != null && data.world == 3 && _cannonSpriteW3 != null) ? _cannonSpriteW3
+                             : (data != null && data.world == 4 && _cannonSpriteW4 != null) ? _cannonSpriteW4
                              : _cannonSprite;
         // Equipped cannon skin (cosmetic, 2026-11-08): same pose and canvas as Cannon.png, so it swaps in place.
         var skin = FarmFury.Core.CosmeticEffects.CannonSkin();
@@ -622,7 +625,9 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private Sprite _mountBaleSpriteW2; // Frozen/FrozenBale.png — snow-capped bales (World 2, 2026-11-09)
     int _mountWorld = 1;
     [SerializeField] private Sprite _mountBaleSpriteW3; // Watermill/FlourSacks.png — stacked flour sacks (World 3, 2026-11-10)
-    Sprite MountSprite => _mountWorld == 2 && _mountBaleSpriteW2 != null ? _mountBaleSpriteW2
+    [SerializeField] private Sprite _mountBaleSpriteW4; // Sky/CloudBale.png — cloud bales tied with gold rope (World 4, 2026-11-11)
+    Sprite MountSprite => _mountWorld == 4 && _mountBaleSpriteW4 != null ? _mountBaleSpriteW4
+                        : _mountWorld == 2 && _mountBaleSpriteW2 != null ? _mountBaleSpriteW2
                         : _mountWorld == 3 && _mountBaleSpriteW3 != null ? _mountBaleSpriteW3
                         : _mountBaleSprite;
     const float MountBaleSize   = 1.15f;   // world units per bale (sprite is square)
@@ -649,6 +654,7 @@ public class CatapultLauncher : MonoBehaviour
 
     void ApplyMount(bool on, float groundY)
     {
+        _floating = false;
         if (_cannonGO != null) _cannonGO.transform.position = _cannonScenePos;
         _cannonRestPos = _cannonScenePos;
         if (!on || MountSprite == null)
@@ -682,7 +688,38 @@ public class CatapultLauncher : MonoBehaviour
         _mount.SetActive(true);
         foreach (var sr in _mount.GetComponentsInChildren<SpriteRenderer>(true)) sr.sprite = MountSprite;   // per world
         _mount.transform.position = new Vector3(_cannonScenePos.x + CannonWheelOffsetX, groundY, 0f);
+        _floating = _mountWorld == 4;
+        _floatBase = _cannonRestPos;
+        _mountBase = _mount.transform.position;
     }
+
+    // ── World 4: the cannon floats (2026-11-11, user: "make it a little more difficult with the cannon floating on the
+    // clouds it is embedded on") ─────────────────────────────────────────────────────────────────────────────────────
+    // The cloud-bale mount and the cannon on it bob slowly up and down, and so does everything derived from
+    // _cannonRestPos: the barrel tip the shot leaves from, the aim pivot, the loaded animal and the trajectory preview.
+    // The player has to time the release.
+    // Vertical only: the recoil animates the cannon's x, a sideways sway would fight it.
+    const float FloatAmp = 0.28f, FloatPeriod = 3.4f;
+    bool _floating;
+    Vector3 _floatBase, _mountBase;
+
+    void LateUpdate()
+    {
+        if (!_floating || _mount == null || !_mount.activeSelf) return;
+        float t = Time.time * (2f * Mathf.PI / FloatPeriod);
+        var off = new Vector3(0f, Mathf.Sin(t) * FloatAmp, 0f);
+        _cannonRestPos = _floatBase + off;
+        if (_cannonGO != null)
+        {
+            Vector3 p = _cannonGO.transform.position;   // x stays the recoil's
+            _cannonGO.transform.position = new Vector3(p.x, _cannonRestPos.y, p.z);
+        }
+        _mount.transform.position = _mountBase + off;
+        RefreshRestPoint();
+        if (_readyBird != null && !_readyBird.IsLaunched)
+            _readyBird.transform.position = _cannonRestPos + (Vector3)CannonLoadedBirdOffset;
+    }
+
 
     // Procedural smoke-puff particle system: cone burst, fades out, drifts slightly upward.
     void BuildSmokeParticles()

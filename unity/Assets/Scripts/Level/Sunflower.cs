@@ -26,9 +26,13 @@ public class Sunflower : MonoBehaviour
     // to the right — more droplets, lower and harder than the sunflower's fan, each one splashing (pushes + damages
     // in a small radius). Afterwards the pump stays put, run dry (darker).
     bool _pump;
+    // World 4 thundercloud (2026-11-11): it flashes white and crackles, then hurls lightning bolts down and to the right
+    // into the structure (two quick volleys); each bolt bursts in a small radius and shoves what it hits. Afterwards
+    // the cloud stays, spent (greyer).
+    bool _storm;
 
     public static Sunflower Spawn(Transform parent, Sprite flower, Sprite seed, Vector2 basePos, float height, bool crystal = false,
-                                  bool pump = false)
+                                  bool pump = false, bool storm = false)
     {
         var go = new GameObject("Sunflower");
         go.transform.SetParent(parent, false);
@@ -65,9 +69,11 @@ public class Sunflower : MonoBehaviour
         f._seedSprite = seed;
         f._height = height;
         f._crystal = crystal;
-        f._pump = pump;
+        f._pump = pump || storm;
+        f._storm = storm;
         if (crystal) go.name = "IceCrystal";
         if (pump) go.name = "WaterPump";
+        if (storm) go.name = "StormCloud";
         return f;
     }
 
@@ -145,6 +151,7 @@ public class Sunflower : MonoBehaviour
             yield return null;
         }
         transform.localScale = s0; transform.position = p0;
+        if (_storm) { yield return StormRoutine(basePos); yield break; }
         // The spout: upper right of the pump (~0.7 of its height, a little right of centre).
         Vector3 spout = basePos + transform.up * (_height * 0.7f) + transform.right * (_height * 0.18f);
         var spec = new AbilityProjectile.Spec
@@ -170,6 +177,42 @@ public class Sunflower : MonoBehaviour
         // Run dry: a little darker, as if the wet sheen is gone.
         Color c0 = _sr.color, dry = new Color(0.72f, 0.72f, 0.76f);
         for (float t = 0f; t < 0.5f; t += Time.deltaTime) { _sr.color = Color.Lerp(c0, dry, t / 0.5f); yield return null; }
+    }
+
+    const int   StormBolts = 8;
+    const float StormAngleMin = -55f, StormAngleMax = 10f, StormSpeedMin = 10f, StormSpeedMax = 14f;
+
+    IEnumerator StormRoutine(Vector3 basePos)
+    {
+        Color c0 = _sr.color;
+        for (int k = 0; k < 3; k++)   // crackle: three white flashes
+        {
+            _sr.color = Color.white * 1.4f; yield return new WaitForSeconds(0.05f);
+            _sr.color = c0;                 yield return new WaitForSeconds(0.05f);
+        }
+        Vector3 from = basePos + transform.up * (_height * 0.55f) + transform.right * (_height * 0.25f);
+        var spec = new AbilityProjectile.Spec
+        {
+            sprite = _seedSprite, burstSprite = null, size = 0.42f, mass = 1.2f, bounciness = 0f, gravityScale = 0.3f,
+            hits = 1, blockDamage = 18f, burstRadius = 0.5f, burstPush = 4f, robotHits = 1, spin = 0f, life = 3f,
+        };
+        for (int volley = 0; volley < 2; volley++)
+        {
+            for (int i = 0; i < StormBolts / 2; i++)
+            {
+                float a = Mathf.Lerp(StormAngleMin, StormAngleMax, (i + Random.Range(-0.3f, 0.3f)) / (StormBolts / 2 - 1)) * Mathf.Deg2Rad;
+                var dir = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                var p = AbilityProjectile.Spawn(spec, from + new Vector3(0.1f, Random.Range(-0.1f, 0.1f), 0f),
+                                                dir * Random.Range(StormSpeedMin, StormSpeedMax), null, 7);
+                p.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + 90f);
+                if (_seedSprite == null) p.GetComponent<SpriteRenderer>().sprite = MakeFallbackSprite();
+            }
+            AudioManager.Play(AudioManager.Sound.RobotHit);
+            CameraShake.Shake(0.12f, 0.14f);
+            yield return new WaitForSeconds(0.18f);
+        }
+        Color spent = new Color(0.62f, 0.66f, 0.74f);
+        for (float t = 0f; t < 0.5f; t += Time.deltaTime) { _sr.color = Color.Lerp(c0, spent, t / 0.5f); yield return null; }
     }
 
     IEnumerator Rotate(Quaternion from, Quaternion to, float seconds)

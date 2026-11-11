@@ -62,6 +62,7 @@ public static partial class SceneSetup
         EnsureAppIcon();            // Sprites/AppIcon.png -> default app icon (SceneSetup.Worlds.cs)
         EnsureWorldRobotPrefabs();  // Worlds 3-9: W<N>_<Tier>Robot prefabs from Stampede art (SceneSetup.Worlds.cs)
         EnsureMillMaulerPrefab();   // MillMaulerRobot.prefab (World 3 boss, 2026-11-10) — before WireLevelLoader wires it
+        EnsureStormBaronPrefab();   // StormBaronRobot.prefab (World 4 boss, 2026-11-11) — same reason
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
         WireAbilityProjectiles(); // Gerald/Woolly/Billy thrown-ability art (SceneSetup.Cornfield.cs)
         WireBessieAudio();      // BessieAnimal.prefab: _earthquakeClip <- Bessie_Earthquake.mp3
@@ -1108,8 +1109,18 @@ public static partial class SceneSetup
             ab.GetArrayElementAtIndex(i).objectReferenceValue = clip;
             if (clip != null) k++;
         }
+        // Launch screams (2026-11-11): Assets/Audio/Falling/<Animal>_Falling.mp3, index = AnimalType.
+        var fl = so.FindProperty("_fallingClips");
+        fl.arraySize = animals.Length;
+        int f = 0;
+        for (int i = 0; i < animals.Length; i++)
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/Audio/Falling/{animals[i]}_Falling.mp3");
+            fl.GetArrayElementAtIndex(i).objectReferenceValue = clip;
+            if (clip != null) f++;
+        }
         so.ApplyModifiedProperties();
-        Debug.Log($"[FarmFury] AudioManager: {n} world tracks, {k} ability sounds wired.");
+        Debug.Log($"[FarmFury] AudioManager: {n} world tracks, {k} ability sounds, {f} launch screams wired.");
     }
 
     static void WireAudioClip(GameObject go, string fieldName, string path)
@@ -1386,6 +1397,16 @@ public static partial class SceneSetup
         var sacks = AssetDatabase.LoadAssetAtPath<Sprite>(flourSacks);
         if (sacks != null) so.FindProperty("_mountBaleSpriteW3").objectReferenceValue = sacks;
 
+        // World 4 (Sky Islands, 2026-11-11): the Sky Cannon on Cannon.png's canvas (PPU 384); cloud bales for the mount.
+        const string skyCannon = "Assets/Sprites/Environment/Launchers/SkyCannon.png";
+        EnsureSingleSprite(skyCannon, 384);
+        var skyCannonSprite = AssetDatabase.LoadAssetAtPath<Sprite>(skyCannon);
+        if (skyCannonSprite != null) so.FindProperty("_cannonSpriteW4").objectReferenceValue = skyCannonSprite;
+        const string cloudBale = "Assets/Sprites/Environment/Sky/CloudBale.png";
+        EnsureSingleSprite(cloudBale, 500);
+        var bales = AssetDatabase.LoadAssetAtPath<Sprite>(cloudBale);
+        if (bales != null) so.FindProperty("_mountBaleSpriteW4").objectReferenceValue = bales;
+
         so.FindProperty("_cannonGO").objectReferenceValue = cannonGO;
 
         so.ApplyModifiedProperties();
@@ -1553,6 +1574,26 @@ public static partial class SceneSetup
         WireBlockPrefab("Assets/Prefabs/Blocks/HaybaleBlock.prefab", millFolder, new[]
         {
             ("_sprNormalW3", "FlourSacks.png"), ("_sprHorizontalW3", "FlourSacks.png"), ("_sprVerticalW3", "FlourSacks.png"),
+        });
+
+        // World 4 Sky Islands (2026-11-11, tools/import_sky_art.py): sky-blue airship timber, white marble (block,
+        // column, lintel slab) and cloud bales. Crates and barrels keep their World 1 art.
+        const string skyFolder = "Assets/Sprites/Environment/Sky";
+        WireBlockPrefab("Assets/Prefabs/Blocks/WoodBlock.prefab", skyFolder, new[]
+        {
+            ("_sprVerticalW4",   "SkyPost.png"),
+            ("_sprHorizontalW4", "SkyPlank.png"),
+        });
+        WireBlockPrefab("Assets/Prefabs/Blocks/StoneBlock.prefab", skyFolder, new[]
+        {
+            ("_sprNormalW4",     "SkyBlock.png"),
+            ("_sprShortW4",      "SkyBlock.png"),
+            ("_sprVerticalW4",   "SkyPillar.png"),
+            ("_sprHorizontalW4", "SkySlab.png"),
+        });
+        WireBlockPrefab("Assets/Prefabs/Blocks/HaybaleBlock.prefab", skyFolder, new[]
+        {
+            ("_sprNormalW4", "CloudBale.png"), ("_sprHorizontalW4", "CloudBale.png"), ("_sprVerticalW4", "CloudBale.png"),
         });
     }
 
@@ -2239,6 +2280,11 @@ public static partial class SceneSetup
     // tools/import_watermill_art.py — no _Explode pose, so the death burst is the generic Explosion.png).
     static void EnsureMillMaulerPrefab() =>
         EnsureBossRobotPrefab("MillMaulerRobot", "Assets/Sprites/Enemies/Robot/MillMauler");
+
+    // World 4's boss (2026-11-11): the Storm Baron airship (Stampede's Sky Islands boss; StormBaron.png / _Alert / _Hit
+    // from tools/import_sky_art.py — no _Explode pose, so the death burst is the generic fire burst + dust).
+    static void EnsureStormBaronPrefab() =>
+        EnsureBossRobotPrefab("StormBaronRobot", "Assets/Sprites/Enemies/Robot/StormBaron");
 
     static void EnsureBossRobotPrefab(string prefabName, string spriteBase)
     {

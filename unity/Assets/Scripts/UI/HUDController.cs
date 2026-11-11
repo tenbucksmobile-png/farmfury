@@ -206,10 +206,12 @@ public class HUDController : MonoBehaviour
         _birdQueueRoot = rt;
     }
 
-    // Round pause button, top-right of the safe area, the franchise round-button size (160).
+    // Round pause button, top-right of the safe area (96, smaller than the menus' round buttons).
     void BuildPauseButton(Transform canvas)
     {
-        const float btnSize = FarmFury.UI.UIKit.RoundButtonSize;
+        // Pause / Locker / Switch sit over the play area: smaller than the menus' round buttons (2026-11-11, user:
+        // "dont forget the pause button on the gameplay").
+        const float btnSize = 96f;
         const float inset   = 16f;
 
         var rootGO = new GameObject("TopRightButtons");

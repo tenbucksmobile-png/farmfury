@@ -33,7 +33,9 @@ POSES = {
                'Impact': 'Ducky/Impact.png', 'Trigger': 'Ducky/Launch.png'},
     'Billy':  {'Idle': 'Billy/Billy_Front.png', 'Loaded': 'Billy/Loaded.png', 'in flight': 'Billy/InFlight.png',
                'Impact': 'Billy/Impact.png', 'Trigger': 'Billy/Trigger1.png'},
-    'Gerald': {'Idle': 'Gerald/Idle.png', 'Loaded': 'Gerald/Launch.png', 'in flight': 'Gerald/inflight.png',
+    # Gerald (2026-11-11, user: "Gerald - he faces the wrong way"): his flight art is mirrored to face right (the way
+    # shots fly) and his loaded pose is a Kling side-on crouch (magenta background).
+    'Gerald': {'Idle': 'Gerald/Idle.png', 'Loaded': 'Gerald/Gerald_LoadedSide.png', 'in flight': 'Gerald/inflight.png',
                'Impact': 'Gerald/Impact.png', 'Trigger': 'Gerald/ability.png'},
     'Percy':  {'Idle': 'Percy/Idle2.png', 'Impact': 'Percy/Impact.png'},
     'Bessie': {'Idle': 'Bessie/Bessie_front.png'},
@@ -43,8 +45,18 @@ POSES = {
 # Horace: front render for Idle/Loaded (like Ducky's front-facing Loaded) + Kling-generated action poses.
 HORACE = {
     'Idle': 'Horace/kling_20260909_IMAGE___Front_fa_624_0.png',
-    'Loaded': 'Horace/kling_20260909_IMAGE___Front_fa_624_0.png',
+    # 2026-11-11: real cannon poses (Kling, magenta): curled up ready (left figure of a pose sheet, mirrored to face
+    # right) and a launched flying leap.
+    'Loaded': 'Horace/Horace_CannonPoses.png',
+    'in flight': 'Horace/Horace_Flight.png',
 }
+
+# Sources on Kling's solid magenta (keyed with import_frozen_art.key_magenta instead of the white-background rule).
+MAGENTA = {'Gerald/Gerald_LoadedSide.png', 'Horace/Horace_CannonPoses.png', 'Horace/Horace_Flight.png'}
+# Mirrored so the pose faces right (the direction every shot flies).
+FLIP = {'Gerald/inflight.png', 'Horace/Horace_CannonPoses.png'}
+# Pose sheets: keep only the left-most figure.
+LEFT_FIGURE = {'Horace/Horace_CannonPoses.png'}
 
 
 WHITE = 235          # tools/remove_backgrounds.py's threshold: R,G,B all >= this is background white
@@ -78,10 +90,32 @@ def drop_specks(im):
     return Image.fromarray(a, 'RGBA')
 
 
-def prepare(path, specks=False):
+def left_figure(im):
+    a = np.asarray(im)
+    labels, n = ndimage.label(a[:, :, 3] > 20)
+    if n <= 1:
+        return im
+    sizes = ndimage.sum(np.ones_like(labels), labels, range(1, n + 1))
+    big = [i + 1 for i in range(n) if sizes[i] >= sizes.max() * 0.2]
+    first = min(big, key=lambda k: np.nonzero(labels == k)[1].mean())
+    a = a.copy()
+    a[:, :, 3] = np.where(labels == first, a[:, :, 3], 0)
+    return Image.fromarray(a, 'RGBA')
+
+
+def prepare(path, specks=False, rel=''):
     im = Image.open(path)
     has_alpha = im.mode == 'RGBA' and im.getchannel('A').getextrema()[0] < 250
-    im = im.convert('RGBA') if has_alpha else remove_white_bg(im)
+    if rel in MAGENTA:
+        from import_frozen_art import key_magenta
+        im = Image.fromarray(key_magenta(path), 'RGBA')
+        specks = True
+    else:
+        im = im.convert('RGBA') if has_alpha else remove_white_bg(im)
+    if rel in LEFT_FIGURE:
+        im = left_figure(im)
+    if rel in FLIP:
+        im = im.transpose(Image.FLIP_LEFT_RIGHT)
     if specks:
         im = drop_specks(im)
     bbox = im.getchannel('A').point(lambda a: 255 if a > 20 else 0).getbbox()
@@ -97,7 +131,7 @@ def prepare(path, specks=False):
 def main():
     jobs = dict(POSES)
     jobs['Horace'] = dict(HORACE)
-    for extra in ('in flight', 'Impact', 'Trigger'):
+    for extra in ('Impact', 'Trigger'):
         p = os.path.join(SRC, 'Horace', f'Horace_{extra.replace(" ", "")}.png')
         if os.path.exists(p):
             jobs['Horace'][extra] = os.path.relpath(p, SRC)
@@ -105,7 +139,7 @@ def main():
         folder = os.path.join(OUT, animal)
         os.makedirs(folder, exist_ok=True)
         for pose, rel in poses.items():
-            prepare(os.path.join(SRC, rel), specks=rel in SPECKY).save(os.path.join(folder, f'{pose}.png'))
+            prepare(os.path.join(SRC, rel), specks=rel in SPECKY, rel=rel).save(os.path.join(folder, f'{pose}.png'))
         print(f'{animal}: {", ".join(poses)}')
 
 

@@ -77,6 +77,12 @@ needing a live pass before shipping.
   in `Cannonfire/originals/`, inpainted, logo at 1.4x the mark's width). Other attempts (Logo2_*, Logo_Cannonfire*,
   Poster_*, Landing_*) stay in that folder; `tools/compose_cannonfire_logo.py` builds the blast-lettering variant. Kling
   total for the rename 26 credits. The pale purple band at the canvases' left edge predates this (2026-11-02 inpaint).
+- **Landing poster ratio (2026-11-11):** `LandingPage.png` is 1280x720 (16:9); phones are ~19.5:9, so `LandingScreen`
+  shows it contained with blurred side bars. Fix = a 2400x1080 (20:9) poster with the title / CANNONFIRE sign /
+  characters inside the centre 1920x1080 and the bottom-left (Play/Exit) and bottom-right (cog) corners clear; then
+  switch LandingScreen's ZoomedCover to cover. Not done yet (needs the art; Kling outpaint ~2 credits is an option).
+- **W2_L17 Whiteout:** its tower is `wonky=False` in `design_world2.py` but the level data hasn't been regenerated /
+  re-probed since (two runs stopped for low memory) — run `.\Run-Unity.ps1 levels`, then probe `FF_PROBE_LEVELS=34,34`.
 - **Not ported yet:** Stampede's Boot scene / Android AAB split + store build scripts, the iOS privacy manifest,
   the Character Story Cosmetics tab.
 - **World 2 (Frozen Tundra) was rebuilt 2026-11-09** and **World 3 (Watermill Village) built 2026-11-10** as 22 framed
@@ -135,7 +141,51 @@ needing a live pass before shipping.
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
-- **2026-11-11 (latest) — Topple, don't break; "robots don't know how to build"; menu music + UI sizing** (user: theme on
+- **2026-11-11 (latest) — World 4 Sky Islands built on the World 1-3 template** (user: "build the next world utilising
+  the exact process you have used for every world build... use the artwork available, but access kling AI for new art
+  required, like the cannon and scenery (use credits most efficiently)"). Unverified in Play mode; designer-checked
+  (24/24, 0 issues) and PhysicsProbe-checked (no input, `unity/Logs/probe_w4.log`): all 24 World 4 levels 100% intact, 0 awake, 0 movement
+  - **Levels:** `tools/design_world4.py` writes `Editor/LevelDataGenerator.World4.cs` (`MakeWorld4Framed`, deletes older
+    `W04_*` files; ids `W4_L01..L24`). Structures stand on floating isles (`isle()`) and floating rocks (`rock()`, mount
+    variant 2, asserted clear of the ground) at different heights, plus the robot-built set pieces and wonky towers.
+    Horace leads the lineups. `design_world1.py` knows `world=4` (`SPRITE_W4`, `KIND_W4`, `HOIST_W[4]`,
+    `GADGET_NAMES[4]`). `WorldLevelGenerator` skips worlds 2-4 and keeps `W02_`-`W04_` files.
+  - **Art:** `python tools/import_sky_art.py` -> `Sprites/Environment/Sky/`, `Launchers/SkyCannon.png`,
+    `Enemies/Robot/StormBaron*.png`, `Scripts/Level/MountMeasurementsW4.cs`, `tools/mounts_w4.json`. Reused (Stampede):
+    SI_Parallax_Far (far), CloudTile (cloud bank wall), StonePillar (mesa mount), AnchorCloud (thundercloud),
+    GiantMushroom (corner silhouettes), the Storm Baron poses. Kling: 10 images, 20 credits, in
+    `FarmFury_Artwork/SkyIsland/Framed/` — the six construction pieces came from ONE sheet (`W4Pieces.png`, split by
+    `split_pieces`). Misses kept but unused: `W4Skiff.png` (a blimp with no deck - World 4 has no rolling wagon; the
+    runaway is a thunder wheel down the slide ramp); `W4Island.png` is a boxy rock (used as the small floating rock);
+    the wide isle and the ground strip are both `W4Soil.png`. Bolt.png is drawn in code.
+  - **Look:** `EnvironmentDepthSystem` theme 4 (`Sky*` fields): far painting anchored just above the ground
+    (`Sky ? g + 0.6`) so its cloud sea meets the cloud bank; one hazed row of distant isles high over the horizon
+    (`SkyMidHeight/Sink` 1.9 / -3.4; no ridges band — two rows read as a repeating border); weathers ClearSkies /
+    Windswept / SunsetClouds / StormFront / StarlitSky in `CornfieldAmbience` (existing effects only).
+  - **Pieces:** `BlockBase._spr*W4` — sky timber post/plank (WoodBlock), marble block / column / slab (StoneBlock),
+    cloud bales (HaybaleBlock, also the cannon mount `CatapultLauncher._mountBaleSpriteW4`).
+  - **Cannon:** `CatapultLauncher._cannonSpriteW4` = the Sky Cannon (Cannon.png's canvas, PPU 384).
+  - **Mounts:** `LevelLoader._platformSpritesW4` + `MountsW4`: wide isle (0/1), floating rock (2), stone pillar (3), sky
+    dock (4), none (5, falls back to World 1's wagon - unused), slide ramp (6).
+  - **Contraptions:** `GadgetType.StormCloud` (`Sunflower` storm mode: three white flashes, two volleys of lightning
+    bolts at -55..10 deg, each bursting and shoving), `GadgetType.ThunderWheel` (`RollingBoulder`), the sky crane
+    (`HayHoist` with a thunder wheel load).
+  - **Boss:** `StormBaronRobot.prefab` (`EnsureStormBaronPrefab`, before `WireLevelLoader`) on `_worldRobots[4].boss`;
+    dropped off by the mothership on L24 onto a straight keep (`wonky=False`).
+  - **Follow-up (user: "a little empty... kite and other flying objects... more difficult with the cannon floating"):**
+    `Core/SkyDecor.cs` (built by EnvironmentDepthSystem, World 4 only): two hot-air balloons drifting across, two kites
+    swaying, three paper lanterns rising (glowing at SunsetClouds / StarlitSky), the floating plum bobbing, all screen-
+    placed at orders -34/-33; the rooster weathervane on the ground right of the cannon (order 1). Stampede art copied
+    by `import_sky_art.py` as `Sky/Decor_*.png`. The World 4 cannon floats: `CatapultLauncher.LateUpdate` bobs the
+    cloud-bale mount, the cannon and `_cannonRestPos` (so the barrel tip, aim pivot, loaded animal and trajectory
+    preview move too) 0.28 u over 3.4 s, vertical only (the recoil owns x).
+  - **Gerald / Horace cannon poses (same day):** Gerald's flight art is mirrored to face right (it faced left - the
+    "wrong way") and his Loaded is a Kling side crouch; Horace got a Kling Loaded (left figure of a pose sheet,
+    mirrored) and a Kling launched-leap flight. Registered in `tools/import_character_art.py` (`MAGENTA`, `FLIP`,
+    `LEFT_FIGURE`). Kling 4 images / 8 credits; the two 2-reference "pose template" sheets drew the template chicken
+    instead of the character - single-reference prompts with the pose in words worked. Horace still has no Impact.
+
+- **2026-11-11 — Topple, don't break; "robots don't know how to build"; menu music + UI sizing** (user: theme on
   every non-gameplay page; smaller "Character" header and buttons; AB-style precarious structures; "structures should
   not explode - they should topple"; only the dynamite explodes and even that topples; a robot crushed by a falling
   structure explodes with dust clouds + fire burst + SFX; nothing left floating; animals don't explode on impact;
@@ -144,14 +194,24 @@ needing a live pass before shipping.
   W2_L22 (Frost Tyrant landing on the now-crooked keep: keep set `wonky=False` in design_world2/3 boss levels),
   W2_L17 Whiteout and W3_L15 Thunderhead (towers on frozen-bale / flour-sack stilts fall by themselves ~0.9 s in,
   i.e. when the new block watchdog starts; its probe depth was raised 0.1 -> 0.25 u and it now logs
-  `[Probe] WATCHDOG woke ...`). **Pending:** those three fixes are committed in source; the
-  user is regenerating the level data in the open Editor (Generate All Level Data + Wire Scene References). Still to
-  re-probe: `FF_PROBE_LEVELS=34,39` and `54,54` (batch needs the Editor closed; the probe menu item covers World 1
-  only). If W2_L17 / W3_L15 still fall, the `[Probe] WATCHDOG` line names the block the watchdog thought unsupported.
+  `[Probe] WATCHDOG woke ...`). Re-probe (`probe_w4.log`): W2_L22 and W3_L15 now
+  clean. W2_L17's collapse starts ~1.0 s in, BEFORE any watchdog wake (so not the watchdog): its 5-storey wonky
+  tower on frozen-bale stilts settles by itself; that tower (and W3_L15's twin) is now `wonky=False`. W4_L14 (same
+  shape on cloud bales) is clean wonky.
+  - **Pacing:** Level Complete counts up (`ResultsScreen.StartReveal/TickReveal`): score 0 -> final over 1.7 s easing
+    out after 0.45 s, earned stars fill one by one at each third (a ping each), coin balance ticks up by the payout over
+    0.7 s, then the buttons (the SafeArea CanvasGroup) and Double Coins fade in; a tap skips. Every page (Landing, World
+    / Level / Character Select, Results, Pause) fades in over 0.35 s (`UI/Kit/ScreenFadeIn.cs`).
+  - **Launch screams:** `AudioManager._fallingClips` (index = AnimalType) from `Assets/Audio/Falling/<Animal>_Falling.mp3`
+    (user-supplied clips, originals in `FarmFury/Launch/`), wired by `SceneSetup.WireAudioArrays`. Every animal's
+    plays once from the cannon shot (no longer looped) and fades on impact. All 8 animals have one (Percy added 2026-11-11).
   - **Music:** `AudioManager.SyncMusic()` (every frame): the world track only while actually playing (Playing,
     unfrozen, no revive prompt); every other page (menus, Pause, Locker, character switch, revive, Results) plays the
     menu theme. The world track pauses behind in-level pages and resumes; the theme resumes rather than restarting.
-  - **UI:** `UIKit.RoundButtonSize` 160 -> 136 (every round button incl. the HUD). The "Character" lettering baked
+    Change-driven (mode/track), never polls `AudioSource.isPlaying`: our clips are imported without Preload Audio
+    Data, so isPlaying reads false right after Play() and the first version restarted the music every frame (silence).
+  - **UI:** `UIKit.RoundButtonSize` 160 -> 136 -> 112 (every menu round button); the HUD's pause / Locker / switch
+    stack is its own 96 (`HUDController.BuildPauseButton`). The "Character" lettering baked
     into the 9 `*Character_Canvas_Wide.png` canvases shrunk to 72% by `tools/shrink_character_header.py` (originals in
     `Sprites/UI/Franchise/Canvas_originals~/`, always the source; `--scale` to retune; a soft inpaint smudge where the
     old lettering was).
@@ -200,7 +260,8 @@ needing a live pass before shipping.
     phones wider than 16:9 — covering had cropped FARM FURY and put CANNONFIRE under the Play/Exit buttons.
   - **Probe (no input) after the change:** all 62 framed levels (Worlds 1-3) 100% intact, 0 awake; only the Frost
     Tyrant settles 0.01 u. The one-strike feel itself is untested in Play mode.
-  - Also today: `NextLevel` on Results opens the next level's Character Select; Character Select slot ability icons;
+  - Also today: `NextLevel` on Results opened the next level's Character Select (reverted 2026-11-11: Next returns to
+    the world's Level Select, where the newly unlocked level is tapped -> Character Select -> play); Character Select slot ability icons;
     floating-robot watchdog + stuck-cannon safety net (see the other 2026-11-10 entries / HISTORY).
 
 - **2026-11-10 — World music + ability sounds from Stampede** (user: "review the music from stampede and arcade for the
@@ -801,7 +862,7 @@ All eight are scripted and art-wired; each leads the lineups of the world that i
 | 8 — Harvest Fairground (paid) | Farm Cannon | — | 12 |
 | 9 — Crop Factory (paid) | Farm Cannon | — | 12 |
 
-World 1 (L01-L18, `tools/design_world1.py`), World 2 (W2_L01-L22, `tools/design_world2.py`, 2026-11-09) and World 3 (W3_L01-L22, `tools/design_world3.py`, 2026-11-10) are designed framed levels; every level of Worlds 4-9 is generated from World 1's towers by `WorldLevelGenerator` (2026-11-02, see Recent work), with each world's own robots, boss, backdrop and props. None of it verified in Play mode.
+World 1 (L01-L18, `tools/design_world1.py`), World 2 (W2_L01-L22, `tools/design_world2.py`, 2026-11-09), World 3 (W3_L01-L22, `tools/design_world3.py`, 2026-11-10) and World 4 (W4_L01-L24, `tools/design_world4.py`, 2026-11-11) are designed framed levels; every level of Worlds 5-9 is generated from World 1's towers by `WorldLevelGenerator` (2026-11-02, see Recent work), with each world's own robots, boss, backdrop and props. None of it verified in Play mode.
 
 ### Star System
 - 1★ — all robots dead (progress gate)

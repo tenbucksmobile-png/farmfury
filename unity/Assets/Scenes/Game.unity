@@ -173,6 +173,15 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 190a43be17e78284cb788333b6dadd21, type: 3}
   - {fileID: 8300000, guid: b67cf000990a28145b93840bba10354a, type: 3}
   - {fileID: 8300000, guid: c4f623004e8ba374d922ebe49271b141, type: 3}
+  _fallingClips:
+  - {fileID: 8300000, guid: 75a3051ba71b4de4e8bab6e9fbf1bad5, type: 3}
+  - {fileID: 8300000, guid: 87d2eaf890676fa42aa7606080060182, type: 3}
+  - {fileID: 8300000, guid: b6518c404107af44381fe4394a274d9c, type: 3}
+  - {fileID: 8300000, guid: f7e811675d0ea9344b00dc936d0c5c27, type: 3}
+  - {fileID: 8300000, guid: 3d0d0e566208dc44a9318fd32443e7be, type: 3}
+  - {fileID: 8300000, guid: 19a18444f7aeebe4f84ae5a87cbaadab, type: 3}
+  - {fileID: 8300000, guid: b7248106ee7534c49a71878f4198cfcc, type: 3}
+  - {fileID: 8300000, guid: 6353409a18d7f1043bb9532f7109bf94, type: 3}
 --- !u!4 &17476937
 Transform:
   m_ObjectHideFlags: 0
@@ -262,6 +271,18 @@ MonoBehaviour:
   _sprMillSoil: {fileID: 21300000, guid: 1b40b46c25fd7fe4fab7bca5d25be966, type: 3}
   _sprMillSilhouetteL: {fileID: 21300000, guid: 4a7195c4b2aab20468fa05fcf3fc781d, type: 3}
   _sprMillSilhouetteR: {fileID: 21300000, guid: cc4617627c9521b4aa2b3dbea2baa3f7, type: 3}
+  _sprSkyFar: {fileID: 21300000, guid: 33e72e76dcdda8d48b63c33521d24804, type: 3}
+  _sprSkyRidges: {fileID: 21300000, guid: 61bfab08ca937af49bf7320fff049e10, type: 3}
+  _sprSkyMid: {fileID: 21300000, guid: 91bc72280aaa9c6449cc55b864de698b, type: 3}
+  _sprSkyWall: {fileID: 21300000, guid: 6ad906ed5e801c54abeab6b4b2c5aa35, type: 3}
+  _sprSkySoil: {fileID: 21300000, guid: 33e674db975d8a841bc4fc501123c558, type: 3}
+  _sprSkySilhouetteL: {fileID: 21300000, guid: 6c1b46a6f0f14c6439d2abc2ef471501, type: 3}
+  _sprSkySilhouetteR: {fileID: 21300000, guid: ecfac79b05938ff4ba202effc7e13042, type: 3}
+  _sprSkyBalloon: {fileID: 21300000, guid: 954c8547bf7509d4594655006b05b6d5, type: 3}
+  _sprSkyKite: {fileID: 21300000, guid: 541cbd1b79501eb4995443f3a210e226, type: 3}
+  _sprSkyLantern: {fileID: 21300000, guid: 60fd2ef9b98bf8144b5ba2ac4fa808d8, type: 3}
+  _sprSkyPlum: {fileID: 21300000, guid: d2fec8e04ceef1446983315af931dfe0, type: 3}
+  _sprSkyVane: {fileID: 21300000, guid: 511b95835670d4541a99e6ca2eacda78, type: 3}
   _farHillsClipAbove: 1
   _midgroundClipAbove: 0.23
   _foregroundClipAbove: 0.3
@@ -861,12 +882,14 @@ MonoBehaviour:
   _cannonSprite: {fileID: 21300000, guid: bab52f50ed8840544a334a7e470ac266, type: 3}
   _cannonSpriteW2: {fileID: 21300000, guid: bbd4ab2bbb0f3e849998a4b237436c2a, type: 3}
   _cannonSpriteW3: {fileID: 21300000, guid: 611c287497878f743bdc54b01c5fc9c0, type: 3}
+  _cannonSpriteW4: {fileID: 21300000, guid: 94cbb88aeb9b6b0409bf9a3d34db735d, type: 3}
   _trajectoryDots: 20
   _trajectorySubsteps: 3
   _trajectoryDotRadius: 0.08
   _mountBaleSprite: {fileID: 21300000, guid: 7d8dd52190664fa40841c1e389047d5f, type: 3}
   _mountBaleSpriteW2: {fileID: 21300000, guid: e85ec2bfceee6f1478fa6fa4ed1f52cc, type: 3}
   _mountBaleSpriteW3: {fileID: 21300000, guid: 5b4f5a559ad6a0544aef63b378475243, type: 3}
+  _mountBaleSpriteW4: {fileID: 21300000, guid: f97543461c6194e48afce455818902d4, type: 3}
 --- !u!4 &364537116
 Transform:
   m_ObjectHideFlags: 0
@@ -1726,29 +1749,29 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f8796a577dc5b754c959200c252e31ac, type: 2}
   - {fileID: 11400000, guid: ed8c67a3c465c7c49be716f3d4618c14, type: 2}
   - {fileID: 11400000, guid: 9d6af3c8f6e4f2f43ae6729eec393146, type: 2}
-  - {fileID: 11400000, guid: b29a1549f75f9554c9e2e20ff09b6c28, type: 2}
-  - {fileID: 11400000, guid: 2d8cf6f13767e3a4eab1339ac0d77f4a, type: 2}
-  - {fileID: 11400000, guid: 68d0b2815ecc1e740a6ddc7118bcaf86, type: 2}
-  - {fileID: 11400000, guid: 075905d11b7367d4180ad12915bf1d78, type: 2}
-  - {fileID: 11400000, guid: 97faebce6d0f3bf49a0fe805fbf5957b, type: 2}
-  - {fileID: 11400000, guid: 8d7e31634304e2f4680ee59c22d8f3d3, type: 2}
-  - {fileID: 11400000, guid: 20c42d150d9ce8748a59951b2e944a80, type: 2}
-  - {fileID: 11400000, guid: 48c08067402b26742a2924acbc6da590, type: 2}
-  - {fileID: 11400000, guid: 4d63afe9d1b0eb84a903a759e22dde9c, type: 2}
-  - {fileID: 11400000, guid: ecbc2beed107bad439a0c89029431e2f, type: 2}
-  - {fileID: 11400000, guid: 04174d3bf60eb764285d933c18e07c4c, type: 2}
-  - {fileID: 11400000, guid: 6ef35e760c889f443bb79a29a529c8dc, type: 2}
-  - {fileID: 11400000, guid: 2d8f5d9baf52e3d40b4cdd52c778dc7e, type: 2}
-  - {fileID: 11400000, guid: cfad13c25565ffd4783240a9074c5569, type: 2}
-  - {fileID: 11400000, guid: 044d6bffbc8e95340afc275dfe0b10b0, type: 2}
-  - {fileID: 11400000, guid: 645b603534e934b41b13c9e19be622cb, type: 2}
-  - {fileID: 11400000, guid: 82902494961e85c4caaed38c04acd1a1, type: 2}
-  - {fileID: 11400000, guid: 2c0f6c2a2cd93324a9f630514e6902b7, type: 2}
-  - {fileID: 11400000, guid: 28c6f928bbfef9c428205bbaf5f21b03, type: 2}
-  - {fileID: 11400000, guid: d3d37e1dbed6eb34ea22766861c547ac, type: 2}
-  - {fileID: 11400000, guid: 9730c458e5c8ce44dbf9e1faecf9be3f, type: 2}
-  - {fileID: 11400000, guid: 853d51c857154be4c8c1a1c11a729eb0, type: 2}
-  - {fileID: 11400000, guid: c0ebb60d77b330143bd7df0e41f1117c, type: 2}
+  - {fileID: 11400000, guid: 85507840b15085a4ea3a50ee1ae88ae8, type: 2}
+  - {fileID: 11400000, guid: 9706562a3ff3d4d4da9017af347eae70, type: 2}
+  - {fileID: 11400000, guid: d33a1fc13b61a5a4b83992352014db3b, type: 2}
+  - {fileID: 11400000, guid: b442c2e68631c8e48b58de7093151099, type: 2}
+  - {fileID: 11400000, guid: d0e5fc3c25cfa3f48b9b5672bfe90049, type: 2}
+  - {fileID: 11400000, guid: ba8d7744b709dd14db8b6a5d9f95fdda, type: 2}
+  - {fileID: 11400000, guid: 051f5f12e6fb22d41828d5b4ec1493b1, type: 2}
+  - {fileID: 11400000, guid: 4c7be8e158646674b83a3e46601ff9dd, type: 2}
+  - {fileID: 11400000, guid: ba676f72a4c850741978b21a1ea38c2e, type: 2}
+  - {fileID: 11400000, guid: e4c8ad492016b104ca48f0aabe1ade87, type: 2}
+  - {fileID: 11400000, guid: d6ec3e9efa3a52447bcc91a3a627251b, type: 2}
+  - {fileID: 11400000, guid: 236731573bdf7434499c5866f1188f97, type: 2}
+  - {fileID: 11400000, guid: f2ca99d36e542594e8e1a54925fb8f63, type: 2}
+  - {fileID: 11400000, guid: b874addcf7767aa42ab3484ad4730e60, type: 2}
+  - {fileID: 11400000, guid: 92537dbbed7e0144b8aa7dede85f954e, type: 2}
+  - {fileID: 11400000, guid: 69ad4e202c6b84943bfdc57081f9268c, type: 2}
+  - {fileID: 11400000, guid: 89148510f2595c54282c1a647b1e0fab, type: 2}
+  - {fileID: 11400000, guid: 0c02dd1de63f5bb499e0421a89168ae9, type: 2}
+  - {fileID: 11400000, guid: bfa0cbe264b8b3049ae72bb274075994, type: 2}
+  - {fileID: 11400000, guid: b48a242db9c383f4f86eb4ca9ffe644a, type: 2}
+  - {fileID: 11400000, guid: f9ce26bba6e0cf24c92233df359b8a59, type: 2}
+  - {fileID: 11400000, guid: 9f7e445faffeabe459d001f815fbf718, type: 2}
+  - {fileID: 11400000, guid: 9c662aa984097504e8a3de8b125bd871, type: 2}
   - {fileID: 11400000, guid: 45a3341b75e65284e830bcb1445877fc, type: 2}
   - {fileID: 11400000, guid: 6d8f1485a843f904a9fd7ab4fb6b4621, type: 2}
   - {fileID: 11400000, guid: dbb912881f17fb44b92fef6172e0cc6b, type: 2}
@@ -4978,7 +5001,7 @@ MonoBehaviour:
   - basic: {fileID: 8773587327195877052, guid: cca2ce3090d933b40924f1287f6483e9, type: 3}
     harvester: {fileID: 7821051956727469214, guid: 53627ad877775334692cb22bc3bc4485, type: 3}
     semiHarvester: {fileID: 3904714324207937427, guid: 134a18cb2274658449b3b4024047b7a2, type: 3}
-    boss: {fileID: 419964969195051949, guid: 2f3bc394c9a801f418643f301a1c6c51, type: 3}
+    boss: {fileID: 5347399306766895856, guid: 93bcee36f036038488a3519c720a66de, type: 3}
   - basic: {fileID: 2748510846856927625, guid: e0e631efceb2959488e1e691929b8fd0, type: 3}
     harvester: {fileID: 7640339733913834232, guid: a2e95e605b539a8408598491f3c0f45d, type: 3}
     semiHarvester: {fileID: 6238315423401233066, guid: 37ba8b22ae8a65949b35b39815283725, type: 3}
@@ -5025,6 +5048,14 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 728e555c48480b84f9865e76cab9a7cb, type: 3}
   - {fileID: 21300000, guid: aef26159b47f33349afac39e60d8b15a, type: 3}
   - {fileID: 21300000, guid: 344876f9e5f31974288ff674adb1c184, type: 3}
+  _platformSpritesW4:
+  - {fileID: 21300000, guid: 8ba40a299040a6246b218f92d37bc95d, type: 3}
+  - {fileID: 21300000, guid: 8ba40a299040a6246b218f92d37bc95d, type: 3}
+  - {fileID: 21300000, guid: 05629e842ca3c1048ab79989ba857e1a, type: 3}
+  - {fileID: 21300000, guid: bfcc249601ff4e94abf3b2fa247dc05f, type: 3}
+  - {fileID: 21300000, guid: 397d6bdda6e99864caac3250f62ada11, type: 3}
+  - {fileID: 0}
+  - {fileID: 21300000, guid: 4de46e35b2c5cfc4b8927375f6649048, type: 3}
   _mothershipSprite: {fileID: 21300000, guid: aedf0dcc043eb96468cc881558708834, type: 3}
   _sunflowerSprite: {fileID: 21300000, guid: 993cfd2e108e60747964039bb0d8d185, type: 3}
   _sunflowerSeedSprite: {fileID: 21300000, guid: 00537f9649f66aa40ac532b188db7b0f, type: 3}
@@ -5039,6 +5070,10 @@ MonoBehaviour:
   _waterDropSprite: {fileID: 21300000, guid: 96adcd43ebcb3dc4baf3c3aa2ed39de0, type: 3}
   _millCraneSprite: {fileID: 21300000, guid: a9286ff1a9bdbfe429326f3940489f57, type: 3}
   _millstoneSprite: {fileID: 21300000, guid: 962a8675f6897a74bab579f27a2e779f, type: 3}
+  _stormCloudSprite: {fileID: 21300000, guid: 0afbfb65b025833479b5ce1f4055de34, type: 3}
+  _boltSprite: {fileID: 21300000, guid: 9ef84413b9bd83d49ae5bb1e833f3a86, type: 3}
+  _skyCraneSprite: {fileID: 21300000, guid: 30eb40163d4d05c468690c9b4ff7c69e, type: 3}
+  _thunderWheelSprite: {fileID: 21300000, guid: 0b75856fb004cc840a45745b1b0a6d7a, type: 3}
 --- !u!4 &2045008050
 Transform:
   m_ObjectHideFlags: 0

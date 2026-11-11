@@ -107,7 +107,7 @@ public static class WorldLevelGenerator
             string path = AssetDatabase.GUIDToAssetPath(guid);
             // Its own files only: World 2 ("W02_") is designed by tools/design_world2.py (2026-11-09).
             string fn = System.IO.Path.GetFileName(path);
-            if (fn.StartsWith("W") && !fn.StartsWith("W02_") && !fn.StartsWith("W03_")) AssetDatabase.DeleteAsset(path);
+            if (fn.StartsWith("W") && !fn.StartsWith("W02_") && !fn.StartsWith("W03_") && !fn.StartsWith("W04_")) AssetDatabase.DeleteAsset(path);
         }
 
         int made = 0;
@@ -115,7 +115,8 @@ public static class WorldLevelGenerator
         {
             // World 2 is designed by hand on the framed template (tools/design_world2.py, 2026-11-09).
             // World 3 likewise (tools/design_world3.py, 2026-11-10).
-            if (spec.world == 2 || spec.world == 3) continue;
+            // World 4 likewise (tools/design_world4.py, 2026-11-11).
+            if (spec.world == 2 || spec.world == 3 || spec.world == 4) continue;
             var names = LevelNames(spec);
             int regular = spec.levels - 1;
             for (int k = spec.firstLevel; k <= regular; k++)

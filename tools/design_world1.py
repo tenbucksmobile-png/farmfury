@@ -78,29 +78,49 @@ SPRITE_W3 = {"post": "Environment/Watermill/MillPost", "plank": "Environment/Wat
              "crate": "Environment/World1Props/Plank_Short", "sbox": "Environment/Watermill/MillStoneBlock",
              "pillar": "Environment/Watermill/MillStonePillar", "slab": "Environment/Watermill/MillSlab",
              "hay": "Environment/Watermill/FlourSacks", "barrel": "Environment/World1Props/Barrel_Dynamite"}
+# ── World 4 (Sky Islands, 2026-11-11) ────────────────────────────────────────────────────────────────────────
+# Sky-blue airship timber, white marble (block / column / lintel slab) and cloud bales (tools/import_sky_art.py);
+# crates and barrels keep their World 1 art. Mounts: wide floating isle, small floating rock, cloud-wrapped stone
+# pillar, sky dock, slide ramp (no rolling wagon: the runaway is a thunder wheel). Contraptions: thundercloud
+# (lightning bolts), sky crane with a thunder wheel, rolling thunder wheel.
+SPRITE_W4 = {"post": "Environment/Sky/SkyPost", "plank": "Environment/Sky/SkyPlank",
+             "crate": "Environment/World1Props/Plank_Short", "sbox": "Environment/Sky/SkyBlock",
+             "pillar": "Environment/Sky/SkyPillar", "slab": "Environment/Sky/SkySlab",
+             "hay": "Environment/Sky/CloudBale", "barrel": "Environment/World1Props/Barrel_Dynamite"}
 ART_W = {1: ART, 2: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W2.items()},
-         3: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W3.items()}}
+         3: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W3.items()},
+         4: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W4.items()}}
 # Frost robots: pawn/semi art is 426 px tall (World 1's is 256), scaled down so they fit a storey; vis = height.
 ROBOT_W = {1: ROBOT, 2: {"pawn": ("Basic", 4.4, 1.074, 0.0), "semi": ("SemiHarvester", 4.4, 1.074, 0.0),
                          "harv": ("Harvester", 7.5, 1.099, 0.0), "boss": ("Commander", 7.0, 2.004, 0.06)},
            # Watermill robots are Stampede's 256 px art like World 1's (the pawn is a wide river-sub); the boss is the
            # Mill Stone Mauler, padded to the Commander's 500 px canvas.
-           3: ROBOT}
+           3: ROBOT,
+           # Sky robots are Stampede's 256 px art (rover, harvester, drone); the boss is the Storm Baron airship, padded
+           # to the Commander's 500 px canvas.
+           4: ROBOT}
 MOUNTS_W = {1: MOUNTS, 2: _json.load(open(os.path.join(HERE, "mounts_w2.json"))),
-            3: _json.load(open(os.path.join(HERE, "mounts_w3.json")))}
+            3: _json.load(open(os.path.join(HERE, "mounts_w3.json"))),
+            4: _json.load(open(os.path.join(HERE, "mounts_w4.json")))}
 KIND_W2 = {"Mesa": "IcePillar", "Scaffold": "FrostScaffold", "Wagon": "Sled", "Ramp": "SnowRamp", "Hill": "Floe"}
 _W2_FLOE = MOUNTS_W[2]["Floe"]
 KIND_W3 = {"Mesa": "Pier", "Scaffold": "Jetty", "Wagon": "Boat", "Ramp": "Slipway", "Hill": "Islet"}
 _W3_ISLET = MOUNTS_W[3]["Islet"]
-ISLAND_W = {1: ISLAND, 2: [(_W2_FLOE["uv"], _W2_FLOE["aspect"])] * 2, 3: [(_W3_ISLET["uv"], _W3_ISLET["aspect"])] * 2}
-POST_W = {1: 0.276, 2: 0.34, 3: 0.32}       # visible post width (the frosted post's art is stockier)
-PILLAR_W = {1: 0.35, 2: 0.42, 3: 0.40}      # visible stone / ice pillar width
+KIND_W4 = {"Mesa": "Pillar", "Scaffold": "Dock", "Ramp": "Ramp", "Hill": "Rock"}
+_W4_ISLE = MOUNTS_W[4]["Isle"]
+ISLAND_W = {1: ISLAND, 2: [(_W2_FLOE["uv"], _W2_FLOE["aspect"])] * 2, 3: [(_W3_ISLET["uv"], _W3_ISLET["aspect"])] * 2,
+            4: [(_W4_ISLE["uv"], _W4_ISLE["aspect"])] * 2}
+POST_W = {1: 0.276, 2: 0.34, 3: 0.32, 4: 0.30}       # visible post width (the frosted post's art is stockier)
+PILLAR_W = {1: 0.35, 2: 0.42, 3: 0.40, 4: 0.36}      # visible stone / ice pillar width
 # Hoist crane + load per world: crane aspect w/h, post centre, rope anchor (x, y from the bottom), load w/h, knot height.
 _W3_CRANE = MOUNTS_W[3]["MillCrane"]
 HOIST_W = {1: HOIST, 2: HOIST,
            3: dict(aspect=_W3_CRANE["aspect"], post=_W3_CRANE["post"], anchor=tuple(_W3_CRANE["anchor"]),
-                   bucket_aspect=506 / 512, handle=0.99)}
-GADGET_NAMES = {1: ("Sunflower", "IceBoulder"), 2: ("IceCrystal", "IceBoulder"), 3: ("WaterPump", "Millstone")}
+                   bucket_aspect=506 / 512, handle=0.99),
+           4: dict(aspect=MOUNTS_W[4]["SkyCrane"]["aspect"], post=MOUNTS_W[4]["SkyCrane"]["post"],
+                   anchor=tuple(MOUNTS_W[4]["SkyCrane"]["anchor"]), bucket_aspect=1.0, handle=0.99)}
+GADGET_NAMES = {1: ("Sunflower", "IceBoulder"), 2: ("IceCrystal", "IceBoulder"), 3: ("WaterPump", "Millstone"),
+                4: ("StormCloud", "ThunderWheel")}
 
 
 def _rect_poly(cx, cy, w, h, rot):
@@ -190,7 +210,7 @@ class Level:
 
     def hut(self, xa, xb, b, h, stone=False, roof_stone=None):
         """Two posts at the ends and a roof across them; returns the roof's top."""
-        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20)}[self.world][1 if stone else 0]   # half the post width
+        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20), 4: (0.15, 0.18)}[self.world][1 if stone else 0]   # half the post width
         top = self.post(xa + inset, b, h, stone)
         self.post(xb - inset, b, h, stone)
         return self.plank(xa, xb, top, stone if roof_stone is None else roof_stone)
@@ -210,7 +230,7 @@ class Level:
         return surface, cx - width / 2 + m["flat"][0] * width, cx - width / 2 + m["flat"][1] * width
 
     def _m(self, kind):
-        names = {2: KIND_W2, 3: KIND_W3}.get(self.world, {})
+        names = {2: KIND_W2, 3: KIND_W3, 4: KIND_W4}.get(self.world, {})
         return MOUNTS_W[self.world][names.get(kind, kind)]
 
     def mount(self, kind, x, width):
@@ -365,7 +385,7 @@ def tower(L, xc, base, floors, width=1.9, h=1.15, taper=0.12, stone_floors=0, ro
             if rng.random() < 0.5: ov_l = rng.uniform(0.3, 0.85)
             else: ov_r = rng.uniform(0.3, 0.85)
         if rk: L.robot(c, b, rk)
-        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20)}[L.world][1 if stone else 0]
+        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20), 4: (0.15, 0.18)}[L.world][1 if stone else 0]
         if style == "tee":
             px = c + rng.uniform(-0.18, 0.18) * w
             if sa is not None: px = min(max(px, sa + pw), sb - pw)
@@ -746,7 +766,7 @@ def check(L):
         if rb["y"] + rb["vis"] / 2 > G + 12.0: issues.append(f"robot {k} under the HUD (top {rb['y'] + rb['vis'] / 2 - G:.1f} u up)")
     # contraptions: reachable; a hoist's bucket hangs clear of everything and has a target below it
     for g in L.gadgets:
-        if g["type"] in ("Sunflower", "IceCrystal", "IceBoulder", "WaterPump", "Millstone"):
+        if g["type"] in ("Sunflower", "IceCrystal", "IceBoulder", "WaterPump", "Millstone", "StormCloud", "ThunderWheel"):
             if not reachable(*g["head"]): issues.append(f"{g['type']} at x={g['x']:.2f} out of reach")
             continue
         bl, br, bb, bt = g["bucket"]

@@ -149,6 +149,12 @@ public static partial class SceneSetup
                 var mauler = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/MillMaulerRobot.prefab");
                 if (mauler != null) set.FindPropertyRelative("boss").objectReferenceValue = mauler.GetComponent<RobotEnemy>();
             }
+            // World 4's framed boss levels use the Storm Baron (taunt poses + the mothership drop-in), 2026-11-11.
+            if (world == 4)
+            {
+                var baron = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/StormBaronRobot.prefab");
+                if (baron != null) set.FindPropertyRelative("boss").objectReferenceValue = baron.GetComponent<RobotEnemy>();
+            }
         }
     }
 

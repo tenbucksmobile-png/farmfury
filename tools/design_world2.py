@@ -196,7 +196,7 @@ x0 = 6.0 + 2.5 + 1.8
 for x in (x0 - 0.95, x0, x0 + 0.95):
     t = L.hay(x, G)
 f = L.plank(x0 - 1.5, x0 + 1.5, t)
-tower(L, x0, f, 5, width=2.2, h=1.1, taper=0.2, robots=["semi", "pawn", None, "semi", None], top="pawn")
+tower(L, x0, f, 5, width=2.2, h=1.1, taper=0.2, robots=["semi", "pawn", None, "semi", None], top="pawn", wonky=False)   # on bale stilts: wonky settled by itself (probe)
 
 L = level(18, "Northern Lights", 3, [P, W, C], """
 Under the aurora: a six-storey tower with see-saws balancing robots on both sides.""")

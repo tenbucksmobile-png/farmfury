@@ -31,6 +31,10 @@ public class AudioManager : MonoBehaviour
     // triggers the ability (AnimalBase.Update). Woolly has none in the franchise (empty slot = silent). Files in
     // Assets/Audio/Abilities/.
     [SerializeField] private AudioClip[] _abilityClips = new AudioClip[8];
+    // Per-animal launch scream (2026-11-11, user-supplied clips in Assets/Audio/Falling/<Animal>_Falling.mp3), index =
+    // AnimalType. Plays once from the cannon shot and fades on impact; an empty slot falls back to the older
+    // _fallingClip / _bessieFallingClip (Cluck / Bessie), otherwise the flight is silent (Percy has none yet).
+    [SerializeField] private AudioClip[] _fallingClips = new AudioClip[8];
     private const float AbilityVolume = 0.9f;
 
     private AudioSource _src;
@@ -143,7 +147,7 @@ public class AudioManager : MonoBehaviour
 
         _fallingSrc             = gameObject.AddComponent<AudioSource>();
         _fallingSrc.playOnAwake = false;
-        _fallingSrc.loop        = true;
+        _fallingSrc.loop        = false;   // a shout, not a loop (2026-11-11): short clips repeated on long flights
         _fallingSrc.volume      = FallingVolume;
         _fallingSrc.clip        = _fallingClip;
 
@@ -184,8 +188,11 @@ public class AudioManager : MonoBehaviour
 
     void Update() => SyncMusic();
 
-    private bool _gameMusicPaused;
-    private bool _menuMusicPaused;
+    private enum MusicMode { None, Menu, Game }
+    private MusicMode _musicMode;
+    private AudioClip _gameTrack;          // the world track currently loaded on _musicSrc
+    private bool _gameMusicPaused;         // _musicSrc paused behind an in-level page (resume, don't restart)
+    private bool _menuMusicStarted;        // the theme has been started once; afterwards it is paused / unpaused
 
     /// <summary>
     /// User (2026-11-11): "theme music must play on every page outside of gameplay". The world's gameplay track plays
@@ -193,6 +200,9 @@ public class AudioManager : MonoBehaviour
     /// World / Level / Character Select, Pause, the Locker and in-level character switch, the revive prompt, Level
     /// Complete / Failed) plays the menu theme. The gameplay track is paused (not restarted) behind an in-level page
     /// and resumes where it left off; the theme likewise resumes rather than restarting.
+    /// Acts only when the wanted mode / track CHANGES — never on AudioSource.isPlaying, which reads false for a while
+    /// after Play() on clips imported without "Preload Audio Data" (all of ours): polling it restarted the track every
+    /// frame and nothing was heard (2026-11-11, user: "no sound is coming through").
     /// </summary>
     private void SyncMusic()
     {
@@ -201,40 +211,42 @@ public class AudioManager : MonoBehaviour
         var s = gm.State;
         bool gameplay = s == GameState.Playing && Time.timeScale > 0f && !gm.ReviveDecisionPending;
         bool inLevel = s == GameState.Playing || s == GameState.Paused;
+        var want = gameplay ? MusicMode.Game : MusicMode.Menu;
+        var track = gameplay ? MusicForWorld(gm.CurrentLevel != null ? gm.CurrentLevel.world : 1) : null;
 
-        if (gameplay)
+        // Left the level from an in-level page (Pause -> Home / Retry ...): the paused world track is finished with.
+        if (!inLevel && _gameMusicPaused)
         {
-            if (_menuMusicSrc.isPlaying) { _menuMusicSrc.Pause(); _menuMusicPaused = true; }
-            var track = MusicForWorld(gm.CurrentLevel != null ? gm.CurrentLevel.world : 1);
-            if (track != null && _musicSrc.clip != track)
+            _musicSrc.Stop();
+            _gameMusicPaused = false;
+            _gameTrack = null;
+        }
+        if (want == _musicMode && (want != MusicMode.Game || track == _gameTrack)) return;
+
+        if (want == MusicMode.Game)
+        {
+            _menuMusicSrc.Pause();
+            if (_gameMusicPaused && track == _gameTrack) _musicSrc.UnPause();
+            else if (track != null)
             {
                 _musicSrc.Stop();
                 _musicSrc.clip = track;
-                _gameMusicPaused = false;
+                _musicSrc.Play();
             }
-            if (_musicSrc.clip != null && !_musicSrc.isPlaying)
-            {
-                if (_gameMusicPaused) _musicSrc.UnPause(); else _musicSrc.Play();
-                _gameMusicPaused = false;
-            }
-            return;
-        }
-
-        if (inLevel)
-        {
-            if (_musicSrc.isPlaying) { _musicSrc.Pause(); _gameMusicPaused = true; }
-        }
-        else if (_musicSrc.isPlaying || _gameMusicPaused)
-        {
-            _musicSrc.Stop();          // left the level (results / menus): the next level starts its track afresh
+            _gameTrack = track;
             _gameMusicPaused = false;
         }
-
-        if (_menuMusicSrc.clip != null && !_menuMusicSrc.isPlaying)
+        else
         {
-            if (_menuMusicPaused) _menuMusicSrc.UnPause(); else _menuMusicSrc.Play();
-            _menuMusicPaused = false;
+            if (inLevel && _musicMode == MusicMode.Game) { _musicSrc.Pause(); _gameMusicPaused = true; }
+            else if (!inLevel) { _musicSrc.Stop(); _gameTrack = null; }
+            if (_menuMusicSrc.clip != null)
+            {
+                if (_menuMusicStarted) _menuMusicSrc.UnPause();
+                else { _menuMusicSrc.Play(); _menuMusicStarted = true; }
+            }
         }
+        _musicMode = want;
     }
 
     // ── Gameplay music pause/resume (top-right Pause button) ────────────────
@@ -290,9 +302,10 @@ public class AudioManager : MonoBehaviour
 
     public void PlayFalling(AnimalType animal = AnimalType.Cluck)
     {
-        AudioClip clip = animal == AnimalType.Bessie && _bessieFallingClip != null
-            ? _bessieFallingClip
-            : _fallingClip;
+        int i = (int)animal;
+        AudioClip clip = _fallingClips != null && i >= 0 && i < _fallingClips.Length ? _fallingClips[i] : null;
+        if (clip == null && animal == AnimalType.Bessie) clip = _bessieFallingClip;
+        if (clip == null && animal == AnimalType.Cluck)  clip = _fallingClip;
         if (_fallingSrc == null || clip == null || !SfxEnabled) return;
         if (_fallingFadeRoutine != null) { StopCoroutine(_fallingFadeRoutine); _fallingFadeRoutine = null; }
         _fallingSrc.clip   = clip;

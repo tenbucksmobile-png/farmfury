@@ -439,6 +439,9 @@ public class LevelLoader : MonoBehaviour
     // World 3 (2026-11-10): 0/1/2 grassy river islet, 3 stone bridge pier, 4 fishing jetty on stilts, 5 rowing boat (slides
     // on its keel like the sled), 6 boat slipway. Measured by tools/import_watermill_art.py into MountMeasurementsW3.
     [SerializeField] private Sprite[] _platformSpritesW3 = new Sprite[MountCount];
+    // World 4 (Sky Islands, 2026-11-11): 0/1 wide floating isle, 2 small floating rock, 3 cloud-wrapped stone pillar,
+    // 4 sky dock, 5 (none - falls back to World 1's wagon), 6 slide ramp. Measured by tools/import_sky_art.py.
+    [SerializeField] private Sprite[] _platformSpritesW4 = new Sprite[MountCount];
     const int PlatformSortingOrder = 1;   // decorative band (<= 1): behind blocks (2) and robots (3)
 
     // Mount kinds (LevelData.PlatformSpawnData.variant), 2026-11-08. surfaceUV = the walkable top's height from the
@@ -486,6 +489,16 @@ public class LevelLoader : MonoBehaviour
         new() { surfaceUV = MountMeasurementsW3.BoatUV,     solids = MountMeasurementsW3.BoatSolids },
         new() { surfaceUV = MountMeasurementsW3.SlipwayUV,  solids = MountMeasurementsW3.SlipwaySolids, poly = MountMeasurementsW3.SlipwayPoly },
     };
+    static readonly MountSpec[] MountsW4 =
+    {
+        new() { surfaceUV = MountMeasurementsW4.IsleUV,   solids = MountMeasurementsW4.IsleSolids },
+        new() { surfaceUV = MountMeasurementsW4.IsleUV,   solids = MountMeasurementsW4.IsleSolids },
+        new() { surfaceUV = MountMeasurementsW4.RockUV,   solids = MountMeasurementsW4.RockSolids },
+        new() { surfaceUV = MountMeasurementsW4.PillarUV, solids = MountMeasurementsW4.PillarSolids },
+        new() { surfaceUV = MountMeasurementsW4.DockUV,   solids = MountMeasurementsW4.DockSolids },
+        default,
+        new() { surfaceUV = MountMeasurementsW4.RampUV,   solids = MountMeasurementsW4.RampSolids, poly = MountMeasurementsW4.RampPoly },
+    };
     int _loadingWorld = 1;
 
     readonly List<GameObject> _spawnedPlatforms = new();
@@ -495,8 +508,9 @@ public class LevelLoader : MonoBehaviour
         int v = Mathf.Clamp(data.variant, 0, Mounts.Length - 1);
         bool w2 = _loadingWorld == 2 && _platformSpritesW2 != null && v < _platformSpritesW2.Length && _platformSpritesW2[v] != null;
         bool w3 = _loadingWorld == 3 && _platformSpritesW3 != null && v < _platformSpritesW3.Length && _platformSpritesW3[v] != null;
-        var spec = w2 ? MountsW2[v] : w3 ? MountsW3[v] : Mounts[v];
-        Sprite sprite = w2 ? _platformSpritesW2[v] : w3 ? _platformSpritesW3[v]
+        bool w4 = _loadingWorld == 4 && _platformSpritesW4 != null && v < _platformSpritesW4.Length && _platformSpritesW4[v] != null;
+        var spec = w2 ? MountsW2[v] : w3 ? MountsW3[v] : w4 ? MountsW4[v] : Mounts[v];
+        Sprite sprite = w2 ? _platformSpritesW2[v] : w3 ? _platformSpritesW3[v] : w4 ? _platformSpritesW4[v]
                       : _platformSprites != null && v < _platformSprites.Length ? _platformSprites[v] : null;
         var go = new GameObject($"Mount_{_spawnedPlatforms.Count}");
         go.transform.SetParent(_blockParent, false);
@@ -580,14 +594,29 @@ public class LevelLoader : MonoBehaviour
     [SerializeField] private Sprite _waterDropSprite;
     [SerializeField] private Sprite _millCraneSprite;
     [SerializeField] private Sprite _millstoneSprite;
+    // World 4 (2026-11-11): the thundercloud + its lightning bolts (Sky/StormCloud.png = Stampede AnchorCloud, Sky/Bolt.png),
+    // the sky crane dangling a thunder wheel (Sky/SkyCrane.png, Sky/ThunderWheel.png), a rolling thunder wheel.
+    [SerializeField] private Sprite _stormCloudSprite;
+    [SerializeField] private Sprite _boltSprite;
+    [SerializeField] private Sprite _skyCraneSprite;
+    [SerializeField] private Sprite _thunderWheelSprite;
     readonly List<GameObject> _spawnedGadgets = new();
 
     void SpawnGadget(LevelData.GadgetSpawnData data)
     {
         bool w2 = _loadingWorld == 2;
         bool w3 = _loadingWorld == 3;
+        bool w4 = _loadingWorld == 4;
         GameObject go = data.type switch
         {
+            GadgetType.HayHoist when w4 && _skyCraneSprite != null =>
+                HayHoist.Spawn(_blockParent, _skyCraneSprite, _thunderWheelSprite, data.position,
+                               Mathf.Max(1f, data.size), data.ropeLength, data.faceLeft, 0.99f,
+                               MountMeasurementsW4.SkyCraneAnchor, MountMeasurementsW4.SkyCranePost).gameObject,
+            GadgetType.StormCloud => Sunflower.Spawn(_blockParent, _stormCloudSprite, _boltSprite, data.position,
+                                                     Mathf.Max(0.5f, data.size), storm: true).gameObject,
+            GadgetType.ThunderWheel => RollingBoulder.Spawn(_blockParent, _thunderWheelSprite, data.position,
+                                                            Mathf.Max(0.5f, data.size)).gameObject,
             GadgetType.HayHoist when w3 && _millCraneSprite != null =>
                 HayHoist.Spawn(_blockParent, _millCraneSprite, _millstoneSprite, data.position,
                                Mathf.Max(1f, data.size), data.ropeLength, data.faceLeft, 0.99f,

@@ -153,8 +153,51 @@ public class CornfieldAmbience : MonoBehaviour
         pollen = 0.35f, speckKind = 2, crows = false, groundFog = 0.35f,
     };
 
+    // ── Sky Islands (World 4, 2026-11-11) ──────────────────────────────────────────────────────────────────────
+    // Above a sea of clouds: big drifting clouds and bright sun, gusty updraft days (chaff = blown leaves), a pink-gold
+    // sunset with pollen, a storm front with rain and lightning, a starlit night with fireflies and a faint aurora.
+    static readonly Profile ClearSkies = new()
+    {
+        sky = Color.white, land = Color.white, haze = new Color(0.86f, 0.93f, 1f), hazeAlpha = 0.2f, mistAlpha = 0.35f,
+        grade = new Color(0.9f, 0.96f, 1f, 0.0f), wind = 1.1f, sun = 1f, sunColour = new Color(1f, 0.97f, 0.86f),
+        clouds = 7, cloudTint = Color.white, pollen = 0.3f, speckKind = 0, crows = true, groundFog = 0.1f,
+    };
+    static readonly Profile Windswept = new()
+    {
+        sky = new Color(0.92f, 0.96f, 1f), land = new Color(0.95f, 0.98f, 1f), haze = new Color(0.84f, 0.9f, 0.98f),
+        hazeAlpha = 0.28f, mistAlpha = 0.45f, grade = new Color(0.7f, 0.82f, 1f, 0.05f), wind = 2.0f, sun = 0.8f,
+        sunColour = new Color(1f, 0.98f, 0.9f), clouds = 8, cloudTint = new Color(0.96f, 0.98f, 1f), pollen = 0.8f,
+        speckKind = 2, crows = false, groundFog = 0.2f,
+    };
+    static readonly Profile SunsetClouds = new()
+    {
+        sky = new Color(1f, 0.82f, 0.78f), land = new Color(1f, 0.88f, 0.86f), haze = new Color(1f, 0.74f, 0.66f),
+        hazeAlpha = 0.3f, mistAlpha = 0.55f, grade = new Color(0.95f, 0.5f, 0.45f, 0.1f), wind = 0.6f, sun = 1f,
+        sunColour = new Color(1f, 0.7f, 0.5f), clouds = 6, cloudTint = new Color(1f, 0.78f, 0.74f), pollen = 0.7f,
+        speckKind = 0, crows = true, groundFog = 0.25f,
+    };
+    static readonly Profile StormFront = new()
+    {
+        sky = new Color(0.52f, 0.58f, 0.7f), land = new Color(0.66f, 0.72f, 0.8f), haze = new Color(0.58f, 0.64f, 0.74f),
+        hazeAlpha = 0.42f, mistAlpha = 0.6f, grade = new Color(0.12f, 0.18f, 0.32f, 0.22f), wind = 1.8f, rain = 0.8f,
+        lightning = true, sun = 0f, sunColour = Color.white, clouds = 8, cloudTint = new Color(0.52f, 0.56f, 0.66f),
+        pollen = 0.3f, speckKind = 2, crows = false, groundFog = 0.3f,
+    };
+    static readonly Profile StarlitSky = new()
+    {
+        sky = new Color(0.42f, 0.48f, 0.72f), land = new Color(0.6f, 0.66f, 0.86f), haze = new Color(0.4f, 0.46f, 0.7f),
+        hazeAlpha = 0.32f, mistAlpha = 0.5f, grade = new Color(0.12f, 0.12f, 0.4f, 0.22f), wind = 0.4f, sun = 0.3f,
+        sunColour = new Color(0.85f, 0.9f, 1f), clouds = 4, cloudTint = new Color(0.55f, 0.6f, 0.8f), pollen = 1f,
+        speckKind = 1, crows = false, groundFog = 0.2f, aurora = 0.25f,
+    };
+
     public static Profile For(LevelWeather w) => w switch
     {
+        LevelWeather.ClearSkies    => ClearSkies,
+        LevelWeather.Windswept     => Windswept,
+        LevelWeather.SunsetClouds  => SunsetClouds,
+        LevelWeather.StormFront    => StormFront,
+        LevelWeather.StarlitSky    => StarlitSky,
         LevelWeather.SummerMorning => SummerMorning,
         LevelWeather.RiverMist     => RiverMist,
         LevelWeather.SpringShower  => SpringShower,

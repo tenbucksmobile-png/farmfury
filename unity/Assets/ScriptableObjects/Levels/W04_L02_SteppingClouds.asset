@@ -1,0 +1,142 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1966708deffe45949832dc573867a129, type: 3}
+  m_Name: W04_L02_SteppingClouds
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelId: W4_L02
+  levelName: Stepping Clouds
+  parBirds: 2
+  world: 4
+  isBossLevel: 0
+  referenceFraming: 1
+  trimColliders: 0
+  birds: 050000000500000000000000
+  blocks:
+  - type: 0
+    position: {x: 6.75, y: -3.075}
+    size: {x: 0.3, y: 1.05}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - type: 0
+    position: {x: 7.65, y: -3.075}
+    size: {x: 0.3, y: 1.05}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - type: 0
+    position: {x: 7.2, y: -2.425}
+    size: {x: 1.2, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - type: 0
+    position: {x: 9.507, y: -2.056}
+    size: {x: 0.979, y: 0.823}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 4
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - type: 0
+    position: {x: 9.643, y: -1.436}
+    size: {x: 0.979, y: 0.823}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 4
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - type: 0
+    position: {x: 9.78, y: -0.816}
+    size: {x: 0.979, y: 0.823}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 4
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - type: 0
+    position: {x: 12.1, y: -0.7}
+    size: {x: 0.3, y: 1}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - type: 0
+    position: {x: 12.1, y: -0.075}
+    size: {x: 1.4, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  robots:
+  - robotType: 0
+    position: {x: 7.2, y: -3.15}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 7.2, y: -1.85}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 9.555, y: -0.09}
+    scale: {x: 5.5, y: 5.5}
+  - robotType: 0
+    position: {x: 12.4, y: 0.5}
+    scale: {x: 5.5, y: 5.5}
+  platforms:
+  - x: 7.2
+    surfaceY: -3.6
+    width: 2
+    variant: 2
+    rolling: 0
+  - x: 9.7
+    surfaceY: -2.4
+    width: 2
+    variant: 2
+    rolling: 0
+  - x: 12.2
+    surfaceY: -1.2
+    width: 2
+    variant: 2
+    rolling: 0
+  weather: 16
+  gadgets: []

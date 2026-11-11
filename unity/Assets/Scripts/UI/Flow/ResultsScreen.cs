@@ -41,6 +41,17 @@ namespace FarmFury.UI
         private readonly Text _plainTitle;
         private readonly Image[] _plainStars;
 
+        // Count-up reveal (2026-11-11, user: "have the score run up from zero - like a counter to slow down the flow"):
+        // the score counts up from 0 easing out, the earned stars fill in one by one as it passes each third, the coin
+        // balance ticks up by the payout, then the buttons fade in. A tap skips to the end. Unscaled time.
+        private const float CountDelay = 0.45f, CountTime = 1.7f, CoinTime = 0.7f, ButtonsFade = 0.3f;
+        private CanvasGroup _buttons;
+        private float _revealT = -1f;          // seconds into the reveal; < 0 = not revealing
+        private bool _countDone = true;
+        private int _shownStars;
+        private int _balanceStart, _paid;
+        private string _bestLine = "";
+
         // The canvases are 1280x720 (Stampede's mockup); the painted stars are 76px boxes centred on these points.
         // The score goes under them; the World Unlocked sign sits in the open hills to the right.
         public static readonly Vector2 ArtSize = new(1280f, 720f);
@@ -122,6 +133,7 @@ namespace FarmFury.UI
 
             var safe = UIKit.NewRect("SafeArea", root);
             safe.gameObject.AddComponent<SafeAreaFitter>();
+            _buttons = safe.gameObject.AddComponent<CanvasGroup>();
             float size = UIKit.RoundButtonSize;
             // Same inset as Home/Settings on the right (was EdgeMargin + 60, user request 2026-11-08).
             float left = EdgeMargin, second = left + size + ButtonGap;
@@ -198,7 +210,8 @@ namespace FarmFury.UI
         public void Tick()
         {
             var gm = GameManager.Instance;
-            bool show = gm != null && gm.State == GameState.LevelComplete && _run != null && !_run.doubleCoinsClaimed &&
+            if (_revealT >= 0f) TickReveal();
+            bool show = _countDone && gm != null && gm.State == GameState.LevelComplete && _run != null && !_run.doubleCoinsClaimed &&
                 _run.coinsEarned > 0 && AdManager.Instance != null && AdManager.Instance.IsRewardedAdReady;
             if (_doubleCoins.activeSelf != show) { _doubleCoins.SetActive(show); }
         }
@@ -265,10 +278,70 @@ namespace FarmFury.UI
                 UIKit.SetStars(_plainStars, run.starsEarned);
             }
             _scoreText.gameObject.SetActive(true);
-            _scoreText.text = run.score.ToString("N0");
-            _bestText.text = run.isPerfect ? "PERFECT!" : run.isNewBest ? "NEW BEST!" : "";
+            _bestLine = run.isPerfect ? "PERFECT!" : run.isNewBest ? "NEW BEST!" : "";
             LayoutButtons(complete: true);
+            StartReveal(run);
             Root.SetActive(true);
+        }
+
+        private void StartReveal(LevelRunState run)
+        {
+            _paid = run.coinsEarned * (run.doubleCoinsClaimed ? 2 : 1);
+            int balance = SaveManager.Instance != null ? SaveManager.Instance.CoinBalance : _paid;
+            _balanceStart = Mathf.Max(0, balance - _paid);
+            _scoreText.text = "0";
+            _bestText.text = "";
+            _shownStars = 0;
+            SetShownStars(0);
+            _payoutText.text = _balanceStart.ToString();
+            _buttons.alpha = 0f;
+            _buttons.interactable = _buttons.blocksRaycasts = false;
+            _countDone = false;
+            _revealT = 0f;
+        }
+
+        private void TickReveal()
+        {
+            _revealT += Time.unscaledDeltaTime;
+            var pointer = UnityEngine.InputSystem.Pointer.current;
+            float end = CountDelay + CountTime + CoinTime;
+            if (!_countDone && _revealT > 0.25f && pointer != null && pointer.press.wasPressedThisFrame) _revealT = end;   // tap: skip
+
+            float p = Mathf.Clamp01((_revealT - CountDelay) / CountTime);
+            float eased = 1f - Mathf.Pow(1f - p, 3f);
+            int target = _run != null ? _run.score : 0;
+            _scoreText.text = Mathf.RoundToInt(target * eased).ToString("N0");
+            int stars = _run != null ? _run.starsEarned : 0;
+            int due = 0;
+            for (int i = 0; i < stars; i++) if (p >= (i + 1) / 3f - 0.001f || p >= 1f) due = i + 1;
+            if (due != _shownStars) { _shownStars = due; SetShownStars(due); AudioManager.Play(AudioManager.Sound.RobotHit); }
+
+            float q = Mathf.Clamp01((_revealT - CountDelay - CountTime) / CoinTime);
+            _payoutText.text = (_balanceStart + Mathf.RoundToInt(_paid * q)).ToString();
+
+            if (!_countDone && _revealT >= end)
+            {
+                _countDone = true;
+                _bestText.text = _bestLine;
+                _buttons.interactable = _buttons.blocksRaycasts = true;
+            }
+            if (_countDone)
+            {
+                _buttons.alpha = Mathf.Clamp01((_revealT - end) / ButtonsFade);
+                if (_buttons.alpha >= 1f) _revealT = -1f;
+            }
+        }
+
+        // Stars filled so far: the empty-star overlay hides over each earned painted star in turn (art look), or the
+        // plain bar fills (plain look).
+        private void SetShownStars(int n)
+        {
+            if (_artLook)
+            {
+                for (int i = 0; i < _emptyStars.Length; i++)
+                    _emptyStars[i].gameObject.SetActive(_art.levelCompleteStarEmpty != null && i >= n);
+            }
+            else if (_plainStars != null) UIKit.SetStars(_plainStars, n);
         }
 
         public void ShowFailed(WorldData world)
@@ -290,6 +363,10 @@ namespace FarmFury.UI
             }
             _scoreText.gameObject.SetActive(false);
             _bestText.text = "";
+            _revealT = -1f;
+            _countDone = true;
+            _buttons.alpha = 1f;
+            _buttons.interactable = _buttons.blocksRaycasts = true;
             LayoutButtons(complete: false);
             Root.SetActive(true);
         }

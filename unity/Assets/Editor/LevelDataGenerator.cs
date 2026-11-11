@@ -147,6 +147,7 @@ public static partial class LevelDataGenerator
         // its L19_FrostboundWatch file and W2_L01 id (save progress is keyed by levelId); the rest keep W2_LNN ids.
         MakeWorld2Framed(folder);
         MakeWorld3Framed(folder);   // World 3 Watermill Village (tools/design_world3.py, 2026-11-10)
+        MakeWorld4Framed(folder);   // World 4 Sky Islands (tools/design_world4.py, 2026-11-11)
 
         // Worlds 3-9 (2026-11-02): built from the World 1 towers above — see WorldLevelGenerator (World 2 is designed).
         WorldLevelGenerator.GenerateAll();

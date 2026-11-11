@@ -195,7 +195,7 @@ L.boulder(l + 0.9, s, 1.0)
 x0 = 6.0 + 2.5 + 1.8
 t = sack_stilts(L, x0)
 f = L.plank(x0 - 1.5, x0 + 1.5, t)
-tower(L, x0, f, 5, width=2.2, h=1.1, taper=0.2, robots=["semi", "pawn", None, "semi", None], top="pawn")
+tower(L, x0, f, 5, width=2.2, h=1.1, taper=0.2, robots=["semi", "pawn", None, "semi", None], top="pawn", wonky=False)   # on bale stilts: wonky settled by itself (probe)
 
 L = level(16, "Waterwheel Keep", 2, [W, D, B], """
 Storm over the mill: a Harvester in a river-stone keep with a watch-house and a see-saw on its roof. On a bridge pier

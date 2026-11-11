@@ -72,6 +72,12 @@ public abstract class BlockBase : MonoBehaviour
     [SerializeField] protected Sprite _sprHorizontalW3;
     [SerializeField] protected Sprite _sprShortW3;
     [SerializeField] protected Sprite _sprExplodeW3;
+    // World 4 (Sky Islands, 2026-11-11): sky-blue airship timber (brass-banded post and plank), white marble (block,
+    // column, lintel slab) instead of stone, cloud bales for hay (tools/import_sky_art.py). Same slots as World 3's.
+    [SerializeField] protected Sprite _sprNormalW4;
+    [SerializeField] protected Sprite _sprVerticalW4;
+    [SerializeField] protected Sprite _sprHorizontalW4;
+    [SerializeField] protected Sprite _sprShortW4;
 
     // Optional hit-reaction art (e.g. Haybail_Damaged.png) — null on block types that don't
     // have one wired, in which case TakeDamage() only does the existing colour-tint/crack
@@ -366,12 +372,13 @@ public abstract class BlockBase : MonoBehaviour
         // falls back to the ice "normal" tile rather than always landing on wood/stone art.
         bool   isW2       = world == 2;
         bool   isW3       = world == 3;
-        Sprite normal     = (isW2 && _sprNormalW2     != null) ? _sprNormalW2     : (isW3 && _sprNormalW3     != null) ? _sprNormalW3     : _sprNormal;
-        Sprite vertical   = (isW2 && _sprVerticalW2   != null) ? _sprVerticalW2   : (isW3 && _sprVerticalW3   != null) ? _sprVerticalW3   : _sprVertical;
-        Sprite horizontal = (isW2 && _sprHorizontalW2 != null) ? _sprHorizontalW2 : (isW3 && _sprHorizontalW3 != null) ? _sprHorizontalW3 : _sprHorizontal;
+        bool   isW4       = world == 4;
+        Sprite normal     = (isW4 && _sprNormalW4     != null) ? _sprNormalW4     : (isW2 && _sprNormalW2     != null) ? _sprNormalW2     : (isW3 && _sprNormalW3     != null) ? _sprNormalW3     : _sprNormal;
+        Sprite vertical   = (isW4 && _sprVerticalW4   != null) ? _sprVerticalW4   : (isW2 && _sprVerticalW2   != null) ? _sprVerticalW2   : (isW3 && _sprVerticalW3   != null) ? _sprVerticalW3   : _sprVertical;
+        Sprite horizontal = (isW4 && _sprHorizontalW4 != null) ? _sprHorizontalW4 : (isW2 && _sprHorizontalW2 != null) ? _sprHorizontalW2 : (isW3 && _sprHorizontalW3 != null) ? _sprHorizontalW3 : _sprHorizontal;
         Sprite diagonal   = (isW2 && _sprDiagonalW2   != null) ? _sprDiagonalW2   : _sprDiagonal;
-        Sprite shortSpr   = (isW2 && _sprShortW2      != null) ? _sprShortW2      : (isW3 && _sprShortW3      != null) ? _sprShortW3      : _sprShort;
-        bool   themed     = isW2 || (isW3 && _sprNormalW3 != null);
+        Sprite shortSpr   = (isW4 && _sprShortW4      != null) ? _sprShortW4      : (isW2 && _sprShortW2      != null) ? _sprShortW2      : (isW3 && _sprShortW3      != null) ? _sprShortW3      : _sprShort;
+        bool   themed     = isW2 || (isW3 && _sprNormalW3 != null) || (isW4 && _sprNormalW4 != null);
 
         // Select art sprite: an explicit artVariant (set by LevelLayoutDumper directly from the
         // design-time sprite's own filename) always wins over the aspect-ratio guess below —

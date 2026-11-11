@@ -143,7 +143,7 @@ public class SceneryBuilder : MonoBehaviour
     public void BuildForLevel(int levelIdx, int world = 1, bool framed = false)
     {
         ClearProps();
-        if ((world == 2 || world == 3) && framed) return;   // framed World 2/3 levels: the frozen / watermill stack is the scenery
+        if ((world == 2 || world == 3 || world == 4) && framed) return;   // framed World 2/3/4 levels: their own depth stack is the scenery
 
         if (world == 2)
         {
