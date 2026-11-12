@@ -44,8 +44,20 @@ public class AbilityProjectile : MonoBehaviour
     float _age;
     bool _spent;
 
-    public static AbilityProjectile Spawn(Spec spec, Vector3 position, Vector2 velocity, Collider2D thrower = null, int sortingOrder = 6)
+    public static AbilityProjectile Spawn(Spec spec, Vector3 position, Vector2 velocity, Collider2D thrower = null, int sortingOrder = 7)   // 7: in front of the animal (6), like Cluck's eggs
     {
+        // An animal's ability (thrown by its collider) flies at the shot's pace (AnimalBase.Pace, 2026-11-12): gravity
+        // x pace squared, heavier by 1/pace (same momentum), lives and grows over 1/pace as long. Contraptions (no
+        // thrower) keep their own speed.
+        if (thrower != null && AnimalBase.Pace < 0.999f)
+        {
+            float k = Mathf.Max(0.1f, AnimalBase.Pace);
+            spec.gravityScale *= k * k;
+            spec.mass /= k;
+            spec.life /= k;
+            spec.growTime /= k;
+            spec.spin *= k;
+        }
         var go = new GameObject("AbilityProjectile");
         go.transform.position = position;
         go.layer = EggLayer;

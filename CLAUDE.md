@@ -139,7 +139,171 @@ needing a live pass before shipping.
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
-- **2026-11-11 (latest) — Softer impacts; World 4 rebuilt as generated sky cities** (user: impact "too high and shoots
+- **2026-11-12 (latest) — Polish round before the paid worlds** (user list). Compiled; unverified in Play mode.
+  - **Robots hidden behind a mound:** `design_world1.prune_hidden_robots` / `prune_all` (called by every designer's
+    `write_cs`): `reachable()` ignores obstacles, so a robot low behind a mound (cloud / reef / pedestal / mesa / island,
+    mount variants 0-3; ramps, wagons and scaffolds are not walls) counted as reachable. `reachable_clear` traces the same
+    arcs from the raised launch point and stops in a mound's body; robots no arc reaches are dropped (never a boss, never
+    a room's last robot). Dropped: W4 L04/L06/L09/L10/L24, W5 L09, W6 L08/L16 (one each); Worlds 1-3 none.
+  - **Deep Dredger 1.5x:** `ROBOT_W[5]` boss scale 7.0 -> 10.5 (vis 3.006) - the wide sub read small on its canvas.
+  - **World 6 sky:** drones and small ships gone (SpaceDecor flyers and the warp wipe's drone); `Core/SpaceDecor.cs` -
+    a faint milky-way band x2, spiral galaxies x2 (turning slowly), six asteroids drifting / tumbling at three depths,
+    two comets streaking down-left every 5-11 s. Art: one Kling sheet (W6SpaceDecor.png, 2 credits) cut by
+    `import_mothership_art.space_decor` (border-only keying: the milky way's pink must survive). The warp wipe tumbles
+    asteroids instead of a drone.
+  - **Sky Islands landmark:** the rune tablet in the clouds (`Sky/SkyTablet.png`, cut by `tools/import_sky_tablet.py`
+    from `FarmFury_Artwork/SkyIsland/SkyTemple.png`), `_tabletBackSprite`, BackProp Tablet (floats 0.3 u).
+  - **"Adding FarmFury"** replaces "+1 animal": the one-shot room banner and the revive prompt's reward label.
+  - **Beginner tips** (`UI/TutorialHints.cs`, added to the HUD by HUDController): W1_L01 aiming (a cartoon hand drags
+    back from the loaded animal until the first shot, then "Topple the structure onto the robots!"), W1_L02 "Press here
+    to change characters" (hand at the switch button), W1_L03 rooms, W1_L04 abilities (tapping hand during the first
+    flight). Nothing on any other level. Hooks: `CatapultLauncher.Fired` / `LoadedPosition`, `AnimalBase.AbilityUsed`,
+    `HUDController.SwapButtonRect` / `_hintHandSprite` (`Sprites/UI/Franchise/Hint/HintHand.png`, Kling 1 credit).
+
+- **2026-11-12 (latest) — World 6 Robot Mothership built on the World 1-5 template** (user: "go ahead and build W6 -
+  mothership - applying the same process"). Compiled; unverified in Play mode.
+  - **Art:** `python tools/import_mothership_art.py` -> `Sprites/Environment/Mothership/`, `Launchers/GravityCannon.png`,
+    `Enemies/Robot/FactoryMachine*.png`, `MountMeasurementsW6.cs`, `tools/mounts_w6.json`. Reused (Stampede MotherShip):
+    RM_Parallax_Far (far), DeckStrip / HullFill (floor + underfill), SateliteDish (silhouettes), Drone + Ship (SpaceDecor,
+    a SeaDecor with no jellies / bubbles), WarningBeacon (landmark), LaserEmitter (pump-mode contraption firing a
+    code-drawn PlasmaOrb), GravitySling (rolling GravityRing), the Factory Machine (boss). Kling 3 images / 6 credits in
+    `FarmFury_Artwork/Mothership/Framed/` (W6Cannon, W6Pieces, W6Mounts). The pieces sheet's post (blue bundle) and
+    column (white marble) bled in from the World 5 / World 4 sheets - usable, a 2-credit redo if they read wrong.
+  - **Code:** the World 5 pattern again - `Space` theme in EnvironmentDepthSystem (`_sprSpace*`, no biplane), weathers
+    StarField / RedAlert (a soft red grade, no flashing) / NebulaGlow / SolarFlare / PowerDown, `BlockBase._spr*W6`
+    (the Worlds 4-6 "hi" slots), `_cannonSpriteW6` / `_mountBaleSpriteW6` (battery pods) / `_beaconBackSprite`,
+    `_platformSpritesW6` + `MountsW6` (DeckLow / Mid / Tall), `GadgetType.LaserEmitter` / `GravityRing`,
+    `FactoryMachineRobot.prefab` on `_worldRobots[6].boss`, the warp-jump wipe (deep-blue veil, two speeds of star
+    streaks, star points, a drone; no flash). `WorldLevelGenerator` now makes Worlds 7-9 only.
+  - **Levels:** `tools/design_world6.py` -> `LevelDataGenerator.World6.cs` (`MakeWorld6Framed`, ids `W6_L01..L16`): the
+    city generator on the pedestals, two rooms each, emitters / gravity rings / dynamite, L16 = outer works + the Factory
+    Machine's keep in room 2. Billy leads. Designer 0 issues; Worlds 1-5 designer output unchanged. PhysicsProbe (no input)
+    both rooms 32/32 untouched (`unity/Logs/probe_w6_room1/2.log`).
+
+- **2026-11-12 — Slow-motion shots, slower room change, wipes for Worlds 2-4** (user: "slow the transition down - it
+  feels rushed ... the character still flys too fast, slow them down - almost slow mo - also then adjust the ability
+  speed in parallel ... the user should feel the anxiety, anticipation of their shot - apply to all built worlds").
+  - `ReferenceFraming.FlightPace` 0.6 (framed levels = every built world): launch speeds x pace, projectile gravity x
+    pace^2 - the same arcs (preview, reach checks), 1/0.6 = 1.67x as long in the air. `AnimalBase.Pace` (set by
+    `ApplyFlightTuning`): the launched animal's mass / pace (same momentum, same hits); abilities in step -
+    `AbilitySpeed` floors x pace, `AbilityProjectile.Spawn` (thrown by an animal) gravity x pace^2 / mass / pace / life
+    and growTime / pace / spin x pace, Cluck's eggs, Bessie's slam. The trajectory preview takes 1/pace substeps so it
+    still shows the same stretch of arc. Contraptions keep their own speed.
+  - `CatapultLauncher.RoomPanDuration` 1.0 -> 1.8 s (the swoosh still peaks mid-pan; the wipes stretch with it).
+  - Wipes: World 2 blizzard whiteout (white veil, snow clouds, 160 snowflakes, driving streaks, ice splinters, a frozen
+    bale), World 3 river splash (blue-green veil, spray, 70 spinning droplets, flour puffs, a flour sack), World 4 cloud
+    bank (white veil, 38 clouds, a balloon and a kite). Shared sprites loaded as they are (no re-import).
+
+- **2026-11-12 (latest) — World-themed room-change wipes, Worlds 1 and 5** (user: "a panning effect that is specific
+  to a world - example - cornfield (hurricane wind), sunken world (bubbles) - that cover the whole screen while it pans";
+  "build world 1 and world 5 first"). Compiled; checked with an offline render of the same maths, unverified in Play mode.
+  - `Launcher/PanWipe.cs`: screen-space layers (a full-screen veil, or a swarm of one kind of sprite with size / start /
+    spread / travel / spin / wobble / tint / order; fish flip to face their travel). Coverage envelope: builds over the
+    first 38% of the pan, holds ~40-60% (the camera's fastest moment, the swoosh peak, the room swap), clears from 62%;
+    ~85% opaque at its thickest. Orders 35-37: over the play layer, under the rain / grade and the HUD canvas.
+  - `CatapultLauncher.WipeLayers(world)` (recipes) replaces the speed streaks where a recipe exists:
+    World 1 hurricane gust = khaki dust veil, 26 dust clouds (cornfield Cloud_0/2 tinted), 50 wind streaks, 50 spinning
+    golden leaves, 10 feathers, 2 tumbling haybales, all blasting right to left; World 5 bubble surge = teal veil, 85 big
+    + 130 small bubbles boiling up and drifting left, a school of 12 fish darting across. Other worlds: the streaks.
+  - Art: `Sprites/Effects/PanWipe/Leaf_0-9`, `Feather_0-3` cut by `tools/import_pan_wipes.py` from CornHuskTrail.png and
+    Impact_Feathers.png (no Kling); wired by `SceneSetup.WireRoomWipes` (`_wipeDust/_wipeLeaves/_wipeFeathers/_wipeHay/
+    _wipeBubble/_wipeFish`).
+
+- **2026-11-12 (latest) — World 5 Sunken City built on the World 1-4 template** (user: "begin with W5 - utilise the
+  exact same process as the other worlds, seek artwork in the artwork folders, if you dont have call on Kling AI ... apply
+  the same two room panning, and enhanced structures also"). Compiled; unverified in Play mode.
+  - **Art:** `python tools/import_sunken_art.py` -> `Sprites/Environment/Sunken/`, `Launchers/SeaCannon.png`,
+    `Enemies/Robot/DeepDredger*.png`, `Scripts/Level/MountMeasurementsW5.cs`, `tools/mounts_w5.json`. Reused (Stampede
+    Sunken City): SC_Parallax_Far (far), SeabedStrip / SeabedFill (floor + underfill colour), Kelp (corner silhouettes),
+    Fish_1-6 / JellyFish / Bubble (`SeaDecor`), Clam + pearl, ShipsWheel, SunkenStatue (landmark), the Deep Dredger
+    (boss, DeepDredger_Left idle / mirrored alert / Defeated hit). Kling: 3 images, 6 credits, in
+    `FarmFury_Artwork/SunkenCity/Framed/`: W5Cannon (brass diving-helmet torpedo cannon), W5Pieces (one sheet: shipwreck
+    post + plank, teal block / column / slab, sponge bale - split by `import_sky_art.split_pieces`), W5ReefMounts (three
+    flat-topped coral reef mesas - `sheet_part`).
+  - **Look:** `EnvironmentDepthSystem` Sea theme (`_sprSea*`, `Sea` / `SeaReady`, no mid band or wall like World 4, kelp
+    sways 0.3); the biplane fly-by is off under the sea. Weathers SunlitShallows / KelpForest / MurkyDepths / GlowingDeep /
+    Undertow in `CornfieldAmbience` (no clouds or crows, surface light, marine snow, glowing plankton, murk).
+    `Core/SeaDecor.cs`: fish crossing at three depths (flipped to face their way; `SeaFishFacesRight`), jellyfish pulsing
+    upward (glowing in GlowingDeep), bubbles rising.
+  - **Pieces / cannon / mounts / contraptions / boss:** `BlockBase._spr*W5` (Worlds 4 and 5 share the "hi" slots in
+    Initialise); `CatapultLauncher._cannonSpriteW5`, `_mountBaleSpriteW5` (sponge), 4-row pyramid + `FarmMountShift`,
+    `_statueBackSprite` landmark; `LevelLoader._platformSpritesW5` + `MountsW5` (reef low / mid / tall, tall = mesa);
+    `GadgetType.Clam` (Sunflower pump mode, pearls) and `GadgetType.ShipsWheel` (RollingBoulder);
+    `DeepDredgerRobot.prefab` (`EnsureDeepDredgerPrefab`) on `_worldRobots[5].boss`.
+  - **Levels:** `tools/design_world5.py` writes `Editor/LevelDataGenerator.World5.cs` (`MakeWorld5Framed`, deletes older
+    `W05_*` files; ids `W5_L01..L22`): World 4's city generator (`design_world4.city`) on the reef shapes
+    (`w4.CLOUDS` re-pointed), every level two rooms (`room2_spec`), clams / ship's wheels / dynamite as fixed
+    contraptions, L22 = outer town + the Dredger's keep as room 2. Gerald leads. Designer 0 issues. PhysicsProbe (no
+    input) both rooms: 44/44 untouched (`unity/Logs/probe_w5_room1/2.log`). No DeepDredger_Explode.png: the death burst
+    falls back to the generic explosion.
+    `WorldLevelGenerator` now skips worlds 2-5 (Worlds 6-9 only) and keeps `W05_` files.
+  - Fixed on the way: World 4's room-1 seeds were pinned with `reach_world=1`, which moved when World 1's cannon was
+    raised - now `reach_world=0` (the original ground-level launch, no LAUNCH_SHIFT entry); World 4 output identical.
+
+- **2026-11-12 — Worlds 1-3: two rooms, taller cannon pyramid, a landmark behind the cannon** (user: "return
+  to first world - apply the same logic as we did for W4"; then "apply the same now to W2 ... then apply W3"). Compiled,
+  probed; unverified in Play mode.
+  - **Cannon:** `CatapultLauncher.MountRows` 4 for Worlds 1-3 (bales 5-4-3-2, +1.6 u over the old 3-2) and
+    `FarmMountShift` (-1.2, 0) - the same raised point as World 4. Designer `LAUNCH_SHIFT` 1-4 = (-1.2, 1.6).
+  - **Landmark** (`PlaceSilo`, order 1, behind bales/cannon, travels with the rooms): W1 broken silo
+    (`Cornfield/BrokenSilo.png`, cut by `tools/import_silo.py` from `MeadowRuins/FarmSilo.png`), W2 ice crystals
+    (`World2Props/IceCrystals.png`), W3 mossy waterwheel (`World3Props/WaterWheel.png`); sizes in `BackProp`.
+  - **Second rooms:** `design_world1.room2_for` / `farm_room` / `add_second_rooms` (seeded; 2-4 set pieces - wonky
+    tower, stilt hut, plank tent, upside-down crate pyramid, leaning stack, balanced rock, cantilever, see-saw, dynamite
+    deck - some on mesas / islands later; robots last via `settle_robots`; first seed passing every check). World 2/3
+    designers call `d.add_second_rooms(LEVELS, 1)`. Boss levels (L18, W2_L22, W3_L22): a new outer yard first, the keep
+    as room 2. Room 1 of every other level byte-identical. L01 (hand-written) appends `L01Room2*` from World1.cs.
+    `ROOM2_SKIP` per designer for any room 2 that falls in the probe.
+  - **Worlds 5-9 untouched:** `WorldLevelGenerator.Create` copies one room only (room 0; the boss template's last room
+    shifted back) - assets identical but for ~1e-6 float rounding on the 5 boss levels.
+  - Probe (no input): W1 both rooms 36/36 clean; W2-3 both rooms 88/88 clean (see `unity/Logs/probe_w1_room*.log`,
+    `probe_w23_room*.log`).
+
+- **2026-11-12 — Play-test fixes after the two-room pilot** (user list). Compiled; unverified in Play mode.
+  - **Animal vanished mid-air:** `AnimalBase.MaxAbsX` (40) was measured from x = 0; room 2's cannon is at x ~ 27, so
+    shots died at x = 40. Now measured from the launch x (`_launchX`).
+  - **Floating plum removed** (Stampede's pellet) from `SkyDecor` (sprite still wired, unused).
+  - **Loaded pose changed in room 2:** the display-only loaded animal kept its collider, and the pan dragged it
+    through room 1's wreckage -> "hit" -> impact pose. `PrepareNextBird` now disables its colliders.
+  - **Billy:** loaded = `Launch(1).png` (braced crouch), flight = `kling_20260721...5562` (full-body leap facing right,
+    watermark specks dropped), impact = `Defeat.png`; goat-sized: radius 0.36 -> 0.44, PPU 2057 -> 1683.
+  - **Percy:** loaded = `Launch2.png`, flight = `kling_20260721...5548` (leap facing right; ground shadow removed by
+    `import_character_art.largest_only`), bounce = `Trigger.png`. `import_character_art.py --only <Animal>` added.
+    Bounce Roll reworked: curls + dives, bounces off the first hit ONCE (bounciness 0.5, no boost, was 1.1 + 1.35x
+    per bounce x3 - "bounced all over the screen"), stays curled (`KeepAbilityPose`), fades 0.6 s later (`EndSoon`).
+  - **Abilities appear faster:** `AbilitySpeedFactor` 1.25 -> 1.6 and `AbilityProjectile` draws at order 7 (in front
+    of the animal); at 1.25x they crept out from behind the animal's sprite for ~0.3 s.
+
+- **2026-11-12 — Two-room levels, World 4 pilot** (user: "allow for two plays in one level... panning the camera
+  across to another structure", AB2 rooms; then "utilise the swoosh_panning SFX... to coincide with the camera
+  movement"). Compiled, probed; unverified in Play mode.
+  - **Data:** `LevelData.rooms` + a `room` index on every Block/Robot/Platform/Gadget spawn entry; room r is laid out
+    `LevelData.RoomStride` (32 u, > one screen width on any aspect) right of room 0, in absolute coordinates.
+    Generator helpers take `room:` / `rooms:`. Older assets = 1 room.
+  - **Flow (`LevelLoader`):** spawns one room at a time (`SpawnRoom`). The last robot of a non-final room ->
+    `NextRoom()`: aim locked (`LevelReveal.LockAim`), wait for wreckage + the shot to settle, **+1 animal if the room
+    took one shot** (banner "ONE SHOT! +1 ANIMAL", else "ROOM CLEARED!"), `CatapultLauncher.PanToRoom` (1.0 s
+    ease-in-out, speed streaks, cannon + mount + loaded animal + camera move together), old room destroyed, next spawned,
+    `LevelReveal.RevealRoom` (boss drop-in only in a boss level's last room), then the usual out-of-animals check.
+    Lineup shared across rooms; stars count all rooms' robots. HUD: room dots top-centre (`SetRoomProgress`), `ShowBanner`.
+    Ground widened for framed levels (`SetGroundSpan`); corner silhouettes ignore the room offset (`RoomPanX`).
+  - **Sound:** `AudioManager._roomPanClip` = `Assets/Audio/Swoosh_panning.mp3` (from `Launch/`), `PlayRoomPan`: the clip
+    peaks 1.9 s in, so it is joined 1.4 s in and peaks at mid-pan (the fastest frame); the tail fades 0.4 s after.
+  - **World 4 designs:** `design_world4.city_level` adds a smaller second city (`room2_spec`: one fewer peak (3-4), the
+    flipped skyline profile, 3-4 / 3-5 / 4-6 robots by level band, own seed range, checked from the real raised launch
+    point) via `Level.add_room` (design_world1). Room 1 of L01-L23 is byte-identical to before; L24's room 1 is a new
+    outer town and the Storm Baron's keep (pinned seed) is room 2. Designer 0 issues; PhysicsProbe both rooms
+    (`FF_PROBE_ROOM=0|1`, new; `LevelLoader.DebugStartRoom`) all 24 stand untouched (`unity/Logs/probe_w4_room1/2.log`).
+  - Open: difficulty with 3 animals over two rooms is untested; the weathervane stays in room 1.
+
+- **2026-11-12 — World 4 cannon raised up-left** (user: "the character struggles to fly over the structure").
+  `CatapultLauncher.SkyMountShift` (-1.2, +1.6) moves the cloud-bale mount + cannon (and so the barrel, aim pivot,
+  loaded animal, preview) in World 4 only; the mount floats clear of the cloud floor. The framed camera now centres on
+  `_cannonScenePos.x` (not the rest pos) so the framing doesn't follow. Designer: `LAUNCH_SHIFT` in design_world1.py;
+  `check(L, reach_world=1)` keeps World 4's city seeds pinned (generated levels byte-identical; final report uses the
+  real launch point: 0 issues). Compiled; unverified in Play mode.
+
+- **2026-11-11 — Softer impacts; World 4 rebuilt as generated sky cities** (user: impact "too high and shoots
   the structure apart... just enough to topple should it hit correctly - if it doesnt nothing should happen - for
   example hitting a stone"; then "make your structures wilder, more absurd... almost like cities of elevation"; chose
   World 4 first, big & dense). Unverified in Play mode.
@@ -921,7 +1085,7 @@ All eight are scripted and art-wired; each leads the lineups of the world that i
 | 8 — Harvest Fairground (paid) | Farm Cannon | — | 12 |
 | 9 — Crop Factory (paid) | Farm Cannon | — | 12 |
 
-World 1 (L01-L18, `tools/design_world1.py`), World 2 (W2_L01-L22, `tools/design_world2.py`, 2026-11-09), World 3 (W3_L01-L22, `tools/design_world3.py`, 2026-11-10) and World 4 (W4_L01-L24, `tools/design_world4.py`, 2026-11-11) are designed framed levels; every level of Worlds 5-9 is generated from World 1's towers by `WorldLevelGenerator` (2026-11-02, see Recent work), with each world's own robots, boss, backdrop and props. None of it verified in Play mode.
+World 1 (L01-L18, `tools/design_world1.py`), World 2 (W2_L01-L22, `tools/design_world2.py`, 2026-11-09), World 3 (W3_L01-L22, `tools/design_world3.py`, 2026-11-10), World 4 (W4_L01-L24, `tools/design_world4.py`, 2026-11-11) and World 5 (W5_L01-L22, `tools/design_world5.py`, 2026-11-12) are designed framed levels (Worlds 1-5 all two rooms per level); every level of Worlds 6-9 is generated from World 1's towers by `WorldLevelGenerator` (2026-11-02, see Recent work), with each world's own robots, boss, backdrop and props. None of it verified in Play mode.
 
 ### Star System
 - 1★ — all robots dead (progress gate)

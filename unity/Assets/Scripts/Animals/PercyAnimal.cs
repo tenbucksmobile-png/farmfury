@@ -1,18 +1,19 @@
 using UnityEngine;
 
-// Percy (pig) — Bounce Roll: on tap, curls into a ball that bounces up to 3x
-// gaining speed with each bounce.
+// Percy (pig) — Bounce Roll: on tap he curls into a ball and dives forward-and-down into the structure, bounces off the
+// first thing he hits once, and fades away.
+// Was: bounciness 1.1, no friction and 1.35x speed after each of 3 bounces — he pinged faster and faster all over the
+// screen (2026-11-12, user: "percy should not bounce all over the screen (this may freak out the kids) - he should
+// bounce off once and disappear").
 public class PercyAnimal : AnimalBase
 {
-    [Header("Bounce Roll")]
-    [SerializeField] private int   _maxBounces   = 3;
-    [SerializeField] private float _bounceBoost  = 1.35f;  // speed multiplier per bounce
-    [SerializeField] private float _rollDrag      = 0f;
-    [SerializeField] private float _rollBounciness = 1.1f;
+    const float RollBounciness = 0.5f;   // one soft rebound, no boost
+    const float FadeAfterBounce = 0.6f;  // seconds after the bounce before he fades out
 
     private bool _rolling;
-    private int  _bouncesLeft;
     private PhysicsMaterial2D _rollMat;
+
+    protected override bool KeepAbilityPose => _rolling;   // stays curled up for the whole roll
 
     protected override void Awake()
     {
@@ -24,38 +25,23 @@ public class PercyAnimal : AnimalBase
         _sr.sortingOrder = 6; // fixed 2026-07-08: was 5, needed a slot free for CannonSmoke at 5
         _col.radius      = 0.36f;
 
-        _rollMat = new PhysicsMaterial2D("PercyRoll") { bounciness = _rollBounciness, friction = 0f };
+        _rollMat = new PhysicsMaterial2D("PercyRoll") { bounciness = RollBounciness, friction = 0.3f };
     }
 
     protected override void TriggerAbility()
     {
-        _rolling      = true;
-        // Dives forward-and-down into the structure, faster than the flight (2026-11-11), then bounces on.
+        _rolling = true;
+        // Dives forward-and-down into the structure, faster than the flight (2026-11-11).
         _rb.linearVelocity = AbilityAim(30f) * AbilitySpeed(8f);
-        _bouncesLeft  = _maxBounces;
-        _rb.linearDamping = _rollDrag;
         _col.sharedMaterial = _rollMat;
         if (!HasRealSprites) _sr.color = new Color(1f, 0.85f, 0.2f); // golden "rolled up" tint
     }
 
     protected override void OnCollisionEnter2D(Collision2D col)
     {
-        if (_rolling && _bouncesLeft > 0)
-        {
-            _bouncesLeft--;
-            IsInFlight = false;
-            return; // skip contact timer — Percy is still active during bounces
-        }
-
-        _rolling = false;
-        base.OnCollisionEnter2D(col);
-    }
-
-    void OnCollisionExit2D(Collision2D col)
-    {
-        if (!_rolling || _bouncesLeft < 0) return;
-        // Boost speed after each bounce exit
-        _rb.linearVelocity *= _bounceBoost;
-        if (_bouncesLeft > 0) IsInFlight = true;
+        base.OnCollisionEnter2D(col);   // the hit (impact sound cue, contact timer) - the rebound itself is physics
+        if (!_rolling) return;
+        ShowAbilityPose();              // still curled up as he bounces off, not the impact pose
+        EndSoon(FadeAfterBounce);
     }
 }

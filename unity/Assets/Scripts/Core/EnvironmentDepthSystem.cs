@@ -111,6 +111,32 @@ public class EnvironmentDepthSystem : MonoBehaviour
     [SerializeField] Sprite _sprSkyLantern;
     [SerializeField] Sprite _sprSkyPlum;
     [SerializeField] Sprite _sprSkyVane;
+    // World 5 Sunken City framed stack (2026-11-12, tools/import_sunken_art.py):
+    //   Far    = SeaFar.png     Stampede SC_Parallax_Far: sunken ruins under shafts of light
+    //   Soil   = SeaSoil.png    Stampede SeabedStrip: a sand lip over pebbled rock
+    //   Silhouettes = SeaSilhouetteL/R.png, kelp baked to deep blue-green
+    //   No mid band or wall (like World 4). SeaDecor: Stampede's fish, jellyfish and bubbles.
+    [SerializeField] Sprite _sprSeaFar;
+    [SerializeField] Sprite _sprSeaSoil;
+    [SerializeField] Sprite _sprSeaSilhouetteL;
+    [SerializeField] Sprite _sprSeaSilhouetteR;
+    [SerializeField] Sprite[] _sprSeaFish;
+    [SerializeField] Sprite _sprSeaJelly;
+    [SerializeField] Sprite _sprSeaBubble;
+    // World 6 Robot Mothership framed stack (2026-11-12, tools/import_mothership_art.py): Far = SpaceFar.png (Stampede
+    // RM_Parallax_Far: the mothership over a planet), Soil = SpaceSoil.png (Stampede DeckStrip), silhouettes = the
+    // satellite dish in deep space blue; SpaceDecor: asteroids, comets, galaxies and a milky way (2026-11-12, the drones and
+    // small ships were removed: "only keep the big one as a backdrop").
+    [SerializeField] Sprite _sprSpaceFar;
+    [SerializeField] Sprite _sprSpaceSoil;
+    [SerializeField] Sprite _sprSpaceSilhouetteL;
+    [SerializeField] Sprite _sprSpaceSilhouetteR;
+    [SerializeField] Sprite _sprSpaceAsteroid;
+    [SerializeField] Sprite _sprSpaceComet;
+    [SerializeField] Sprite _sprSpaceGalaxy;
+    [SerializeField] Sprite _sprSpaceMilkyWay;
+    // Which way each fish's head points in its art (SeaDecor flips them to swim forwards): Fish_5 faces right.
+    static readonly bool[] SeaFishFacesRight = { false, false, false, false, true, false };
 
     // Tunable per-layer reveal bands — the fraction (0-1) of EACH painting's own local UV height
     // that stays visible before the shader clips the rest to transparent. Exposed as live
@@ -219,13 +245,27 @@ public class EnvironmentDepthSystem : MonoBehaviour
         // Framed World 1 levels pin the painted meadow to the shared ground line (ReferenceFraming) instead of
         // centring the paintings on the camera, so the scenery, blocks and painted grass all meet at one line.
         _groundAnchored = ReferenceFraming.Active(data) &&
-                          (_currentWorld == 1 || (_currentWorld == 2 && FrozenReady) || (_currentWorld == 3 && MillReady) || (_currentWorld == 4 && SkyReady));
+                          (_currentWorld == 1 || (_currentWorld == 2 && FrozenReady) || (_currentWorld == 3 && MillReady) || (_currentWorld == 4 && SkyReady) ||
+                           (_currentWorld == 5 && SeaReady) ||
+                           (_currentWorld == 6 && SpaceReady));
         _groundAnchorY  = _groundAnchored ? ReferenceFraming.GroundY(data) : 0f;
         _parallaxOriginPending = true;   // the launcher parks the camera after this handler; capture it next frame
         _weather = data != null ? data.weather : LevelWeather.Golden;
         ApplyWorldLayers();
         RescaleToCamera();
-        if (_flyby != null) _flyby.ResetSchedule();
+        if (_flyby != null) { _flyby.ResetSchedule(); _flyby.gameObject.SetActive(!Sea && !Space); }   // no biplane under the sea or in space
+        if (_spaceDecor != null)
+        {
+            bool space = Space && CornfieldActive;
+            _spaceDecor.gameObject.SetActive(space);
+            if (space) _spaceDecor.ResetFor(CornfieldAmbience.For(_weather).sky);
+        }
+        if (_seaDecor != null)
+        {
+            bool sea = Sea && CornfieldActive;
+            _seaDecor.gameObject.SetActive(sea);
+            if (sea) _seaDecor.ResetFor(CornfieldAmbience.For(_weather).sky, _weather == LevelWeather.GlowingDeep);
+        }
         if (_skyDecor != null)
         {
             bool sky = Sky && CornfieldActive;
@@ -434,44 +474,52 @@ public class EnvironmentDepthSystem : MonoBehaviour
     SpriteRenderer _soilUnderfill, _silLeft, _silRight;
     SkyFlyby _flyby;
     SkyDecor _skyDecor;
+    SeaDecor _seaDecor;
+    SpaceDecor _spaceDecor;
     CornfieldAmbience _ambience;
     Transform _cornRoot;
     bool _parallaxOriginPending;
     Vector3 _parallaxOrigin;
+    /// <summary>The camera's room offset on multi-room levels (CatapultLauncher.SetRoomOffset, 2026-11-12).</summary>
+    public float RoomPanX { get; set; }
 
     // The framed stack's art for the current world: World 1 cornfield, World 2 frozen (2026-11-09), World 3 watermill
     // village (2026-11-10).
     bool Frozen => _currentWorld == 2;
     bool Mill   => _currentWorld == 3;
     bool Sky    => _currentWorld == 4;
+    bool Sea    => _currentWorld == 5;
+    bool Space  => _currentWorld == 6;
+    bool SpaceReady => _sprSpaceFar != null && _sprSpaceSoil != null;
+    bool SeaReady => _sprSeaFar != null && _sprSeaSoil != null;
     bool SkyReady => _sprSkyFar != null && _sprSkyWall != null && _sprSkySoil != null;
     bool FrozenReady => _sprFarHillsW2 != null && _sprFrozenMid != null && _sprFrozenWall != null && _sprFrozenSoil != null;
     bool MillReady   => _sprMillFar != null && _sprMillMid != null && _sprMillWall != null && _sprMillSoil != null;
-    Sprite ThemeFar    => Sky ? _sprSkyFar : Mill ? _sprMillFar         : Frozen ? _sprFarHillsW2        : _sprCornFar;
+    Sprite ThemeFar    => Space ? _sprSpaceFar : Sea ? _sprSeaFar : Sky ? _sprSkyFar : Mill ? _sprMillFar         : Frozen ? _sprFarHillsW2        : _sprCornFar;
     // Sky: no isles band (2026-11-11, user: "a row of windmills and other items in the background that we should remove");
     // _sprSkyMid stays wired but unused.
-    Sprite ThemeMid    => Sky ? null : Mill ? _sprMillMid         : Frozen ? _sprFrozenMid         : _sprCornMid;
+    Sprite ThemeMid    => Space || Sea || Sky ? null : Mill ? _sprMillMid         : Frozen ? _sprFrozenMid         : _sprCornMid;
     // Sky: no cloud-bank wall since the cloud floor (2026-11-11) — it read as a dashed fence along the ground.
-    Sprite ThemeWall   => Sky ? null : Mill ? _sprMillWall        : Frozen ? _sprFrozenWall        : _sprCornWall;
-    Sprite ThemeSoil   => Sky ? _sprSkySoil : Mill ? _sprMillSoil        : Frozen ? _sprFrozenSoil        : _sprCornSoil;
+    Sprite ThemeWall   => Space || Sea || Sky ? null : Mill ? _sprMillWall        : Frozen ? _sprFrozenWall        : _sprCornWall;
+    Sprite ThemeSoil   => Space ? _sprSpaceSoil : Sea ? _sprSeaSoil : Sky ? _sprSkySoil : Mill ? _sprMillSoil        : Frozen ? _sprFrozenSoil        : _sprCornSoil;
     // Sky: one isles band only — the mid band. A second, smaller far copy read as a repeating border (2026-11-11);
     // _sprSkyRidges stays wired for a future dedicated far-isles painting.
-    Sprite ThemeRidges => Sky ? null : Mill ? _sprMillRidges      : Frozen ? _sprFrozenRidges      : _sprCornRidges;
+    Sprite ThemeRidges => Space || Sea || Sky ? null : Mill ? _sprMillRidges      : Frozen ? _sprFrozenRidges      : _sprCornRidges;
     // The village band is the watermill world's middle distance; it has no separate near-hills layer.
-    Sprite ThemeHills  => Sky ? null : Mill ? null                : Frozen ? _sprFrozenHills       : _sprCornHills;
-    Sprite ThemeSilL   => Sky ? _sprSkySilhouetteL : Mill ? _sprMillSilhouetteL : Frozen ? _sprFrozenSilhouetteL : _sprCornSilhouetteL;
-    Sprite ThemeSilR   => Sky ? _sprSkySilhouetteR : Mill ? _sprMillSilhouetteR : Frozen ? _sprFrozenSilhouetteR : _sprCornSilhouetteR;
+    Sprite ThemeHills  => Space || Sea || Sky ? null : Mill ? null                : Frozen ? _sprFrozenHills       : _sprCornHills;
+    Sprite ThemeSilL   => Space ? _sprSpaceSilhouetteL : Sea ? _sprSeaSilhouetteL : Sky ? _sprSkySilhouetteL : Mill ? _sprMillSilhouetteL : Frozen ? _sprFrozenSilhouetteL : _sprCornSilhouetteL;
+    Sprite ThemeSilR   => Space ? _sprSpaceSilhouetteR : Sea ? _sprSeaSilhouetteR : Sky ? _sprSkySilhouetteR : Mill ? _sprMillSilhouetteR : Frozen ? _sprFrozenSilhouetteR : _sprCornSilhouetteR;
     // The aurora painting is all sky: its bottom edge sits behind the mid band (DistantBarn's barns sit at 0.052).
     // The valley painting's own near hills sit low: its bottom edge goes just behind the village band too.
-    float ThemeFarAnchorUV  => Sky ? 0f : Mill ? 0f : Frozen ? 0f : CornFarAnchorUV;
-    float ThemeSoilGroundUV => Sky ? SkySoilGroundUV : Mill ? MillSoilGroundUV : Frozen ? FrozenSoilGroundUV : CornSoilGroundUV;
-    Color ThemeWallTint     => Sky ? SkyWallTint : Mill ? MillWallTint : Frozen ? FrozenWallTint : CornWallTint;
-    Color ThemeUnderfill    => Sky ? SkyUnderfill : Mill ? MillUnderfill : SoilUnderfill;
+    float ThemeFarAnchorUV  => Space || Sea || Sky ? 0f : Mill ? 0f : Frozen ? 0f : CornFarAnchorUV;
+    float ThemeSoilGroundUV => Space ? SpaceSoilGroundUV : Sea ? SeaSoilGroundUV : Sky ? SkySoilGroundUV : Mill ? MillSoilGroundUV : Frozen ? FrozenSoilGroundUV : CornSoilGroundUV;
+    Color ThemeWallTint     => Space || Sea || Sky ? SkyWallTint : Mill ? MillWallTint : Frozen ? FrozenWallTint : CornWallTint;
+    Color ThemeUnderfill    => Space ? SpaceUnderfill : Sea ? SeaUnderfill : Sky ? SkyUnderfill : Mill ? MillUnderfill : SoilUnderfill;
     // Band sizes: the village band stands on the far riverbank, lifted so its rooftops and the watermill's wheel clear
     // the bulrushes in front (the bulrush art is taller and airier than the corn wall).
-    float ThemeMidHeight  => Sky ? SkyMidHeight : Mill ? MillMidHeight  : CornMidHeight;
-    float ThemeMidSink    => Sky ? SkyMidSink : Mill ? MillMidSink    : CornMidSink;
-    float ThemeWallHeight => Sky ? SkyWallHeight : Mill ? MillWallHeight : CornWallHeight;
+    float ThemeMidHeight  => Space || Sea || Sky ? SkyMidHeight : Mill ? MillMidHeight  : CornMidHeight;
+    float ThemeMidSink    => Space || Sea || Sky ? SkyMidSink : Mill ? MillMidSink    : CornMidSink;
+    float ThemeWallHeight => Space || Sea || Sky ? SkyWallHeight : Mill ? MillWallHeight : CornWallHeight;
     const float FrozenSoilGroundUV = 0.851f;   // snow lip in FrozenSoil.png, from the bottom (measured)
     static readonly Color FrozenWallTint = new Color(0.82f, 0.88f, 0.98f, 1f);
     // MillSoil.png grass line from the bottom, measured by tools/import_watermill_art.py (keep in step).
@@ -481,6 +529,12 @@ public class EnvironmentDepthSystem : MonoBehaviour
     const float MillMidHeight = 3.6f, MillMidSink = -0.9f, MillWallHeight = 2.4f;
     // SkySoil.png grass line from the bottom, measured by tools/import_sky_art.py (keep in step). The isles band rides
     // well above the cloud bank so the islands read; the far isles hang high in the sky, small and hazed.
+    // SeaSoil.png sand line from the bottom and SeabedFill's average colour, measured by tools/import_sunken_art.py.
+    const float SeaSoilGroundUV = 0.927f;
+    // SpaceSoil.png deck line from the bottom and HullFill's average colour (tools/import_mothership_art.py).
+    const float SpaceSoilGroundUV = 0.979f;
+    static readonly Color SpaceUnderfill = new Color(0.14f, 0.16f, 0.20f);
+    static readonly Color SeaUnderfill = new Color(0.14f, 0.28f, 0.33f);
     const float SkySoilGroundUV = 0.929f;   // cloud floor (W4CloudFloor) since 2026-11-11; was 0.749 on the grass strip
     static readonly Color SkyWallTint  = new Color(0.94f, 0.97f, 1f, 1f);
     static readonly Color SkyUnderfill = new Color(0.86f, 0.92f, 0.99f);   // cloud below the island's rock
@@ -489,16 +543,16 @@ public class EnvironmentDepthSystem : MonoBehaviour
     // The distant hills (church spire, windmill) sit low and small on the horizon, behind the village's rooftops.
     const float MillRidgesHeight = 2.3f, MillRidgesBase = 3.5f;
     // Frozen stalks are stiff: they barely sway. Bulrushes bend easily; the village band (buildings) never sways.
-    float SwayMid  => Sky ? 0f : Mill ? 0f    : Frozen ? 0.025f : 0.07f;
-    float SwayWall => Sky ? 0.04f : Mill ? 0.15f : Frozen ? 0.045f : 0.13f;
-    float SwaySil  => Sky ? 0.1f : Mill ? 0.24f : Frozen ? 0.08f  : 0.22f;
+    float SwayMid  => Space || Sea || Sky ? 0f : Mill ? 0f    : Frozen ? 0.025f : 0.07f;
+    float SwayWall => Space ? 0f : Sea ? 0.1f : Sky ? 0.04f : Mill ? 0.15f : Frozen ? 0.045f : 0.13f;
+    float SwaySil  => Space ? 0f : Sea ? 0.3f : Sky ? 0.1f : Mill ? 0.24f : Frozen ? 0.08f  : 0.22f;
     int _builtWorld = -1;
 
     bool CornfieldActive =>
         // World 4 was missing here until 2026-11-11 (late): its whole framed sky stack (cloud bank, isle soil, isles band,
         // silhouettes, ambience, SkyDecor) never switched on and World 4 showed only the plain fallback painting.
-        _groundAnchored && _currentWorld >= 1 && _currentWorld <= 4 &&
-        ThemeFar != null && (ThemeMid != null || Sky) && (ThemeWall != null || Sky) && ThemeSoil != null;
+        _groundAnchored && _currentWorld >= 1 && _currentWorld <= 6 &&
+        ThemeFar != null && (ThemeMid != null || Sky || Sea || Space) && (ThemeWall != null || Sky || Sea || Space) && ThemeSoil != null;
 
     void SetCornStripsActive(bool on)
     {
@@ -512,6 +566,8 @@ public class EnvironmentDepthSystem : MonoBehaviour
             _ambience = null;
             _flyby = null;
             _skyDecor = null;
+            _seaDecor = null;
+            _spaceDecor = null;
         }
         if (on && _cornRoot == null)
         {
@@ -545,6 +601,16 @@ public class EnvironmentDepthSystem : MonoBehaviour
             _skyDecor = decor.AddComponent<SkyDecor>();
             _skyDecor.Init(_cam, _sprSkyBalloon, _sprSkyKite, _sprSkyLantern, _sprSkyPlum, _sprSkyVane);
             decor.SetActive(false);
+            var sea = new GameObject("SeaDecor");
+            sea.transform.SetParent(_cornRoot, false);
+            _seaDecor = sea.AddComponent<SeaDecor>();
+            _seaDecor.Init(_cam, _sprSeaFish, SeaFishFacesRight, _sprSeaJelly, _sprSeaBubble);
+            sea.SetActive(false);
+            var space = new GameObject("SpaceDecor");
+            space.transform.SetParent(_cornRoot, false);
+            _spaceDecor = space.AddComponent<SpaceDecor>();
+            _spaceDecor.Init(_cam, _sprSpaceAsteroid, _sprSpaceComet, _sprSpaceGalaxy, _sprSpaceMilkyWay);
+            space.SetActive(false);
         }
         if (_cornRoot != null) _cornRoot.gameObject.SetActive(on);
     }
@@ -606,7 +672,9 @@ public class EnvironmentDepthSystem : MonoBehaviour
         // Foreground silhouettes: framed to the screen corners, drifting a little against the pan (a near-layer cue)
         // rather than full 1.3x parallax — the camera follows shots far enough that a true near layer would sweep
         // the right-hand clump across the structures.
-        float slide = (c.x - _parallaxOrigin.x) * SilhouetteParallax;   // screen-space drift, opposite the pan
+        // A room change (multi-room levels) moves the parked camera a whole room: the clumps drift only with the
+        // camera's offset from its current room's rest, or they'd slide off screen for good.
+        float slide = (c.x - _parallaxOrigin.x - RoomPanX) * SilhouetteParallax;   // screen-space drift, opposite the pan
         float left = c.x - camW * 0.5f, right = c.x + camW * 0.5f;
         PlaceClump(_silLeft,  0.50f * camH, left  + 0.09f * camW, rightEdge: true,  camBottom - 0.02f * camH, slide);
         PlaceClump(_silRight, 0.22f * camH, right - 0.06f * camW, rightEdge: false, camBottom - 0.02f * camH, slide);
@@ -768,7 +836,7 @@ public class EnvironmentDepthSystem : MonoBehaviour
             // Barn/silo bases just behind the mid corn's tassels; the corn and soil cover everything below, so
             // only the width and the top of the screen need covering.
             // Sky: the painting's sea of clouds runs right down to the cloud bank (the isles band floats high above it).
-            float anchorY = Sky ? _groundAnchorY + 0.6f
+            float anchorY = Sky || Sea || Space ? _groundAnchorY + 0.6f
                                 : _groundAnchorY - ThemeMidSink + ThemeMidHeight * (Mill ? 0.3f : 0.8f);
             float camTop = camPos.y + camH * 0.5f;
             scale = Mathf.Max(camW / native.x, (camTop - anchorY) / ((1f - ThemeFarAnchorUV) * native.y));

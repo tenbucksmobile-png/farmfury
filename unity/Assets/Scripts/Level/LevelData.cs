@@ -55,9 +55,20 @@ public class LevelData : ScriptableObject
     // drops onto whatever is below. Spawned by LevelLoader.SpawnGadget after the blocks.
     public GadgetSpawnData[] gadgets;
 
+    // Multi-room levels (2026-11-12, Angry Birds 2 rooms; World 4 pilot, user: "allow for two plays in one level,
+    // panning the camera across to another structure"). Every spawn entry carries a room index; room r is laid out
+    // r * RoomStride to the right of room 0 in world space (the coordinates are absolute). LevelLoader spawns one room
+    // at a time; clearing a room's robots pans the cannon + camera to the next. 1 (and 0, older assets) = one room.
+    public int rooms = 1;
+    public int RoomCount => Mathf.Max(1, rooms);
+    /// <summary>World-space distance between rooms: a little over one screen width at the framed zoom, so the
+    /// previous room is off screen on any phone aspect (keep in step with ROOM_STRIDE in tools/design_world1.py).</summary>
+    public const float RoomStride = 32f;
+
     [Serializable]
     public struct GadgetSpawnData
     {
+        public int room;   // multi-room levels: which room this belongs to (0 = the first)
         public GadgetType type;
         public Vector2    position;   // Sunflower: base (on the ground/surface). HayHoist: post base.
         public float      size;       // Sunflower: height. HayHoist: post height (the arm reaches right).
@@ -68,6 +79,7 @@ public class LevelData : ScriptableObject
     [Serializable]
     public struct PlatformSpawnData
     {
+        public int room;   // multi-room levels: which room this belongs to (0 = the first)
         public float x;          // centre X
         public float surfaceY;   // world Y of the walkable grass surface (blocks rest on this line)
         public float width;      // visual width in world units
@@ -83,6 +95,7 @@ public class LevelData : ScriptableObject
     [Serializable]
     public struct BlockSpawnData
     {
+        public int room;   // multi-room levels: which room this belongs to (0 = the first)
         public BlockType     type;
         public Vector2       position;
         public Vector2       size;
@@ -123,6 +136,7 @@ public class LevelData : ScriptableObject
     [Serializable]
     public struct RobotSpawnData
     {
+        public int room;   // multi-room levels: which room this belongs to (0 = the first)
         public RobotType robotType;
         public Vector2   position;
         public Vector2   scale;     // (0,0) = use prefab default; non-zero overrides localScale
@@ -134,9 +148,13 @@ public enum BlockType     { Wood,  Stone,  Haybale, Barrel }
 // World 1 moods first; World 2 (Frozen Tundra, 2026-11-09) adds its own five.
 public enum LevelWeather  { Golden, MorningMist, Overcast, Rain, Dusk, AuroraNight, Snowfall, Blizzard, IceFog, PolarDawn,
                             SummerMorning, RiverMist, SpringShower, LanternDusk, Thunderstorm,   // World 3 (2026-11-10)
-                            ClearSkies, Windswept, SunsetClouds, StormFront, StarlitSky }   // World 4 (2026-11-11)
+                            ClearSkies, Windswept, SunsetClouds, StormFront, StarlitSky,   // World 4 (2026-11-11)
+                            SunlitShallows, KelpForest, MurkyDepths, GlowingDeep, Undertow,   // World 5 (2026-11-12)
+                            StarField, RedAlert, NebulaGlow, SolarFlare, PowerDown }   // World 6 (2026-11-12)
 public enum GadgetType    { Sunflower, HayHoist, IceCrystal, IceBoulder, WaterPump, Millstone,   // World 3: pump, rolling millstone
-                            StormCloud, ThunderWheel }   // World 4 (2026-11-11): lightning cloud, rolling thunder wheel
+                            StormCloud, ThunderWheel,    // World 4 (2026-11-11): lightning cloud, rolling thunder wheel
+                            Clam, ShipsWheel,            // World 5 (2026-11-12): pearl-spitting clam, rolling ship's wheel
+                            LaserEmitter, GravityRing }  // World 6 (2026-11-12): plasma-firing emitter, rolling gravity ring
 // Commander added 2026-07-12 for L18's boss level — Commander.png/Commander_Hit.png/
 // Commander_Explode.png art dropped in by the user, see SceneSetup.EnsureCommanderRobotPrefab().
 public enum RobotType     { Basic, Harvester, SemiHarvester, Commander }

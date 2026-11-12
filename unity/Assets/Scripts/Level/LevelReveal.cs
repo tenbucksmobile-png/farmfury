@@ -29,6 +29,7 @@ public class LevelReveal : MonoBehaviour
     const int PuffSortingOrder = 7;   // in front of blocks (2), robots (3), cannon (4) and animals (6)
 
     static Sprite _puffSprite;
+    static LevelReveal _instance;
     GameManager _gm;
     Coroutine _routine;
 
@@ -39,6 +40,28 @@ public class LevelReveal : MonoBehaviour
         var go = new GameObject("LevelReveal");
         DontDestroyOnLoad(go);
         go.AddComponent<LevelReveal>();
+    }
+
+    void Awake() => _instance = this;
+
+    /// <summary>Multi-room levels (LevelLoader.NextRoom): no shots from the moment a room is cleared until the next
+    /// one has been revealed.</summary>
+    public static void LockAim() => IsRevealing = true;
+    public static void UnlockAim() => IsRevealing = false;
+
+    /// <summary>The reveal for a room that was just spawned (2026-11-12): hidden in the same frame, then the usual
+    /// beat, dust, robot pops (and the boss drop-in on a boss level's last room).</summary>
+    public static void RevealRoom(List<BlockBase> blocks, List<RobotEnemy> robots, bool bossRoom)
+    {
+        if (_instance == null) { IsRevealing = false; return; }
+        if (_instance._routine != null) _instance.StopCoroutine(_instance._routine);
+        IsRevealing = true;
+        var b = new List<BlockBase>(blocks);
+        var r = new List<RobotEnemy>(robots);
+        var hidden = new List<Renderer>();
+        foreach (var x in b) Hide(x, hidden);
+        foreach (var x in r) Hide(x, hidden);
+        _instance._routine = _instance.StartCoroutine(_instance.RevealObjects(b, r, hidden, bossRoom));
     }
 
     void Update()
@@ -60,7 +83,8 @@ public class LevelReveal : MonoBehaviour
         IsRevealing = false;
         if (!ReferenceFraming.Active(level)) return;
         IsRevealing = true;   // lock aiming from this frame, before the loader has even spawned anything
-        _routine = StartCoroutine(Reveal(level != null && level.isBossLevel));
+        // A multi-room boss level drops the boss off in its last room (RevealRoom), not here.
+        _routine = StartCoroutine(Reveal(level != null && level.isBossLevel && level.RoomCount <= 1));
     }
 
     IEnumerator Reveal(bool bossLevel)
@@ -72,7 +96,11 @@ public class LevelReveal : MonoBehaviour
         var hidden = new List<Renderer>();
         foreach (var b in blocks) Hide(b, hidden);
         foreach (var r in robots) Hide(r, hidden);
+        yield return RevealObjects(blocks, robots, hidden, bossLevel);
+    }
 
+    IEnumerator RevealObjects(List<BlockBase> blocks, List<RobotEnemy> robots, List<Renderer> hidden, bool bossLevel)
+    {
         yield return new WaitForSeconds(EmptyBeat);
 
         // The structure appears in one frame, in dust.

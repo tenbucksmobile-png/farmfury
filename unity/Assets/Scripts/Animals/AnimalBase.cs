@@ -12,6 +12,12 @@ public abstract class AnimalBase : MonoBehaviour
     // structure apart"). Cluck 8 -> 3.2, Bessie 28 -> 11.2: about a block's weight, enough to tip a well-struck piece,
     // not to blast a tower apart. Flight is unaffected (gravity doesn't depend on mass). Ability projectiles share it.
     public const float ImpactMassScale = 0.4f;
+    /// <summary>The level's flight pace (ReferenceFraming.FlightPace on framed levels, else 1), set by
+    /// CatapultLauncher.ApplyFlightTuning. Slower shots carry 1/Pace the mass so their momentum - and their hits - stay
+    /// the same; abilities fly and fall at the same pace.</summary>
+    public static float Pace = 1f;
+    /// <summary>Raised when a flying animal's ability is triggered (TutorialHints).</summary>
+    public static event System.Action AbilityUsed;
     [SerializeField] protected float mass       = 8f;
     [SerializeField] protected float bounciness = 0.4f;
     [SerializeField] protected float linearDrag = 0.008f;
@@ -151,6 +157,7 @@ public abstract class AnimalBase : MonoBehaviour
         {
             _abilityUsed = true;
             TriggerAbility();
+            AbilityUsed?.Invoke();   // TutorialHints (2026-11-12)
             AudioManager.PlayAbility(Kind);   // the franchise ability sound (2026-11-10)
             if (_sprAbility != null)
             {
@@ -166,7 +173,7 @@ public abstract class AnimalBase : MonoBehaviour
             bool still = _rb == null || _rb.linearVelocity.sqrMagnitude < RestSpeedSqr * 4f;
             _settledTimer = still ? _settledTimer + Time.deltaTime : 0f;
             Vector2 cp = transform.position;
-            if (_contactTimer <= 0f || _settledTimer >= SettledSeconds || cp.y <= MaxFallY || Mathf.Abs(cp.x) > MaxAbsX)
+            if (_contactTimer <= 0f || _settledTimer >= SettledSeconds || cp.y <= MaxFallY || Mathf.Abs(cp.x - _launchX) > MaxAbsX)
                 StartCoroutine(FadeOutAndDestroy());
             return;
         }
@@ -178,7 +185,7 @@ public abstract class AnimalBase : MonoBehaviour
         // forever. Also ends a launched animal that has left the play area or has come to rest without a "real" hit.
         _flightTimer += Time.deltaTime;
         Vector2 p = transform.position;
-        if (_flightTimer >= MaxFlightSeconds || p.y <= MaxFallY || Mathf.Abs(p.x) > MaxAbsX)
+        if (_flightTimer >= MaxFlightSeconds || p.y <= MaxFallY || Mathf.Abs(p.x - _launchX) > MaxAbsX)
         {
             DestroyAnimal();
             return;
@@ -191,7 +198,11 @@ public abstract class AnimalBase : MonoBehaviour
         else _restTimer = 0f;
     }
 
-    const float MaxAbsX = 40f;               // the ground collider is 60 u wide, centred on x = 0
+    // Left the play area: measured from where the animal was fired (2026-11-12). It was |x| > 40 from the world origin,
+    // and on a multi-room level's second room the cannon stands at x ~ 27, so a shot vanished mid-air at x = 40 before
+    // reaching the structure (user: "the character sometimes disappears mid air").
+    const float MaxAbsX = 40f;
+    float _launchX;
     const float RestSpeedSqr = 0.15f * 0.15f, RestSeconds = 1.2f;
     float _restTimer;
 
@@ -208,9 +219,18 @@ public abstract class AnimalBase : MonoBehaviour
         // Only revert to the normal flight pose if nothing else has claimed the sprite since —
         // a real impact's pose (set in OnCollisionEnter2D, gated by _contactStarted) takes
         // priority and must not be stomped back to InFlight.
-        if (IsLaunched && !IsDestroyed && !_contactStarted && _sprInFlight != null)
+        if (IsLaunched && !IsDestroyed && !_contactStarted && !KeepAbilityPose && _sprInFlight != null)
             _sr.sprite = _sprInFlight;
     }
+
+    /// <summary>True while the ability pose should stay up for the rest of the flight (Percy's curled-up roll).</summary>
+    protected virtual bool KeepAbilityPose => false;
+
+    /// <summary>Shows the ability pose (if there is one).</summary>
+    protected void ShowAbilityPose() { if (_sprAbility != null) _sr.sprite = _sprAbility; }
+
+    /// <summary>After a hit: fade out within `seconds` instead of the usual settle / 3 s (Percy's single bounce).</summary>
+    protected void EndSoon(float seconds) { if (_contactStarted) _contactTimer = Mathf.Min(_contactTimer, seconds); }
 
     // Call after placing the animal in the sling cup — shows the seated pose.
     public void SetLoadedPose()
@@ -237,6 +257,8 @@ public abstract class AnimalBase : MonoBehaviour
     // gravityScale: CatapultLauncher passes ReferenceFraming.ProjectileGravityScale on framed levels.
     public void Launch(Vector2 velocity, float gravityScale)
     {
+        _launchX = transform.position.x;
+        _rb.mass = mass * ImpactMassScale / Mathf.Max(0.1f, Pace);   // slower, heavier: the same momentum into the hit
         _rb.bodyType       = RigidbodyType2D.Dynamic;
         // 2026-07-14: dropped from 0.4 to 0.18 (~55% weaker fall) per request to slow the
         // flight considerably and loop higher — paired with CatapultLauncher's higher
@@ -255,7 +277,9 @@ public abstract class AnimalBase : MonoBehaviour
     // Every thrown ability leaves forward (the way the animal is travelling) and DOWN: at least minDownDeg below the
     // horizon and always at least 12 deg steeper than the animal's own path, so it drops into the structure instead of
     // sailing over it; offsetDeg fans several projectiles around that line. Speed: 1.25x the animal's, never below min.
-    const float AbilitySpeedFactor = 1.25f, AbilitySteeperBy = 12f, AbilityMaxDownDeg = 80f;
+    // 1.25 -> 1.6 (2026-11-12, user: abilities "seem slow to appear"): at 1.25x the projectiles drifted out from behind
+    // the animal at about a quarter of its speed, hidden by its sprite for ~0.3 s; now they burst clear at once.
+    const float AbilitySpeedFactor = 1.6f, AbilitySteeperBy = 12f, AbilityMaxDownDeg = 80f;
 
     protected Vector2 AbilityAim(float minDownDeg, float offsetDeg = 0f)
     {
@@ -268,7 +292,7 @@ public abstract class AnimalBase : MonoBehaviour
     }
 
     protected float AbilitySpeed(float min) =>
-        Mathf.Max(min, (_rb != null ? _rb.linearVelocity.magnitude : 0f) * AbilitySpeedFactor);
+        Mathf.Max(min * Pace, (_rb != null ? _rb.linearVelocity.magnitude : 0f) * AbilitySpeedFactor);
 
     /// <summary>Which animal this is (picks its ability sound).</summary>
     public AnimalType Kind => this switch

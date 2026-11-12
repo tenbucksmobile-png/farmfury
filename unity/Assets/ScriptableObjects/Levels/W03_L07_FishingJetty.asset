@@ -21,7 +21,8 @@ MonoBehaviour:
   trimColliders: 0
   birds: 030000000400000000000000
   blocks:
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 6.827, y: -3.272}
     size: {x: 0.908, y: 0.764}
     passThrough: 0
@@ -32,7 +33,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 6.827, y: -2.697}
     size: {x: 0.908, y: 0.764}
     passThrough: 0
@@ -43,7 +45,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 8.012, y: -3.272}
     size: {x: 0.908, y: 0.764}
     passThrough: 0
@@ -54,7 +57,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 8.012, y: -2.697}
     size: {x: 0.908, y: 0.764}
     passThrough: 0
@@ -65,7 +69,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 7.203, y: -2.316}
     size: {x: 2.22, y: 0.25}
     passThrough: 0
@@ -76,7 +81,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 6.838, y: -1.872}
     size: {x: 0.908, y: 0.764}
     passThrough: 0
@@ -87,7 +93,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 6.838, y: -1.297}
     size: {x: 0.908, y: 0.764}
     passThrough: 0
@@ -98,7 +105,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 7.923, y: -1.872}
     size: {x: 0.908, y: 0.764}
     passThrough: 0
@@ -109,7 +117,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 7.923, y: -1.297}
     size: {x: 0.908, y: 0.764}
     passThrough: 0
@@ -120,7 +129,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 7.374, y: -0.916}
     size: {x: 1.7, y: 0.25}
     passThrough: 0
@@ -131,7 +141,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 10.793, y: -2.651}
     size: {x: 0.32, y: 1.15}
     passThrough: 0
@@ -142,7 +153,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 12.273, y: -2.651}
     size: {x: 0.32, y: 1.15}
     passThrough: 0
@@ -153,7 +165,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 11.175, y: -1.951}
     size: {x: 2.517, y: 0.25}
     passThrough: 0
@@ -164,7 +177,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 10.466, y: -0.992}
     size: {x: 0.32, y: 1.667}
     passThrough: 0
@@ -175,7 +189,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 11.846, y: -0.992}
     size: {x: 0.32, y: 1.667}
     passThrough: 0
@@ -186,7 +201,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 11.156, y: -0.033}
     size: {x: 1.7, y: 0.25}
     passThrough: 0
@@ -197,7 +213,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 10.499, y: 0.667}
     size: {x: 0.32, y: 1.15}
     passThrough: 0
@@ -208,7 +225,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 11.779, y: 0.667}
     size: {x: 0.32, y: 1.15}
     passThrough: 0
@@ -219,7 +237,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 11.515, y: 1.367}
     size: {x: 2.352, y: 0.25}
     passThrough: 0
@@ -230,39 +249,283 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 39.717, y: -5.095}
+    size: {x: 0.32, y: 1.009}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 39.717, y: -4.466}
+    size: {x: 2.435, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 3
+    position: {x: 38.952, y: -3.919}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 42.274, y: -2.454}
+    size: {x: 0.32, y: 0.966}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 43.403, y: -2.454}
+    size: {x: 0.32, y: 0.966}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 42.911, y: -1.846}
+    size: {x: 1.594, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 42.41, y: -1.238}
+    size: {x: 0.32, y: 0.966}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 43.419, y: -1.238}
+    size: {x: 0.32, y: 0.966}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 42.774, y: -0.63}
+    size: {x: 1.61, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 42.437, y: -0.022}
+    size: {x: 0.32, y: 0.966}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 43.326, y: -0.022}
+    size: {x: 0.32, y: 0.966}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 42.992, y: 0.586}
+    size: {x: 1.431, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 42.491, y: 1.411}
+    size: {x: 0.32, y: 1.401}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 43.271, y: 1.411}
+    size: {x: 0.32, y: 1.401}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 43.02, y: 2.237}
+    size: {x: 1.377, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 45.418, y: -5.139}
+    size: {x: 0.32, y: 0.921}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 3
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 0
+    position: {x: 45.922, y: -4.554}
+    size: {x: 1.91, y: 0.25}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 2
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
+  - room: 1
+    type: 3
+    position: {x: 46.48, y: -4.007}
+    size: {x: 0.977, y: 0.977}
+    passThrough: 0
+    healthOverride: 0
+    massOverride: 0
+    indestructible: 0
+    artVariant: 0
+    forceStayKinematic: 0
+    flipX: 0
+    rotation: 0
   robots:
-  - robotType: 0
+  - room: 0
+    robotType: 0
     position: {x: 7.413, y: -3.141}
     scale: {x: 5.5, y: 5.5}
-  - robotType: 0
+  - room: 0
+    robotType: 0
     position: {x: 7.374, y: -0.341}
     scale: {x: 5.5, y: 5.5}
-  - robotType: 0
+  - room: 0
+    robotType: 0
     position: {x: 11.533, y: -2.776}
     scale: {x: 5.5, y: 5.5}
-  - robotType: 2
+  - room: 0
+    robotType: 2
     position: {x: 11.139, y: 0.542}
     scale: {x: 5.5, y: 5.5}
-  - robotType: 0
+  - room: 0
+    robotType: 0
     position: {x: 11.139, y: 1.942}
     scale: {x: 5.5, y: 5.5}
+  - room: 1
+    robotType: 0
+    position: {x: 40.484, y: -3.891}
+    scale: {x: 5.5, y: 5.5}
+  - room: 1
+    robotType: 0
+    position: {x: 42.839, y: -2.487}
+    scale: {x: 5.5, y: 5.5}
+  - room: 1
+    robotType: 0
+    position: {x: 42.881, y: 2.812}
+    scale: {x: 5.5, y: 5.5}
   platforms:
-  - x: 7.3
+  - room: 0
+    x: 7.3
     surfaceY: -3.591
     width: 2.2
     variant: 4
     rolling: 0
     height: 0
-  - x: 11.4
+  - room: 0
+    x: 11.4
     surfaceY: -3.226
     width: 2.6
     variant: 4
     rolling: 0
     height: 0
+  - room: 1
+    x: 42.735
+    surfaceY: -2.937
+    width: 1.9
+    variant: 3
+    rolling: 0
+    height: 0
   weather: 11
   gadgets:
-  - type: 4
+  - room: 0
+    type: 4
     position: {x: 9.35, y: -5.6}
     size: 1.3
     ropeLength: 0
     faceLeft: 0
+  rooms: 2

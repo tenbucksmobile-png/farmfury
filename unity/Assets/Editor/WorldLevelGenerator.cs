@@ -107,7 +107,7 @@ public static class WorldLevelGenerator
             string path = AssetDatabase.GUIDToAssetPath(guid);
             // Its own files only: World 2 ("W02_") is designed by tools/design_world2.py (2026-11-09).
             string fn = System.IO.Path.GetFileName(path);
-            if (fn.StartsWith("W") && !fn.StartsWith("W02_") && !fn.StartsWith("W03_") && !fn.StartsWith("W04_")) AssetDatabase.DeleteAsset(path);
+            if (fn.StartsWith("W") && !fn.StartsWith("W02_") && !fn.StartsWith("W03_") && !fn.StartsWith("W04_") && !fn.StartsWith("W05_") && !fn.StartsWith("W06_")) AssetDatabase.DeleteAsset(path);
         }
 
         int made = 0;
@@ -116,7 +116,8 @@ public static class WorldLevelGenerator
             // World 2 is designed by hand on the framed template (tools/design_world2.py, 2026-11-09).
             // World 3 likewise (tools/design_world3.py, 2026-11-10).
             // World 4 likewise (tools/design_world4.py, 2026-11-11).
-            if (spec.world == 2 || spec.world == 3 || spec.world == 4) continue;
+            // World 5 likewise (tools/design_world5.py, 2026-11-12), World 6 too (tools/design_world6.py, 2026-11-12).
+            if (spec.world >= 2 && spec.world <= 6) continue;
             var names = LevelNames(spec);
             int regular = spec.levels - 1;
             for (int k = spec.firstLevel; k <= regular; k++)
@@ -128,7 +129,7 @@ public static class WorldLevelGenerator
             Create(spec, spec.levels, spec.bossName, boss, boss: true);
             made++;
         }
-        Debug.Log($"[FarmFury] WorldLevelGenerator: created {made} levels for Worlds 2-9.");
+        Debug.Log($"[FarmFury] WorldLevelGenerator: created {made} levels for Worlds 7-9.");
     }
 
     static LevelData LoadTemplate(string file) =>
@@ -140,8 +141,14 @@ public static class WorldLevelGenerator
         float stoneChance = 0.03f * spec.difficulty;
         float tierChance  = 0.07f * spec.difficulty;
 
-        var blocks = template.blocks.ToArray();
-        var robots = template.robots.ToArray();
+        // Multi-room World 1 templates (2026-11-12): these worlds copy one room only, as before the rooms existed - the
+        // first room, or for the boss template its last room (the keep moved there), shifted back to room 0's frame.
+        int useRoom = boss ? template.RoomCount - 1 : 0;
+        float roomDx = -useRoom * LevelData.RoomStride;
+        var blocks = template.blocks.Where(b => b.room == useRoom).Select(b => { b.position.x += roomDx; b.room = 0; return b; }).ToArray();
+        var robots = template.robots.Where(r => r.room == useRoom).Select(r => { r.position.x += roomDx; r.room = 0; return r; }).ToArray();
+        var platforms = (template.platforms ?? new LevelData.PlatformSpawnData[0])
+            .Where(p => p.room == useRoom).Select(p => { p.x += roomDx; return p; }).ToArray();
 
         // Bounds of the whole tower (blocks and robots), for mirroring and shifting.
         var xs = blocks.Select(b => b.position.x).Concat(robots.Select(r => r.position.x)).ToList();
@@ -159,8 +166,7 @@ public static class WorldLevelGenerator
         // on one drops by the island's height back onto the template's ground line, as before the islands existed.
         float IslandLift(float x, float y)
         {
-            if (template.platforms == null) return 0f;
-            foreach (var p in template.platforms)
+            foreach (var p in platforms)
                 if (Mathf.Abs(x - p.x) <= p.width * 0.5f && y > p.surfaceY - 0.1f)
                     return p.surfaceY - ReferenceFraming.World1GroundY;
             return 0f;

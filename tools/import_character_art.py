@@ -19,7 +19,7 @@ from PIL import Image
 from scipy import ndimage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ART = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
+ART = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith('--') else os.path.join(
     os.path.dirname(ROOT), 'FarmFury_Technical', 'FarmFury_Artwork')
 SRC = os.path.join(ART, 'Rough_Characters')
 OUT = os.path.join(ROOT, 'unity', 'Assets', 'Sprites', 'Characters')
@@ -31,13 +31,21 @@ POSE_CONTENT = 400
 POSES = {
     'Ducky':  {'Idle': 'Ducky/Idle.png', 'Loaded': 'Ducky/Loaded.png', 'in flight': 'Ducky/InFLight.png',
                'Impact': 'Ducky/Impact.png', 'Trigger': 'Ducky/Launch.png'},
-    'Billy':  {'Idle': 'Billy/Billy_Front.png', 'Loaded': 'Billy/Loaded.png', 'in flight': 'Billy/InFlight.png',
-               'Impact': 'Billy/Impact.png', 'Trigger': 'Billy/Trigger1.png'},
+    # Billy (2026-11-12, user: "loading, flight, hit images are not good and seem small"): unused renders from his folder -
+    # a full-body leap facing right for flight (InFlight.png was a thin streak facing left), the braced crouch for
+    # loaded, knocked head over heels for the hit (was standing with a halo).
+    'Billy':  {'Idle': 'Billy/Billy_Front.png', 'Loaded': 'Billy/Launch(1).png',
+               'in flight': 'Billy/kling_20260721_IMAGE_replicate__5562_0.png',
+               'Impact': 'Billy/Defeat.png', 'Trigger': 'Billy/Trigger1.png'},
     # Gerald (2026-11-11, user: "Gerald - he faces the wrong way"): his flight art is mirrored to face right (the way
     # shots fly) and his loaded pose is a Kling side-on crouch (magenta background).
     'Gerald': {'Idle': 'Gerald/Idle.png', 'Loaded': 'Gerald/Gerald_LoadedSide.png', 'in flight': 'Gerald/inflight.png',
                'Impact': 'Gerald/Impact.png', 'Trigger': 'Gerald/ability.png'},
-    'Percy':  {'Idle': 'Percy/Idle2.png', 'Impact': 'Percy/Impact.png'},
+    # Percy (2026-11-12, user: "check percy loaded, flight and bounce"): the old flight / loaded poses were his face turned
+    # on its side and a sideways spring-body. Flight = a full-body leap facing right, loaded = curled in his spin ring
+    # (upright), the bounce roll = curled into a ball.
+    'Percy':  {'Idle': 'Percy/Idle2.png', 'Impact': 'Percy/Impact.png', 'Loaded': 'Percy/Launch2.png',
+               'in flight': 'Percy/kling_20260721_IMAGE_Farm_Fury__5548_0.png', 'Trigger': 'Percy/Trigger.png'},
     'Bessie': {'Idle': 'Bessie/Bessie_front.png'},
     'Woolly': {'Idle': 'Wooly/Wooly_front.png'},
 }
@@ -62,7 +70,9 @@ LEFT_FIGURE = {'Horace/Horace_CannonPoses.png'}
 WHITE = 235          # tools/remove_backgrounds.py's threshold: R,G,B all >= this is background white
 SPECK_FRACTION = 0.01  # detached opaque bits smaller than this share of the largest piece are dropped
 # Only these sources get speck removal — elsewhere small detached bits are wanted effects (dizzy stars, sparkles).
-SPECKY = {'Horace/kling_20260909_IMAGE___Front_fa_624_0.png'}   # has a render watermark under the hooves
+SPECKY = {'Horace/kling_20260909_IMAGE___Front_fa_624_0.png',   # has a render watermark under the hooves
+          'Billy/kling_20260721_IMAGE_replicate__5562_0.png',     # render watermark bottom-right
+          'Percy/kling_20260721_IMAGE_Farm_Fury__5548_0.png'}
 
 
 def remove_white_bg(im):
@@ -90,6 +100,31 @@ def drop_specks(im):
     return Image.fromarray(a, 'RGBA')
 
 
+# Keep only the largest opaque piece: drops a baked-in ground shadow from a mid-air pose (and any specks).
+LARGEST_ONLY = {'Percy/kling_20260721_IMAGE_Farm_Fury__5548_0.png'}
+
+
+def largest_only(im):
+    # The ground shadow (mid grey, unsaturated) can touch the feet; clear it from the lowest fifth of the figure first.
+    a = np.asarray(im).copy()
+    rgb = a[:, :, :3].astype(int)
+    rows = np.nonzero(a[:, :, 3].max(axis=1) > 20)[0]
+    if len(rows):
+        y0 = rows[-1] - (rows[-1] - rows[0]) // 5
+        grey = (rgb.max(axis=2) - rgb.min(axis=2) < 28) & (rgb.max(axis=2) > 80)
+        grey[:y0] = False
+        a[:, :, 3] = np.where(grey, 0, a[:, :, 3])
+    im = Image.fromarray(a, 'RGBA')
+    a = np.asarray(im)
+    labels, n = ndimage.label(a[:, :, 3] > 20)
+    if n <= 1:
+        return im
+    sizes = ndimage.sum(np.ones_like(labels), labels, range(1, n + 1))
+    a = a.copy()
+    a[:, :, 3] = np.where(labels == 1 + int(np.argmax(sizes)), a[:, :, 3], 0)
+    return Image.fromarray(a, 'RGBA')
+
+
 def left_figure(im):
     a = np.asarray(im)
     labels, n = ndimage.label(a[:, :, 3] > 20)
@@ -114,6 +149,8 @@ def prepare(path, specks=False, rel=''):
         im = im.convert('RGBA') if has_alpha else remove_white_bg(im)
     if rel in LEFT_FIGURE:
         im = left_figure(im)
+    if rel in LARGEST_ONLY:
+        im = largest_only(im)
     if rel in FLIP:
         im = im.transpose(Image.FLIP_LEFT_RIGHT)
     if specks:
@@ -129,6 +166,7 @@ def prepare(path, specks=False, rel=''):
 
 
 def main():
+    only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
     jobs = dict(POSES)
     jobs['Horace'] = dict(HORACE)
     for extra in ('Impact', 'Trigger'):
@@ -136,6 +174,8 @@ def main():
         if os.path.exists(p):
             jobs['Horace'][extra] = os.path.relpath(p, SRC)
     for animal, poses in jobs.items():
+        if only and animal not in only:
+            continue
         folder = os.path.join(OUT, animal)
         os.makedirs(folder, exist_ok=True)
         for pose, rel in poses.items():

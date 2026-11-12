@@ -59,6 +59,8 @@ public class PhysicsProbeRunner : MonoBehaviour
         if (gm == null) { Debug.Log("[Probe] no GameManager"); _done(); yield break; }
         for (int i = _first; i <= _last && i < gm.TotalLevels; i++)
         {
+            // FF_PROBE_ROOM=1 (2026-11-12): probe a multi-room level's second room instead of its first.
+            LevelLoader.DebugStartRoom = int.TryParse(System.Environment.GetEnvironmentVariable("FF_PROBE_ROOM"), out var pr) ? pr : 0;
             gm.ForceStartLevel(i);
             // Timeline: awake bodies over the first 3 s, and collider overlaps once the blocks have gone live.
             float ts = Time.time; bool overlapsLogged = false;

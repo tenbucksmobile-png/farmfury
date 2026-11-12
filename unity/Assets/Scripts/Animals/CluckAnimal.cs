@@ -102,7 +102,11 @@ public class CluckAnimal : AnimalBase
             var egg = Instantiate(_eggPrefab, spawnPos, Quaternion.identity);
 
             if (egg.TryGetComponent<Rigidbody2D>(out var rb))
+            {
                 rb.linearVelocity = dir * speed;
+                rb.gravityScale *= Pace * Pace;   // at the shot's pace (2026-11-12): the same arc, slower
+                rb.mass /= Mathf.Max(0.1f, Pace);
+            }
 
             // Belt-and-suspenders on top of the 0.5 spawn offset above (2026-07-13, user report:
             // "eggs are still random — there must be five and they all must inflict damage"): in a

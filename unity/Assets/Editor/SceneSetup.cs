@@ -63,6 +63,8 @@ public static partial class SceneSetup
         EnsureWorldRobotPrefabs();  // Worlds 3-9: W<N>_<Tier>Robot prefabs from Stampede art (SceneSetup.Worlds.cs)
         EnsureMillMaulerPrefab();   // MillMaulerRobot.prefab (World 3 boss, 2026-11-10) — before WireLevelLoader wires it
         EnsureStormBaronPrefab();   // StormBaronRobot.prefab (World 4 boss, 2026-11-11) — same reason
+        EnsureDeepDredgerPrefab();  // DeepDredgerRobot.prefab (World 5 boss, 2026-11-12) — same reason
+        EnsureFactoryMachinePrefab(); // FactoryMachineRobot.prefab (World 6 boss, 2026-11-12) — same reason
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
         WireAbilityProjectiles(); // Gerald/Woolly/Billy thrown-ability art (SceneSetup.Cornfield.cs)
         WireBessieAudio();      // BessieAnimal.prefab: _earthquakeClip <- Bessie_Earthquake.mp3
@@ -803,6 +805,7 @@ public static partial class SceneSetup
         WireSprite(so, "_coinSprite",          FranchiseArt + "/Shop/Coin_UI.png");
         WireSprite(so, "_lockerSprite",        FranchiseArt + "/Shop/Locker.png");
         WireSprite(so, "_swapSprite",          FranchiseArt + "/Menu/SwapCharacter.png");   // 2026-11-09
+        WireSprite(so, "_hintHandSprite",      FranchiseArt + "/Hint/HintHand.png");        // TutorialHints, 2026-11-12
 
         so.ApplyModifiedProperties();
     }
@@ -1075,6 +1078,7 @@ public static partial class SceneSetup
         WireAudioClip(go, "_cannonShotClip", "Assets/Audio/CannonShot.mp3");
         WireAudioClip(go, "_fallingClip",    "Assets/Audio/Cluck_falling.mp3");
         WireAudioClip(go, "_bessieFallingClip", "Assets/Audio/Bessie_falling.mp3");
+        WireAudioClip(go, "_roomPanClip",    "Assets/Audio/Swoosh_panning.mp3");   // multi-room level pan (2026-11-12)
         // Landing page + Sunrise Meadows world map (GameState.Idle) — separate track/AudioSource
         // from the gameplay loop above, see AudioManager.OnStateChanged.
         WireAudioClip(go, "_menuMusicClip",  "Assets/Audio/SunriseMeadows_TransitionMusic.mp3");
@@ -1406,6 +1410,41 @@ public static partial class SceneSetup
         EnsureSingleSprite(cloudBale, 500);
         var bales = AssetDatabase.LoadAssetAtPath<Sprite>(cloudBale);
         if (bales != null) so.FindProperty("_mountBaleSpriteW4").objectReferenceValue = bales;
+        // World 1's broken silo behind the cannon (2026-11-12, tools/import_silo.py).
+        var silo = LoadSpriteAt("Assets/Sprites/Environment/Cornfield/BrokenSilo.png", false);
+        if (silo != null) so.FindProperty("_siloSprite").objectReferenceValue = silo;
+        // World 2 / 3 landmarks in the same spot (2026-11-12): the existing prop sprites, loaded as they are (no re-import).
+        var crystals = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Environment/World2Props/IceCrystals.png");
+        if (crystals != null) so.FindProperty("_iceCrystalsBackSprite").objectReferenceValue = crystals;
+        var wheel = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Environment/World3Props/WaterWheel.png");
+        if (wheel != null) so.FindProperty("_waterWheelBackSprite").objectReferenceValue = wheel;
+        var statue = LoadSpriteAt("Assets/Sprites/Environment/Sunken/SunkenStatue.png", false);
+        if (statue != null) so.FindProperty("_statueBackSprite").objectReferenceValue = statue;
+        // World 5 (2026-11-12, tools/import_sunken_art.py): the Sea Cannon on Cannon.png's canvas (PPU 384), sponge bales.
+        const string seaCannon = "Assets/Sprites/Environment/Launchers/SeaCannon.png";
+        EnsureSingleSprite(seaCannon, 384);
+        var seaCannonSprite = AssetDatabase.LoadAssetAtPath<Sprite>(seaCannon);
+        if (seaCannonSprite != null) so.FindProperty("_cannonSpriteW5").objectReferenceValue = seaCannonSprite;
+        const string sponge = "Assets/Sprites/Environment/Sunken/SpongeBale.png";
+        EnsureSingleSprite(sponge, 500);
+        var spongeSprite = AssetDatabase.LoadAssetAtPath<Sprite>(sponge);
+        if (spongeSprite != null) so.FindProperty("_mountBaleSpriteW5").objectReferenceValue = spongeSprite;
+        // World 6 (2026-11-12, tools/import_mothership_art.py): the Gravity Cannon (PPU 384), battery pods, the beacon.
+        const string gravCannon = "Assets/Sprites/Environment/Launchers/GravityCannon.png";
+        EnsureSingleSprite(gravCannon, 384);
+        var gravCannonSprite = AssetDatabase.LoadAssetAtPath<Sprite>(gravCannon);
+        if (gravCannonSprite != null) so.FindProperty("_cannonSpriteW6").objectReferenceValue = gravCannonSprite;
+        const string pod = "Assets/Sprites/Environment/Mothership/BatteryPod.png";
+        EnsureSingleSprite(pod, 500);
+        var podSprite = AssetDatabase.LoadAssetAtPath<Sprite>(pod);
+        if (podSprite != null) so.FindProperty("_mountBaleSpriteW6").objectReferenceValue = podSprite;
+        var beacon = LoadSpriteAt("Assets/Sprites/Environment/Mothership/WarningBeacon.png", false);
+        if (beacon != null) so.FindProperty("_beaconBackSprite").objectReferenceValue = beacon;
+        var rockWipe = so.FindProperty("_wipeAsteroid");
+        if (rockWipe != null) rockWipe.objectReferenceValue = LoadSpriteAt("Assets/Sprites/Environment/Mothership/Decor_Asteroid.png", false);
+        var tablet = LoadSpriteAt("Assets/Sprites/Environment/Sky/SkyTablet.png", false);   // World 4 landmark (2026-11-12)
+        if (tablet != null) so.FindProperty("_tabletBackSprite").objectReferenceValue = tablet;
+        WireRoomWipes(so);
 
         so.FindProperty("_cannonGO").objectReferenceValue = cannonGO;
 
@@ -1594,6 +1633,46 @@ public static partial class SceneSetup
         WireBlockPrefab("Assets/Prefabs/Blocks/HaybaleBlock.prefab", skyFolder, new[]
         {
             ("_sprNormalW4", "CloudBale.png"), ("_sprHorizontalW4", "CloudBale.png"), ("_sprVerticalW4", "CloudBale.png"),
+        });
+
+        // World 5 Sunken City (2026-11-12, tools/import_sunken_art.py): shipwreck timber, teal sunken-city stone (block,
+        // column, lintel slab) and sponge bales. Crates and barrels keep their World 1 art.
+        const string seaFolder = "Assets/Sprites/Environment/Sunken";
+        WireBlockPrefab("Assets/Prefabs/Blocks/WoodBlock.prefab", seaFolder, new[]
+        {
+            ("_sprVerticalW5",   "SeaPost.png"),
+            ("_sprHorizontalW5", "SeaPlank.png"),
+        });
+        WireBlockPrefab("Assets/Prefabs/Blocks/StoneBlock.prefab", seaFolder, new[]
+        {
+            ("_sprNormalW5",     "SeaBlock.png"),
+            ("_sprShortW5",      "SeaBlock.png"),
+            ("_sprVerticalW5",   "SeaPillar.png"),
+            ("_sprHorizontalW5", "SeaSlab.png"),
+        });
+        WireBlockPrefab("Assets/Prefabs/Blocks/HaybaleBlock.prefab", seaFolder, new[]
+        {
+            ("_sprNormalW5", "SpongeBale.png"), ("_sprHorizontalW5", "SpongeBale.png"), ("_sprVerticalW5", "SpongeBale.png"),
+        });
+
+        // World 6 Robot Mothership (2026-11-12, tools/import_mothership_art.py): steel girder post and I-beam, riveted
+        // crate / energy column / steel slab, battery pods. Crates and barrels keep their World 1 art.
+        const string shipFolder = "Assets/Sprites/Environment/Mothership";
+        WireBlockPrefab("Assets/Prefabs/Blocks/WoodBlock.prefab", shipFolder, new[]
+        {
+            ("_sprVerticalW6",   "ShipPost.png"),
+            ("_sprHorizontalW6", "ShipPlank.png"),
+        });
+        WireBlockPrefab("Assets/Prefabs/Blocks/StoneBlock.prefab", shipFolder, new[]
+        {
+            ("_sprNormalW6",     "ShipBlock.png"),
+            ("_sprShortW6",      "ShipBlock.png"),
+            ("_sprVerticalW6",   "ShipPillar.png"),
+            ("_sprHorizontalW6", "ShipSlab.png"),
+        });
+        WireBlockPrefab("Assets/Prefabs/Blocks/HaybaleBlock.prefab", shipFolder, new[]
+        {
+            ("_sprNormalW6", "BatteryPod.png"), ("_sprHorizontalW6", "BatteryPod.png"), ("_sprVerticalW6", "BatteryPod.png"),
         });
     }
 
@@ -2285,6 +2364,62 @@ public static partial class SceneSetup
     // from tools/import_sky_art.py — no _Explode pose, so the death burst is the generic fire burst + dust).
     static void EnsureStormBaronPrefab() =>
         EnsureBossRobotPrefab("StormBaronRobot", "Assets/Sprites/Enemies/Robot/StormBaron");
+    // Room-change wipe art (PanWipe, 2026-11-12): World 1 dust clouds, leaves, feathers and haybale (leaves and
+    // feathers cut by tools/import_pan_wipes.py), World 5 bubble and fish.
+    static void WireRoomWipes(SerializedObject so)
+    {
+        void Arr(string field, string[] paths)
+        {
+            var prop = so.FindProperty(field);
+            if (prop == null) return;
+            var list = new System.Collections.Generic.List<Sprite>();
+            foreach (var p in paths) { var sp = LoadSpriteAt(p, false); if (sp != null) list.Add(sp); }
+            prop.arraySize = list.Count;
+            for (int i = 0; i < list.Count; i++) prop.GetArrayElementAtIndex(i).objectReferenceValue = list[i];
+        }
+        const string wipe = "Assets/Sprites/Effects/PanWipe";
+        Arr("_wipeDust", new[] { "Assets/Sprites/Environment/Cornfield/Cloud_0.png", "Assets/Sprites/Environment/Cornfield/Cloud_2.png" });
+        var leaves = new System.Collections.Generic.List<string>();
+        for (int i = 0; i < 10; i++) leaves.Add($"{wipe}/Leaf_{i}.png");
+        Arr("_wipeLeaves", leaves.ToArray());
+        Arr("_wipeFeathers", new[] { $"{wipe}/Feather_0.png", $"{wipe}/Feather_1.png", $"{wipe}/Feather_2.png", $"{wipe}/Feather_3.png" });
+        var hay = so.FindProperty("_wipeHay");
+        if (hay != null) hay.objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Environment/World1Props/Haybail.png");
+        var bubble = so.FindProperty("_wipeBubble");
+        if (bubble != null) bubble.objectReferenceValue = LoadSpriteAt("Assets/Sprites/Environment/Sunken/Decor_Bubble.png", false);
+        var fish = new System.Collections.Generic.List<string>();
+        for (int i = 1; i <= 6; i++) fish.Add($"Assets/Sprites/Environment/Sunken/Decor_Fish{i}.png");
+        Arr("_wipeFish", fish.ToArray());
+        // Worlds 2-4 (2026-11-12). Sprites shared with blocks / contraptions are loaded as they are (no re-import:
+        // WireBlockPrefab owns some of their import settings).
+        void One(string field, string path)
+        {
+            var prop = so.FindProperty(field);
+            if (prop != null) prop.objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+        One("_wipeIceShards", "Assets/Sprites/Environment/World2Props/IceSplinters.png");
+        One("_wipeFrozenBale", "Assets/Sprites/Environment/Frozen/FrozenBale.png");
+        One("_wipeWaterDrop", "Assets/Sprites/Abilities/WaterSwirl.png");
+        One("_wipeFoam", "Assets/Sprites/Effects/DustCloud.png");
+        One("_wipeFlourSack", "Assets/Sprites/Environment/Watermill/FlourSacks.png");
+        var skyClouds = new System.Collections.Generic.List<Sprite>();
+        foreach (var p in new[] { "Assets/Sprites/Environment/World4Props/Cloud.png", "Assets/Sprites/Environment/Cornfield/Cloud_0.png",
+                                  "Assets/Sprites/Environment/Cornfield/Cloud_2.png" })
+        { var sp = AssetDatabase.LoadAssetAtPath<Sprite>(p); if (sp != null) skyClouds.Add(sp); }
+        var sc = so.FindProperty("_wipeSkyClouds");
+        if (sc != null)
+        {
+            sc.arraySize = skyClouds.Count;
+            for (int i = 0; i < skyClouds.Count; i++) sc.GetArrayElementAtIndex(i).objectReferenceValue = skyClouds[i];
+        }
+        One("_wipeBalloon", "Assets/Sprites/Environment/Sky/Decor_Balloon.png");
+        One("_wipeKite", "Assets/Sprites/Environment/Sky/Decor_Kite.png");
+    }
+
+    static void EnsureFactoryMachinePrefab() =>
+        EnsureBossRobotPrefab("FactoryMachineRobot", "Assets/Sprites/Enemies/Robot/FactoryMachine");
+    static void EnsureDeepDredgerPrefab() =>
+        EnsureBossRobotPrefab("DeepDredgerRobot", "Assets/Sprites/Enemies/Robot/DeepDredger");
 
     static void EnsureBossRobotPrefab(string prefabName, string spriteBase)
     {

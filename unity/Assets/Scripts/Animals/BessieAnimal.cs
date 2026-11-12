@@ -55,7 +55,7 @@ public class BessieAnimal : AnimalBase
     {
         if (_slammed) return;
         _slammed = true;
-        _rb.linearVelocity += Vector2.down * _slamImpulse;
+        _rb.linearVelocity += Vector2.down * _slamImpulse * Pace;   // at the shot's pace (2026-11-12)
         if (_rb.linearVelocity.y < -MaxSlammedDownwardSpeed)
             _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, -MaxSlammedDownwardSpeed);
     }

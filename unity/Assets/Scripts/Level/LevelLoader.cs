@@ -83,6 +83,7 @@ public class LevelLoader : MonoBehaviour
     {
         if (_birdQueue.Count == 0) { type = default; return false; }
         type = _birdQueue.Dequeue();
+        _roomShots++;
         OnBirdConsumed?.Invoke();
         return true;
     }
@@ -174,7 +175,13 @@ public class LevelLoader : MonoBehaviour
 
     public void LoadLevel(LevelData data)
     {
+        StopAllCoroutines();   // a restart mid room-transition / mid complete-or-fail timer
+        _failedRoutine = null;
         ClearLevel();
+        _level = data;
+        _room = Mathf.Clamp(DebugStartRoom, 0, data.RoomCount - 1);
+        _roomShots = 0;
+        _roomTransition = false;
 
         // The lineup picked in Character Select (GameManager.CurrentLineup) replaces the level's authored queue;
         // null when the level was started directly by index (Editor tools), which uses the authored one.
@@ -187,23 +194,107 @@ public class LevelLoader : MonoBehaviour
         _birdQueue.Clear();
         foreach (var b in birdsToUse) _birdQueue.Enqueue(b);
 
-        _loadingWorld = data.world;
-        if (data.platforms != null)
-            foreach (var p in data.platforms) SpawnPlatform(p);
-        RobotEnemy.SuppressIdleMotion = ReferenceFraming.Active(data);   // live physics: robots mustn't shove blocks
-        foreach (var b in data.blocks) SpawnBlock(b, data.world, ReferenceFraming.Active(data) || data.trimColliders);
-        foreach (var r in data.robots) SpawnRobot(r, data.world);
-        if (data.gadgets != null)
-            foreach (var g in data.gadgets) SpawnGadget(g);
+        SpawnRoom(data, _room);
+        if (_launcher == null) _launcher = FindAnyObjectByType<CatapultLauncher>();
+        if (_launcher != null) _launcher.SnapToRoom(_room);   // whichever OnLevelStarted handler runs first
 
+        // Multi-room levels count every room's robots: the stars still need all of them dead.
         ScoreManager.Instance.InitLevel(
             GameManager.Instance.CurrentLevelIndex,
             birdsToUse.Length,
-            _spawnedRobots.Count,
+            data.RoomCount > 1 ? data.robots.Length : _spawnedRobots.Count,
             data.blocks.Length);
+        if (HUDController.Instance != null) HUDController.Instance.SetRoomProgress(_room, data.RoomCount);
 
         if (ReferenceFraming.Active(data)) StartCoroutine(GoLiveAfterReveal());
         else StartCoroutine(SettleUnsupportedBlocksNextFrame());
+    }
+
+    // Spawns one room's mounts, blocks, robots and contraptions (everything, on a one-room level).
+    void SpawnRoom(LevelData data, int room)
+    {
+        _loadingWorld = data.world;
+        bool trim = ReferenceFraming.Active(data) || data.trimColliders;
+        if (data.platforms != null)
+            foreach (var p in data.platforms) if (p.room == room) SpawnPlatform(p);
+        RobotEnemy.SuppressIdleMotion = ReferenceFraming.Active(data);   // live physics: robots mustn't shove blocks
+        foreach (var b in data.blocks) if (b.room == room) SpawnBlock(b, data.world, trim);
+        foreach (var r in data.robots) if (r.room == room) SpawnRobot(r, data.world);
+        if (data.gadgets != null)
+            foreach (var g in data.gadgets) if (g.room == room) SpawnGadget(g);
+    }
+
+    // ── Rooms (2026-11-12, Angry Birds 2 style; World 4 pilot) ─────────────────────────────────────────────────────
+    // When the last robot of a room that isn't the last one dies: let the wreckage settle and the shot finish, award a
+    // bonus animal for a one-shot clear, swoosh the cannon + camera one room to the right (CatapultLauncher.PanToRoom),
+    // drop the old room, spawn the next and replay the reveal. The lineup is shared across the rooms.
+    LevelData _level;
+    int  _room, _roomShots;
+    bool _roomTransition;
+    CatapultLauncher _launcher;
+
+    public int  CurrentRoom      => _room;
+    /// <summary>QA / PhysicsProbe (FF_PROBE_ROOM): start every level in this room (clamped). 0 in normal play.</summary>
+    public static int DebugStartRoom;
+    public int  RoomCount        => _level != null ? _level.RoomCount : 1;
+    public bool InRoomTransition => _roomTransition;
+
+    IEnumerator NextRoom()
+    {
+        _roomTransition = true;
+        if (_launcher == null) _launcher = FindAnyObjectByType<CatapultLauncher>();
+        bool oneShot = _roomShots == 1;
+        LevelReveal.LockAim();   // the room is won: no more shots into its wreckage, none while the camera travels
+
+        // Settle: at least a beat, then half a second with nothing moving and nothing in flight (cap 9 s).
+        yield return new WaitForSeconds(0.8f);
+        float waited = 0.8f;
+        int quiet = 0;
+        while (waited < 9f && quiet < 2)
+        {
+            yield return new WaitForSeconds(0.25f);
+            waited += 0.25f;
+            bool busy = WreckageMoving() || (_launcher != null && _launcher.ShotInProgress);
+            quiet = busy ? 0 : quiet + 1;
+        }
+
+        var hud = HUDController.Instance;
+        if (oneShot)
+        {
+            AddBird(CatapultLauncher.LastAnimalUsed);
+            ScoreManager.Instance?.AddBird();
+            if (hud != null) hud.ShowBanner("ONE SHOT!  ADDING FARMFURY");   // user: "change +1 animal to adding FarmFury" (2026-11-12)
+        }
+        else if (hud != null) hud.ShowBanner("ROOM CLEARED!");
+        yield return new WaitForSeconds(0.7f);
+
+        int next = _room + 1;
+        if (_launcher != null) yield return _launcher.PanToRoom(next * LevelData.RoomStride);
+
+        // The cleared room is off screen now: drop it, then build the next one.
+        ClearLevel();
+        _room = next;
+        _roomShots = 0;
+        SpawnRoom(_level, _room);
+        if (hud != null) hud.SetRoomProgress(_room, RoomCount);
+        if (_launcher != null) _launcher.EnsureLoaded();
+
+        bool bossHere = _level.isBossLevel && _room == RoomCount - 1;
+        if (ReferenceFraming.Active(_level))
+        {
+            LevelReveal.RevealRoom(_spawnedBlocks, _spawnedRobots, bossHere);
+            StartCoroutine(GoLiveAfterReveal());
+            while (LevelReveal.IsRevealing) yield return null;
+        }
+        else
+        {
+            LevelReveal.UnlockAim();
+            StartCoroutine(SettleUnsupportedBlocksNextFrame());
+        }
+        _roomTransition = false;
+
+        // Room 1 may have used the last animal: the new room starts with the usual "out of animals" check.
+        if (!HasBirdsRemaining && (_launcher == null || !_launcher.ShotInProgress)) NotifyBirdsExhausted();
     }
 
     // Framed levels run live physics (BlockBase.GoLive / RobotEnemy.GoLive): blocks go Dynamic-asleep at once (the
@@ -300,6 +391,11 @@ public class LevelLoader : MonoBehaviour
             // fail path here, a level the player actually cleared could still force the fail
             // screen and make them replay it. Robot destruction always wins outright now.
             if (_failedRoutine != null) { StopCoroutine(_failedRoutine); _failedRoutine = null; }
+            if (_level != null && _room < RoomCount - 1)
+            {
+                if (!_roomTransition) StartCoroutine(NextRoom());
+                return;
+            }
             OnAllRobotsDestroyed?.Invoke();
             StartCoroutine(DelayedLevelComplete());
         }
@@ -307,7 +403,7 @@ public class LevelLoader : MonoBehaviour
 
     public void NotifyBirdsExhausted()
     {
-        if (_spawnedRobots.Count > 0)
+        if (_spawnedRobots.Count > 0 && !_roomTransition)
         {
             OnBirdsExhausted?.Invoke();
             _failedRoutine = StartCoroutine(DelayedLevelFailed());
@@ -315,6 +411,8 @@ public class LevelLoader : MonoBehaviour
     }
 
     void HandleLevelStarted(LevelData data) => LoadLevel(data);
+
+    void Start() => _launcher = FindAnyObjectByType<CatapultLauncher>();
 
     void SpawnBlock(LevelData.BlockSpawnData data, int world = 1, bool trimCollider = false)
     {
@@ -433,6 +531,8 @@ public class LevelLoader : MonoBehaviour
         StopAllCoroutines();
         ClearLevel();
         _birdQueue.Clear();
+        _level = null;
+        _roomTransition = false;
     }
 
     // ── Platforms (raised earth islands, 2026-11-08) ─────────────────────────────────────────────────────────
@@ -449,6 +549,12 @@ public class LevelLoader : MonoBehaviour
     // (replaced the floating isle and rock the same day; stretched to height by PlatformSpawnData.height), 3 cloud-wrapped stone pillar,
     // 4 sky dock, 5 (none - falls back to World 1's wagon), 6 slide ramp. Measured by tools/import_sky_art.py.
     [SerializeField] private Sprite[] _platformSpritesW4 = new Sprite[MountCount];
+    // World 5 (Sunken City, 2026-11-12): 0/1/2 coral reef mesas low / mid / tall standing on the sea floor (stretched to
+    // height like World 4's cloud mountains), 3 = the tall reef. No dock, wagon or ramp. tools/import_sunken_art.py.
+    [SerializeField] private Sprite[] _platformSpritesW5 = new Sprite[MountCount];
+    // World 6 (Robot Mothership, 2026-11-12): 0/1/2 machinery pedestals low / mid / tall standing on the deck (stretched to
+    // height like the reefs), 3 = the tall pedestal. tools/import_mothership_art.py.
+    [SerializeField] private Sprite[] _platformSpritesW6 = new Sprite[MountCount];
     const int PlatformSortingOrder = 1;   // decorative band (<= 1): behind blocks (2) and robots (3)
 
     // Mount kinds (LevelData.PlatformSpawnData.variant), 2026-11-08. surfaceUV = the walkable top's height from the
@@ -506,6 +612,22 @@ public class LevelLoader : MonoBehaviour
         default,
         new() { surfaceUV = MountMeasurementsW4.RampUV,   solids = MountMeasurementsW4.RampSolids, poly = MountMeasurementsW4.RampPoly },
     };
+    static readonly MountSpec[] MountsW5 =
+    {
+        new() { surfaceUV = MountMeasurementsW5.ReefLowUV,  solids = MountMeasurementsW5.ReefLowSolids },
+        new() { surfaceUV = MountMeasurementsW5.ReefMidUV,  solids = MountMeasurementsW5.ReefMidSolids },
+        new() { surfaceUV = MountMeasurementsW5.ReefTallUV, solids = MountMeasurementsW5.ReefTallSolids },
+        new() { surfaceUV = MountMeasurementsW5.ReefTallUV, solids = MountMeasurementsW5.ReefTallSolids },
+        default, default, default,
+    };
+    static readonly MountSpec[] MountsW6 =
+    {
+        new() { surfaceUV = MountMeasurementsW6.DeckLowUV,  solids = MountMeasurementsW6.DeckLowSolids },
+        new() { surfaceUV = MountMeasurementsW6.DeckMidUV,  solids = MountMeasurementsW6.DeckMidSolids },
+        new() { surfaceUV = MountMeasurementsW6.DeckTallUV, solids = MountMeasurementsW6.DeckTallSolids },
+        new() { surfaceUV = MountMeasurementsW6.DeckTallUV, solids = MountMeasurementsW6.DeckTallSolids },
+        default, default, default,
+    };
     int _loadingWorld = 1;
 
     readonly List<GameObject> _spawnedPlatforms = new();
@@ -516,8 +638,11 @@ public class LevelLoader : MonoBehaviour
         bool w2 = _loadingWorld == 2 && _platformSpritesW2 != null && v < _platformSpritesW2.Length && _platformSpritesW2[v] != null;
         bool w3 = _loadingWorld == 3 && _platformSpritesW3 != null && v < _platformSpritesW3.Length && _platformSpritesW3[v] != null;
         bool w4 = _loadingWorld == 4 && _platformSpritesW4 != null && v < _platformSpritesW4.Length && _platformSpritesW4[v] != null;
-        var spec = w2 ? MountsW2[v] : w3 ? MountsW3[v] : w4 ? MountsW4[v] : Mounts[v];
-        Sprite sprite = w2 ? _platformSpritesW2[v] : w3 ? _platformSpritesW3[v] : w4 ? _platformSpritesW4[v]
+        bool w5 = _loadingWorld == 5 && _platformSpritesW5 != null && v < _platformSpritesW5.Length && _platformSpritesW5[v] != null;
+        bool w6 = _loadingWorld == 6 && _platformSpritesW6 != null && v < _platformSpritesW6.Length && _platformSpritesW6[v] != null;
+        var spec = w2 ? MountsW2[v] : w3 ? MountsW3[v] : w4 ? MountsW4[v] : w5 ? MountsW5[v] : w6 ? MountsW6[v] : Mounts[v];
+        Sprite sprite = w2 ? _platformSpritesW2[v] : w3 ? _platformSpritesW3[v] : w4 ? _platformSpritesW4[v] : w5 ? _platformSpritesW5[v]
+                      : w6 ? _platformSpritesW6[v]
                       : _platformSprites != null && v < _platformSprites.Length ? _platformSprites[v] : null;
         var go = new GameObject($"Mount_{_spawnedPlatforms.Count}");
         go.transform.SetParent(_blockParent, false);
@@ -609,6 +734,16 @@ public class LevelLoader : MonoBehaviour
     [SerializeField] private Sprite _boltSprite;
     [SerializeField] private Sprite _skyCraneSprite;
     [SerializeField] private Sprite _thunderWheelSprite;
+    // World 5 (2026-11-12): the clam that spits a jet of pearls when hit (Sunken/Clam.png + Pearl.png, Sunflower's pump
+    // mode) and the ship's wheel that rolls into the structure (Sunken/ShipsWheel.png, RollingBoulder).
+    [SerializeField] private Sprite _clamSprite;
+    [SerializeField] private Sprite _pearlSprite;
+    [SerializeField] private Sprite _shipsWheelSprite;
+    // World 6 (2026-11-12): the laser emitter that fires a jet of plasma orbs when hit (Mothership/LaserEmitter.png +
+    // PlasmaOrb.png, Sunflower's pump mode) and the gravity ring that rolls into the structure (GravityRing.png).
+    [SerializeField] private Sprite _laserEmitterSprite;
+    [SerializeField] private Sprite _plasmaOrbSprite;
+    [SerializeField] private Sprite _gravityRingSprite;
     readonly List<GameObject> _spawnedGadgets = new();
 
     void SpawnGadget(LevelData.GadgetSpawnData data)
@@ -622,6 +757,14 @@ public class LevelLoader : MonoBehaviour
                 HayHoist.Spawn(_blockParent, _skyCraneSprite, _thunderWheelSprite, data.position,
                                Mathf.Max(1f, data.size), data.ropeLength, data.faceLeft, 0.99f,
                                MountMeasurementsW4.SkyCraneAnchor, MountMeasurementsW4.SkyCranePost).gameObject,
+            GadgetType.LaserEmitter => Sunflower.Spawn(_blockParent, _laserEmitterSprite, _plasmaOrbSprite, data.position,
+                                                       Mathf.Max(0.5f, data.size), pump: true).gameObject,
+            GadgetType.GravityRing => RollingBoulder.Spawn(_blockParent, _gravityRingSprite, data.position,
+                                                           Mathf.Max(0.5f, data.size)).gameObject,
+            GadgetType.Clam => Sunflower.Spawn(_blockParent, _clamSprite, _pearlSprite, data.position,
+                                               Mathf.Max(0.5f, data.size), pump: true).gameObject,
+            GadgetType.ShipsWheel => RollingBoulder.Spawn(_blockParent, _shipsWheelSprite, data.position,
+                                                          Mathf.Max(0.5f, data.size)).gameObject,
             GadgetType.StormCloud => Sunflower.Spawn(_blockParent, _stormCloudSprite, _boltSprite, data.position,
                                                      Mathf.Max(0.5f, data.size), storm: true).gameObject,
             GadgetType.ThunderWheel => RollingBoulder.Spawn(_blockParent, _thunderWheelSprite, data.position,

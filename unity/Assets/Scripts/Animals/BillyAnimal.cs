@@ -27,7 +27,7 @@ public class BillyAnimal : AnimalBase
         base.Awake();
         if (!HasRealSprites) _sr.color = new Color(0.80f, 0.80f, 0.80f); // light grey
         _sr.sortingOrder = 6;
-        _col.radius      = 0.36f;
+        _col.radius      = 0.44f;   // goat-sized (2026-11-12, user: Billy's poses "seem small"; was the chicken's 0.36)
     }
 
     protected override void TriggerAbility()

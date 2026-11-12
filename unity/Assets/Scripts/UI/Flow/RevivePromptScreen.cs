@@ -106,15 +106,16 @@ namespace FarmFury.UI
             return PlankCentreY + (1 - row) * (ButtonHeight + ButtonGap);
         }
 
-        // "+1 animal" just right of a button, in the coin count's gold lettering.
+        // "Adding FarmFury" just right of a button, in the coin count's gold lettering (was "+1 animal"; user, 2026-11-12:
+        // "change +1 animal to 'adding FarmFury'").
         private void RewardLabel(string name, int row, float buttonWidth)
         {
-            var label = UIKit.Label(_sign, name, $"+{GameManager.ReviveAnimals} animal", 40, TextAnchor.MiddleLeft, CountGold);
+            var label = UIKit.Label(_sign, name, "Adding FarmFury", 36, TextAnchor.MiddleLeft, CountGold);
             label.fontStyle = FontStyle.Bold;
             var outline = label.gameObject.AddComponent<Outline>();
             outline.effectColor = CountOutline;
             outline.effectDistance = new Vector2(2f, -2f);
-            UIKit.Place(label.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(buttonWidth * 0.5f + 16f, RowY(row)), new Vector2(200f, ButtonHeight));
+            UIKit.Place(label.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(buttonWidth * 0.5f + 16f, RowY(row)), new Vector2(360f, ButtonHeight));
         }
 
         protected override void OnShow()

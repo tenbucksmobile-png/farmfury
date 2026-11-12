@@ -87,9 +87,27 @@ SPRITE_W4 = {"post": "Environment/Sky/SkyPost", "plank": "Environment/Sky/SkyPla
              "crate": "Environment/World1Props/Plank_Short", "sbox": "Environment/Sky/SkyBlock",
              "pillar": "Environment/Sky/SkyPillar", "slab": "Environment/Sky/SkySlab",
              "hay": "Environment/Sky/CloudBale", "barrel": "Environment/World1Props/Barrel_Dynamite"}
+# ── World 5 (Sunken City, 2026-11-12) ────────────────────────────────────────────────────────────────────────
+# Barnacled shipwreck timber, teal sunken-city stone (block / column / lintel slab) and sponge bales
+# (tools/import_sunken_art.py); crates and barrels keep their World 1 art. Mounts: coral reef mesas low / mid / tall
+# (sized like World 4's cloud mountains). Contraptions: the pearl-spitting clam, the rolling ship's wheel.
+SPRITE_W5 = {"post": "Environment/Sunken/SeaPost", "plank": "Environment/Sunken/SeaPlank",
+             "crate": "Environment/World1Props/Plank_Short", "sbox": "Environment/Sunken/SeaBlock",
+             "pillar": "Environment/Sunken/SeaPillar", "slab": "Environment/Sunken/SeaSlab",
+             "hay": "Environment/Sunken/SpongeBale", "barrel": "Environment/World1Props/Barrel_Dynamite"}
+# ── World 6 (Robot Mothership, 2026-11-12) ───────────────────────────────────────────────────────────────────
+# Steel girder post and I-beam, riveted crate / energy column / steel slab and battery pods
+# (tools/import_mothership_art.py); crates and barrels keep their World 1 art. Mounts: machinery pedestals low / mid /
+# tall (sized like the reefs). Contraptions: the laser emitter (a jet of plasma orbs), the rolling gravity ring.
+SPRITE_W6 = {"post": "Environment/Mothership/ShipPost", "plank": "Environment/Mothership/ShipPlank",
+             "crate": "Environment/World1Props/Plank_Short", "sbox": "Environment/Mothership/ShipBlock",
+             "pillar": "Environment/Mothership/ShipPillar", "slab": "Environment/Mothership/ShipSlab",
+             "hay": "Environment/Mothership/BatteryPod", "barrel": "Environment/World1Props/Barrel_Dynamite"}
 ART_W = {1: ART, 2: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W2.items()},
          3: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W3.items()},
-         4: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W4.items()}}
+         4: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W4.items()},
+         5: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W5.items()},
+         6: {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in SPRITE_W6.items()}}
 # Frost robots: pawn/semi art is 426 px tall (World 1's is 256), scaled down so they fit a storey; vis = height.
 ROBOT_W = {1: ROBOT, 2: {"pawn": ("Basic", 4.4, 1.074, 0.0), "semi": ("SemiHarvester", 4.4, 1.074, 0.0),
                          "harv": ("Harvester", 7.5, 1.099, 0.0), "boss": ("Commander", 7.0, 2.004, 0.06)},
@@ -98,29 +116,44 @@ ROBOT_W = {1: ROBOT, 2: {"pawn": ("Basic", 4.4, 1.074, 0.0), "semi": ("SemiHarve
            3: ROBOT,
            # Sky robots are Stampede's 256 px art (rover, harvester, drone); the boss is the Storm Baron airship, padded
            # to the Commander's 500 px canvas.
-           4: ROBOT}
+           4: ROBOT,
+           # Sea robots are Stampede's 256 px art too; the boss is the Deep Dredger, padded to the Commander's canvas -
+           # 1.5x the Commander's scale (2026-11-12, user: "increase the size of the sunken world boss"; the wide
+           # submarine read small on the 500 px canvas).
+           5: dict(ROBOT, boss=("Commander", 10.5, 3.006, 0.06)),
+           # Mothership robots are Stampede's 256 px art too; the boss is the Factory Machine, padded like the Commander.
+           6: ROBOT}
 MOUNTS_W = {1: MOUNTS, 2: _json.load(open(os.path.join(HERE, "mounts_w2.json"))),
             3: _json.load(open(os.path.join(HERE, "mounts_w3.json"))),
-            4: _json.load(open(os.path.join(HERE, "mounts_w4.json")))}
+            4: _json.load(open(os.path.join(HERE, "mounts_w4.json"))),
+            5: _json.load(open(os.path.join(HERE, "mounts_w5.json"))),
+            6: _json.load(open(os.path.join(HERE, "mounts_w6.json")))}
 KIND_W2 = {"Mesa": "IcePillar", "Scaffold": "FrostScaffold", "Wagon": "Sled", "Ramp": "SnowRamp", "Hill": "Floe"}
 _W2_FLOE = MOUNTS_W[2]["Floe"]
 KIND_W3 = {"Mesa": "Pier", "Scaffold": "Jetty", "Wagon": "Boat", "Ramp": "Slipway", "Hill": "Islet"}
 _W3_ISLET = MOUNTS_W[3]["Islet"]
 KIND_W4 = {"Mesa": "Pillar", "Scaffold": "Dock", "Ramp": "Ramp", "Hill": "Rock"}
+KIND_W5 = {"Mesa": "ReefTall", "Hill": "ReefLow"}
+_W5_REEF = MOUNTS_W[5]["ReefLow"]
+KIND_W6 = {"Mesa": "DeckTall", "Hill": "DeckLow"}
+_W6_DECK = MOUNTS_W[6]["DeckLow"]
 _W4_ISLE = MOUNTS_W[4]["CloudLow"]   # World 4 islands are cloud mountains (design_world4.cloud) since 2026-11-11
 ISLAND_W = {1: ISLAND, 2: [(_W2_FLOE["uv"], _W2_FLOE["aspect"])] * 2, 3: [(_W3_ISLET["uv"], _W3_ISLET["aspect"])] * 2,
-            4: [(_W4_ISLE["uv"], _W4_ISLE["aspect"])] * 2}
-POST_W = {1: 0.276, 2: 0.34, 3: 0.32, 4: 0.30}       # visible post width (the frosted post's art is stockier)
-PILLAR_W = {1: 0.35, 2: 0.42, 3: 0.40, 4: 0.36}      # visible stone / ice pillar width
+            4: [(_W4_ISLE["uv"], _W4_ISLE["aspect"])] * 2, 5: [(_W5_REEF["uv"], _W5_REEF["aspect"])] * 2,
+            6: [(_W6_DECK["uv"], _W6_DECK["aspect"])] * 2}
+POST_W = {1: 0.276, 2: 0.34, 3: 0.32, 4: 0.30, 5: 0.30, 6: 0.30}       # visible post width (the frosted post's art is stockier)
+PILLAR_W = {1: 0.35, 2: 0.42, 3: 0.40, 4: 0.36, 5: 0.36, 6: 0.36}      # visible stone / ice pillar width
 # Hoist crane + load per world: crane aspect w/h, post centre, rope anchor (x, y from the bottom), load w/h, knot height.
 _W3_CRANE = MOUNTS_W[3]["MillCrane"]
 HOIST_W = {1: HOIST, 2: HOIST,
            3: dict(aspect=_W3_CRANE["aspect"], post=_W3_CRANE["post"], anchor=tuple(_W3_CRANE["anchor"]),
                    bucket_aspect=506 / 512, handle=0.99),
            4: dict(aspect=MOUNTS_W[4]["SkyCrane"]["aspect"], post=MOUNTS_W[4]["SkyCrane"]["post"],
-                   anchor=tuple(MOUNTS_W[4]["SkyCrane"]["anchor"]), bucket_aspect=1.0, handle=0.99)}
+                   anchor=tuple(MOUNTS_W[4]["SkyCrane"]["anchor"]), bucket_aspect=1.0, handle=0.99),
+           5: HOIST, 6: HOIST}   # no crane in Worlds 5 and 6
 GADGET_NAMES = {1: ("Sunflower", "IceBoulder"), 2: ("IceCrystal", "IceBoulder"), 3: ("WaterPump", "Millstone"),
-                4: ("StormCloud", "ThunderWheel")}
+                4: ("StormCloud", "ThunderWheel"), 5: ("Clam", "ShipsWheel"),
+                6: ("LaserEmitter", "GravityRing")}
 
 
 def _rect_poly(cx, cy, w, h, rot):
@@ -162,6 +195,28 @@ class Level:
         self.world = world
         self.blocks, self.robots, self.islands = [], [], []
         self.weather, self.gadgets = "Golden", []
+        self.rooms = 1   # multi-room levels (2026-11-12): items carry "room"; room r is laid out r * ROOM_STRIDE right
+
+    def add_room(self, other):
+        """Appends another level's layout as the next room: shifted ROOM_STRIDE per room to the right, tagged."""
+        room, dx = self.rooms, self.rooms * ROOM_STRIDE
+        for b in other.blocks:
+            b = dict(b, room=room, x=b["x"] + dx, vc=(b["vc"][0] + dx, b["vc"][1]),
+                     poly=[(x + dx, y) for x, y in b["poly"]], vis=(b["vis"][0] + dx, b["vis"][1] + dx, b["vis"][2], b["vis"][3]))
+            self.blocks.append(b)
+        for r in other.robots: self.robots.append(dict(r, room=room, x=r["x"] + dx))
+        for i in other.islands:
+            i = dict(i, room=room, x=i["x"] + dx)
+            if "span" in i: i["span"] = (i["span"][0] + dx, i["span"][1] + dx)   # World 4 cloud plateau
+            self.islands.append(i)
+        for g in other.gadgets:
+            g = dict(g, room=room, x=g["x"] + dx)
+            if "head" in g: g["head"] = (g["head"][0] + dx, g["head"][1])
+            if "anchor" in g: g["anchor"] = (g["anchor"][0] + dx, g["anchor"][1])
+            if "bucket" in g: bl, br, bb, bt = g["bucket"]; g["bucket"] = (bl + dx, br + dx, bb, bt)
+            if "cl" in g: g["cl"] = g["cl"] + dx
+            self.gadgets.append(g)
+        self.rooms += 1
 
     # ── pieces (all take the VISIBLE bottom; return the visible top) ─────────────────────────────────────
     def _piece(self, kind, cx, bottom, vis_w, vis_h):
@@ -210,7 +265,7 @@ class Level:
 
     def hut(self, xa, xb, b, h, stone=False, roof_stone=None):
         """Two posts at the ends and a roof across them; returns the roof's top."""
-        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20), 4: (0.15, 0.18)}[self.world][1 if stone else 0]   # half the post width
+        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20), 4: (0.15, 0.18), 5: (0.15, 0.18), 6: (0.15, 0.18)}[self.world][1 if stone else 0]   # half the post width
         top = self.post(xa + inset, b, h, stone)
         self.post(xb - inset, b, h, stone)
         return self.plank(xa, xb, top, stone if roof_stone is None else roof_stone)
@@ -230,7 +285,7 @@ class Level:
         return surface, cx - width / 2 + m["flat"][0] * width, cx - width / 2 + m["flat"][1] * width
 
     def _m(self, kind):
-        names = {2: KIND_W2, 3: KIND_W3, 4: KIND_W4}.get(self.world, {})
+        names = {2: KIND_W2, 3: KIND_W3, 4: KIND_W4, 5: KIND_W5, 6: KIND_W6}.get(self.world, {})
         return MOUNTS_W[self.world][names.get(kind, kind)]
 
     def mount(self, kind, x, width):
@@ -275,6 +330,29 @@ class Level:
         self.robots.append(dict(kind=kind, type=t, x=x, y=cy, s=sc, vis=vis, surface=surface))
 
     # ── output ───────────────────────────────────────────────────────────────────────────────────────────
+    def cs_items(self):
+        """The B(...) / R(...) / P(...) / Gd(...) lines, without the surrounding Make call."""
+        f = lambda v: f"{v:.3f}f"
+        bl, rl, pl, gl = [], [], [], []
+        for b in self.blocks:
+            t, v, extra = CS[b["kind"]]
+            art = f", artVariant: WoodArtVariant.{v}" if v else ""
+            rot = f", rot: {f(b['rot'])}" if abs(b.get("rot", 0.0)) > 0.01 else ""
+            rm = f", room: {b['room']}" if b.get("room") else ""
+            bl.append(f"B(BlockType.{t}, {f(b['x'])}, {f(b['y'])}, {f(b['w'])}, {f(b['h'])}{art}{extra}{rot}{rm})")
+        for r in self.robots:
+            rm = f", room: {r['room']}" if r.get("room") else ""
+            rl.append(f"R({f(r['x'])}, {f(r['y'])}, {f(r['s'])}, {f(r['s'])}, RobotType.{r['type']}{rm})")
+        for i in self.islands:
+            pl.append(f"P({f(i['x'])}, {f(i['s'])}, {f(i['w'])}, variant: {i['v']}" + (", rolling: true" if i.get("rolling") else "")
+                      + (f", height: {f(i['h'])}" if i.get("stretch") else "") + (f", room: {i['room']}" if i.get("room") else "") + ")")
+        for g in self.gadgets:
+            extra = f", ropeLength: {f(g['rope'])}" if g["type"] == "HayHoist" else ""
+            extra += ", faceLeft: true" if g["left"] else ""
+            extra += f", room: {g['room']}" if g.get("room") else ""
+            gl.append(f"Gd(GadgetType.{g['type']}, {f(g['x'])}, {f(g['y'])}, {f(g['size'])}{extra})")
+        return bl, rl, pl, gl
+
     def cs(self):
         f = lambda v: f"{v:.3f}f"
         out = [f"        // ── {self.id}  {self.name} " + "─" * max(4, 60 - len(self.name)),
@@ -287,22 +365,26 @@ class Level:
             t, v, extra = CS[b["kind"]]
             art = f", artVariant: WoodArtVariant.{v}" if v else ""
             rot = f", rot: {f(b['rot'])}" if abs(b.get("rot", 0.0)) > 0.01 else ""
-            out.append(f"                B(BlockType.{t}, {f(b['x'])}, {f(b['y'])}, {f(b['w'])}, {f(b['h'])}{art}{extra}{rot}),")
+            rm = f", room: {b['room']}" if b.get("room") else ""
+            out.append(f"                B(BlockType.{t}, {f(b['x'])}, {f(b['y'])}, {f(b['w'])}, {f(b['h'])}{art}{extra}{rot}{rm}),")
         out += ["            },", "            robots: new[]", "            {"]
         for r in self.robots:
-            out.append(f"                R({f(r['x'])}, {f(r['y'])}, {f(r['s'])}, {f(r['s'])}, RobotType.{r['type']}),")
+            rm = f", room: {r['room']}" if r.get("room") else ""
+            out.append(f"                R({f(r['x'])}, {f(r['y'])}, {f(r['s'])}, {f(r['s'])}, RobotType.{r['type']}{rm}),")
         out.append("            },")
         if self.islands:
             out += ["            platforms: new[]", "            {"]
             out += [f"                P({f(i['x'])}, {f(i['s'])}, {f(i['w'])}, variant: {i['v']}"
                     + (", rolling: true" if i.get("rolling") else "")
-                    + (f", height: {f(i['h'])}" if i.get("stretch") else "") + ")," for i in self.islands]
+                    + (f", height: {f(i['h'])}" if i.get("stretch") else "")
+                    + (f", room: {i['room']}" if i.get("room") else "") + ")," for i in self.islands]
             out.append("            },")
         if self.gadgets:
             out += ["            gadgets: new[]", "            {"]
             for g in self.gadgets:
                 extra = f", ropeLength: {f(g['rope'])}" if g["type"] == "HayHoist" else ""
                 extra += ", faceLeft: true" if g["left"] else ""
+                extra += f", room: {g['room']}" if g.get("room") else ""
                 out.append(f"                Gd(GadgetType.{g['type']}, {f(g['x'])}, {f(g['y'])}, {f(g['size'])}{extra}),")
             out.append("            },")
         if self.weather != "Golden":
@@ -311,6 +393,8 @@ class Level:
             out.append(f"            world: {self.world},")
         if self.boss:
             out.append("            isBoss: true,")
+        if self.rooms > 1:
+            out.append(f"            rooms: {self.rooms},")
         out.append("            referenceFraming: true);")
         return "\n".join(out)
 
@@ -386,7 +470,7 @@ def tower(L, xc, base, floors, width=1.9, h=1.15, taper=0.12, stone_floors=0, ro
             if rng.random() < 0.5: ov_l = rng.uniform(0.3, 0.85)
             else: ov_r = rng.uniform(0.3, 0.85)
         if rk: L.robot(c, b, rk)
-        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20), 4: (0.15, 0.18)}[L.world][1 if stone else 0]
+        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20), 4: (0.15, 0.18), 5: (0.15, 0.18), 6: (0.15, 0.18)}[L.world][1 if stone else 0]
         if style == "tee":
             px = c + rng.uniform(-0.18, 0.18) * w
             if sa is not None: px = min(max(px, sa + pw), sb - pw)
@@ -724,10 +808,15 @@ wobble_stack(L, 6.4, G, n=4, s=0.8, lean_by=0.15, stone=True, top="pawn")
 
 # ═══════════════════════════════════════════ checks ═══════════════════════════════════════════════════════
 LAUNCH = (-2.62, -2.69)          # barrel tip with the haybale mount (CatapultLauncher.ApplyMount)
+# Raised launch points (2026-11-12): World 4's floating mount (CatapultLauncher.SkyMountShift) and World 1's taller bale
+# pyramid (two more rows, 1.6 u, + FarmMountShift's 1.2 u to the left); Worlds 2 and 3 got the same pyramid.
+LAUNCH_SHIFT = {1: (-1.2, 1.6), 2: (-1.2, 1.6), 3: (-1.2, 1.6), 4: (-1.2, 1.6), 5: (-1.2, 1.6), 6: (-1.2, 1.6)}
+ROOM_STRIDE = 32.0               # LevelData.RoomStride: room r is laid out (and the cannon moves) r * this to the right
 GRAV, VMIN, VMAX = 8.0, 5.6, 13.6
 
 
-def check(L):
+def check(L, reach_world=None):
+    rw = L.world if reach_world is None else reach_world
     issues = []
     # support (2026-11-11, polygons so tilted pieces count): each block's collider, dropped 0.1 u, must touch the
     # ground, a mount's solid or a block whose centre is lower. Balance is NOT checked on purpose: structures start
@@ -762,16 +851,18 @@ def check(L):
             issues.append(f"robot {k} at x={rb['x']:.2f} y={bot:.2f} standing on nothing")
     # reach: some angle/power passes within 0.45 u of each robot (obstacles ignored)
     for k, rb in enumerate(L.robots):
-        if not reachable(rb["x"], rb["y"]): issues.append(f"robot {k} at ({rb['x']:.2f},{rb['y']:.2f}) out of reach")
-        if rb["x"] > 16.5: issues.append(f"robot {k} off-screen at 16:9")
+        rx = rb["x"] - rb.get("room", 0) * ROOM_STRIDE   # in its own room's frame
+        if not reachable(rx, rb["y"], world=rw): issues.append(f"robot {k} at ({rb['x']:.2f},{rb['y']:.2f}) out of reach")
+        if rx > 16.5: issues.append(f"robot {k} off-screen at 16:9")
         if rb["y"] + rb["vis"] / 2 > G + 12.0: issues.append(f"robot {k} under the HUD (top {rb['y'] + rb['vis'] / 2 - G:.1f} u up)")
     # contraptions: reachable; a hoist's bucket hangs clear of everything and has a target below it
     for g in L.gadgets:
-        if g["type"] in ("Sunflower", "IceCrystal", "IceBoulder", "WaterPump", "Millstone", "StormCloud", "ThunderWheel"):
-            if not reachable(*g["head"]): issues.append(f"{g['type']} at x={g['x']:.2f} out of reach")
+        gdx = g.get("room", 0) * ROOM_STRIDE
+        if g["type"] in ("Sunflower", "IceCrystal", "IceBoulder", "WaterPump", "Millstone", "StormCloud", "ThunderWheel", "Clam", "ShipsWheel", "LaserEmitter", "GravityRing"):
+            if not reachable(g["head"][0] - gdx, g["head"][1], world=rw): issues.append(f"{g['type']} at x={g['x']:.2f} out of reach")
             continue
         bl, br, bb, bt = g["bucket"]
-        if not reachable((bl + br) / 2, (bb + bt) / 2): issues.append(f"hoist bucket at x={(bl + br) / 2:.2f} out of reach")
+        if not reachable((bl + br) / 2 - gdx, (bb + bt) / 2, world=rw): issues.append(f"hoist bucket at x={(bl + br) / 2:.2f} out of reach")
         below = False
         for b in L.blocks:
             l2, r2, b2, t2 = b["vis"]
@@ -787,20 +878,197 @@ def check(L):
     return issues
 
 
-def reachable(tx, ty, tol=0.45):
+def reachable(tx, ty, tol=0.45, world=1):
+    dx, dy = LAUNCH_SHIFT.get(world, (0.0, 0.0))
+    lx, ly = LAUNCH[0] + dx, LAUNCH[1] + dy
     for ang in range(20, 81, 2):
         for v in [VMIN + (VMAX - VMIN) * q / 20 for q in range(21)]:
             vx, vy = v * math.cos(math.radians(ang)), v * math.sin(math.radians(ang))
             t = 0
             while t < 4:
-                x, y = LAUNCH[0] + vx * t, LAUNCH[1] + vy * t - GRAV * t * t / 2
+                x, y = lx + vx * t, ly + vy * t - GRAV * t * t / 2
                 if (x - tx) ** 2 + (y - ty) ** 2 < tol * tol: return True
                 if y < G - 1: break
                 t += 0.01
     return False
 
 
+# ═══════════════════════════════════════════ second rooms ════════════════════════════════════════════════════
+# 2026-11-12 (user: "lets return to first world - apply the same logic as we did for W4 ... introduce the panning and
+# room 2 to all the levels"): every World 1 level gets a second farmyard one room to the right (LevelData rooms, see
+# CLAUDE.md). Room 1 stays exactly as designed above. Room 2 is generated: 2-4 of the set pieces above spread across
+# the yard (in later levels some on a mesa or a floating island), robots last; the first seed that passes every check
+# (support, overlaps, robots, reach from the raised cannon, under the HUD) is kept, so it is stable from run to run.
+FARM_PIECES = ["tower", "tower", "stilt", "aframe", "pyramid", "wobble", "rock", "cantilever", "seesaw", "deck"]
+
+
+def _farm_piece(L, kind, x, b, rng, half):
+    u = rng.uniform
+    if kind == "tower":
+        w = u(1.4, max(1.45, min(1.9, 2 * half - 0.3)))
+        tower(L, x, b, rng.randint(2, 4), width=w, h=u(0.95, 1.15), taper=0.12,
+              robots=[rng.choice([None, "pawn"]), None, rng.choice(["semi", "pawn"]), None],
+              top=rng.choice([None, "pawn"]), room=(x - half + 0.05, x + half - 0.05))
+    elif kind == "stilt":
+        stilt_house(L, x, b, legs_h=u(1.3, 2.3), w=max(1.1, min(1.5, 2 * half - 1.0)), robot="pawn", top=rng.choice([None, "pawn"]))
+    elif kind == "aframe":
+        aframe(L, x, b, h=u(1.0, 1.25), half=u(0.65, 0.85), robot=rng.choice(["pawn", "semi"]))
+    elif kind == "pyramid":
+        upside_pyramid(L, x, b, rows=(1, 2, 3), s=0.55, robots=[rng.choice([None, "pawn"]), None, rng.choice([None, "pawn"])])
+    elif kind == "wobble":
+        wobble_stack(L, x, b, n=rng.randint(3, 5), s=0.62, lean_by=u(0.15, 0.25), stone=rng.random() < 0.3, top="pawn")
+    elif kind == "rock":
+        balanced_rock(L, x, b, h=u(1.1, 1.8), s=0.9, top=rng.choice(["pawn", "semi"]))
+    elif kind == "cantilever":
+        cantilever(L, x - 0.35, b, u(0.9, 1.5), 0.45, min(u(1.1, 1.5), half + 0.2), tip=rng.choice(["pawn", "barrel"]))
+    elif kind == "seesaw":
+        seesaw(L, x, b, u(0.7, 1.1), max(1.8, min(u(2.3, 2.8), 2 * half - 0.1)), left=rng.choice(["pawn", "crate", "barrel"]), right="pawn")
+    elif kind == "deck":
+        hw = max(0.6, min(0.9, half - 0.1))
+        d = barrel_deck(L, x - hw, x + hw, b, n=3)
+        L.robot(x, d, rng.choice(["pawn", "semi"]))
+
+
+def farm_room(L, rng, pieces, mounts=0.0, x0=6.0, x1=15.2):
+    pitch = (x1 - x0) / pieces
+    for i in range(pieces):
+        x = x0 + pitch * (i + 0.5) + rng.uniform(-0.2, 0.2)
+        b, half = G, pitch / 2
+        r = rng.random()
+        if r < mounts * 0.5:
+            b, l_, r_ = L.mount("Mesa", x, 1.9); x = (l_ + r_) / 2; half = min(half, (r_ - l_) / 2 + 0.4)
+        elif r < mounts:
+            w = min(2 * half - 0.2, rng.uniform(2.6, 3.2))
+            b = L.island(x, G + rng.uniform(1.4, 2.4), w, rng.randint(0, 1)); half = min(half, w * 0.42)
+        _farm_piece(L, rng.choice(FARM_PIECES), x, b, rng, half)
+
+
+def settle_robots(L, rng, lo, hi):
+    """Robots go in last and nothing rests on them: drop any whose in-game 0.6 x 0.9 collider would start inside wood
+    (it shoves the structure apart when it switches on after the reveal pop), trim at random to the range."""
+    cols = [_shrink(b["poly"], 0.02) for b in L.blocks]
+    keep, boxes = [], []
+    for r in L.robots:
+        bot = r["surface"]
+        box = [(r["x"] - 0.31, bot + 0.02), (r["x"] + 0.31, bot + 0.02), (r["x"] + 0.31, bot + 0.93), (r["x"] - 0.31, bot + 0.93)]
+        clear = not any(_sat_overlap(box, c) > 0.0 for c in cols) and not any(_sat_overlap(box, o) > 0.0 for o in boxes)
+        if r["kind"] == "boss" or clear: keep.append(r); boxes.append(box)
+    boss = [r for r in keep if r["kind"] == "boss"]
+    rest = [r for r in keep if r["kind"] != "boss"]
+    while len(rest) > hi: rest.pop(rng.randrange(len(rest)))
+    L.robots = rest + boss
+    return len(rest) >= lo
+
+
+def room2_for(k, like, skip=0):
+    """Level k's second room, in the world and weather of `like` (World 2/3 since 2026-11-12, same generator)."""
+    import random
+    pieces = 2 if k <= 5 else 3 if k <= 12 else 4
+    lo, hi = (2, 3) if k <= 5 else (3, 4) if k <= 12 else (3, 5)
+    mounts = 0.0 if k <= 4 else 0.25 if k <= 10 else 0.4
+    for seed in range(1500):
+        R = Level("room2", like.id, like.name, like.par, like.birds, "", world=like.world)
+        R.weather = like.weather
+        rng = random.Random(200000 + (like.world - 1) * 50000 + k * 1000 + seed)
+        farm_room(R, rng, pieces, mounts)
+        if not settle_robots(R, rng, lo, hi): continue
+        if check(R): continue
+        if any(b["vis"][3] > G + 9.5 for b in R.blocks): continue
+        if skip > 0: skip -= 1; continue
+        R.seed = seed
+        return R
+    raise RuntimeError(f"W{like.world}_L{k:02d}: no valid second room in 1500 seeds")
+
+
+def add_second_rooms(levels, first_k, skips=None):
+    """Gives every level in `levels` (numbered from first_k) its generated second room, in place. A boss level gets a
+    new outer yard first and its keep (exactly as designed) as room 2, where the mothership drops the boss off."""
+    skips = skips or {}
+    for k, L in enumerate(list(levels), start=first_k):
+        if L.boss:
+            yard = room2_for(k, L, skips.get(k, 0))
+            yard.file, yard.id, yard.name, yard.par, yard.birds, yard.boss = L.file, L.id, L.name, L.par, L.birds, True
+            yard.comment = L.comment + "\nTwo rooms: an outer yard first, then the keep."
+            yard.add_room(L)
+            levels[levels.index(L)] = yard
+        else:
+            L.add_room(room2_for(k, L, skips.get(k, 0)))
+
+
+ROOM2_SKIP = {}   # level number -> valid rooms to pass over (one that fell by itself in Unity's PhysicsProbe)
+add_second_rooms(LEVELS, 2, ROOM2_SKIP)
+
+# L01 is written by hand in LevelDataGenerator.cs; its second room is generated here and appended there.
+L01_ROOM2 = Level("L01", "W1_L01", "First Contact", 2, [C, C, C], "", world=1)
+L01_ROOM2.add_room(room2_for(1, L01_ROOM2, ROOM2_SKIP.get(1, 0)))
+
+
+# ── hidden robots (2026-11-12, user: "there is always a robot that is protected behind the mound, under fallen structure
+# that is impossible to reach - we should perhaps not place a robot there") ──────────────────────────────────────────
+# reachable() ignores obstacles. A robot standing low behind a mound (a cloud, reef, pedestal, mesa or island) passes it
+# while every real shot hits the mound first. prune_hidden_robots() drops every robot that no arc reaches without going
+# through a mound's body; structures are untouched. Ramps, wagons and scaffolds (shots pass their legs) are not walls.
+WALL_VARIANTS = (0, 1, 2, 3)
+
+
+def _walls(L, room):
+    out = []
+    for i in L.islands:
+        if i.get("room", 0) != room or i.get("v") not in WALL_VARIANTS: continue
+        h = i["h"]; base = i["s"] - i["uv"] * h
+        x0 = i["x"] - i["w"] / 2 - room * ROOM_STRIDE
+        out.append((x0 + 0.1, x0 + i["w"] - 0.1, base, i["s"] - 0.05))
+    return out
+
+
+def reachable_clear(tx, ty, walls, tol=0.45, world=1):
+    dx, dy = LAUNCH_SHIFT.get(world, (0.0, 0.0))
+    lx, ly = LAUNCH[0] + dx, LAUNCH[1] + dy
+    for ang in range(20, 86, 2):
+        for v in [VMIN + (VMAX - VMIN) * q / 20 for q in range(21)]:
+            vx, vy = v * math.cos(math.radians(ang)), v * math.sin(math.radians(ang))
+            t = 0
+            while t < 4:
+                x, y = lx + vx * t, ly + vy * t - GRAV * t * t / 2
+                if (x - tx) ** 2 + (y - ty) ** 2 < tol * tol: return True
+                if y < G - 1 or any(a <= x <= b and lo <= y <= hi for a, b, lo, hi in walls): break
+                t += 0.01
+    return False
+
+
+def prune_hidden_robots(L):
+    """Drops robots behind a mound that no shot can reach (never a boss, never the last robot of a room). Returns how
+    many were dropped."""
+    keep, dropped = [], 0
+    for r in L.robots:
+        room = r.get("room", 0)
+        rx = r["x"] - room * ROOM_STRIDE
+        walls = [w for w in _walls(L, room)
+                 if w[0] < rx + 0.3 and w[3] > r["y"] - 0.6                                  # left of it, above its feet
+                 and not (w[0] - 0.2 <= rx <= w[1] + 0.2 and r["surface"] >= w[3] - 0.15)]    # not the mount it stands on
+        if r["kind"] == "boss" or not walls or reachable_clear(rx, r["y"], walls, world=L.world):
+            keep.append(r)
+        else:
+            dropped += 1
+    for room in range(L.rooms):   # never empty a room
+        if not any(r.get("room", 0) == room for r in keep):
+            lost = [r for r in L.robots if r.get("room", 0) == room]
+            if lost: keep.append(lost[0]); dropped -= 1
+    L.robots = [r for r in L.robots if r in keep]
+    return dropped
+
+
+def prune_all(levels):
+    n = 0
+    for L in levels:
+        k = prune_hidden_robots(L)
+        if k: print(f"  {L.id}: dropped {k} robot(s) hidden behind a mound")
+        n += k
+    return n
+
+
 def write_cs():
+    prune_all(LEVELS + [L01_ROOM2])
     body = "\n\n".join(L.cs() for L in LEVELS)
     src = f"""// GENERATED by tools/design_world1.py — edit the designs there, not here.
 // World 1 levels L02-L18 (2026-11-08 rebuild): Angry-Birds-style structures on the ground, raised islands and
@@ -812,8 +1080,25 @@ public static partial class LevelDataGenerator
     {{
 {body}
     }}
+
+    // L01's second room (2026-11-12): L01 itself is hand-written in LevelDataGenerator.cs, which appends these.
+    static LevelData.BlockSpawnData[] L01Room2Blocks => new[]
+    {{
+@@L01B@@
+    }};
+    static LevelData.RobotSpawnData[] L01Room2Robots => new[]
+    {{
+@@L01R@@
+    }};
+    static LevelData.PlatformSpawnData[] L01Room2Platforms => new LevelData.PlatformSpawnData[]
+    {{
+@@L01P@@
+    }};
 }}
 """
+    bl, rl, pl, _ = L01_ROOM2.cs_items()
+    ind = lambda xs: "\n".join(f"        {x}," for x in xs)
+    src = src.replace("@@L01B@@", ind(bl)).replace("@@L01R@@", ind(rl)).replace("@@L01P@@", ind(pl))
     path = os.path.join(UNITY, "Editor", "LevelDataGenerator.World1.cs")
     open(path, "w", encoding="utf-8").write(src)
     print("wrote", os.path.normpath(path))

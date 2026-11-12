@@ -71,6 +71,52 @@ public static partial class SceneSetup
         WireSkySprite(eds, "_sprSkyLantern", "Decor_Lantern.png");
         WireSkySprite(eds, "_sprSkyPlum",    "Decor_Plum.png");
         WireSkySprite(eds, "_sprSkyVane",    "Decor_Windvane.png");
+
+        // World 5 Sunken City framed stack + SeaDecor (2026-11-12, tools/import_sunken_art.py).
+        WireSeaSprite(eds, "_sprSeaFar",    "SeaFar.png", opaque: true);
+        WireSeaSprite(eds, "_sprSeaSoil",   "SeaSoil.png");
+        WireSeaSprite(eds, "_sprSeaSilhouetteL", "SeaSilhouetteL.png");
+        WireSeaSprite(eds, "_sprSeaSilhouetteR", "SeaSilhouetteR.png");
+        WireSeaSprite(eds, "_sprSeaJelly",  "Decor_Jelly.png");
+        WireSeaSprite(eds, "_sprSeaBubble", "Decor_Bubble.png");
+        WireSpaceSprites(eds);   // World 6 Robot Mothership (2026-11-12, tools/import_mothership_art.py)
+        var fish = eds.FindProperty("_sprSeaFish");
+        if (fish != null)
+        {
+            fish.arraySize = 6;
+            for (int i = 0; i < 6; i++)
+                fish.GetArrayElementAtIndex(i).objectReferenceValue = LoadSpriteAt($"{SeaFolder}/Decor_Fish{i + 1}.png", false);
+        }
+    }
+
+    const string SeaFolder = "Assets/Sprites/Environment/Sunken";
+    const string SpaceFolder = "Assets/Sprites/Environment/Mothership";
+
+    static void WireSpaceSprites(SerializedObject eds)
+    {
+        void One(string field, string file, bool opaque = false)
+        {
+            var sp = LoadSpriteAt($"{SpaceFolder}/{file}", opaque);
+            var prop = eds.FindProperty(field);
+            if (sp != null && prop != null) prop.objectReferenceValue = sp;
+            else Debug.LogWarning($"[FarmFury] Space: {field} not wired ({SpaceFolder}/{file} missing?)");
+        }
+        One("_sprSpaceFar", "SpaceFar.png", opaque: true);
+        One("_sprSpaceSoil", "SpaceSoil.png");
+        One("_sprSpaceSilhouetteL", "SpaceSilhouetteL.png");
+        One("_sprSpaceSilhouetteR", "SpaceSilhouetteR.png");
+        One("_sprSpaceAsteroid", "Decor_Asteroid.png");
+        One("_sprSpaceComet", "Decor_Comet.png");
+        One("_sprSpaceGalaxy", "Decor_Galaxy.png");
+        One("_sprSpaceMilkyWay", "Decor_MilkyWay.png");
+    }
+
+    static void WireSeaSprite(SerializedObject so, string field, string file, bool opaque = false)
+    {
+        var sp = LoadSpriteAt($"{SeaFolder}/{file}", opaque);
+        var prop = so.FindProperty(field);
+        if (sp != null && prop != null) { prop.objectReferenceValue = sp; Debug.Log($"[FarmFury] Sea: {field} -> {file}"); }
+        else Debug.LogWarning($"[FarmFury] Sea: {field} not wired ({SeaFolder}/{file} missing?)");
     }
 
     const string SkyFolder = "Assets/Sprites/Environment/Sky";
@@ -171,6 +217,21 @@ public static partial class SceneSetup
             var prop = loader.FindProperty(field);
             if (prop != null) prop.objectReferenceValue = LoadSpriteAt(path, opaque: false);
         }
+        // World 5 contraptions (2026-11-12): the pearl-spitting clam and the rolling ship's wheel.
+        (string field, string path)[] w5 =
+        {
+            ("_clamSprite",       $"{SeaFolder}/Clam.png"),
+            ("_pearlSprite",      $"{SeaFolder}/Pearl.png"),
+            ("_shipsWheelSprite", $"{SeaFolder}/ShipsWheel.png"),
+            ("_laserEmitterSprite", $"{SpaceFolder}/LaserEmitter.png"),   // World 6 (2026-11-12)
+            ("_plasmaOrbSprite",    $"{SpaceFolder}/PlasmaOrb.png"),
+            ("_gravityRingSprite",  $"{SpaceFolder}/GravityRing.png"),
+        };
+        foreach (var (field, path) in w5)
+        {
+            var prop = loader.FindProperty(field);
+            if (prop != null) prop.objectReferenceValue = LoadSpriteAt(path, opaque: false);
+        }
         var drop = loader.FindProperty("_waterDropSprite");
         if (drop != null) drop.objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Abilities/WaterSwirl.png");
 
@@ -211,6 +272,20 @@ public static partial class SceneSetup
         w4.arraySize = filesW4.Length;
         for (int i = 0; i < filesW4.Length; i++)
             w4.GetArrayElementAtIndex(i).objectReferenceValue = filesW4[i] == null ? null : LoadSpriteAt($"{SkyFolder}/{filesW4[i]}", opaque: false);
+        // World 5 mounts (2026-11-12): reef low / mid / tall, the tall reef as the mesa; no dock, wagon or ramp.
+        var w5 = loader.FindProperty("_platformSpritesW5");
+        if (w5 == null) return;
+        string[] filesW5 = { "Mount_ReefLow.png", "Mount_ReefMid.png", "Mount_ReefTall.png", "Mount_ReefTall.png", null, null, null };
+        w5.arraySize = filesW5.Length;
+        for (int i = 0; i < filesW5.Length; i++)
+            w5.GetArrayElementAtIndex(i).objectReferenceValue = filesW5[i] == null ? null : LoadSpriteAt($"{SeaFolder}/{filesW5[i]}", opaque: false);
+        // World 6 mounts (2026-11-12): machinery pedestals low / mid / tall, the tall one as the mesa.
+        var w6 = loader.FindProperty("_platformSpritesW6");
+        if (w6 == null) return;
+        string[] filesW6 = { "Mount_DeckLow.png", "Mount_DeckMid.png", "Mount_DeckTall.png", "Mount_DeckTall.png", null, null, null };
+        w6.arraySize = filesW6.Length;
+        for (int i = 0; i < filesW6.Length; i++)
+            w6.GetArrayElementAtIndex(i).objectReferenceValue = filesW6[i] == null ? null : LoadSpriteAt($"{SpaceFolder}/{filesW6[i]}", opaque: false);
     }
 
     // Thrown-ability art (AbilityProjectile, 2026-11-08): Gerald's feather bombs, Woolly's wool balls, Billy's mud,

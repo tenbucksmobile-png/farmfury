@@ -45,9 +45,9 @@ public static class ReferenceFraming
     /// <summary>Projectile gravity, sh/s² (AB2 ≈ 0.5; FarmFury was 0.23 at this zoom).</summary>
     public const float ProjectileGravitySh = 0.5f;
     /// <summary>Full-pull launch speed, sh/s.</summary>
-    public const float MaxLaunchSpeedSh = 0.85f;
+    public const float MaxLaunchSpeedSh = 0.85f * FlightPace;
     /// <summary>Softest-pull launch speed, sh/s (same min/max ratio as the original 3.8/9.3).</summary>
-    public const float MinLaunchSpeedSh = 0.35f;
+    public const float MinLaunchSpeedSh = 0.35f * FlightPace;
     /// <summary>Pull distance for full power, sh (was 2.4 u at ortho 4.79 = 0.25 sh).</summary>
     public const float MaxDragSh = 0.25f;
     /// <summary>Angle deadzone around the pivot, sh (was 0.6 u = 0.063 sh).</summary>
@@ -57,12 +57,20 @@ public static class ReferenceFraming
     /// <summary>Trajectory preview dot diameter, sh (was 0.16 u = 0.017 sh).</summary>
     public const float TrajectoryDotSh = 0.017f;
 
+    /// <summary>Flight pace (2026-11-12, user: "the character still flys too fast, slow them down - almost slow mo ...
+    /// it should not feel rushed - but the user should feel the anxiety, anticipation of their shot"). Time-scales the
+    /// shot: launch speeds x pace, projectile gravity x pace squared - every arc keeps exactly the same shape and reach
+    /// (the preview, the designers' reach checks), it just takes 1/pace as long. The animal's impact mass is divided by
+    /// the pace (AnimalBase.Launch) so a hit carries the same momentum as before; abilities follow the same pace
+    /// (AnimalBase.AbilitySpeed, AbilityProjectile.Spawn, Cluck's eggs, Bessie's slam).</summary>
+    public const float FlightPace = 0.6f;
+
     /// <summary>Screen heights to world units at the framed zoom.</summary>
     public static float ToWorld(float sh) => sh * 2f * OrthoSize;
 
     /// <summary>Rigidbody2D.gravityScale that gives <see cref="ProjectileGravitySh"/> (0.40 with gravity -20).</summary>
     public static float ProjectileGravityScale =>
-        ToWorld(ProjectileGravitySh) / Mathf.Max(0.01f, Mathf.Abs(Physics2D.gravity.y));
+        ToWorld(ProjectileGravitySh) * FlightPace * FlightPace / Mathf.Max(0.01f, Mathf.Abs(Physics2D.gravity.y));
 
     public static bool Active(LevelData level) => level != null && level.referenceFraming;
 

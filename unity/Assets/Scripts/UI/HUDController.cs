@@ -50,6 +50,11 @@ public class HUDController : MonoBehaviour
     [SerializeField] private Sprite _lockerSprite;      // Franchise/Shop/Locker.png
     [SerializeField] private Sprite _swapSprite;        // Franchise/Menu/SwapCharacter.png (Arcade/Stampede swap icon)
     Button _swapButton;
+    /// <summary>The in-level character switch button (TutorialHints points at it).</summary>
+    public RectTransform SwapButtonRect => _swapButton != null ? (RectTransform)_swapButton.transform : null;
+    // Beginner tips on the first four cornfield levels (TutorialHints, 2026-11-12): the pointing hand
+    // (Sprites/UI/Franchise/Hint/HintHand.png, Kling), wired by SceneSetup.
+    [SerializeField] private Sprite _hintHandSprite;
     Image  _swapImage;
     private RectTransform  _topRightRoot;
     private Text           _coinText;
@@ -68,6 +73,7 @@ public class HUDController : MonoBehaviour
 
     void Start()
     {
+        gameObject.AddComponent<TutorialHints>().Init(this, _hintHandSprite);
         _levelLoader = FindAnyObjectByType<LevelLoader>();
         if (FarmFury.Core.SaveManager.Instance != null)
         {
@@ -141,6 +147,12 @@ public class HUDController : MonoBehaviour
     {
         if (_birdQueueRoot != null) _birdQueueRoot.gameObject.SetActive(visible);
         if (_topRightRoot  != null) _topRightRoot.gameObject.SetActive(visible);
+        if (!visible && _roomRoot != null) _roomRoot.gameObject.SetActive(false);
+        if (visible && _roomRoot != null && _roomDots.Count > 0)
+        {
+            var loader = _levelLoader != null ? _levelLoader : FindAnyObjectByType<LevelLoader>();
+            if (loader != null) SetRoomProgress(loader.CurrentRoom, loader.RoomCount);
+        }
     }
 
     // ── Canvas construction ───────────────────────────────────────────────────
@@ -170,6 +182,78 @@ public class HUDController : MonoBehaviour
 
         BuildBirdQueueArea(safeArea);
         BuildPauseButton(safeArea);
+        BuildRoomIndicator(safeArea);
+    }
+
+    // ── Rooms (multi-room levels, 2026-11-12) ─────────────────────────────────────────────────────────────────
+    // A row of dots top-centre (filled = rooms reached), shown only on levels with more than one room, and a short
+    // banner over the play area when a room is cleared ("ONE SHOT! ADDING FARMFURY").
+    RectTransform _roomRoot;
+    readonly List<Image> _roomDots = new();
+    TextMeshProUGUI _banner;
+    Coroutine _bannerRoutine;
+
+    void BuildRoomIndicator(Transform canvas)
+    {
+        _roomRoot = MakeRect(canvas, "RoomDots",
+            anchorMin: new Vector2(0.5f, 1f), anchorMax: new Vector2(0.5f, 1f), pivot: new Vector2(0.5f, 1f),
+            pos: new Vector2(0f, -22f), size: new Vector2(200f, 40f));
+        _roomRoot.gameObject.SetActive(false);
+        _banner = MakeCentredText(canvas, "RoomBanner", new Vector2(0f, 220f), new Vector2(1400f, 140f), 84f, "", Color.white);
+        StyleAsGameNumber(_banner);
+        _banner.raycastTarget = false;
+        _banner.gameObject.SetActive(false);
+    }
+
+    /// <summary>LevelLoader: which room of how many (dots hidden on a one-room level).</summary>
+    public void SetRoomProgress(int current, int total)
+    {
+        if (_roomRoot == null) return;
+        _roomRoot.gameObject.SetActive(total > 1);
+        while (_roomDots.Count < total)
+        {
+            var img = new GameObject($"Dot{_roomDots.Count}", typeof(RectTransform)).AddComponent<Image>();
+            img.transform.SetParent(_roomRoot, false);
+            img.sprite = _circleSpr;
+            img.raycastTarget = false;
+            _roomDots.Add(img);
+        }
+        const float D = 26f, Gap = 18f;
+        float x0 = -(total - 1) * (D + Gap) * 0.5f;
+        for (int i = 0; i < _roomDots.Count; i++)
+        {
+            var img = _roomDots[i];
+            img.gameObject.SetActive(i < total);
+            var rt = img.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(D, D);
+            rt.anchoredPosition = new Vector2(x0 + i * (D + Gap), 0f);
+            img.color = i <= current ? new Color(1f, 0.82f, 0.25f) : new Color(1f, 1f, 1f, 0.35f);
+        }
+    }
+
+    /// <summary>A short message that pops, holds and fades (unscaled time).</summary>
+    public void ShowBanner(string text)
+    {
+        if (_banner == null) return;
+        if (_bannerRoutine != null) StopCoroutine(_bannerRoutine);
+        _bannerRoutine = StartCoroutine(BannerRoutine(text));
+    }
+
+    IEnumerator BannerRoutine(string text)
+    {
+        _banner.text = text;
+        _banner.gameObject.SetActive(true);
+        var t = _banner.rectTransform;
+        for (float e = 0f; e < 1.9f; e += Time.unscaledDeltaTime)
+        {
+            float pop = e < 0.25f ? Mathf.Lerp(0.4f, 1.12f, e / 0.25f) : e < 0.4f ? Mathf.Lerp(1.12f, 1f, (e - 0.25f) / 0.15f) : 1f;
+            t.localScale = Vector3.one * pop;
+            _banner.alpha = e < 1.5f ? 1f : 1f - (e - 1.5f) / 0.4f;
+            yield return null;
+        }
+        _banner.gameObject.SetActive(false);
+        _bannerRoutine = null;
     }
 
     RectTransform BuildSafeArea(Transform canvas)

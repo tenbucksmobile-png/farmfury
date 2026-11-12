@@ -397,26 +397,54 @@ def settle_robots(L, rng, lo, hi):
     return len(rest) >= lo
 
 
-def city_level(k, name, par, birds, comment, weather="ClearSkies", boss=False, robots=(5, 8), fixed=None, skip=0, **kw):
-    """Try seeds until the city passes every designer check; append the winner to LEVELS. skip: pass over that many
-    valid cities first (one that passed the designer but fell by itself in Unity's PhysicsProbe)."""
+def _pick_city(k, name, par, birds, comment, weather, boss, robots, fixed, skip, seed_base, reach_world, **kw):
+    """Try seeds until the city passes every designer check. skip: pass over that many valid cities first (one that
+    passed the designer but fell by itself in Unity's PhysicsProbe)."""
     key = name.replace("'", "").replace(" ", "").replace("-", "")
     if kw.get("peaks", 4) >= 5: kw.setdefault("x0", 6.0); kw.setdefault("x1", 15.8)
     for seed in range(800):
         L = d.Level(f"W04_L{k:02d}_{key}", f"W4_L{k:02d}", name, par, birds, comment, boss=boss, world=4)
         L.weather = weather
-        rng = _random.Random(k * 1000 + seed)
+        rng = _random.Random(seed_base + seed)
         if fixed: fixed(L, rng)
         city(L, rng, **kw)
         if not settle_robots(L, rng, *robots): continue
         fit_clouds(L)
-        if d.check(L) or cloud_checks(L): continue
+        if d.check(L, reach_world=reach_world) or cloud_checks(L): continue
         if any(b["vis"][3] > AT(11.0) for b in L.blocks): continue
         if skip > 0: skip -= 1; continue
         L.seed = seed
-        LEVELS.append(L)
         return L
     raise RuntimeError(f"W4_L{k:02d} {name}: no valid city in 800 seeds")
+
+
+# Second rooms (2026-11-12, AB2 multi-room pilot - user: "allow for two plays in one level, panning the camera across to
+# another structure"): every World 4 level gets a smaller second city, one room to the right. Its skyline answers the
+# first one's (a rising town is followed by a falling one, a valley by a mountain), on the same kinds of mount.
+FLIP_PROFILE = {"rise": "fall", "fall": "rise", "valley": "mount", "mount": "valley", "random": "random"}
+
+
+def room2_spec(k, kw):
+    peaks = min(4, max(3, kw.get("peaks", 4) - 1))
+    return dict(peaks=peaks, profile=FLIP_PROFILE[kw.get("profile", "random")], stack=kw.get("stack", 0.5),
+                walk=kw.get("walk", 0.7), mounts=kw.get("mounts", ("cloud",)),
+                x0=6.0 if peaks == 3 else 5.8, x1=13.8 if peaks == 3 else 15.4,
+                robots=(3, 4) if k <= 8 else (3, 5) if k <= 16 else (4, 6))
+
+
+def city_level(k, name, par, birds, comment, weather="ClearSkies", boss=False, robots=(5, 8), fixed=None, skip=0,
+               room2=None, room2_skip=0, **kw):
+    """Room 1: the city exactly as picked before the second rooms (reach_world=0 = the original ground-level launch
+    point, no LAUNCH_SHIFT entry - it pins those seeds; the raised World 4
+    mount of 2026-11-12 must not reshuffle them - the user liked these layouts). Room 2: a new, smaller city checked
+    from the real (raised) launch point, its own seed range. Appends the two-room level to LEVELS."""
+    L = _pick_city(k, name, par, birds, comment, weather, boss, robots, fixed, skip, k * 1000, 0, **kw)
+    spec = dict(room2 or room2_spec(k, kw))
+    r2 = _pick_city(k, name, par, birds, comment, weather, False, spec.pop("robots"), spec.pop("fixed", None),
+                    room2_skip, 100000 + k * 1000, None, **spec)
+    L.add_room(r2)
+    LEVELS.append(L)
+    return L
 
 
 # ── fixed contraptions per level ──────────────────────────────────────────────────────────────────────────────
@@ -519,10 +547,16 @@ def _baron(L, rng):
     L.robot(13.4, t, "boss")
 
 
-city_level(24, "The Storm Baron", 3, [H, B, B], """
-Boss: the Storm Baron's keep at the back of his city (the mothership drops him on it), three districts in front.""",
-           weather="StormFront", boss=True, robots=(6, 9), peaks=3, profile="rise", x0=5.8, x1=11.0, stack=0.6,
-           fixed=_baron)
+# Boss level, two rooms: first his outer town, then (room 2) the Storm Baron's keep at the back of his city - the
+# city exactly as before, its seed pinned - where the mothership drops him off.
+_bl = _pick_city(24, "The Storm Baron", 3, [H, B, B], """
+Boss: the Storm Baron's outer town, then his keep at the back of his city (the mothership drops him on it).""",
+                 "StormFront", True, (6, 9), _baron, 0, 24 * 1000, 0, peaks=3, profile="rise", x0=5.8, x1=11.0, stack=0.6)
+_town = _pick_city(24, "The Storm Baron", 3, [H, B, B], "", "StormFront", False, (4, 6), None, 0, 100000 + 24 * 1000, None,
+                   peaks=4, profile="mount", mounts=("cloud", "mesa"), stack=0.6, walk=0.9)
+_town.file, _town.id, _town.name, _town.par, _town.birds, _town.comment, _town.boss = _bl.file, _bl.id, _bl.name, _bl.par, _bl.birds, _bl.comment, True
+_town.add_room(_bl)
+LEVELS.append(_town)
 
 
 for _L in LEVELS: fit_clouds(_L)
@@ -530,6 +564,7 @@ for _L in LEVELS: fit_clouds(_L)
 
 # ═══════════════════════════════════════════ output ═══════════════════════════════════════════════════════
 def write_cs():
+    d.prune_all(LEVELS)   # robots hidden behind a mound (2026-11-12)
     body = "\n\n".join(L.cs() for L in LEVELS)
     keep = ", ".join(f'"{L.file}"' for L in LEVELS)
     src = f"""// GENERATED by tools/design_world4.py — edit the designs there, not here.

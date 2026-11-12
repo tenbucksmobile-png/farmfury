@@ -191,8 +191,95 @@ public class CornfieldAmbience : MonoBehaviour
         speckKind = 1, crows = false, groundFog = 0.2f, aurora = 0.25f,
     };
 
+    // ── Sunken City (World 5, 2026-11-12) ──────────────────────────────────────────────────────────────────────
+    // Under the sea: no clouds or crows; the "sun" is the light from the surface; marine snow drifts down (the snow
+    // speck layer), glowing plankton (fireflies) in the deep, murk rolling along the floor (ground fog), and the kelp
+    // sways in the current (wind).
+    static readonly Profile SunlitShallows = new()
+    {
+        sky = Color.white, land = Color.white, haze = new Color(0.55f, 0.85f, 0.88f), hazeAlpha = 0.18f, mistAlpha = 0.3f,
+        grade = new Color(0.4f, 0.85f, 0.9f, 0.05f), wind = 0.6f, sun = 0.9f, sunColour = new Color(0.85f, 1f, 0.95f),
+        clouds = 0, cloudTint = Color.white, pollen = 0.4f, speckKind = 0, crows = false, groundFog = 0.1f, snow = 0.2f,
+    };
+    static readonly Profile KelpForest = new()
+    {
+        sky = new Color(0.86f, 1f, 0.92f), land = new Color(0.88f, 1f, 0.9f), haze = new Color(0.4f, 0.7f, 0.6f),
+        hazeAlpha = 0.26f, mistAlpha = 0.4f, grade = new Color(0.3f, 0.7f, 0.5f, 0.08f), wind = 1.2f, sun = 0.6f,
+        sunColour = new Color(0.8f, 1f, 0.85f), clouds = 0, cloudTint = Color.white, pollen = 0.3f, speckKind = 0,
+        crows = false, groundFog = 0.2f, snow = 0.3f,
+    };
+    static readonly Profile MurkyDepths = new()
+    {
+        sky = new Color(0.6f, 0.72f, 0.74f), land = new Color(0.7f, 0.8f, 0.8f), haze = new Color(0.3f, 0.45f, 0.48f),
+        hazeAlpha = 0.42f, mistAlpha = 0.6f, grade = new Color(0.1f, 0.28f, 0.32f, 0.2f), wind = 0.4f, sun = 0.2f,
+        sunColour = new Color(0.7f, 0.9f, 0.9f), clouds = 0, cloudTint = Color.white, pollen = 0.2f, speckKind = 2,
+        crows = false, groundFog = 0.45f, snow = 0.6f,
+    };
+    static readonly Profile GlowingDeep = new()
+    {
+        sky = new Color(0.38f, 0.46f, 0.66f), land = new Color(0.55f, 0.62f, 0.82f), haze = new Color(0.2f, 0.28f, 0.5f),
+        hazeAlpha = 0.34f, mistAlpha = 0.5f, grade = new Color(0.08f, 0.1f, 0.36f, 0.24f), wind = 0.3f, sun = 0.15f,
+        sunColour = new Color(0.6f, 0.8f, 1f), clouds = 0, cloudTint = Color.white, pollen = 1f, speckKind = 1,
+        crows = false, groundFog = 0.25f, snow = 0.25f,
+    };
+    static readonly Profile Undertow = new()
+    {
+        sky = new Color(0.78f, 0.9f, 0.92f), land = new Color(0.84f, 0.94f, 0.94f), haze = new Color(0.45f, 0.65f, 0.7f),
+        hazeAlpha = 0.3f, mistAlpha = 0.45f, grade = new Color(0.2f, 0.5f, 0.6f, 0.1f), wind = 2.0f, sun = 0.5f,
+        sunColour = new Color(0.85f, 1f, 1f), clouds = 0, cloudTint = Color.white, pollen = 0.8f, speckKind = 2,
+        crows = false, groundFog = 0.3f, snow = 0.2f,
+    };
+
+    // ── Robot Mothership (World 6, 2026-11-12) ────────────────────────────────────────────────────────────────
+    // On the mothership's deck in space: no clouds or crows; twinkling stars (the firefly specks), drifting sparks
+    // (chaff), the glow of the planet or a sun; a soft red alert grade (no flashing), a purple nebula, a power-down gloom.
+    static readonly Profile StarField = new()
+    {
+        sky = Color.white, land = Color.white, haze = new Color(0.2f, 0.26f, 0.45f), hazeAlpha = 0.15f, mistAlpha = 0.25f,
+        grade = new Color(0.3f, 0.4f, 0.8f, 0.04f), wind = 0.2f, sun = 0.35f, sunColour = new Color(0.7f, 0.85f, 1f),
+        clouds = 0, cloudTint = Color.white, pollen = 0.9f, speckKind = 1, crows = false, groundFog = 0.08f,
+    };
+    static readonly Profile RedAlert = new()
+    {
+        sky = new Color(1f, 0.78f, 0.78f), land = new Color(1f, 0.85f, 0.85f), haze = new Color(0.5f, 0.15f, 0.18f),
+        hazeAlpha = 0.25f, mistAlpha = 0.35f, grade = new Color(0.7f, 0.08f, 0.08f, 0.1f), wind = 0.4f, sun = 0.2f,
+        sunColour = new Color(1f, 0.5f, 0.45f), clouds = 0, cloudTint = Color.white, pollen = 0.6f, speckKind = 2,
+        crows = false, groundFog = 0.2f,
+    };
+    static readonly Profile NebulaGlow = new()
+    {
+        sky = new Color(0.92f, 0.8f, 1f), land = new Color(0.94f, 0.88f, 1f), haze = new Color(0.45f, 0.25f, 0.6f),
+        hazeAlpha = 0.22f, mistAlpha = 0.35f, grade = new Color(0.55f, 0.25f, 0.8f, 0.08f), wind = 0.3f, sun = 0.5f,
+        sunColour = new Color(0.9f, 0.7f, 1f), clouds = 0, cloudTint = Color.white, pollen = 1f, speckKind = 1,
+        crows = false, groundFog = 0.12f, aurora = 0.2f,
+    };
+    static readonly Profile SolarFlare = new()
+    {
+        sky = new Color(1f, 0.95f, 0.86f), land = new Color(1f, 0.96f, 0.9f), haze = new Color(0.8f, 0.6f, 0.35f),
+        hazeAlpha = 0.2f, mistAlpha = 0.3f, grade = new Color(1f, 0.6f, 0.2f, 0.07f), wind = 0.5f, sun = 1f,
+        sunColour = new Color(1f, 0.85f, 0.6f), clouds = 0, cloudTint = Color.white, pollen = 0.5f, speckKind = 2,
+        crows = false, groundFog = 0.1f,
+    };
+    static readonly Profile PowerDown = new()
+    {
+        sky = new Color(0.55f, 0.6f, 0.75f), land = new Color(0.65f, 0.7f, 0.85f), haze = new Color(0.12f, 0.15f, 0.3f),
+        hazeAlpha = 0.35f, mistAlpha = 0.5f, grade = new Color(0.05f, 0.08f, 0.25f, 0.24f), wind = 0.2f, sun = 0.1f,
+        sunColour = new Color(0.6f, 0.75f, 1f), clouds = 0, cloudTint = Color.white, pollen = 0.5f, speckKind = 1,
+        crows = false, groundFog = 0.3f,
+    };
+
     public static Profile For(LevelWeather w) => w switch
     {
+        LevelWeather.StarField  => StarField,
+        LevelWeather.RedAlert   => RedAlert,
+        LevelWeather.NebulaGlow => NebulaGlow,
+        LevelWeather.SolarFlare => SolarFlare,
+        LevelWeather.PowerDown  => PowerDown,
+        LevelWeather.SunlitShallows => SunlitShallows,
+        LevelWeather.KelpForest     => KelpForest,
+        LevelWeather.MurkyDepths    => MurkyDepths,
+        LevelWeather.GlowingDeep    => GlowingDeep,
+        LevelWeather.Undertow       => Undertow,
         LevelWeather.ClearSkies    => ClearSkies,
         LevelWeather.Windswept     => Windswept,
         LevelWeather.SunsetClouds  => SunsetClouds,

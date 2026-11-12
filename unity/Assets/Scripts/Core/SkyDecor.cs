@@ -60,8 +60,7 @@ public class SkyDecor : MonoBehaviour
         Add(Kind.Kite, Depth.Mid,  0.07f,  0.45f, 0.70f, 0f);
         Add(Kind.Kite, Depth.Mid,  0.08f,  0.93f, 0.86f, 0f);
         Add(Kind.Kite, Depth.Near, 0.12f,  0.40f, 0.90f, 0f);
-        Add(Kind.Plum, Depth.Far, 0.05f,  0.95f, 0.56f, 0f);
-        Add(Kind.Plum, Depth.Mid, 0.075f, 0.14f, 0.80f, 0f);
+        // No floating plum (2026-11-12, user: "a peach on a cloud - this is Stampede's pellet - remove on all levels").
         for (int i = 0; i < 7; i++)   // lanterns, small to medium, staggered up the screen
             Add(Kind.Lantern, i % 3 == 0 ? Depth.Far : Depth.Mid, 0.02f + 0.006f * (i % 4), 0.12f + 0.125f * i,
                 0.22f + 0.11f * ((i * 3) % 7), 1f / (24f + 5f * (i % 4)));

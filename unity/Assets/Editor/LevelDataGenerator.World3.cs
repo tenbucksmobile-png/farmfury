@@ -33,12 +33,20 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 8.889f, -3.881f, 0.908f, 0.764f, artVariant: WoodArtVariant.Short),
                 B(BlockType.Wood, 8.889f, -3.306f, 0.908f, 0.764f, artVariant: WoodArtVariant.Short),
                 B(BlockType.Wood, 8.524f, -2.925f, 2.229f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 40.478f, -5.187f, 0.320f, 0.825f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 40.478f, -4.650f, 2.774f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Barrel, 39.544f, -4.103f, 0.977f, 0.977f, room: 1),
+                B(BlockType.Wood, 44.895f, -5.070f, 0.320f, 1.059f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.895f, -4.416f, 2.684f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Barrel, 44.006f, -3.868f, 0.977f, 0.977f, room: 1),
             },
             robots: new[]
             {
                 R(8.300f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
                 R(8.300f, -3.750f, 5.500f, 5.500f, RobotType.Basic),
                 R(8.300f, -2.350f, 5.500f, 5.500f, RobotType.Basic),
+                R(41.415f, -4.075f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(45.787f, -3.841f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             gadgets: new[]
             {
@@ -46,6 +54,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.SummerMorning,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L02  Stepping Stones ─────────────────────────────────────────────
@@ -71,6 +80,10 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 11.690f, -1.761f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 12.710f, -1.761f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 12.200f, -1.061f, 1.340f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 40.450f, -5.015f, 0.320f, 1.169f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 40.450f, -3.981f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Wood, 44.978f, -4.838f, 0.320f, 1.524f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 44.978f, -3.626f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
             },
             robots: new[]
             {
@@ -81,6 +94,8 @@ public static partial class LevelDataGenerator
                 R(12.200f, -4.686f, 5.500f, 5.500f, RobotType.Basic),
                 R(12.200f, -1.886f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(12.200f, -0.486f, 5.500f, 5.500f, RobotType.Basic),
+                R(40.450f, -3.081f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
+                R(44.978f, -2.726f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
             },
             platforms: new[]
             {
@@ -90,6 +105,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.RiverMist,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L03  Miller's Barn ───────────────────────────────────────────────
@@ -117,6 +133,14 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 6.156f, -4.045f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
                 B(BlockType.Haybale, 12.600f, -5.109f, 1.067f, 1.067f, passThrough: true, hp: 10f, mass: 3f),
                 B(BlockType.Haybale, 12.600f, -4.220f, 1.067f, 1.067f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Wood, 39.932f, -4.636f, 0.320f, 1.928f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 40.572f, -4.636f, 0.320f, 1.928f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 40.252f, -3.547f, 2.100f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 39.662f, -2.897f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 40.842f, -2.897f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 40.252f, -2.247f, 1.500f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 44.382f, -5.008f, 1.247f, 0.250f, artVariant: WoodArtVariant.Horizontal, rot: 57.193f, room: 1),
+                B(BlockType.Wood, 45.328f, -5.008f, 1.247f, 0.250f, artVariant: WoodArtVariant.Horizontal, rot: -57.193f, room: 1),
             },
             robots: new[]
             {
@@ -124,9 +148,12 @@ public static partial class LevelDataGenerator
                 R(9.606f, -2.300f, 5.500f, 5.500f, RobotType.Basic),
                 R(9.606f, 0.500f, 5.500f, 5.500f, RobotType.Basic),
                 R(7.650f, -3.900f, 5.500f, 5.500f, RobotType.Basic),
+                R(40.252f, -2.972f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(40.252f, -1.672f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             weather: LevelWeather.SummerMorning,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L04  Down the Slipway ────────────────────────────────────────────
@@ -156,6 +183,19 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 10.436f, 0.575f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.516f, 0.575f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.738f, 1.275f, 1.876f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 40.441f, -5.256f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 40.560f, -4.636f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 40.679f, -4.016f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 40.608f, -3.396f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 44.368f, -5.059f, 0.320f, 1.081f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.559f, -5.059f, 0.320f, 1.081f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.964f, -5.074f, 1.135f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 56.000f, room: 1),
+                B(BlockType.Wood, 44.964f, -4.394f, 1.510f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 44.935f, -3.728f, 0.320f, 1.081f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.370f, -3.062f, 2.178f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 44.498f, -2.396f, 0.320f, 1.081f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.448f, -2.396f, 0.320f, 1.081f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.973f, -1.731f, 1.270f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
             },
             robots: new[]
             {
@@ -164,6 +204,8 @@ public static partial class LevelDataGenerator
                 R(10.380f, -2.350f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.976f, 0.450f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(10.976f, 1.850f, 5.500f, 5.500f, RobotType.Basic),
+                R(40.601f, -2.670f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(44.973f, -2.487f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
             {
@@ -172,6 +214,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.SpringShower,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L05  Flour Store ─────────────────────────────────────────────────
@@ -198,12 +241,29 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 11.132f, 0.140f, 0.320f, 1.100f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.492f, 0.122f, 1.199f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: -52.000f),
                 B(BlockType.Wood, 10.492f, 0.815f, 1.600f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 40.031f, -2.443f, 0.320f, 0.988f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 40.366f, -1.824f, 1.570f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 44.164f, -5.104f, 0.320f, 0.992f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.344f, -5.104f, 0.320f, 0.992f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.754f, -5.119f, 1.056f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 53.000f, room: 1),
+                B(BlockType.Wood, 45.048f, -4.483f, 2.087f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.114f, -3.862f, 0.320f, 0.992f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.985f, -3.242f, 1.380f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 44.486f, -2.621f, 0.320f, 0.992f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.426f, -2.621f, 0.320f, 0.992f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.684f, -2.000f, 1.804f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
             },
             robots: new[]
             {
                 R(10.000f, -4.010f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(10.492f, -1.310f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.492f, 1.390f, 5.500f, 5.500f, RobotType.Basic),
+                R(40.751f, -1.249f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(44.956f, -2.667f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
+            },
+            platforms: new[]
+            {
+                P(40.277f, -2.937f, 1.900f, variant: 3, room: 1),
             },
             gadgets: new[]
             {
@@ -211,6 +271,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.SummerMorning,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L06  Bridge Toll ─────────────────────────────────────────────────
@@ -235,6 +296,27 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 11.898f, -1.286f, 0.751f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 74.000f),
                 B(BlockType.Wood, 11.898f, -0.402f, 1.100f, 0.250f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 9.798f, -0.152f, 3.700f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 39.120f, -5.063f, 0.320f, 1.073f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 40.299f, -5.063f, 0.320f, 1.073f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.952f, -4.402f, 1.984f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 39.967f, -3.740f, 0.320f, 1.073f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 40.095f, -3.078f, 1.378f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 41.955f, -5.289f, 0.886f, 0.746f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.955f, -4.727f, 0.886f, 0.746f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 43.215f, -5.289f, 0.886f, 0.746f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 43.215f, -4.727f, 0.886f, 0.746f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 42.579f, -4.352f, 1.862f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 42.537f, -3.666f, 0.320f, 1.123f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.566f, -2.980f, 1.742f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 41.950f, -2.293f, 0.320f, 1.123f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.252f, -2.293f, 0.320f, 1.123f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.446f, -1.607f, 1.932f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 41.690f, -0.921f, 0.320f, 1.123f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.872f, -0.921f, 0.320f, 1.123f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.281f, -0.936f, 1.164f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 58.000f, room: 1),
+                B(BlockType.Wood, 42.281f, -0.234f, 1.502f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.417f, -4.971f, 0.320f, 1.258f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.931f, -4.217f, 1.928f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
             },
             robots: new[]
             {
@@ -242,6 +324,10 @@ public static partial class LevelDataGenerator
                 R(11.898f, -2.627f, 5.500f, 5.500f, RobotType.Basic),
                 R(9.798f, 0.423f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(9.700f, -5.050f, 7.500f, 7.500f, RobotType.Harvester),
+                R(39.710f, -5.150f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(40.095f, -2.503f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(42.579f, -5.150f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(46.495f, -3.642f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
             {
@@ -250,6 +336,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.SummerMorning,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L07  Fishing Jetty ───────────────────────────────────────────────
@@ -279,6 +366,24 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 10.499f, 0.667f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.779f, 0.667f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.515f, 1.367f, 2.352f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 39.717f, -5.095f, 0.320f, 1.009f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.717f, -4.466f, 2.435f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Barrel, 38.952f, -3.919f, 0.977f, 0.977f, room: 1),
+                B(BlockType.Wood, 42.274f, -2.454f, 0.320f, 0.966f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.403f, -2.454f, 0.320f, 0.966f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.911f, -1.846f, 1.594f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 42.410f, -1.238f, 0.320f, 0.966f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.419f, -1.238f, 0.320f, 0.966f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.774f, -0.630f, 1.610f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 42.437f, -0.022f, 0.320f, 0.966f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.326f, -0.022f, 0.320f, 0.966f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.992f, 0.586f, 1.431f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 42.491f, 1.411f, 0.320f, 1.401f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.271f, 1.411f, 0.320f, 1.401f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.020f, 2.237f, 1.377f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.418f, -5.139f, 0.320f, 0.921f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.922f, -4.554f, 1.910f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Barrel, 46.480f, -4.007f, 0.977f, 0.977f, room: 1),
             },
             robots: new[]
             {
@@ -287,11 +392,15 @@ public static partial class LevelDataGenerator
                 R(11.533f, -2.776f, 5.500f, 5.500f, RobotType.Basic),
                 R(11.139f, 0.542f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(11.139f, 1.942f, 5.500f, 5.500f, RobotType.Basic),
+                R(40.484f, -3.891f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(42.839f, -2.487f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(42.881f, 2.812f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
             {
                 P(7.300f, -3.591f, 2.200f, variant: 4),
                 P(11.400f, -3.226f, 2.600f, variant: 4),
+                P(42.735f, -2.937f, 1.900f, variant: 3, room: 1),
             },
             gadgets: new[]
             {
@@ -299,6 +408,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.RiverMist,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L08  Runaway Millstone ───────────────────────────────────────────
@@ -317,6 +427,29 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 10.111f, -2.425f, 2.822f, 0.250f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 10.103f, -1.725f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 9.447f, -1.025f, 2.606f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 39.373f, -5.107f, 0.320f, 0.987f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.373f, -4.488f, 2.352f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Barrel, 38.650f, -3.941f, 0.977f, 0.977f, room: 1),
+                B(BlockType.Wood, 41.751f, -5.099f, 0.320f, 1.002f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.054f, -5.099f, 0.320f, 1.002f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.403f, -5.114f, 1.132f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: -48.000f, room: 1),
+                B(BlockType.Wood, 42.403f, -4.473f, 1.623f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 41.807f, -3.847f, 0.320f, 1.002f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.990f, -3.847f, 0.320f, 1.002f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.398f, -3.221f, 1.503f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 41.844f, -2.595f, 0.320f, 1.002f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.907f, -2.595f, 0.320f, 1.002f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.375f, -1.969f, 1.383f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 44.947f, -5.072f, 0.320f, 1.057f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.505f, -5.072f, 0.320f, 1.057f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.998f, -4.418f, 2.422f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.007f, -3.765f, 0.320f, 1.057f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.445f, -3.765f, 0.320f, 1.057f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.726f, -3.783f, 1.268f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: -44.000f, room: 1),
+                B(BlockType.Wood, 45.726f, -3.111f, 1.757f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.067f, -2.458f, 0.320f, 1.057f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.385f, -2.458f, 0.320f, 1.057f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.496f, -1.804f, 2.098f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
             },
             robots: new[]
             {
@@ -324,6 +457,10 @@ public static partial class LevelDataGenerator
                 R(9.800f, -3.250f, 5.500f, 5.500f, RobotType.Basic),
                 R(9.800f, -0.450f, 5.500f, 5.500f, RobotType.Basic),
                 R(12.500f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
+                R(40.098f, -3.913f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(42.375f, -2.646f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
+                R(45.726f, -5.150f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(45.726f, -2.536f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
             },
             platforms: new[]
             {
@@ -335,6 +472,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.SummerMorning,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L09  Cobble Cottages ─────────────────────────────────────────────
@@ -357,6 +495,19 @@ public static partial class LevelDataGenerator
                 B(BlockType.Stone, 11.500f, -5.000f, 0.400f, 1.200f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Stone, 12.900f, -5.000f, 0.400f, 1.200f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Stone, 12.200f, -4.250f, 1.800f, 0.300f, artVariant: WoodArtVariant.Block),
+                B(BlockType.Wood, 39.402f, -3.684f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.097f, -3.134f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.707f, -3.134f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 38.792f, -2.584f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.402f, -2.584f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 40.012f, -2.584f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 42.770f, -5.140f, 0.320f, 0.919f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.770f, -4.556f, 2.631f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.067f, -5.105f, 0.320f, 0.990f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.263f, -5.105f, 0.320f, 0.990f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.391f, -4.485f, 2.064f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.729f, -3.864f, 0.320f, 0.990f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.345f, -3.244f, 2.036f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
             },
             robots: new[]
             {
@@ -364,6 +515,14 @@ public static partial class LevelDataGenerator
                 R(9.800f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(9.800f, -3.650f, 5.500f, 5.500f, RobotType.Basic),
                 R(12.200f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
+                R(38.785f, -1.889f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(40.005f, -1.889f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(41.905f, -3.981f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(45.665f, -5.150f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+            },
+            platforms: new[]
+            {
+                P(39.395f, -3.989f, 2.867f, variant: 1, room: 1),
             },
             gadgets: new[]
             {
@@ -371,6 +530,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.SpringShower,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L10  The Weir ────────────────────────────────────────────────────
@@ -401,6 +561,20 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 7.256f, -0.425f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 8.336f, -0.425f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 7.796f, 0.275f, 1.400f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 39.556f, -5.295f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.251f, -4.745f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.861f, -4.745f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 38.946f, -4.195f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.556f, -4.195f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 40.166f, -4.195f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 42.229f, -4.871f, 0.320f, 1.457f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.869f, -4.871f, 0.320f, 1.457f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.549f, -4.018f, 2.100f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 41.959f, -3.368f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.139f, -3.368f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.549f, -2.718f, 1.500f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.748f, -4.816f, 0.320f, 1.569f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 45.748f, -3.581f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
             },
             robots: new[]
             {
@@ -409,9 +583,13 @@ public static partial class LevelDataGenerator
                 R(9.000f, -2.750f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(7.800f, -1.950f, 5.500f, 5.500f, RobotType.Basic),
                 R(7.796f, 0.850f, 5.500f, 5.500f, RobotType.Basic),
+                R(42.549f, -3.443f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(42.549f, -2.143f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(45.748f, -2.681f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             weather: LevelWeather.RiverMist,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L11  Grain Seesaws ───────────────────────────────────────────────
@@ -441,6 +619,28 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 13.100f, -5.150f, 0.320f, 0.900f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 13.100f, -4.575f, 2.200f, 0.250f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Haybale, 13.750f, -3.959f, 1.067f, 1.067f, passThrough: true, hp: 10f, mass: 3f),
+                B(BlockType.Wood, 39.674f, -5.295f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.369f, -4.745f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.979f, -4.745f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.064f, -4.195f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.674f, -4.195f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 40.284f, -4.195f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 42.296f, -2.376f, 0.320f, 1.122f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.404f, -2.376f, 0.320f, 1.122f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.850f, -2.391f, 1.136f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 61.000f, room: 1),
+                B(BlockType.Wood, 42.928f, -1.689f, 1.584f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 42.832f, -1.003f, 0.320f, 1.122f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.844f, -0.317f, 1.618f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.008f, -5.306f, 0.836f, 0.703f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 45.008f, -4.777f, 0.836f, 0.703f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 46.236f, -5.306f, 0.836f, 0.703f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 46.236f, -4.777f, 0.836f, 0.703f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 45.616f, -4.416f, 1.798f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.475f, -3.762f, 0.320f, 1.059f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.875f, -3.107f, 2.240f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 44.992f, -2.453f, 0.320f, 1.059f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.230f, -2.453f, 0.320f, 1.059f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.611f, -1.799f, 1.558f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
             },
             robots: new[]
             {
@@ -449,9 +649,18 @@ public static partial class LevelDataGenerator
                 R(9.814f, -0.750f, 5.500f, 5.500f, RobotType.Basic),
                 R(7.050f, -4.000f, 5.500f, 5.500f, RobotType.Basic),
                 R(12.450f, -4.000f, 5.500f, 5.500f, RobotType.Basic),
+                R(39.057f, -3.500f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(40.277f, -3.500f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(45.611f, -2.532f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(45.611f, -1.224f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+            },
+            platforms: new[]
+            {
+                P(42.746f, -2.937f, 1.900f, variant: 3, room: 1),
             },
             weather: LevelWeather.LanternDusk,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L12  Mill Race ───────────────────────────────────────────────────
@@ -486,6 +695,25 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 12.514f, -1.781f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 13.494f, -1.781f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 12.827f, -1.081f, 1.654f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 39.045f, -4.852f, 0.320f, 1.497f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.685f, -4.852f, 0.320f, 1.497f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.365f, -3.978f, 2.100f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 38.775f, -3.328f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.955f, -3.328f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.365f, -2.678f, 1.500f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 42.295f, -5.087f, 0.320f, 1.026f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.792f, -4.449f, 1.894f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Barrel, 43.341f, -3.902f, 0.977f, 0.977f, room: 1),
+                B(BlockType.Wood, 45.083f, -2.368f, 0.320f, 1.138f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.269f, -2.368f, 0.320f, 1.138f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.676f, -1.673f, 1.506f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.151f, -0.979f, 0.320f, 1.138f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.217f, -0.979f, 0.320f, 1.138f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.684f, -0.994f, 1.134f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 64.000f, room: 1),
+                B(BlockType.Wood, 45.592f, -0.285f, 1.570f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 44.989f, 0.409f, 0.320f, 1.138f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.934f, 0.409f, 0.320f, 1.138f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.656f, 1.103f, 1.656f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
             },
             robots: new[]
             {
@@ -496,15 +724,20 @@ public static partial class LevelDataGenerator
                 R(10.677f, 2.368f, 5.500f, 5.500f, RobotType.Basic),
                 R(13.000f, -4.706f, 5.500f, 5.500f, RobotType.Basic),
                 R(13.004f, -1.906f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(39.365f, -3.403f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(45.676f, -2.487f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(45.461f, 0.290f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
             {
                 P(6.900f, -2.937f, 1.900f, variant: 3),
                 P(6.836f, -1.917f, 1.700f, variant: 5, rolling: true),
                 P(13.000f, -5.156f, 2.200f, variant: 0),
+                P(45.572f, -2.937f, 1.900f, variant: 3, room: 1),
             },
             weather: LevelWeather.SummerMorning,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L13  Twin Mills ──────────────────────────────────────────────────
@@ -540,6 +773,26 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 12.078f, 2.143f, 0.320f, 1.667f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.106f, 3.101f, 2.263f, 0.250f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Wood, 10.073f, 3.351f, 3.300f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 38.386f, -5.048f, 0.320f, 1.104f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.583f, -5.048f, 0.320f, 1.104f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 38.985f, -4.371f, 1.516f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 38.485f, -3.694f, 0.320f, 1.104f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.561f, -3.694f, 0.320f, 1.104f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.023f, -3.709f, 1.102f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 63.000f, room: 1),
+                B(BlockType.Wood, 39.023f, -3.017f, 1.396f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 38.514f, -2.340f, 0.320f, 1.104f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.470f, -2.340f, 0.320f, 1.104f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.219f, -1.663f, 1.731f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 41.294f, -4.882f, 0.320f, 1.435f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 41.294f, -3.715f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Wood, 43.941f, -4.746f, 0.320f, 1.708f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 43.941f, -3.442f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Wood, 45.580f, -4.512f, 0.320f, 2.177f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.220f, -4.512f, 0.320f, 2.177f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.900f, -3.298f, 1.900f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.410f, -2.648f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.390f, -2.648f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.900f, -1.998f, 1.300f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
             },
             robots: new[]
             {
@@ -548,6 +801,11 @@ public static partial class LevelDataGenerator
                 R(12.023f, -2.958f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(11.498f, 0.359f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.073f, 3.926f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(38.985f, -5.150f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(38.992f, -2.442f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
+                R(38.992f, -1.088f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(41.294f, -2.815f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(45.900f, -2.723f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
             {
@@ -556,6 +814,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.SpringShower,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L14  Lantern Row ─────────────────────────────────────────────────
@@ -574,6 +833,23 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 8.060f, -3.475f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.740f, -3.475f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 9.400f, -2.775f, 3.000f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 39.204f, -2.500f, 0.320f, 1.622f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 39.204f, -1.239f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Wood, 41.630f, -3.291f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.325f, -2.741f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.935f, -2.741f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.020f, -2.191f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.630f, -2.191f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 42.240f, -2.191f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 43.354f, -2.651f, 0.320f, 1.372f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.670f, -1.840f, 1.532f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Barrel, 44.039f, -1.293f, 0.977f, 0.977f, room: 1),
+                B(BlockType.Wood, 45.792f, -2.807f, 0.320f, 1.767f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.432f, -2.807f, 0.320f, 1.767f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.112f, -1.799f, 1.700f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.722f, -1.149f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.502f, -1.149f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.112f, -0.499f, 1.100f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
             },
             robots: new[]
             {
@@ -581,6 +857,16 @@ public static partial class LevelDataGenerator
                 R(10.400f, -5.150f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(8.700f, -3.600f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.100f, -3.600f, 5.500f, 5.500f, RobotType.Basic),
+                R(39.204f, -0.339f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
+                R(42.234f, -1.496f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(46.112f, 0.076f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+            },
+            platforms: new[]
+            {
+                P(39.204f, -3.311f, 2.100f, variant: 0, room: 1),
+                P(41.624f, -3.596f, 2.100f, variant: 1, room: 1),
+                P(43.704f, -3.337f, 2.100f, variant: 1, room: 1),
+                P(46.112f, -3.691f, 2.100f, variant: 1, room: 1),
             },
             gadgets: new[]
             {
@@ -588,6 +874,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.LanternDusk,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L15  Thunderhead ─────────────────────────────────────────────────
@@ -617,6 +904,26 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 9.760f, 1.490f, 0.320f, 1.100f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.840f, 1.490f, 0.320f, 1.100f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.300f, 2.165f, 1.400f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 39.081f, -4.955f, 0.320f, 1.290f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 39.081f, -3.860f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Wood, 40.822f, -5.088f, 0.320f, 1.024f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.363f, -5.088f, 0.320f, 1.024f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.507f, -4.451f, 2.030f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 41.470f, -3.814f, 0.320f, 1.024f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.401f, -3.177f, 1.819f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 40.930f, -2.768f, 0.808f, 0.680f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 40.930f, -2.256f, 0.808f, 0.680f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.999f, -2.768f, 0.808f, 0.680f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.999f, -2.256f, 0.808f, 0.680f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.670f, -1.903f, 2.044f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 43.700f, -5.256f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 43.828f, -4.636f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 43.956f, -4.016f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 43.879f, -3.396f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 44.007f, -2.776f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 45.886f, -5.132f, 0.320f, 0.936f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.886f, -4.539f, 2.200f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.242f, -4.109f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
             },
             robots: new[]
             {
@@ -624,6 +931,10 @@ public static partial class LevelDataGenerator
                 R(10.300f, -2.660f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.300f, 0.040f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(10.300f, 2.740f, 5.500f, 5.500f, RobotType.Basic),
+                R(39.081f, -2.960f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(41.592f, -5.150f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(44.000f, -2.050f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(46.536f, -3.964f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
             {
@@ -635,6 +946,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.Thunderstorm,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L16  Waterwheel Keep ─────────────────────────────────────────────
@@ -659,20 +971,40 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 10.000f, -0.075f, 2.400f, 0.250f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Barrel, 10.753f, 0.472f, 0.977f, 0.977f),
                 B(BlockType.Wood, 6.171f, -2.008f, 0.711f, 0.598f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 39.023f, -3.601f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.132f, -2.981f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.241f, -2.361f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.328f, -4.953f, 0.320f, 1.293f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 41.328f, -3.857f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Wood, 43.537f, -4.779f, 0.320f, 1.642f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.177f, -4.779f, 0.320f, 1.642f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.857f, -3.833f, 1.900f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 43.367f, -3.183f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.347f, -3.183f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.857f, -2.533f, 1.300f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.863f, -3.096f, 0.320f, 1.309f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 45.863f, -1.992f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
             },
             robots: new[]
             {
                 R(10.000f, -5.050f, 7.500f, 7.500f, RobotType.Harvester),
                 R(10.000f, -3.250f, 5.500f, 5.500f, RobotType.Basic),
                 R(9.250f, 0.500f, 5.500f, 5.500f, RobotType.Basic),
+                R(39.059f, -1.635f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(41.328f, -2.957f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(43.857f, -3.258f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(45.863f, -1.092f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
             {
                 P(6.000f, -3.217f, 1.700f, variant: 3),
                 P(5.908f, -2.258f, 1.600f, variant: 5, rolling: true),
+                P(39.016f, -3.945f, 2.100f, variant: 1, room: 1),
+                P(45.863f, -3.751f, 2.100f, variant: 0, room: 1),
             },
             weather: LevelWeather.Thunderstorm,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L17  Riverside Market ────────────────────────────────────────────
@@ -698,6 +1030,24 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 10.510f, -2.293f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 11.290f, -2.293f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 10.900f, -1.593f, 1.100f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 39.062f, -3.370f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 38.757f, -2.820f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.367f, -2.820f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 38.452f, -2.270f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.062f, -2.270f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.672f, -2.270f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.443f, -5.016f, 0.320f, 1.168f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 41.443f, -3.982f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Wood, 43.750f, -5.295f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 43.445f, -4.745f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 44.055f, -4.745f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 43.140f, -4.195f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 43.750f, -4.195f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 44.360f, -4.195f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Stone, 46.140f, -5.290f, 0.620f, 0.620f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Stone, 46.292f, -4.670f, 0.620f, 0.620f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Stone, 46.445f, -4.050f, 0.620f, 0.620f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Stone, 46.354f, -3.430f, 0.620f, 0.620f, artVariant: WoodArtVariant.Square, room: 1),
             },
             robots: new[]
             {
@@ -706,10 +1056,16 @@ public static partial class LevelDataGenerator
                 R(9.150f, -3.818f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.900f, -3.818f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.900f, -2.418f, 5.500f, 5.500f, RobotType.Basic),
+                R(38.446f, -1.575f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(39.666f, -1.575f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(41.443f, -3.082f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
+                R(43.134f, -3.500f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(44.354f, -3.500f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
             {
                 P(9.600f, -4.268f, 6.600f, variant: 0),
+                P(39.056f, -3.675f, 2.100f, variant: 1, room: 1),
             },
             gadgets: new[]
             {
@@ -717,6 +1073,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.SummerMorning,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L18  Rainbow Green ───────────────────────────────────────────────
@@ -750,6 +1107,37 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 12.800f, -5.150f, 0.320f, 0.900f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 12.800f, -4.575f, 2.200f, 0.250f, artVariant: WoodArtVariant.Horizontal),
                 B(BlockType.Barrel, 13.453f, -4.028f, 0.977f, 0.977f),
+                B(BlockType.Wood, 38.461f, -5.069f, 0.320f, 1.062f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.621f, -5.069f, 0.320f, 1.062f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.041f, -4.413f, 1.480f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 38.556f, -3.757f, 0.320f, 1.062f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.596f, -3.757f, 0.320f, 1.062f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.268f, -3.100f, 1.745f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 38.616f, -2.444f, 0.320f, 1.062f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.536f, -2.444f, 0.320f, 1.062f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.298f, -1.788f, 1.685f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 38.987f, -1.132f, 0.320f, 1.062f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.787f, -1.132f, 0.320f, 1.062f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.387f, -1.238f, 0.822f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: -74.000f, room: 1),
+                B(BlockType.Wood, 39.037f, -0.476f, 1.819f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 40.787f, -5.328f, 0.775f, 0.652f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 40.787f, -4.837f, 0.775f, 0.652f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.883f, -5.328f, 0.775f, 0.652f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.883f, -4.837f, 0.775f, 0.652f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.186f, -4.494f, 1.913f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 40.570f, -3.657f, 0.320f, 1.423f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.757f, -3.657f, 0.320f, 1.423f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.163f, -2.821f, 1.507f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 40.595f, -2.205f, 0.320f, 0.981f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.662f, -2.205f, 0.320f, 0.981f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.025f, -1.590f, 1.592f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 43.234f, -5.045f, 0.320f, 1.109f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.599f, -5.045f, 0.320f, 1.109f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.787f, -4.366f, 1.942f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 43.537f, -3.686f, 0.320f, 1.109f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.679f, -3.006f, 1.726f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.539f, -4.994f, 1.285f, 0.250f, artVariant: WoodArtVariant.Horizontal, rot: 56.851f, room: 1),
+                B(BlockType.Wood, 46.510f, -4.994f, 1.285f, 0.250f, artVariant: WoodArtVariant.Horizontal, rot: -56.851f, room: 1),
             },
             robots: new[]
             {
@@ -759,9 +1147,15 @@ public static partial class LevelDataGenerator
                 R(9.814f, 3.300f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(7.550f, -4.000f, 5.500f, 5.500f, RobotType.Basic),
                 R(12.150f, -4.000f, 5.500f, 5.500f, RobotType.Basic),
+                R(39.041f, -5.150f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(39.076f, -2.525f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(41.329f, -5.150f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(41.128f, -2.246f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(41.128f, -1.015f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             weather: LevelWeather.SpringShower,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L19  Old Stone Arch ──────────────────────────────────────────────
@@ -789,6 +1183,27 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 10.440f, 0.475f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 9.800f, 0.460f, 1.241f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 54.000f),
                 B(BlockType.Wood, 9.800f, 1.175f, 1.600f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 38.715f, -2.880f, 0.320f, 1.306f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.031f, -2.102f, 1.532f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Barrel, 39.400f, -1.555f, 0.977f, 0.977f, room: 1),
+                B(BlockType.Wood, 40.696f, -5.034f, 0.320f, 1.132f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.842f, -5.034f, 0.320f, 1.132f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.269f, -4.343f, 1.465f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 40.759f, -3.652f, 0.320f, 1.132f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.784f, -3.652f, 0.320f, 1.132f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.271f, -3.667f, 1.115f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 66.000f, room: 1),
+                B(BlockType.Wood, 41.057f, -2.962f, 1.775f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 40.819f, -2.271f, 0.320f, 1.132f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.724f, -2.271f, 0.320f, 1.132f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.271f, -1.580f, 1.225f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 40.879f, -0.889f, 0.320f, 1.132f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.664f, -0.889f, 0.320f, 1.132f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.271f, -1.055f, 0.771f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: -74.000f, room: 1),
+                B(BlockType.Wood, 41.477f, -0.198f, 1.517f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 43.676f, -3.277f, 0.320f, 1.423f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 43.676f, -2.115f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Wood, 46.074f, -5.044f, 0.320f, 1.113f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 46.074f, -4.037f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
             },
             robots: new[]
             {
@@ -796,6 +1211,15 @@ public static partial class LevelDataGenerator
                 R(9.800f, -2.450f, 5.500f, 5.500f, RobotType.Basic),
                 R(9.800f, -1.050f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(9.800f, 1.750f, 5.500f, 5.500f, RobotType.Basic),
+                R(41.269f, -5.150f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(41.271f, -2.387f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(43.676f, -1.215f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(46.074f, -3.137f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
+            },
+            platforms: new[]
+            {
+                P(39.065f, -3.533f, 2.100f, variant: 0, room: 1),
+                P(43.676f, -3.989f, 2.100f, variant: 0, room: 1),
             },
             gadgets: new[]
             {
@@ -803,6 +1227,7 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.RiverMist,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L20  Miller's Manor ──────────────────────────────────────────────
@@ -839,6 +1264,31 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 12.457f, -0.812f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 13.437f, -0.812f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 12.734f, -0.112f, 1.724f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 38.873f, -2.196f, 0.320f, 1.482f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 39.208f, -1.330f, 1.570f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Barrel, 39.596f, -0.783f, 0.977f, 0.977f, room: 1),
+                B(BlockType.Wood, 40.684f, -5.088f, 0.320f, 1.024f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.233f, -5.088f, 0.320f, 1.024f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 41.459f, -5.105f, 1.334f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 39.000f, room: 1),
+                B(BlockType.Wood, 41.459f, -4.451f, 1.870f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 40.882f, -4.043f, 0.808f, 0.680f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 40.882f, -3.531f, 0.808f, 0.680f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 42.080f, -4.043f, 0.808f, 0.680f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 42.080f, -3.531f, 0.808f, 0.680f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.475f, -3.178f, 1.750f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 43.198f, -3.218f, 0.320f, 0.991f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.312f, -3.218f, 0.320f, 0.991f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.755f, -2.598f, 1.434f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 43.258f, -1.977f, 0.320f, 0.991f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.252f, -1.977f, 0.320f, 0.991f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.755f, -1.992f, 0.970f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 64.000f, room: 1),
+                B(BlockType.Wood, 43.842f, -1.357f, 1.489f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 43.511f, -0.736f, 0.320f, 0.991f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.385f, -0.736f, 0.320f, 0.991f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.948f, -0.116f, 1.194f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.991f, -5.085f, 0.320f, 1.031f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 45.991f, -4.444f, 2.200f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.347f, -4.014f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short, room: 1),
             },
             robots: new[]
             {
@@ -849,13 +1299,20 @@ public static partial class LevelDataGenerator
                 R(12.750f, -3.737f, 5.500f, 5.500f, RobotType.Basic),
                 R(12.947f, -0.937f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(12.947f, 0.463f, 5.500f, 5.500f, RobotType.Basic),
+                R(41.475f, -2.603f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(43.755f, -3.264f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(43.948f, 0.459f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(46.641f, -3.869f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
             {
                 P(10.000f, -4.187f, 7.000f, variant: 0),
+                P(39.119f, -2.937f, 1.900f, variant: 3, room: 1),
+                P(43.755f, -3.714f, 2.100f, variant: 0, room: 1),
             },
             weather: LevelWeather.LanternDusk,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L21  Sluice Gate Fortress ────────────────────────────────────────
@@ -882,6 +1339,29 @@ public static partial class LevelDataGenerator
                 B(BlockType.Wood, 11.906f, 0.425f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 13.486f, 0.425f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
                 B(BlockType.Wood, 12.696f, 1.125f, 1.900f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 39.328f, -2.593f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.440f, -1.973f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.551f, -1.353f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 39.484f, -0.733f, 0.979f, 0.823f, artVariant: WoodArtVariant.Short, room: 1),
+                B(BlockType.Wood, 41.564f, -4.824f, 0.320f, 1.553f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 41.564f, -3.597f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Wood, 43.112f, -5.040f, 0.320f, 1.120f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.590f, -5.040f, 0.320f, 1.120f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.851f, -5.056f, 1.344f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 45.000f, room: 1),
+                B(BlockType.Wood, 43.750f, -4.355f, 1.999f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 43.580f, -3.670f, 0.320f, 1.120f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.662f, -2.985f, 1.678f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 43.064f, -2.300f, 0.320f, 1.120f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 44.302f, -2.300f, 0.320f, 1.120f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.927f, -1.615f, 2.047f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 43.826f, -0.930f, 0.320f, 1.120f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.576f, -0.245f, 1.651f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.899f, -2.013f, 0.320f, 1.847f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.539f, -2.013f, 0.320f, 1.847f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.219f, -0.965f, 1.700f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 45.829f, -0.315f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.609f, -0.315f, 0.320f, 1.050f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 46.219f, 0.335f, 1.100f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
             },
             robots: new[]
             {
@@ -890,11 +1370,18 @@ public static partial class LevelDataGenerator
                 R(11.200f, -2.500f, 5.500f, 5.500f, RobotType.Basic),
                 R(12.696f, 0.300f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(12.696f, 1.700f, 5.500f, 5.500f, RobotType.Basic),
+                R(39.477f, -0.007f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(41.564f, -2.697f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(43.683f, -2.410f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
+                R(43.683f, 0.330f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(46.219f, 0.910f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
             {
                 P(5.600f, -3.766f, 4.600f, variant: 6),
                 P(11.200f, -4.550f, 5.200f, variant: 0),
+                P(39.218f, -2.937f, 1.900f, variant: 3, room: 1),
+                P(46.115f, -2.937f, 1.900f, variant: 3, room: 1),
             },
             gadgets: new[]
             {
@@ -902,54 +1389,74 @@ public static partial class LevelDataGenerator
             },
             weather: LevelWeather.Thunderstorm,
             world: 3,
+            rooms: 2,
             referenceFraming: true);
 
         // ── W3_L22  The Mill Stone Mauler ───────────────────────────────────────
         // Boss: the mothership drops the Mill Stone Mauler onto a three-storey keep on an islet; water pumps guard the keep's
         // door and a sentry watches from a river-stone tower.
+        // Two rooms: an outer yard first, then the keep.
         Make(folder, "W03_L22_TheMillStoneMauler",
             id: "W3_L22", name: "The Mill Stone Mauler", par: 3,
             birds: new[] { AnimalType.Ducky, AnimalType.Woolly, AnimalType.Bessie },
             blocks: new[]
             {
-                B(BlockType.Stone, 9.500f, -3.760f, 0.400f, 1.500f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Stone, 12.300f, -3.760f, 0.400f, 1.500f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Stone, 10.900f, -2.860f, 3.400f, 0.300f, artVariant: WoodArtVariant.Block),
-                B(BlockType.Barrel, 8.803f, -4.088f, 0.977f, 0.977f),
-                B(BlockType.Barrel, 13.003f, -4.088f, 0.977f, 0.977f),
-                B(BlockType.Wood, 9.860f, -2.135f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.940f, -2.135f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.900f, -1.435f, 2.400f, 0.250f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 9.960f, -0.735f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.840f, -0.735f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.900f, -0.035f, 2.200f, 0.250f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Wood, 10.060f, 0.665f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 11.740f, 0.665f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical),
-                B(BlockType.Wood, 10.900f, 1.365f, 2.000f, 0.250f, artVariant: WoodArtVariant.Horizontal),
-                B(BlockType.Stone, 6.400f, -5.200f, 0.800f, 0.800f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 6.400f, -4.400f, 0.800f, 0.800f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 6.400f, -3.600f, 0.800f, 0.800f, artVariant: WoodArtVariant.Square),
-                B(BlockType.Stone, 6.400f, -2.800f, 0.800f, 0.800f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Wood, 6.457f, -5.100f, 0.320f, 0.999f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 7.803f, -5.100f, 0.320f, 0.999f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 6.996f, -4.476f, 1.933f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 6.472f, -3.851f, 0.320f, 0.999f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 7.698f, -3.851f, 0.320f, 0.999f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 7.085f, -3.866f, 1.089f, 0.180f, artVariant: WoodArtVariant.Horizontal, rot: 51.000f),
+                B(BlockType.Wood, 7.085f, -3.227f, 1.546f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 9.439f, -5.046f, 0.320f, 1.107f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Stone, 9.439f, -4.043f, 0.900f, 0.900f, artVariant: WoodArtVariant.Square),
+                B(BlockType.Wood, 11.684f, -5.228f, 0.320f, 0.743f, artVariant: WoodArtVariant.Vertical),
+                B(BlockType.Wood, 11.684f, -4.732f, 2.200f, 0.250f, artVariant: WoodArtVariant.Horizontal),
+                B(BlockType.Wood, 11.040f, -4.302f, 0.868f, 0.730f, artVariant: WoodArtVariant.Short),
+                B(BlockType.Wood, 13.506f, -4.940f, 1.390f, 0.250f, artVariant: WoodArtVariant.Horizontal, rot: 59.068f),
+                B(BlockType.Wood, 14.495f, -4.940f, 1.390f, 0.250f, artVariant: WoodArtVariant.Horizontal, rot: -59.068f),
+                B(BlockType.Stone, 41.500f, -3.760f, 0.400f, 1.500f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 44.300f, -3.760f, 0.400f, 1.500f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Stone, 42.900f, -2.860f, 3.400f, 0.300f, artVariant: WoodArtVariant.Block, room: 1),
+                B(BlockType.Barrel, 40.803f, -4.088f, 0.977f, 0.977f, room: 1),
+                B(BlockType.Barrel, 45.003f, -4.088f, 0.977f, 0.977f, room: 1),
+                B(BlockType.Wood, 41.860f, -2.135f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.940f, -2.135f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.900f, -1.435f, 2.400f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 41.960f, -0.735f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.840f, -0.735f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.900f, -0.035f, 2.200f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Wood, 42.060f, 0.665f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 43.740f, 0.665f, 0.320f, 1.150f, artVariant: WoodArtVariant.Vertical, room: 1),
+                B(BlockType.Wood, 42.900f, 1.365f, 2.000f, 0.250f, artVariant: WoodArtVariant.Horizontal, room: 1),
+                B(BlockType.Stone, 38.400f, -5.200f, 0.800f, 0.800f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Stone, 38.400f, -4.400f, 0.800f, 0.800f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Stone, 38.400f, -3.600f, 0.800f, 0.800f, artVariant: WoodArtVariant.Square, room: 1),
+                B(BlockType.Stone, 38.400f, -2.800f, 0.800f, 0.800f, artVariant: WoodArtVariant.Square, room: 1),
             },
             robots: new[]
             {
-                R(10.900f, -4.060f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.900f, -2.260f, 5.500f, 5.500f, RobotType.Basic),
-                R(10.900f, 0.540f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(10.900f, 2.372f, 7.000f, 7.000f, RobotType.Commander),
-                R(6.400f, -1.950f, 5.500f, 5.500f, RobotType.Basic),
+                R(7.130f, -5.150f, 5.500f, 5.500f, RobotType.Basic),
+                R(9.439f, -3.143f, 5.500f, 5.500f, RobotType.SemiHarvester),
+                R(12.334f, -4.157f, 5.500f, 5.500f, RobotType.Basic),
+                R(42.900f, -4.060f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
+                R(42.900f, -2.260f, 5.500f, 5.500f, RobotType.Basic, room: 1),
+                R(42.900f, 0.540f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
+                R(42.900f, 2.372f, 7.000f, 7.000f, RobotType.Commander, room: 1),
+                R(38.400f, -1.950f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
             {
-                P(10.900f, -4.510f, 5.400f, variant: 0),
+                P(42.900f, -4.510f, 5.400f, variant: 0, room: 1),
             },
             gadgets: new[]
             {
-                Gd(GadgetType.WaterPump, 7.600f, -5.600f, 1.400f),
+                Gd(GadgetType.WaterPump, 39.600f, -5.600f, 1.400f, room: 1),
             },
             weather: LevelWeather.SummerMorning,
             world: 3,
             isBoss: true,
+            rooms: 2,
             referenceFraming: true);
     }
 }

@@ -109,6 +109,12 @@ public class CatapultLauncher : MonoBehaviour
     // World 4 (Sky Islands, 2026-11-11): the Sky Cannon - striped brass barrel under a little cloud balloon, propeller,
     // sky-blue carriage (Kling, fitted onto Cannon.png's canvas at PPU 384 so every offset carries over).
     [SerializeField] private Sprite     _cannonSpriteW4;
+    // World 5 (Sunken City, 2026-11-12): the Sea Cannon - a brass diving-helmet torpedo cannon on a coral-crusted cart
+    // (Kling, fitted onto Cannon.png's canvas at PPU 384 by tools/import_sunken_art.py).
+    [SerializeField] private Sprite     _cannonSpriteW5;
+    // World 6 (Robot Mothership, 2026-11-12): the Gravity Cannon - a steel barrel ringed with glowing energy coils (Kling,
+    // fitted onto Cannon.png's canvas at PPU 384 by tools/import_mothership_art.py).
+    [SerializeField] private Sprite     _cannonSpriteW6;
 
     // Cannon-relative offsets (world-space, added to the cannon's REST position — recoil never
     // affects the launch point or the loaded-bird position, only the cannon's own sprite).
@@ -172,6 +178,10 @@ public class CatapultLauncher : MonoBehaviour
     // than an instance lookup since there's exactly one cannon per scene and this outlives
     // any single AnimalBase instance (which gets destroyed on landing).
     public static AnimalType LastAnimalUsed { get; private set; } = AnimalType.Cluck;
+    /// <summary>Raised when an animal leaves the cannon (TutorialHints, 2026-11-12).</summary>
+    public static event System.Action Fired;
+    /// <summary>Where the loaded animal sits in the cannon (TutorialHints' aiming hand).</summary>
+    public Vector3 LoadedPosition => _cannonRestPos + (Vector3)CannonLoadedBirdOffset;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -375,13 +385,327 @@ public class CatapultLauncher : MonoBehaviour
     /// <summary>After a switch replaced the queue: put the new first animal in the cannon.</summary>
     public void ReloadAfterSwap() => PrepareNextBird();
 
+    /// <summary>An animal (or its ability) is still out there: fired and not yet gone.</summary>
+    public bool ShotInProgress => _activeAnimal != null && !_activeAnimal.IsDestroyed;
+
+    /// <summary>Multi-room levels: after a room change / bonus animal, make sure one is sitting in the cannon.</summary>
+    public void EnsureLoaded()
+    {
+        if (_readyBird == null && !ShotInProgress) PrepareNextBird();
+    }
+
+    // ── Rooms (2026-11-12, Angry Birds 2 multi-room levels; World 4 pilot) ──────────────────────────────────────────
+    // The cannon, its mount, the loaded animal and the camera framing all move room-by-room: room r sits
+    // r * LevelData.RoomStride to the right. The move is AB2's swoosh: 0.6 s ease-in-out with speed streaks
+    // (reference: 0.3-0.7 s, peak 3-4.5 screen widths/s, a streak wipe; the far sky stays put).
+    // 1.0 s rather than AB2's 0.6 so the user's Swoosh_panning.mp3 fits: its whoosh peaks mid-pan, where the camera moves
+    // fastest. 1.0 -> 1.8 s (2026-11-12, user: "slow the transition down - it feels rushed"); the swoosh still peaks mid-pan.
+    const float RoomPanDuration = 1.8f;
+    float _roomOffsetX;
+    Coroutine _panRoutine;
+
+    public Coroutine PanToRoom(float targetOffsetX)
+    {
+        if (_panRoutine != null) StopCoroutine(_panRoutine);
+        _panRoutine = StartCoroutine(PanRoutine(targetOffsetX));
+        return _panRoutine;
+    }
+
+    IEnumerator PanRoutine(float target)
+    {
+        float from = _roomOffsetX;
+        // A world-themed wipe over the whole screen (PanWipe, 2026-11-12) where there is one; the plain speed streaks
+        // elsewhere.
+        var wipe = WipeLayers(_mountWorld);
+        if (wipe != null && _camera != null) PanWipe.Play(_camera, RoomPanDuration, wipe);
+        var streaks = wipe == null ? MakeStreaks() : new SpriteRenderer[0];
+        // The swoosh starts with the camera and peaks at mid-pan (the ease's fastest point); its tail fades soon after.
+        AudioManager.PlayRoomPan(RoomPanDuration * 0.5f, RoomPanDuration + 0.4f);
+        for (float e = 0f; e < RoomPanDuration; e += Time.deltaTime)
+        {
+            float k = e / RoomPanDuration;
+            float ease = k < 0.5f ? 4f * k * k * k : 1f - Mathf.Pow(-2f * k + 2f, 3f) / 2f;
+            SetRoomOffset(Mathf.Lerp(from, target, ease));
+            UpdateStreaks(streaks, k);
+            yield return null;
+        }
+        SetRoomOffset(target);
+        foreach (var sr in streaks) if (sr != null) Destroy(sr.gameObject);
+        _panRoutine = null;
+    }
+
+    /// <summary>Jump straight to a room (level start / QA), no pan.</summary>
+    public void SnapToRoom(int room) => SetRoomOffset(room * LevelData.RoomStride);
+
+    void SetRoomOffset(float x)
+    {
+        var d = new Vector3(x - _roomOffsetX, 0f, 0f);
+        _roomOffsetX = x;
+        _cannonRestPos += d;
+        _floatBase += d;
+        _mountBase += d;
+        if (_cannonGO != null) _cannonGO.transform.position += d;
+        if (_mount != null) _mount.transform.position += d;
+        if (_silo != null) _silo.transform.position += d;
+        if (_readyBird != null && !_readyBird.IsLaunched) _readyBird.transform.position += d;
+        RefreshRestPoint();
+        if (EnvironmentDepthSystem.Instance != null) EnvironmentDepthSystem.Instance.RoomPanX = x;
+        if (_camera != null) _camera.transform.position = RestCameraPosition();
+    }
+
+    // ── World-themed room-change wipes (PanWipe, 2026-11-12, user: "a panning effect that is specific to a world -
+    // example - cornfield (hurricane wind), sunken world (bubbles) - that cover the whole screen while it pans"). Worlds
+    // 1 and 5 first; the others keep the speed streaks. Layers in screen fractions (u across, v up); travel = how far a
+    // piece moves over the whole wipe. Art: Effects/PanWipe/ (tools/import_pan_wipes.py: leaves and feathers cut from
+    // existing art), the cornfield clouds, the haybale, World 5's bubble and fish (wired by SceneSetup).
+    [Header("Room-change wipes")]
+    [SerializeField] private Sprite[] _wipeDust;      // World 1: soft clouds, tinted to blown dust
+    [SerializeField] private Sprite[] _wipeLeaves;    // World 1: golden leaves
+    [SerializeField] private Sprite[] _wipeFeathers;  // World 1: feathers
+    [SerializeField] private Sprite   _wipeHay;       // World 1: a haybale tumbling past
+    [SerializeField] private Sprite   _wipeBubble;    // World 5
+    [SerializeField] private Sprite[] _wipeFish;      // World 5 (Fish_1-6; only Fish_5 has its head to the right)
+    [SerializeField] private Sprite   _wipeIceShards; // World 2: ice splinters (World2Props/IceSplinters.png)
+    [SerializeField] private Sprite   _wipeFrozenBale;// World 2: a snow-capped bale tumbling past
+    [SerializeField] private Sprite   _wipeWaterDrop; // World 3: water (Abilities/WaterSwirl.png)
+    [SerializeField] private Sprite   _wipeFoam;      // World 3: spray / flour puffs (Effects/DustCloud.png)
+    [SerializeField] private Sprite   _wipeFlourSack; // World 3: a flour sack tumbling past
+    [SerializeField] private Sprite[] _wipeSkyClouds; // World 4: big white clouds
+    [SerializeField] private Sprite   _wipeBalloon;   // World 4
+    [SerializeField] private Sprite   _wipeKite;      // World 4
+    [SerializeField] private Sprite   _wipeAsteroid;  // World 6: asteroids tumbling past the warp (no drones, 2026-11-12)
+    static Sprite _softDot;
+    static readonly bool[] WipeFishFacesRight = { false, false, false, false, true, false };
+    static Sprite _windStreak;
+
+    System.Collections.Generic.List<PanWipe.Layer> WipeLayers(int world)
+    {
+        var L = new System.Collections.Generic.List<PanWipe.Layer>();
+        if (world == 1 && _wipeDust != null && _wipeDust.Length > 0)
+        {
+            // Hurricane gust: a dusty veil, a wall of dust clouds, wind streaks, leaves and feathers whipping past,
+            // a haybale or two tumbling along low - all blasting right to left, against the pan.
+            _windStreak ??= MakeWindStreak();
+            L.Add(new PanWipe.Layer { veil = true, tint = new Color(0.84f, 0.74f, 0.54f), alpha = 0.5f, order = 35 });
+            L.Add(new PanWipe.Layer { sprites = _wipeDust, count = 26, size = new Vector2(0.32f, 0.6f),
+                start = new Vector2(0.6f, -0.25f), spread = new Vector2(2.0f, 1.35f), travel = new Vector2(-2.2f, 0.05f),
+                tint = new Color(0.9f, 0.8f, 0.62f), alpha = 0.85f, order = 36 });
+            L.Add(new PanWipe.Layer { sprites = new[] { _windStreak }, count = 50, size = new Vector2(0.005f, 0.01f),
+                start = new Vector2(0.8f, 0f), spread = new Vector2(2.4f, 1f), travel = new Vector2(-3.4f, -0.05f),
+                tint = Color.white, alpha = 0.7f, order = 37 });
+            L.Add(new PanWipe.Layer { sprites = _wipeLeaves, count = 50, size = new Vector2(0.03f, 0.07f),
+                start = new Vector2(0.9f, 0f), spread = new Vector2(2.0f, 1f), travel = new Vector2(-2.8f, -0.15f),
+                spin = 720f, wobble = 0.04f, tint = Color.white, alpha = 1f, order = 37 });
+            L.Add(new PanWipe.Layer { sprites = _wipeFeathers, count = 10, size = new Vector2(0.05f, 0.09f),
+                start = new Vector2(0.9f, 0.1f), spread = new Vector2(1.8f, 0.8f), travel = new Vector2(-2.4f, 0.1f),
+                spin = 300f, wobble = 0.05f, tint = Color.white, alpha = 1f, order = 37 });
+            if (_wipeHay != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeHay }, count = 2, size = new Vector2(0.13f, 0.17f),
+                    start = new Vector2(1.1f, 0.12f), spread = new Vector2(0.8f, 0.25f), travel = new Vector2(-2.0f, 0.05f),
+                    spin = 400f, tint = Color.white, alpha = 1f, order = 37 });
+            return L;
+        }
+        if (world == 2 && _wipeDust != null && _wipeDust.Length > 0)
+        {
+            // Blizzard whiteout: a white veil, snow clouds, near-horizontal driving snow, ice splinters glinting, a
+            // frozen bale tumbling past - right to left, a little downward.
+            _windStreak ??= MakeWindStreak();
+            _softDot ??= MakeSoftDot();
+            L.Add(new PanWipe.Layer { veil = true, tint = new Color(0.9f, 0.95f, 1f), alpha = 0.55f, order = 35 });
+            L.Add(new PanWipe.Layer { sprites = _wipeDust, count = 24, size = new Vector2(0.32f, 0.6f),
+                start = new Vector2(0.6f, -0.25f), spread = new Vector2(2.0f, 1.35f), travel = new Vector2(-2.2f, -0.1f),
+                tint = new Color(0.96f, 0.98f, 1f), alpha = 0.85f, order = 36 });
+            L.Add(new PanWipe.Layer { sprites = new[] { _softDot }, count = 160, size = new Vector2(0.008f, 0.022f),
+                start = new Vector2(0.7f, 0f), spread = new Vector2(2.4f, 1.3f), travel = new Vector2(-2.9f, -0.35f),
+                wobble = 0.01f, tint = Color.white, alpha = 0.95f, order = 37 });
+            L.Add(new PanWipe.Layer { sprites = new[] { _windStreak }, count = 40, size = new Vector2(0.004f, 0.008f),
+                start = new Vector2(0.8f, 0f), spread = new Vector2(2.4f, 1f), travel = new Vector2(-3.4f, -0.3f),
+                tint = new Color(0.92f, 0.96f, 1f), alpha = 0.7f, order = 37 });
+            if (_wipeIceShards != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeIceShards }, count = 14, size = new Vector2(0.03f, 0.06f),
+                    start = new Vector2(0.9f, 0.05f), spread = new Vector2(1.9f, 0.9f), travel = new Vector2(-2.6f, -0.2f),
+                    spin = 540f, tint = Color.white, alpha = 1f, order = 37 });
+            if (_wipeFrozenBale != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeFrozenBale }, count = 1, size = new Vector2(0.14f, 0.16f),
+                    start = new Vector2(1.2f, 0.12f), spread = new Vector2(0.6f, 0.2f), travel = new Vector2(-2.0f, 0.02f),
+                    spin = 380f, tint = Color.white, alpha = 1f, order = 37 });
+            return L;
+        }
+        if (world == 3 && _wipeWaterDrop != null)
+        {
+            // River splash: a blue-green veil, a wave of spray rolling across, water droplets flung in arcs, flour
+            // puffs and a flour sack caught in it - right to left.
+            L.Add(new PanWipe.Layer { veil = true, tint = new Color(0.55f, 0.8f, 0.85f), alpha = 0.45f, order = 35 });
+            if (_wipeFoam != null)
+            {
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeFoam }, count = 22, size = new Vector2(0.3f, 0.55f),
+                    start = new Vector2(0.6f, -0.25f), spread = new Vector2(2.0f, 1.3f), travel = new Vector2(-2.2f, 0.1f),
+                    tint = new Color(0.78f, 0.92f, 0.98f), alpha = 0.8f, order = 36 });
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeFoam }, count = 8, size = new Vector2(0.08f, 0.16f),
+                    start = new Vector2(0.9f, 0f), spread = new Vector2(1.8f, 1f), travel = new Vector2(-2.6f, 0.15f),
+                    tint = new Color(1f, 0.98f, 0.92f), alpha = 0.9f, order = 37 });   // flour puffs
+            }
+            L.Add(new PanWipe.Layer { sprites = new[] { _wipeWaterDrop }, count = 70, size = new Vector2(0.025f, 0.07f),
+                start = new Vector2(0.8f, -0.1f), spread = new Vector2(2.2f, 1.2f), travel = new Vector2(-2.8f, 0.25f),
+                spin = 600f, wobble = 0.02f, tint = Color.white, alpha = 0.95f, order = 37 });
+            if (_wipeFlourSack != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeFlourSack }, count = 1, size = new Vector2(0.14f, 0.16f),
+                    start = new Vector2(1.2f, 0.14f), spread = new Vector2(0.6f, 0.2f), travel = new Vector2(-2.0f, 0.05f),
+                    spin = 320f, tint = Color.white, alpha = 1f, order = 37 });
+            return L;
+        }
+        if (world == 4 && _wipeSkyClouds != null && _wipeSkyClouds.Length > 0)
+        {
+            // Cloud bank: big white clouds roll across and cover the screen, then part; a balloon and a kite drift
+            // through - slower and softer than the gusts, right to left.
+            L.Add(new PanWipe.Layer { veil = true, tint = new Color(0.93f, 0.97f, 1f), alpha = 0.5f, order = 35 });
+            L.Add(new PanWipe.Layer { sprites = _wipeSkyClouds, count = 26, size = new Vector2(0.35f, 0.7f),
+                start = new Vector2(0.55f, -0.3f), spread = new Vector2(2.1f, 1.4f), travel = new Vector2(-2.1f, 0f),
+                tint = Color.white, alpha = 0.92f, order = 36 });
+            L.Add(new PanWipe.Layer { sprites = _wipeSkyClouds, count = 12, size = new Vector2(0.12f, 0.25f),
+                start = new Vector2(0.8f, 0f), spread = new Vector2(2f, 1f), travel = new Vector2(-2.6f, 0f),
+                tint = Color.white, alpha = 0.85f, order = 37 });
+            if (_wipeBalloon != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeBalloon }, count = 1, size = new Vector2(0.16f, 0.18f),
+                    start = new Vector2(1.1f, 0.55f), spread = new Vector2(0.3f, 0.2f), travel = new Vector2(-1.6f, 0.08f),
+                    wobble = 0.01f, tint = Color.white, alpha = 1f, order = 37 });
+            if (_wipeKite != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeKite }, count = 1, size = new Vector2(0.1f, 0.12f),
+                    start = new Vector2(1.3f, 0.75f), spread = new Vector2(0.3f, 0.1f), travel = new Vector2(-1.9f, -0.05f),
+                    spin = 25f, wobble = 0.02f, tint = Color.white, alpha = 1f, order = 37 });
+            return L;
+        }
+        if (world == 6)
+        {
+            // Warp jump: a deep-blue veil, star streaks stretching into hyperspace lines (two speeds), a field of soft
+            // star points, asteroids tumbling past - right to left. A soft glow, no flashing.
+            _windStreak ??= MakeWindStreak();
+            _softDot ??= MakeSoftDot();
+            L.Add(new PanWipe.Layer { veil = true, tint = new Color(0.1f, 0.14f, 0.36f), alpha = 0.6f, order = 35 });
+            L.Add(new PanWipe.Layer { veil = true, tint = new Color(0.45f, 0.75f, 1f), alpha = 0.12f, order = 36 });
+            L.Add(new PanWipe.Layer { sprites = new[] { _windStreak }, count = 90, size = new Vector2(0.003f, 0.008f),
+                start = new Vector2(0.6f, 0f), spread = new Vector2(2.8f, 1f), travel = new Vector2(-4.2f, 0f),
+                tint = new Color(0.75f, 0.88f, 1f), alpha = 0.9f, order = 37 });
+            L.Add(new PanWipe.Layer { sprites = new[] { _windStreak }, count = 40, size = new Vector2(0.006f, 0.012f),
+                start = new Vector2(0.7f, 0f), spread = new Vector2(2.4f, 1f), travel = new Vector2(-3.2f, 0f),
+                tint = new Color(0.55f, 1f, 1f), alpha = 0.7f, order = 37 });
+            L.Add(new PanWipe.Layer { sprites = new[] { _softDot }, count = 120, size = new Vector2(0.004f, 0.012f),
+                start = new Vector2(0f, 0f), spread = new Vector2(2.2f, 1f), travel = new Vector2(-1.2f, 0f),
+                tint = new Color(0.85f, 0.92f, 1f), alpha = 1f, order = 36 });
+            if (_wipeAsteroid != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeAsteroid }, count = 4, size = new Vector2(0.05f, 0.12f),
+                    start = new Vector2(1.1f, 0.2f), spread = new Vector2(0.8f, 0.6f), travel = new Vector2(-2.4f, -0.05f),
+                    spin = 90f, tint = Color.white, alpha = 1f, order = 37 });
+            return L;
+        }
+        if (world == 5 && _wipeBubble != null)
+        {
+            // Bubble surge: a teal veil, bubbles of every size boiling up from below and drifting left, a school of
+            // fish darting across.
+            L.Add(new PanWipe.Layer { veil = true, tint = new Color(0.35f, 0.72f, 0.82f), alpha = 0.5f, order = 35 });
+            L.Add(new PanWipe.Layer { sprites = new[] { _wipeBubble }, count = 85, size = new Vector2(0.06f, 0.26f),
+                start = new Vector2(-0.05f, -1.3f), spread = new Vector2(1.1f, 1.2f), travel = new Vector2(-0.35f, 2.4f),
+                wobble = 0.03f, tint = Color.white, alpha = 0.95f, order = 36 });
+            L.Add(new PanWipe.Layer { sprites = new[] { _wipeBubble }, count = 130, size = new Vector2(0.012f, 0.04f),
+                start = new Vector2(-0.05f, -1.4f), spread = new Vector2(1.1f, 1.3f), travel = new Vector2(-0.3f, 2.8f),
+                wobble = 0.02f, tint = Color.white, alpha = 0.9f, order = 37 });
+            if (_wipeFish != null && _wipeFish.Length > 0)
+                L.Add(new PanWipe.Layer { sprites = _wipeFish, count = 12, size = new Vector2(0.045f, 0.075f),
+                    start = new Vector2(1.1f, 0.35f), spread = new Vector2(0.6f, 0.4f), travel = new Vector2(-1.9f, 0.05f),
+                    faceTravel = true, facesRight = WipeFishFacesRight, tint = Color.white, alpha = 1f, order = 37 });
+            return L;
+        }
+        return null;
+    }
+
+    // A soft round speck (snowflakes).
+    static Sprite MakeSoftDot()
+    {
+        const int N = 32;
+        var tex = new Texture2D(N, N, TextureFormat.ARGB32, false) { wrapMode = TextureWrapMode.Clamp };
+        for (int y = 0; y < N; y++)
+            for (int x = 0; x < N; x++)
+            {
+                float dd = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(N / 2f, N / 2f)) / (N / 2f);
+                float a = Mathf.Clamp01(1f - dd);
+                tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a * (3f - 2f * a)));
+            }
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, N, N), new Vector2(0.5f, 0.5f), N);
+    }
+
+    // A long thin white line, soft at both ends (64 x 2 px -> 32:1).
+    static Sprite MakeWindStreak()
+    {
+        var tex = new Texture2D(64, 2, TextureFormat.ARGB32, false) { wrapMode = TextureWrapMode.Clamp };
+        for (int x = 0; x < 64; x++)
+        {
+            float a = Mathf.Sin(Mathf.PI * (x + 0.5f) / 64f);
+            for (int y = 0; y < 2; y++) tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a));
+        }
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, 64, 2), new Vector2(0.5f, 0.5f), 64f);
+    }
+
+    // Speed streaks: thin white lines across the screen, rushing the opposite way to the pan, strongest mid-pan.
+    const int StreakCount = 14;
+    static Sprite _streakSprite;
+    readonly float[] _streakLane = new float[StreakCount], _streakPhase = new float[StreakCount];
+
+    SpriteRenderer[] MakeStreaks()
+    {
+        if (_streakSprite == null)
+        {
+            var tex = new Texture2D(16, 1, TextureFormat.ARGB32, false) { wrapMode = TextureWrapMode.Clamp };
+            for (int i = 0; i < 16; i++) { float a = Mathf.Sin(Mathf.PI * (i + 0.5f) / 16f); tex.SetPixel(i, 0, new Color(1f, 1f, 1f, a * a)); }
+            tex.Apply();
+            _streakSprite = Sprite.Create(tex, new Rect(0, 0, 16, 1), new Vector2(0.5f, 0.5f), 16f);
+        }
+        var list = new SpriteRenderer[StreakCount];
+        for (int i = 0; i < StreakCount; i++)
+        {
+            var sr = new GameObject("PanStreak").AddComponent<SpriteRenderer>();
+            sr.sprite = _streakSprite;
+            sr.sortingOrder = 36;   // over the play layer and the near clouds, under the weather and the HUD
+            sr.color = new Color(1f, 1f, 1f, 0f);
+            sr.transform.localScale = new Vector3(Random.Range(3f, 9f), Random.Range(0.04f, 0.1f), 1f);
+            _streakLane[i]  = Random.Range(0.08f, 0.92f);   // height up the screen
+            _streakPhase[i] = Random.value * 1.4f;
+            list[i] = sr;
+        }
+        return list;
+    }
+
+    void UpdateStreaks(SpriteRenderer[] streaks, float k)
+    {
+        if (_camera == null) return;
+        float camH = _camera.orthographicSize * 2f, camW = camH * _camera.aspect;
+        Vector3 c = _camera.transform.position;
+        float alpha = 0.55f * Mathf.Sin(Mathf.PI * k);
+        for (int i = 0; i < streaks.Length; i++)
+        {
+            var sr = streaks[i];
+            if (sr == null) continue;
+            float x = c.x + camW * (0.7f - Mathf.Repeat(_streakPhase[i] + k * 2.2f, 1.4f));   // rushes right to left
+            sr.transform.position = new Vector3(x, c.y - camH * 0.5f + _streakLane[i] * camH, 0f);
+            sr.color = new Color(1f, 1f, 1f, alpha);
+        }
+    }
+
     void PrepareNextBird()
     {
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
         if (_levelLoader == null || !_levelLoader.HasBirdsRemaining) return;
         Vector3 loadedPos = _cannonRestPos + (Vector3)CannonLoadedBirdOffset;
         _readyBird = _levelLoader.CreateNextAnimal(_levelLoader.PeekNextBird(), loadedPos);
-        if (_readyBird != null) ApplyBirdScale(_readyBird);
+        if (_readyBird != null)
+        {
+            ApplyBirdScale(_readyBird);
+            // Display only: Fire() destroys it and launches a fresh animal. Its collider used to stay on, so a room pan
+            // (SetRoomOffset) dragged it through the cleared room's wreckage — each touch counted as a hit and it
+            // switched to its impact pose (2026-11-12, user: "loading images change in the second room").
+            foreach (var c in _readyBird.GetComponentsInChildren<Collider2D>()) c.enabled = false;
+        }
         _readyBird?.SetInFlightPose(); // wings-out pose reads better poking out of a cannon muzzle than the seated "loaded" pose
     }
 
@@ -418,6 +742,7 @@ public class CatapultLauncher : MonoBehaviour
         _activeAnimal.OnAnimalDestroyed += OnAnimalLanded;
         _activeAnimal.OnAnimalImpact    += HandleAnimalImpact;
         _activeAnimal.Launch(velocity, _gravityScaleNow);
+        Fired?.Invoke();
         FarmFury.Core.HighlightMarkers.Shot(_activeAnimal, birdType, velocity,
             Mathf.InverseLerp(_minSpeedNow, _maxSpeedNow, velocity.magnitude));
         AudioManager.Play(AudioManager.Sound.Launch);
@@ -472,21 +797,30 @@ public class CatapultLauncher : MonoBehaviour
             _cannonSR.sprite = (data != null && data.world == 2 && _cannonSpriteW2 != null) ? _cannonSpriteW2
                              : (data != null && data.world == 3 && _cannonSpriteW3 != null) ? _cannonSpriteW3
                              : (data != null && data.world == 4 && _cannonSpriteW4 != null) ? _cannonSpriteW4
+                             : (data != null && data.world == 5 && _cannonSpriteW5 != null) ? _cannonSpriteW5
+                             : (data != null && data.world == 6 && _cannonSpriteW6 != null) ? _cannonSpriteW6
                              : _cannonSprite;
         // Equipped cannon skin (cosmetic, 2026-11-08): same pose and canvas as Cannon.png, so it swaps in place.
         var skin = FarmFury.Core.CosmeticEffects.CannonSkin();
         if (_cannonSR != null && skin != null) _cannonSR.sprite = skin;
         _framed = ReferenceFraming.Active(data);
         _mountWorld = data != null ? data.world : 1;
+        // Rooms: every attempt starts in the first room.
+        if (_panRoutine != null) { StopCoroutine(_panRoutine); _panRoutine = null; }
+        foreach (var st in FindObjectsByType<SpriteRenderer>()) if (st != null && st.name == "PanStreak") Destroy(st.gameObject);
+        _roomOffsetX = 0f;
+        if (EnvironmentDepthSystem.Instance != null) EnvironmentDepthSystem.Instance.RoomPanX = 0f;
         if (_camera != null)
             _camera.orthographicSize = _framed ? ReferenceFraming.OrthoSize : ComputeOrthoSizeForLevel(data);
         // Framed levels share one ground line with the scenery (ReferenceFraming.World1GroundY); every other
         // level keeps the original physics ground at the Launcher anchor's Y.
         _groundY = _framed ? ReferenceFraming.GroundY(data) : transform.position.y;
         SetGroundTop(_groundY);
+        if (_framed) SetGroundSpan(-40f, 40f + LevelData.RoomStride * ((data != null ? data.RoomCount : 1) - 1) + 20f);
         ApplyMount(_framed, _groundY);   // also resets the cannon to its scene position (was done above)
         ApplyFlightTuning();
         RefreshRestPoint();
+        if (_levelLoader != null && _levelLoader.CurrentRoom > 0) SnapToRoom(_levelLoader.CurrentRoom);   // QA start room
         // Restart/Replay now reuses this same handler (GameManager.RestartLevel ->
         // ForceStartLevel, no scene reload — see GameManager.cs), so a leftover mid-pan-back
         // camera position from the previous attempt must be snapped back here explicitly;
@@ -626,7 +960,11 @@ public class CatapultLauncher : MonoBehaviour
     int _mountWorld = 1;
     [SerializeField] private Sprite _mountBaleSpriteW3; // Watermill/FlourSacks.png — stacked flour sacks (World 3, 2026-11-10)
     [SerializeField] private Sprite _mountBaleSpriteW4; // Sky/CloudBale.png — cloud bales tied with gold rope (World 4, 2026-11-11)
-    Sprite MountSprite => _mountWorld == 4 && _mountBaleSpriteW4 != null ? _mountBaleSpriteW4
+    [SerializeField] private Sprite _mountBaleSpriteW5; // Sunken/SpongeBale.png — sponge bales (World 5, 2026-11-12)
+    [SerializeField] private Sprite _mountBaleSpriteW6; // Mothership/BatteryPod.png — battery pods (World 6, 2026-11-12)
+    Sprite MountSprite => _mountWorld == 6 && _mountBaleSpriteW6 != null ? _mountBaleSpriteW6
+                        : _mountWorld == 5 && _mountBaleSpriteW5 != null ? _mountBaleSpriteW5
+                        : _mountWorld == 4 && _mountBaleSpriteW4 != null ? _mountBaleSpriteW4
                         : _mountWorld == 2 && _mountBaleSpriteW2 != null ? _mountBaleSpriteW2
                         : _mountWorld == 3 && _mountBaleSpriteW3 != null ? _mountBaleSpriteW3
                         : _mountBaleSprite;
@@ -636,6 +974,11 @@ public class CatapultLauncher : MonoBehaviour
     const float MountRowStep    = 0.80f;   // second row sits this far above the first (bales nest)
     const float MountSpacing    = 0.95f;   // bale centres within a row (they overlap a little)
     const float MountSink       = 0.06f;   // the cannon's wheels settle into the top bales
+    // Rows of bales (bottom row = rows + 1 bales). World 1 (2026-11-12, user: "place the cannon on a higher pyramid of
+    // haybales to lift for the new enhanced structures"): 5-4-3-2, two rows (1.6 u) higher than the other worlds' 3-2.
+    // Worlds 2 and 3 got the same pyramid the same day ("apply the same now to W2 ... then apply W3").
+    int MountRows => _mountWorld != 4 && _mountWorld >= 1 && _mountWorld <= 6 ? 4 : 2;   // Worlds 1-3, 5, 6   // World 5 too (2026-11-12)
+    int _mountBuiltRows;
     const float CannonWheelOffsetX = -0.15f;   // Cannon.png's wheels sit left of the sprite centre
     const int   MountSortingOrder  = 3;    // behind the cannon (4)
 
@@ -646,7 +989,7 @@ public class CatapultLauncher : MonoBehaviour
     float MountLift(float groundY)
     {
         if (_cannonSR == null || _cannonSR.sprite == null) return 0f;
-        float topOfStack = groundY + MountBaleSize * (1f - MountBaleBottom) + MountRowStep - MountBaleSize * MountBaleTop;
+        float topOfStack = groundY + MountBaleSize * (1f - MountBaleBottom) + (MountRows - 1) * MountRowStep - MountBaleSize * MountBaleTop;
         // Visual bottom of the wheels at the scene position (Cannon.png has 21 of 512 rows transparent below them).
         float cannonBottom = _cannonSR.bounds.min.y + _cannonSR.bounds.size.y * (21f / 512f);
         return topOfStack - MountSink - cannonBottom;
@@ -660,22 +1003,26 @@ public class CatapultLauncher : MonoBehaviour
         if (!on || MountSprite == null)
         {
             if (_mount != null) _mount.SetActive(false);
+            if (_silo != null) _silo.SetActive(false);
             return;
         }
-        _cannonRestPos = _cannonScenePos + new Vector3(0f, MountLift(groundY), 0f);
+        Vector3 worldShift = MountShift;
+        _cannonRestPos = _cannonScenePos + new Vector3(0f, MountLift(groundY), 0f) + worldShift;
         if (_cannonGO != null) _cannonGO.transform.position = _cannonRestPos;
 
+        if (_mount != null && _mountBuiltRows != MountRows) { Destroy(_mount); _mount = null; }
         if (_mount == null)
         {
             _mount = new GameObject("CannonMount");
+            _mountBuiltRows = MountRows;
             float scale = MountBaleSize / MountSprite.bounds.size.x;
             int i = 0;
-            for (int row = 0; row < 2; row++)
-                for (int k = 0; k < 3 - row; k++)
+            for (int row = 0; row < MountRows; row++)
+                for (int k = 0; k < MountRows + 1 - row; k++)
                 {
                     var bale = new GameObject($"Bale{i++}");
                     bale.transform.SetParent(_mount.transform, false);
-                    float x = (k - (2 - row) * 0.5f) * MountSpacing;
+                    float x = (k - (MountRows - row) * 0.5f) * MountSpacing;
                     float y = MountBaleSize * (0.5f - MountBaleBottom) + row * MountRowStep;
                     bale.transform.localPosition = new Vector3(x, y, 0f);
                     bale.transform.localScale = new Vector3(scale, scale, 1f);
@@ -687,10 +1034,56 @@ public class CatapultLauncher : MonoBehaviour
         }
         _mount.SetActive(true);
         foreach (var sr in _mount.GetComponentsInChildren<SpriteRenderer>(true)) sr.sprite = MountSprite;   // per world
-        _mount.transform.position = new Vector3(_cannonScenePos.x + CannonWheelOffsetX, groundY, 0f);
+        _mount.transform.position = new Vector3(_cannonScenePos.x + CannonWheelOffsetX, groundY, 0f) + worldShift;
         _floating = _mountWorld == 4;
         _floatBase = _cannonRestPos;
         _mountBase = _mount.transform.position;
+        PlaceSilo(groundY, worldShift);
+    }
+
+    // ── A landmark behind the cannon, bottom left (2026-11-12) ────────────────────────────────────────────────────────
+    // World 1: the broken silo (user: "insert the broken Silo to the bottom left of the screen, behind the cannon";
+    // Sprites/Environment/Cornfield/BrokenSilo.png, tools/import_silo.py). World 2: a cluster of ice crystals (World2Props/
+    // IceCrystals.png, "in the same position as the silo"). World 3: the mossy waterwheel (World3Props/WaterWheel.png,
+    // "to fill up the space"). Stands on the ground left of the bale pyramid, which hides its lower right; travels with
+    // the cannon from room to room (SetRoomOffset).
+    [SerializeField] private Sprite _siloSprite;
+    [SerializeField] private Sprite _iceCrystalsBackSprite;
+    [SerializeField] private Sprite _waterWheelBackSprite;
+    [SerializeField] private Sprite _statueBackSprite;
+    [SerializeField] private Sprite _beaconBackSprite;
+    [SerializeField] private Sprite _tabletBackSprite;   // World 4: the rune tablet in the clouds (Sky/SkyTablet.png)   // World 6: the warning beacon (Mothership/WarningBeacon.png)   // World 5: the sunken statue (Sunken/SunkenStatue.png)
+    struct BackProp { public float height, offsetX, sink; }
+    static readonly BackProp Silo       = new BackProp { height = 6.6f, offsetX = -2.9f, sink = 0.15f };   // ~0.41 sh
+    static readonly BackProp IceCluster = new BackProp { height = 4.6f, offsetX = -3.2f, sink = 0.2f };
+    static readonly BackProp WaterWheel = new BackProp { height = 6.0f, offsetX = -3.4f, sink = 0.2f };
+    static readonly BackProp Statue     = new BackProp { height = 5.6f, offsetX = -3.1f, sink = 0.25f };
+    static readonly BackProp Beacon     = new BackProp { height = 6.4f, offsetX = -2.9f, sink = 0.15f };
+    static readonly BackProp Tablet     = new BackProp { height = 5.4f, offsetX = -3.0f, sink = -0.3f };   // floats a little
+    const int   SiloSortingOrder = 1;       // behind the bales (3) and the cannon (4); decorative band
+    GameObject _silo;
+
+    void PlaceSilo(float groundY, Vector3 worldShift)
+    {
+        Sprite art = _mountWorld switch { 1 => _siloSprite, 2 => _iceCrystalsBackSprite, 3 => _waterWheelBackSprite,
+                                          4 => _tabletBackSprite,
+                                          5 => _statueBackSprite, 6 => _beaconBackSprite, _ => null };
+        BackProp bp = _mountWorld switch { 2 => IceCluster, 3 => WaterWheel, 4 => Tablet, 5 => Statue, 6 => Beacon, _ => Silo };
+        if (art == null) { if (_silo != null) _silo.SetActive(false); return; }
+        if (_silo == null)
+        {
+            _silo = new GameObject("BrokenSilo");
+            var sr = _silo.AddComponent<SpriteRenderer>();
+            sr.sortingOrder = SiloSortingOrder;
+        }
+        var srr = _silo.GetComponent<SpriteRenderer>();
+        srr.sprite = art;
+        float s = bp.height / Mathf.Max(0.0001f, art.bounds.size.y);
+        _silo.transform.localScale = new Vector3(s, s, 1f);
+        float bottom = groundY - bp.sink;
+        _silo.transform.position = new Vector3(_cannonScenePos.x + worldShift.x + bp.offsetX + _roomOffsetX,
+                                               bottom - art.bounds.min.y * s, 0f);
+        _silo.SetActive(true);
     }
 
     // ── World 4: the cannon floats (2026-11-11, user: "make it a little more difficult with the cannon floating on the
@@ -700,6 +1093,17 @@ public class CatapultLauncher : MonoBehaviour
     // The player has to time the release.
     // Vertical only: the recoil animates the cannon's x, a sideways sway would fight it.
     const float FloatAmp = 0.28f, FloatPeriod = 3.4f;
+
+    // World 4 (2026-11-12, user: "slightly elevate and raise the cannon (up and to the left)... the character struggles
+    // to fly over the structure"): the cloud-bale mount and cannon sit up and left of the other worlds' spot, floating
+    // clear of the cloud floor. The camera stays framed on the scene position (RestCameraPosition), so the shift shows
+    // on screen. Keep in step with LAUNCH_SHIFT in tools/design_world1.py (the designer's reach check).
+    static readonly Vector3 SkyMountShift = new Vector3(-1.2f, 1.6f, 0f);
+    // World 1 (2026-11-12, "apply the same logic as we did for W4"): the same 1.2 u to the left; its 1.6 u of lift comes
+    // from the taller bale pyramid (MountRows) - it stands on the ground.
+    static readonly Vector3 FarmMountShift = new Vector3(-1.2f, 0f, 0f);
+    Vector3 MountShift => _mountWorld == 4 ? SkyMountShift
+                        : _mountWorld >= 1 && _mountWorld <= 6 ? FarmMountShift : Vector3.zero;
     bool _floating;
     Vector3 _floatBase, _mountBase;
 
@@ -865,7 +1269,8 @@ public class CatapultLauncher : MonoBehaviour
             float alpha = DotAlpha(t, visible);
             _trajDotRenderers[i].color = new Color(1f, 1f, 0f, alpha);
 
-            for (int s = 0; s < _trajectorySubsteps; s++)
+            int subs = Mathf.Max(1, Mathf.RoundToInt(_trajectorySubsteps / Mathf.Max(0.1f, AnimalBase.Pace)));
+            for (int s = 0; s < subs; s++)
             {
                 v.y += grav * dt;
                 v   *= Mathf.Max(0f, 1f - fa * dt);
@@ -967,6 +1372,7 @@ public class CatapultLauncher : MonoBehaviour
             _aimDeadzoneNow  = MinAimRadius;
             _grabRadiusNow   = BirdClickRadius;
         }
+        AnimalBase.Pace = _framed ? ReferenceFraming.FlightPace : 1f;
         float dot = _framed ? ReferenceFraming.ToWorld(ReferenceFraming.TrajectoryDotSh) : _trajectoryDotRadius * 2f;
         if (_trajDotRenderers != null)
             foreach (var sr in _trajDotRenderers)
@@ -978,7 +1384,8 @@ public class CatapultLauncher : MonoBehaviour
         float z = _camera.transform.position.z;
         if (_framed)
         {
-            float cannonX = _cannonGO != null ? _cannonRestPos.x : transform.position.x;
+            // The scene position, not the rest position: World 4's shifted mount must not drag the framing with it.
+            float cannonX = (_cannonGO != null ? _cannonScenePos.x : transform.position.x) + _roomOffsetX;   // + the room
             float aspect  = _camera.aspect > 0f ? _camera.aspect : 16f / 9f;
             Vector2 c = ReferenceFraming.CameraCentre(cannonX, _groundY, aspect);
             return new Vector3(c.x, c.y, z);
@@ -994,6 +1401,20 @@ public class CatapultLauncher : MonoBehaviour
         float delta = y - col.bounds.max.y;
         if (Mathf.Abs(delta) < 0.001f) return;
         ground.transform.position += new Vector3(0f, delta, 0f);
+        Physics2D.SyncTransforms();
+    }
+
+    // Widens the physics ground so it spans [left, right] (multi-room levels run well past the original 60 u strip).
+    static void SetGroundSpan(float left, float right)
+    {
+        var ground = GameObject.Find("Ground");
+        if (ground == null || !ground.TryGetComponent<BoxCollider2D>(out var col)) return;
+        if (col.bounds.min.x <= left && col.bounds.max.x >= right) return;
+        float unit = col.size.x * Mathf.Abs(ground.transform.lossyScale.x) / Mathf.Max(0.0001f, Mathf.Abs(ground.transform.localScale.x));
+        var sc = ground.transform.localScale;
+        ground.transform.localScale = new Vector3((right - left) / Mathf.Max(0.0001f, unit), sc.y, sc.z);
+        var p = ground.transform.position;
+        ground.transform.position = new Vector3((left + right) * 0.5f - col.offset.x * ground.transform.lossyScale.x, p.y, p.z);
         Physics2D.SyncTransforms();
     }
 

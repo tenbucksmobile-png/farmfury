@@ -36,6 +36,15 @@ public class AudioManager : MonoBehaviour
     // _fallingClip / _bessieFallingClip (Cluck / Bessie), otherwise the flight is silent (Percy has none yet).
     [SerializeField] private AudioClip[] _fallingClips = new AudioClip[8];
     private const float AbilityVolume = 0.9f;
+    // Room change on multi-room levels (2026-11-12, user: "utilise the swoosh_panning SFX ... to play once the panning
+    // begins - to coincide with the camera movement"): Assets/Audio/Swoosh_panning.mp3 (from FarmFury/Launch/). The clip
+    // builds for 1.9 s to its loudest point and dies away by ~3 s, so PlayRoomPan joins it part-way through the build
+    // so that the peak lands on the pan's fastest moment, and fades the long tail out.
+    [SerializeField] private AudioClip _roomPanClip;
+    public const float RoomPanClipPeak = 1.9f;   // seconds into Swoosh_panning.mp3 where the whoosh is loudest
+    private const float RoomPanVolume = 1f;
+    private AudioSource _panSrc;
+    private Coroutine _panFadeRoutine;
 
     private AudioSource _src;
     private AudioSource _musicSrc;
@@ -150,6 +159,12 @@ public class AudioManager : MonoBehaviour
         _fallingSrc.loop        = false;   // a shout, not a loop (2026-11-11): short clips repeated on long flights
         _fallingSrc.volume      = FallingVolume;
         _fallingSrc.clip        = _fallingClip;
+
+        _panSrc             = gameObject.AddComponent<AudioSource>();
+        _panSrc.playOnAwake = false;
+        _panSrc.loop        = false;
+        _panSrc.clip        = _roomPanClip;
+        if (_roomPanClip != null) _roomPanClip.LoadAudioData();   // imported without preload: seek needs it loaded
 
         _clips = new AudioClip[]
         {
@@ -287,6 +302,33 @@ public class AudioManager : MonoBehaviour
     // the shared SFX AudioSource, uncached and un-throttled — unlike Play(Sound, cooldown) above,
     // there's no cooldown gate here, since callers that reach for this want a guarantee the clip
     // always plays (e.g. HaybaleBlock's explosion sound).
+    /// <summary>The room-change swoosh: starts now and peaks peakIn seconds from now; the tail fades after fadeAfter s.</summary>
+    public static void PlayRoomPan(float peakIn, float fadeAfter)
+    {
+        var a = Instance;
+        if (a == null || a._roomPanClip == null || !SfxEnabled) return;
+        if (a._panFadeRoutine != null) a.StopCoroutine(a._panFadeRoutine);
+        a._panSrc.Stop();
+        a._panSrc.clip = a._roomPanClip;
+        a._panSrc.volume = RoomPanVolume * SfxVolume;
+        a._panSrc.time = Mathf.Clamp(RoomPanClipPeak - peakIn, 0f, a._roomPanClip.length - 0.05f);
+        a._panSrc.Play();
+        a._panFadeRoutine = a.StartCoroutine(a.FadePan(fadeAfter, 0.6f));
+    }
+
+    IEnumerator FadePan(float after, float over)
+    {
+        yield return new WaitForSecondsRealtime(after);
+        float v0 = _panSrc.volume;
+        for (float e = 0f; e < over; e += Time.unscaledDeltaTime)
+        {
+            _panSrc.volume = v0 * (1f - e / over);
+            yield return null;
+        }
+        _panSrc.Stop();
+        _panFadeRoutine = null;
+    }
+
     public static void PlayClip(AudioClip clip, float volume = 0.8f)
     {
         if (Instance == null || clip == null || !SfxEnabled) return;

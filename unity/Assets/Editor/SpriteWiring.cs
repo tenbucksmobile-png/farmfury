@@ -21,7 +21,7 @@ public static class SpriteWiring
         { "Ducky",   2468 },  // radius 0.30 → diam 0.60u  →  1481/0.60
         { "Horace",  1851 },  // radius 0.40 → diam 0.80u  →  1481/0.80
         { "Gerald",  1949 },  // radius 0.38 → diam 0.76u  →  1481/0.76
-        { "Billy",   2057 },  // radius 0.36 → diam 0.72u
+        { "Billy",   1683 },  // radius 0.44 → diam 0.88u  →  1481/0.88 (2026-11-12, was the chicken's 0.72)
     };
 
     static readonly Dictionary<string, string> CharPrefab = new()

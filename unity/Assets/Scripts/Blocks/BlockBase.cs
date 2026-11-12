@@ -78,6 +78,18 @@ public abstract class BlockBase : MonoBehaviour
     [SerializeField] protected Sprite _sprVerticalW4;
     [SerializeField] protected Sprite _sprHorizontalW4;
     [SerializeField] protected Sprite _sprShortW4;
+    // World 5 (Sunken City, 2026-11-12): barnacled shipwreck timber (post and plank), teal sunken-city stone (block,
+    // column, lintel slab), sponge bales for hay (tools/import_sunken_art.py). Same slots as World 4's.
+    [SerializeField] protected Sprite _sprNormalW5;
+    [SerializeField] protected Sprite _sprVerticalW5;
+    [SerializeField] protected Sprite _sprHorizontalW5;
+    [SerializeField] protected Sprite _sprShortW5;
+    // World 6 (Robot Mothership, 2026-11-12): steel girder post and I-beam, riveted crate / energy column / steel slab,
+    // battery pods for hay (tools/import_mothership_art.py). Same slots as World 5's.
+    [SerializeField] protected Sprite _sprNormalW6;
+    [SerializeField] protected Sprite _sprVerticalW6;
+    [SerializeField] protected Sprite _sprHorizontalW6;
+    [SerializeField] protected Sprite _sprShortW6;
 
     // Optional hit-reaction art (e.g. Haybail_Damaged.png) — null on block types that don't
     // have one wired, in which case TakeDamage() only does the existing colour-tint/crack
@@ -357,12 +369,19 @@ public abstract class BlockBase : MonoBehaviour
         bool   isW2       = world == 2;
         bool   isW3       = world == 3;
         bool   isW4       = world == 4;
-        Sprite normal     = (isW4 && _sprNormalW4     != null) ? _sprNormalW4     : (isW2 && _sprNormalW2     != null) ? _sprNormalW2     : (isW3 && _sprNormalW3     != null) ? _sprNormalW3     : _sprNormal;
-        Sprite vertical   = (isW4 && _sprVerticalW4   != null) ? _sprVerticalW4   : (isW2 && _sprVerticalW2   != null) ? _sprVerticalW2   : (isW3 && _sprVerticalW3   != null) ? _sprVerticalW3   : _sprVertical;
-        Sprite horizontal = (isW4 && _sprHorizontalW4 != null) ? _sprHorizontalW4 : (isW2 && _sprHorizontalW2 != null) ? _sprHorizontalW2 : (isW3 && _sprHorizontalW3 != null) ? _sprHorizontalW3 : _sprHorizontal;
+        bool   isW5       = world == 5;
+        bool   isW6       = world == 6;
+        // Worlds 4-6 share one set of slots: the sky, sunken-city or mothership art (2026-11-12).
+        Sprite hiNormal   = isW6 ? _sprNormalW6     : isW5 ? _sprNormalW5     : isW4 ? _sprNormalW4     : null;
+        Sprite hiVertical = isW6 ? _sprVerticalW6   : isW5 ? _sprVerticalW5   : isW4 ? _sprVerticalW4   : null;
+        Sprite hiHoriz    = isW6 ? _sprHorizontalW6 : isW5 ? _sprHorizontalW5 : isW4 ? _sprHorizontalW4 : null;
+        Sprite hiShort    = isW6 ? _sprShortW6      : isW5 ? _sprShortW5      : isW4 ? _sprShortW4      : null;
+        Sprite normal     = hiNormal   != null ? hiNormal   : (isW2 && _sprNormalW2     != null) ? _sprNormalW2     : (isW3 && _sprNormalW3     != null) ? _sprNormalW3     : _sprNormal;
+        Sprite vertical   = hiVertical != null ? hiVertical : (isW2 && _sprVerticalW2   != null) ? _sprVerticalW2   : (isW3 && _sprVerticalW3   != null) ? _sprVerticalW3   : _sprVertical;
+        Sprite horizontal = hiHoriz    != null ? hiHoriz    : (isW2 && _sprHorizontalW2 != null) ? _sprHorizontalW2 : (isW3 && _sprHorizontalW3 != null) ? _sprHorizontalW3 : _sprHorizontal;
         Sprite diagonal   = (isW2 && _sprDiagonalW2   != null) ? _sprDiagonalW2   : _sprDiagonal;
-        Sprite shortSpr   = (isW4 && _sprShortW4      != null) ? _sprShortW4      : (isW2 && _sprShortW2      != null) ? _sprShortW2      : (isW3 && _sprShortW3      != null) ? _sprShortW3      : _sprShort;
-        bool   themed     = isW2 || (isW3 && _sprNormalW3 != null) || (isW4 && _sprNormalW4 != null);
+        Sprite shortSpr   = hiShort    != null ? hiShort    : (isW2 && _sprShortW2      != null) ? _sprShortW2      : (isW3 && _sprShortW3      != null) ? _sprShortW3      : _sprShort;
+        bool   themed     = isW2 || (isW3 && _sprNormalW3 != null) || hiNormal != null;
 
         // Select art sprite: an explicit artVariant (set by LevelLayoutDumper directly from the
         // design-time sprite's own filename) always wins over the aspect-ratio guess below —

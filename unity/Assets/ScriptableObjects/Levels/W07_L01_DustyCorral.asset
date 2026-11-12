@@ -21,7 +21,8 @@ MonoBehaviour:
   trimColliders: 1
   birds: 000000000000000000000000
   blocks:
-  - type: 1
+  - room: 0
+    type: 1
     position: {x: 4.8999996, y: -5.9238}
     size: {x: 1, y: 1.61}
     passThrough: 0
@@ -32,7 +33,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 6.5, y: -5.9238}
     size: {x: 1, y: 1.61}
     passThrough: 0
@@ -43,7 +45,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 0
+  - room: 0
+    type: 0
     position: {x: 5.627, y: -5.0381002}
     size: {x: 2.44, y: 0.52}
     passThrough: 0
@@ -54,7 +57,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 2
+  - room: 0
+    type: 2
     position: {x: 7.3999996, y: -6.1115}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
@@ -65,7 +69,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 2
+  - room: 0
+    type: 2
     position: {x: 8.4, y: -6.1115}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
@@ -76,7 +81,8 @@ MonoBehaviour:
     forceStayKinematic: 0
     flipX: 0
     rotation: 0
-  - type: 2
+  - room: 0
+    type: 2
     position: {x: 7.8999996, y: -5.31}
     size: {x: 0.977, y: 0.977}
     passThrough: 1
@@ -88,12 +94,15 @@ MonoBehaviour:
     flipX: 0
     rotation: 0
   robots:
-  - robotType: 1
+  - room: 0
+    robotType: 1
     position: {x: 5.7, y: -6.15}
     scale: {x: 6.001, y: 6.153}
-  - robotType: 2
+  - room: 0
+    robotType: 2
     position: {x: 5.7, y: -4.4996996}
     scale: {x: 6.001, y: 6.153}
   platforms: []
   weather: 0
   gadgets: []
+  rooms: 1

@@ -155,6 +155,18 @@ public static partial class SceneSetup
                 var baron = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/StormBaronRobot.prefab");
                 if (baron != null) set.FindPropertyRelative("boss").objectReferenceValue = baron.GetComponent<RobotEnemy>();
             }
+            // World 5's framed boss levels use the Deep Dredger (taunt poses + the mothership drop-in), 2026-11-12.
+            if (world == 5)
+            {
+                var dredger = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/DeepDredgerRobot.prefab");
+                if (dredger != null) set.FindPropertyRelative("boss").objectReferenceValue = dredger.GetComponent<RobotEnemy>();
+            }
+            // World 6's framed boss levels use the Factory Machine (taunt poses + the mothership drop-in), 2026-11-12.
+            if (world == 6)
+            {
+                var machine = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/FactoryMachineRobot.prefab");
+                if (machine != null) set.FindPropertyRelative("boss").objectReferenceValue = machine.GetComponent<RobotEnemy>();
+            }
         }
     }
 
