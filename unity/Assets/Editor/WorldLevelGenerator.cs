@@ -107,7 +107,8 @@ public static class WorldLevelGenerator
             string path = AssetDatabase.GUIDToAssetPath(guid);
             // Its own files only: World 2 ("W02_") is designed by tools/design_world2.py (2026-11-09).
             string fn = System.IO.Path.GetFileName(path);
-            if (fn.StartsWith("W") && !fn.StartsWith("W02_") && !fn.StartsWith("W03_") && !fn.StartsWith("W04_") && !fn.StartsWith("W05_") && !fn.StartsWith("W06_")) AssetDatabase.DeleteAsset(path);
+            if (fn.StartsWith("W") && !fn.StartsWith("W02_") && !fn.StartsWith("W03_") && !fn.StartsWith("W04_") && !fn.StartsWith("W05_") && !fn.StartsWith("W06_")
+                && !fn.StartsWith("W07_") && !fn.StartsWith("W08_") && !fn.StartsWith("W09_")) AssetDatabase.DeleteAsset(path);
         }
 
         int made = 0;
@@ -117,7 +118,8 @@ public static class WorldLevelGenerator
             // World 3 likewise (tools/design_world3.py, 2026-11-10).
             // World 4 likewise (tools/design_world4.py, 2026-11-11).
             // World 5 likewise (tools/design_world5.py, 2026-11-12), World 6 too (tools/design_world6.py, 2026-11-12).
-            if (spec.world >= 2 && spec.world <= 6) continue;
+            // The paid worlds 7-9 likewise (tools/design_world7.py / 8 / 9, 2026-11-12): nothing is generated any more.
+            if (spec.world >= 2 && spec.world <= 9) continue;
             var names = LevelNames(spec);
             int regular = spec.levels - 1;
             for (int k = spec.firstLevel; k <= regular; k++)

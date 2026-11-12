@@ -143,7 +143,7 @@ public class SceneryBuilder : MonoBehaviour
     public void BuildForLevel(int levelIdx, int world = 1, bool framed = false)
     {
         ClearProps();
-        if (world >= 2 && world <= 6 && framed) return;   // framed World 2-6 levels: their own depth stack is the scenery
+        if (world >= 2 && world <= 9 && framed) return;   // framed World 2-9 levels: their own depth stack is the scenery
 
         if (world == 2)
         {

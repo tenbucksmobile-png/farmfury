@@ -115,6 +115,12 @@ public class CatapultLauncher : MonoBehaviour
     // World 6 (Robot Mothership, 2026-11-12): the Gravity Cannon - a steel barrel ringed with glowing energy coils (Kling,
     // fitted onto Cannon.png's canvas at PPU 384 by tools/import_mothership_art.py).
     [SerializeField] private Sprite     _cannonSpriteW6;
+    // Paid worlds (2026-11-12, Kling, fitted onto Cannon.png's canvas at PPU 384 by tools/import_paid_worlds_art.py):
+    // World 7 the Prospector Cannon (rusty barrel on a mine-cart), World 8 the Circus Cannon (striped barrel on a circus
+    // wagon), World 9 the Pneumatic Cannon (teal steel barrel on a forklift carriage).
+    [SerializeField] private Sprite     _cannonSpriteW7;
+    [SerializeField] private Sprite     _cannonSpriteW8;
+    [SerializeField] private Sprite     _cannonSpriteW9;
 
     // Cannon-relative offsets (world-space, added to the cannon's REST position — recoil never
     // affects the launch point or the loaded-bird position, only the cannon's own sprite).
@@ -474,6 +480,11 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private Sprite   _wipeBalloon;   // World 4
     [SerializeField] private Sprite   _wipeKite;      // World 4
     [SerializeField] private Sprite   _wipeAsteroid;  // World 6: asteroids tumbling past the warp (no drones, 2026-11-12)
+    [SerializeField] private Sprite   _wipeTumbleweed; // World 7: tumbleweeds bowling through the sandstorm
+    [SerializeField] private Sprite   _wipePopcorn;    // World 8: popcorn
+    [SerializeField] private Sprite   _wipePumpkin;    // World 8: a pumpkin rolling past
+    [SerializeField] private Sprite   _wipeKernel;     // World 9: corn kernels
+    [SerializeField] private Sprite   _wipeCrate;      // World 9: a produce crate tumbling past
     static Sprite _softDot;
     static readonly bool[] WipeFishFacesRight = { false, false, false, false, true, false };
     static Sprite _windStreak;
@@ -598,6 +609,77 @@ public class CatapultLauncher : MonoBehaviour
                     spin = 90f, tint = Color.white, alpha = 1f, order = 37 });
             return L;
         }
+        if (world == 7 && _wipeDust != null && _wipeDust.Length > 0)
+        {
+            // Sandstorm: a rust-orange veil, a wall of red dust rolling across, grit streaks, tumbleweeds bowling
+            // through low - right to left, against the pan.
+            _windStreak ??= MakeWindStreak();
+            _softDot ??= MakeSoftDot();
+            L.Add(new PanWipe.Layer { veil = true, tint = new Color(0.86f, 0.5f, 0.28f), alpha = 0.55f, order = 35 });
+            L.Add(new PanWipe.Layer { sprites = _wipeDust, count = 28, size = new Vector2(0.32f, 0.62f),
+                start = new Vector2(0.6f, -0.25f), spread = new Vector2(2.0f, 1.35f), travel = new Vector2(-2.3f, 0.05f),
+                tint = new Color(0.9f, 0.58f, 0.36f), alpha = 0.88f, order = 36 });
+            L.Add(new PanWipe.Layer { sprites = new[] { _windStreak }, count = 60, size = new Vector2(0.005f, 0.01f),
+                start = new Vector2(0.8f, 0f), spread = new Vector2(2.4f, 1f), travel = new Vector2(-3.4f, -0.05f),
+                tint = new Color(1f, 0.85f, 0.65f), alpha = 0.7f, order = 37 });
+            L.Add(new PanWipe.Layer { sprites = new[] { _softDot }, count = 120, size = new Vector2(0.004f, 0.012f),
+                start = new Vector2(0.7f, 0f), spread = new Vector2(2.4f, 1.3f), travel = new Vector2(-3.0f, 0.05f),
+                wobble = 0.01f, tint = new Color(0.95f, 0.7f, 0.45f), alpha = 0.9f, order = 37 });
+            if (_wipeTumbleweed != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeTumbleweed }, count = 4, size = new Vector2(0.09f, 0.16f),
+                    start = new Vector2(1.1f, -0.2f), spread = new Vector2(0.9f, 0.35f), travel = new Vector2(-2.2f, 0.02f),
+                    spin = 420f, wobble = 0.03f, tint = Color.white, alpha = 1f, order = 37 });
+            return L;
+        }
+        if (world == 8)
+        {
+            // Confetti cannon: a warm veil, a storm of confetti in fair colours and popcorn flung across, a pumpkin
+            // rolling past - right to left.
+            _softDot ??= MakeSoftDot();
+            _confetti ??= MakeConfetti();
+            L.Add(new PanWipe.Layer { veil = true, tint = new Color(0.96f, 0.82f, 0.62f), alpha = 0.5f, order = 35 });
+            if (_wipeDust != null && _wipeDust.Length > 0)
+                L.Add(new PanWipe.Layer { sprites = _wipeDust, count = 18, size = new Vector2(0.3f, 0.55f),
+                    start = new Vector2(0.6f, -0.25f), spread = new Vector2(2.0f, 1.3f), travel = new Vector2(-2.2f, 0.05f),
+                    tint = new Color(1f, 0.95f, 0.88f), alpha = 0.8f, order = 36 });
+            foreach (var col in new[] { new Color(0.95f, 0.2f, 0.25f), new Color(1f, 0.82f, 0.2f), new Color(0.3f, 0.6f, 1f),
+                                        new Color(0.4f, 0.85f, 0.4f), new Color(1f, 1f, 1f) })
+                L.Add(new PanWipe.Layer { sprites = new[] { _confetti }, count = 34, size = new Vector2(0.01f, 0.022f),
+                    start = new Vector2(0.8f, 0f), spread = new Vector2(2.3f, 1.2f), travel = new Vector2(-2.8f, -0.2f),
+                    spin = 720f, wobble = 0.03f, tint = col, alpha = 1f, order = 37 });
+            if (_wipePopcorn != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipePopcorn }, count = 30, size = new Vector2(0.025f, 0.05f),
+                    start = new Vector2(0.9f, -0.05f), spread = new Vector2(2.0f, 1f), travel = new Vector2(-2.6f, 0.1f),
+                    spin = 360f, wobble = 0.03f, tint = Color.white, alpha = 1f, order = 37 });
+            if (_wipePumpkin != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipePumpkin }, count = 1, size = new Vector2(0.14f, 0.16f),
+                    start = new Vector2(1.2f, -0.25f), spread = new Vector2(0.6f, 0.1f), travel = new Vector2(-2.0f, 0f),
+                    spin = 300f, tint = Color.white, alpha = 1f, order = 37 });
+            return L;
+        }
+        if (world == 9)
+        {
+            // Steam blast: a pale teal veil, a wall of steam rolling across, corn kernels sprayed out of a hopper, a
+            // produce crate tumbling past - right to left.
+            _windStreak ??= MakeWindStreak();
+            L.Add(new PanWipe.Layer { veil = true, tint = new Color(0.78f, 0.9f, 0.88f), alpha = 0.55f, order = 35 });
+            if (_wipeDust != null && _wipeDust.Length > 0)
+                L.Add(new PanWipe.Layer { sprites = _wipeDust, count = 28, size = new Vector2(0.32f, 0.62f),
+                    start = new Vector2(0.6f, -0.25f), spread = new Vector2(2.0f, 1.35f), travel = new Vector2(-2.2f, 0.15f),
+                    tint = new Color(0.94f, 0.98f, 0.98f), alpha = 0.88f, order = 36 });
+            L.Add(new PanWipe.Layer { sprites = new[] { _windStreak }, count = 40, size = new Vector2(0.004f, 0.009f),
+                start = new Vector2(0.8f, 0f), spread = new Vector2(2.4f, 1f), travel = new Vector2(-3.2f, 0f),
+                tint = new Color(0.9f, 1f, 1f), alpha = 0.6f, order = 37 });
+            if (_wipeKernel != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeKernel }, count = 70, size = new Vector2(0.015f, 0.03f),
+                    start = new Vector2(0.85f, -0.05f), spread = new Vector2(2.1f, 1.1f), travel = new Vector2(-2.7f, 0.15f),
+                    spin = 540f, wobble = 0.02f, tint = Color.white, alpha = 1f, order = 37 });
+            if (_wipeCrate != null)
+                L.Add(new PanWipe.Layer { sprites = new[] { _wipeCrate }, count = 1, size = new Vector2(0.13f, 0.15f),
+                    start = new Vector2(1.2f, 0.12f), spread = new Vector2(0.6f, 0.2f), travel = new Vector2(-2.0f, 0.03f),
+                    spin = 320f, tint = Color.white, alpha = 1f, order = 37 });
+            return L;
+        }
         if (world == 5 && _wipeBubble != null)
         {
             // Bubble surge: a teal veil, bubbles of every size boiling up from below and drifting left, a school of
@@ -616,6 +698,16 @@ public class CatapultLauncher : MonoBehaviour
             return L;
         }
         return null;
+    }
+
+    static Sprite _confetti;
+    // A small white rectangle (confetti), tinted per layer.
+    static Sprite MakeConfetti()
+    {
+        var tex = new Texture2D(8, 4, TextureFormat.ARGB32, false) { wrapMode = TextureWrapMode.Clamp };
+        for (int y = 0; y < 4; y++) for (int x = 0; x < 8; x++) tex.SetPixel(x, y, Color.white);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, 8, 4), new Vector2(0.5f, 0.5f), 4);
     }
 
     // A soft round speck (snowflakes).
@@ -799,6 +891,9 @@ public class CatapultLauncher : MonoBehaviour
                              : (data != null && data.world == 4 && _cannonSpriteW4 != null) ? _cannonSpriteW4
                              : (data != null && data.world == 5 && _cannonSpriteW5 != null) ? _cannonSpriteW5
                              : (data != null && data.world == 6 && _cannonSpriteW6 != null) ? _cannonSpriteW6
+                             : (data != null && data.world == 7 && _cannonSpriteW7 != null) ? _cannonSpriteW7
+                             : (data != null && data.world == 8 && _cannonSpriteW8 != null) ? _cannonSpriteW8
+                             : (data != null && data.world == 9 && _cannonSpriteW9 != null) ? _cannonSpriteW9
                              : _cannonSprite;
         // Equipped cannon skin (cosmetic, 2026-11-08): same pose and canvas as Cannon.png, so it swaps in place.
         var skin = FarmFury.Core.CosmeticEffects.CannonSkin();
@@ -962,7 +1057,14 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private Sprite _mountBaleSpriteW4; // Sky/CloudBale.png — cloud bales tied with gold rope (World 4, 2026-11-11)
     [SerializeField] private Sprite _mountBaleSpriteW5; // Sunken/SpongeBale.png — sponge bales (World 5, 2026-11-12)
     [SerializeField] private Sprite _mountBaleSpriteW6; // Mothership/BatteryPod.png — battery pods (World 6, 2026-11-12)
-    Sprite MountSprite => _mountWorld == 6 && _mountBaleSpriteW6 != null ? _mountBaleSpriteW6
+    // Paid worlds (2026-11-12): dusty hay bales (World 7), prize cushions (World 8), produce crates (World 9).
+    [SerializeField] private Sprite _mountBaleSpriteW7;
+    [SerializeField] private Sprite _mountBaleSpriteW8;
+    [SerializeField] private Sprite _mountBaleSpriteW9;
+    Sprite MountSprite => _mountWorld == 9 && _mountBaleSpriteW9 != null ? _mountBaleSpriteW9
+                        : _mountWorld == 8 && _mountBaleSpriteW8 != null ? _mountBaleSpriteW8
+                        : _mountWorld == 7 && _mountBaleSpriteW7 != null ? _mountBaleSpriteW7
+                        : _mountWorld == 6 && _mountBaleSpriteW6 != null ? _mountBaleSpriteW6
                         : _mountWorld == 5 && _mountBaleSpriteW5 != null ? _mountBaleSpriteW5
                         : _mountWorld == 4 && _mountBaleSpriteW4 != null ? _mountBaleSpriteW4
                         : _mountWorld == 2 && _mountBaleSpriteW2 != null ? _mountBaleSpriteW2
@@ -977,7 +1079,7 @@ public class CatapultLauncher : MonoBehaviour
     // Rows of bales (bottom row = rows + 1 bales). World 1 (2026-11-12, user: "place the cannon on a higher pyramid of
     // haybales to lift for the new enhanced structures"): 5-4-3-2, two rows (1.6 u) higher than the other worlds' 3-2.
     // Worlds 2 and 3 got the same pyramid the same day ("apply the same now to W2 ... then apply W3").
-    int MountRows => _mountWorld != 4 && _mountWorld >= 1 && _mountWorld <= 6 ? 4 : 2;   // Worlds 1-3, 5, 6   // World 5 too (2026-11-12)
+    int MountRows => _mountWorld != 4 && _mountWorld >= 1 && _mountWorld <= 9 ? 4 : 2;   // the paid worlds too (2026-11-12)   // Worlds 1-3, 5, 6   // World 5 too (2026-11-12)
     int _mountBuiltRows;
     const float CannonWheelOffsetX = -0.15f;   // Cannon.png's wheels sit left of the sprite centre
     const int   MountSortingOrder  = 3;    // behind the cannon (4)
@@ -1052,6 +1154,11 @@ public class CatapultLauncher : MonoBehaviour
     [SerializeField] private Sprite _waterWheelBackSprite;
     [SerializeField] private Sprite _statueBackSprite;
     [SerializeField] private Sprite _beaconBackSprite;
+    // Paid worlds (2026-11-12): the water tower (World 7, Stampede WaterTower), the ferris wheel (World 8, Stampede
+    // FerrisWheel), the grain silo (World 9, Stampede GrainSilo).
+    [SerializeField] private Sprite _waterTowerBackSprite;
+    [SerializeField] private Sprite _ferrisWheelBackSprite;
+    [SerializeField] private Sprite _grainSiloBackSprite;
     [SerializeField] private Sprite _tabletBackSprite;   // World 4: the rune tablet in the clouds (Sky/SkyTablet.png)   // World 6: the warning beacon (Mothership/WarningBeacon.png)   // World 5: the sunken statue (Sunken/SunkenStatue.png)
     struct BackProp { public float height, offsetX, sink; }
     static readonly BackProp Silo       = new BackProp { height = 6.6f, offsetX = -2.9f, sink = 0.15f };   // ~0.41 sh
@@ -1059,6 +1166,9 @@ public class CatapultLauncher : MonoBehaviour
     static readonly BackProp WaterWheel = new BackProp { height = 6.0f, offsetX = -3.4f, sink = 0.2f };
     static readonly BackProp Statue     = new BackProp { height = 5.6f, offsetX = -3.1f, sink = 0.25f };
     static readonly BackProp Beacon     = new BackProp { height = 6.4f, offsetX = -2.9f, sink = 0.15f };
+    static readonly BackProp WaterTower  = new BackProp { height = 6.4f, offsetX = -3.0f, sink = 0.15f };
+    static readonly BackProp FerrisWheel = new BackProp { height = 6.8f, offsetX = -3.2f, sink = 0.2f };
+    static readonly BackProp GrainSilo   = new BackProp { height = 6.8f, offsetX = -2.9f, sink = 0.15f };
     static readonly BackProp Tablet     = new BackProp { height = 5.4f, offsetX = -3.0f, sink = -0.3f };   // floats a little
     const int   SiloSortingOrder = 1;       // behind the bales (3) and the cannon (4); decorative band
     GameObject _silo;
@@ -1067,8 +1177,11 @@ public class CatapultLauncher : MonoBehaviour
     {
         Sprite art = _mountWorld switch { 1 => _siloSprite, 2 => _iceCrystalsBackSprite, 3 => _waterWheelBackSprite,
                                           4 => _tabletBackSprite,
-                                          5 => _statueBackSprite, 6 => _beaconBackSprite, _ => null };
-        BackProp bp = _mountWorld switch { 2 => IceCluster, 3 => WaterWheel, 4 => Tablet, 5 => Statue, 6 => Beacon, _ => Silo };
+                                          5 => _statueBackSprite, 6 => _beaconBackSprite,
+                                          7 => _waterTowerBackSprite, 8 => _ferrisWheelBackSprite, 9 => _grainSiloBackSprite,
+                                          _ => null };
+        BackProp bp = _mountWorld switch { 2 => IceCluster, 3 => WaterWheel, 4 => Tablet, 5 => Statue, 6 => Beacon,
+                                           7 => WaterTower, 8 => FerrisWheel, 9 => GrainSilo, _ => Silo };
         if (art == null) { if (_silo != null) _silo.SetActive(false); return; }
         if (_silo == null)
         {
@@ -1103,7 +1216,7 @@ public class CatapultLauncher : MonoBehaviour
     // from the taller bale pyramid (MountRows) - it stands on the ground.
     static readonly Vector3 FarmMountShift = new Vector3(-1.2f, 0f, 0f);
     Vector3 MountShift => _mountWorld == 4 ? SkyMountShift
-                        : _mountWorld >= 1 && _mountWorld <= 6 ? FarmMountShift : Vector3.zero;
+                        : _mountWorld >= 1 && _mountWorld <= 9 ? FarmMountShift : Vector3.zero;
     bool _floating;
     Vector3 _floatBase, _mountBase;
 

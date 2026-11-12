@@ -153,6 +153,9 @@ public static partial class LevelDataGenerator
         MakeWorld4Framed(folder);   // World 4 Sky Islands (tools/design_world4.py, 2026-11-11)
         MakeWorld5Framed(folder);   // World 5 Sunken City (tools/design_world5.py, 2026-11-12)
         MakeWorld6Framed(folder);   // World 6 Robot Mothership (tools/design_world6.py, 2026-11-12)
+        MakeWorld7Framed(folder);   // World 7 Dustbowl Canyon (paid, tools/design_world7.py, 2026-11-12)
+        MakeWorld8Framed(folder);   // World 8 Harvest Fairground (paid, tools/design_world8.py, 2026-11-12)
+        MakeWorld9Framed(folder);   // World 9 Crop Factory (paid, tools/design_world9.py, 2026-11-12)
 
         // Worlds 3-9 (2026-11-02): built from the World 1 towers above — see WorldLevelGenerator (World 2 is designed).
         WorldLevelGenerator.GenerateAll();

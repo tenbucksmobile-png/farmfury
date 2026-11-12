@@ -150,11 +150,17 @@ public enum LevelWeather  { Golden, MorningMist, Overcast, Rain, Dusk, AuroraNig
                             SummerMorning, RiverMist, SpringShower, LanternDusk, Thunderstorm,   // World 3 (2026-11-10)
                             ClearSkies, Windswept, SunsetClouds, StormFront, StarlitSky,   // World 4 (2026-11-11)
                             SunlitShallows, KelpForest, MurkyDepths, GlowingDeep, Undertow,   // World 5 (2026-11-12)
-                            StarField, RedAlert, NebulaGlow, SolarFlare, PowerDown }   // World 6 (2026-11-12)
+                            StarField, RedAlert, NebulaGlow, SolarFlare, PowerDown,   // World 6 (2026-11-12)
+                            HighNoon, Sandstorm, DesertDusk, CanyonNight, HeatHaze,   // World 7 Dustbowl Canyon (2026-11-12)
+                            FairDay, CarnivalNight, HarvestMoon, FairDrizzle, GoldenHour,   // World 8 Harvest Fairground
+                            ShiftStart, SteamWorks, NightShift, Overdrive, Overtime }   // World 9 Crop Factory
 public enum GadgetType    { Sunflower, HayHoist, IceCrystal, IceBoulder, WaterPump, Millstone,   // World 3: pump, rolling millstone
                             StormCloud, ThunderWheel,    // World 4 (2026-11-11): lightning cloud, rolling thunder wheel
                             Clam, ShipsWheel,            // World 5 (2026-11-12): pearl-spitting clam, rolling ship's wheel
-                            LaserEmitter, GravityRing }  // World 6 (2026-11-12): plasma-firing emitter, rolling gravity ring
+                            LaserEmitter, GravityRing,   // World 6 (2026-11-12): plasma-firing emitter, rolling gravity ring
+                            Cactus, Tumbleweed,          // World 7 (2026-11-12): spine-shooting saguaro, rolling tumbleweed
+                            PopcornCart, Pumpkin,        // World 8: popcorn-blasting cart, rolling pumpkin
+                            CornHopper, Cog }            // World 9: kernel-spraying hopper, rolling cog
 // Commander added 2026-07-12 for L18's boss level — Commander.png/Commander_Hit.png/
 // Commander_Explode.png art dropped in by the user, see SceneSetup.EnsureCommanderRobotPrefab().
 public enum RobotType     { Basic, Harvester, SemiHarvester, Commander }

@@ -60,7 +60,12 @@ level rewards the player who spots the clever shot.
 
 ## 3. Characters (Built — all eight scripted with art)
 
-Each animal has one ability, triggered by a tap in flight. Animals unlock with the world that introduces them.
+Each animal has one ability, triggered by a tap in flight. Two animals join per world, the whole roster by Sky
+Islands, each released after a number of that world's levels are cleared (like Stampede / Arcade's "clear N levels"
+ladder): Cluck from the start, Bessie after 1 Meadow Ruins level; Percy after 1 and Woolly after 8 Frozen Tundra
+levels; Ducky 1 / Horace 8 in Watermill Village; Gerald 1 / Billy 8 in Sky Islands. Until then their cards are
+greyed out in Character Select ("LOCKED - clear N levels") and can't be picked; the clear that releases one shows
+the New Character page.
 
 | Animal | Ability | Real-world logic | Strong against | Introduced |
 |---|---|---|---|---|
@@ -69,9 +74,9 @@ Each animal has one ability, triggered by a tap in flight. Animals unlock with t
 | **Percy** (pig) | **Bounce Roll** — curls up, bounces 3×, gaining speed | Pigs are round | Low, spread-out defences | World 2 |
 | **Woolly** (sheep) | **Wool Balls** — throws three bouncy wool balls that each hit up to three times | Shearing — fleece as ammo | Wide targets, ice | World 2 |
 | **Ducky** (duck) | **Water Swirls** — three spinning swirls of pond water that grow as they fly and burst over the structure, knocking it over | Ducks on the pond | Wide, top-heavy towers | World 3 |
-| **Horace** (horse) | **Horseshoe Throw** — hurls two heavy iron horseshoes that ricochet through the structure | Horses are shod | Dense timber towers | World 4 |
-| **Gerald** (turkey) | **Feather Bombs** — drops three bombs that burst in a small radius | Ruffled feathers | Clustered robots, wood | World 5 |
-| **Billy** (goat) | **Mud Throw** — one mud ball that splats over a wide radius | Goats love mud | Spread-out structures | World 6 |
+| **Horace** (horse) | **Horseshoe Throw** — hurls two heavy iron horseshoes that ricochet through the structure | Horses are shod | Dense timber towers | World 3 |
+| **Gerald** (turkey) | **Feather Bombs** — drops three bombs that burst in a small radius | Ruffled feathers | Clustered robots, wood | World 4 |
+| **Billy** (goat) | **Mud Throw** — one mud ball that splats over a wide radius | Goats love mud | Spread-out structures | World 4 |
 
 Personalities (from v2): Cluck anxious then delighted; Bessie slow and dignified, devastating on impact; Percy
 gleeful chaos; Woolly bewildered by its clones; Ducky smug; Horace noble until the kick; Gerald self-important;
@@ -122,16 +127,24 @@ Six free story worlds in order, then three paid worlds (bought separately, playa
 |---|---|---|---|---|
 | 1 Meadow Ruins | 18 (hand-built) | Rolling hills, ruined walls, golden light | Farm Cannon | Cluck, Bessie |
 | 2 Frozen Tundra | 22 | Aurora skies, ice fortresses, ice/snow blocks | Ice Cannon (look) | Percy, Woolly |
-| 3 Watermill Village | 22 | River valley, watermill village, bulrushes | Mill Cannon (look) | Ducky |
-| 4 Sky Islands | 24 | Floating islands, clouds, balloons | Farm Cannon | Horace |
-| 5 Sunken City | 22 | Flooded ruins, coral, fish | Farm Cannon | Gerald |
-| 6 Robot Mothership | 16 | Deep space, the Mothership | Farm Cannon | Billy |
-| 7 Dustbowl Canyon *(paid)* | 12 | Desert canyon, ranch, cacti | Farm Cannon | — |
-| 8 Harvest Fairground *(paid)* | 12 | Night fair, big top, ferris wheel | Farm Cannon | — |
-| 9 Crop Factory *(paid)* | 12 | Industrial food factory | Farm Cannon | — |
+| 3 Watermill Village | 22 | River valley, watermill village, bulrushes | Mill Cannon (look) | Ducky, Horace |
+| 4 Sky Islands | 24 | Floating islands, clouds, balloons | Farm Cannon | Gerald, Billy |
+| 5 Sunken City | 22 | Flooded ruins, coral, fish | Farm Cannon | — |
+| 6 Robot Mothership | 16 | Deep space, the Mothership | Farm Cannon | — |
+| 7 Dustbowl Canyon *(paid)* | 12 | Red-rock canyon, frontier towns on mesas, tumbleweeds | Prospector Cannon (look) | — |
+| 8 Harvest Fairground *(paid)* | 12 | The robots' harvest fair on circus podiums, fireworks | Circus Cannon (look) | — |
+| 9 Crop Factory *(paid)* | 12 | Production lines on machine housings, steam | Pneumatic Cannon (look) | — |
 
 160 levels in all. Each world has its own painted backdrop and its own scenery props (cottages, ferris wheels,
 coral, silos…), and the same building blocks everywhere (World 2 shows them as ice and snow).
+
+**The paid worlds (built Nov 2026, same framed template as Worlds 1-6):** two rooms per level, robot-built cities
+on each world's mounts with world-specific set pieces — World 7 mine headframes, water towers, two-storey saloons and
+sandstone arches on canyon mesas, a saguaro that fires spines and a rolling tumbleweed; World 8 carousels, high
+strikers with a dynamite bell, prize-cushion pyramids and tents on booths on circus podiums, a popcorn cart and a
+rolling pumpkin; World 9 conveyors, hydraulic presses, stacked steel crates and crane arms on machine housings, a corn
+hopper and a rolling cog. Bosses: the Drill Rig, the Ringmaster, the Harvester Prime, each dropped onto its keep by
+the mothership. Room-change wipes: sandstorm, confetti cannon, steam blast.
 
 **Planned — the per-world launcher mechanics from v2** (not built; every world currently uses the Farm Cannon's
 drag-to-aim): Ice Cannon ricochet + freeze zones (W2), Water Wheel timing + fire spread on wood (W3), Airdrop
@@ -209,7 +222,7 @@ solvability.
 ## 7. Progression (Built)
 
 - Levels unlock in order; the boss opens once every other level in its world is complete.
-- Clearing a world's boss unlocks the next story world and its animals.
+- Clearing a world's boss unlocks the next story world; its two animals are released as its levels are cleared.
 - After a boss: Level Complete → **World Unlocked** page (the new world's badge revealed from a silhouette over
   turning golden rays, confetti, "Next stop: …") → New Worlds promo (first clear) → World Select on the new world.
   A **New Character** page announces the animals the new world brings.

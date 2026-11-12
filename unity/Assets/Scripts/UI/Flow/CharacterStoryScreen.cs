@@ -126,7 +126,9 @@ namespace FarmFury.UI
                 var animal = AnimalRoster.All[i];
                 var entry = StoryContent.Characters[i];
                 var world = AnimalRoster.IntroWorld(animal);
-                string joins = world == WorldType.MeadowRuins ? "\nReady from the start." : $"\nJoins the team in {LeaderboardsScreen.WorldName(world)}.";
+                int after = AnimalRoster.UnlockAfter(animal);   // levels of its world (2026-11-12)
+                string joins = after <= 0 ? "\nReady from the start."
+                    : $"\nJoins the team after {after} level{(after == 1 ? "" : "s")} in {LeaderboardsScreen.WorldName(world)}.";
                 InfoRow(_lists[2], Art.AnimalCard(animal), 300f, entry.Title, entry.Body + joins);
             }
 

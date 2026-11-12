@@ -250,8 +250,34 @@ namespace FarmFury.Core
 
         // ------------------------------------------------------------ animals
 
-        /// <summary>An animal is available once the world that introduces it is unlocked.</summary>
-        public bool IsAnimalUnlocked(AnimalType animal) => IsWorldUnlocked(AnimalRoster.IntroWorld(animal));
+        /// <summary>
+        /// An animal is available once the world that introduces it is unlocked AND enough of that world's levels are
+        /// completed (AnimalRoster.UnlockAfter, 2026-11-12: two per world, each released after a number of levels).
+        /// Derived, nothing stored. Debug "Unlock All Levels" opens everyone.
+        /// </summary>
+        public bool IsAnimalUnlocked(AnimalType animal)
+        {
+            if (DebugAllLevelsOpen) { return true; }
+            var world = AnimalRoster.IntroWorld(animal);
+            if (!IsWorldUnlocked(world)) { return false; }
+            int need = AnimalRoster.UnlockAfter(animal);
+            return need <= 0 || LevelsCompletedIn(world) >= need;
+        }
+
+        /// <summary>How many of a world's levels have been completed at least once.</summary>
+        public int LevelsCompletedIn(WorldType world) =>
+            DataManager.Instance == null ? 0 : DataManager.Instance.GetWorldLevels(world).Count(l => IsLevelCompleted(l.levelId));
+
+        /// <summary>The animals the last RecordLevelCompleted call released (cleared when read).</summary>
+        private readonly List<AnimalType> _newlyUnlockedAnimals = new();
+
+        /// <summary>The animals the latest level clear released - what the New Character page shows. Empties the list.</summary>
+        public List<AnimalType> TakeNewlyUnlockedAnimals()
+        {
+            var list = new List<AnimalType>(_newlyUnlockedAnimals);
+            _newlyUnlockedAnimals.Clear();
+            return list;
+        }
 
         public List<AnimalType> UnlockedAnimals() => AnimalRoster.All.Where(IsAnimalUnlocked).ToList();
 
@@ -307,6 +333,8 @@ namespace FarmFury.Core
         public WorldType? RecordLevelCompleted(LevelData level)
         {
             if (level == null) { return null; }
+            var lockedBefore = AnimalRoster.All.Where(a => !IsAnimalUnlocked(a)).ToList();
+            _newlyUnlockedAnimals.Clear();
             if (!IsLevelCompleted(level.levelId))
             {
                 PlayerPrefs.SetInt(LevelCompletedKeyPrefix + level.levelId, 1);
@@ -322,6 +350,7 @@ namespace FarmFury.Core
                 SetWorldBossCleared(level.WorldType, true);
                 if (wasLocked && IsWorldUnlocked(next)) { opened = next; }
             }
+            _newlyUnlockedAnimals.AddRange(lockedBefore.Where(IsAnimalUnlocked));
             return opened;
         }
 

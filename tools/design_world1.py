@@ -155,6 +155,33 @@ GADGET_NAMES = {1: ("Sunflower", "IceBoulder"), 2: ("IceCrystal", "IceBoulder"),
                 4: ("StormCloud", "ThunderWheel"), 5: ("Clam", "ShipsWheel"),
                 6: ("LaserEmitter", "GravityRing")}
 
+# ── Paid worlds (2026-11-12, tools/import_paid_worlds_art.py) ────────────────────────────────────────────────────
+# World 7 Dustbowl Canyon: ranch timber, red sandstone (block / pillar / slab), dusty hay; red-rock mesas; the
+# spine-shooting saguaro and a rolling tumbleweed. World 8 Harvest Fairground: candy-striped poles and planks, striped
+# crates / carousel columns / stage slabs, prize cushions; circus podiums; the popcorn cart and a rolling pumpkin.
+# World 9 Crop Factory: steel trusses and girders, steel crates / pipe columns / hazard plates, produce crates; machine
+# housings; the corn hopper and a rolling cog. Crates and barrels keep their World 1 art; robots are Stampede's 256 px
+# art like World 1's, the bosses (Drill Rig, Ringmaster, Harvester Prime) padded to the Commander's canvas.
+for _w, _folder, _names in ((7, "Canyon", ("RanchPost", "RanchPlank", "SandBlock", "SandPillar", "SandSlab", "DustyBale")),
+                            (8, "Fair", ("FairPost", "FairPlank", "FairBlock", "FairPillar", "FairSlab", "PrizeBale")),
+                            (9, "Factory", ("FactoryPost", "FactoryPlank", "FactoryBlock", "FactoryPillar", "FactorySlab", "ProduceCrate"))):
+    _spr = dict(zip(("post", "plank", "sbox", "pillar", "slab", "hay"), (f"Environment/{_folder}/{n}" for n in _names)))
+    _spr.update(crate="Environment/World1Props/Plank_Short", barrel="Environment/World1Props/Barrel_Dynamite")
+    globals()[f"SPRITE_W{_w}"] = _spr
+    ART_W[_w] = {k: _art_bounds(os.path.join(SPR, v + ".png")) for k, v in _spr.items()}
+    ROBOT_W[_w] = ROBOT
+    MOUNTS_W[_w] = _json.load(open(os.path.join(HERE, f"mounts_w{_w}.json")))
+    POST_W[_w], PILLAR_W[_w] = 0.30, 0.36
+    HOIST_W[_w] = HOIST
+KIND_W7 = {"Mesa": "MesaTall", "Hill": "MesaLow"}
+KIND_W8 = {"Mesa": "PodiumTall", "Hill": "PodiumLow"}
+KIND_W9 = {"Mesa": "HousingTall", "Hill": "HousingLow"}
+for _w, _k in ((7, "MesaLow"), (8, "PodiumLow"), (9, "HousingLow")):
+    ISLAND_W[_w] = [(MOUNTS_W[_w][_k]["uv"], MOUNTS_W[_w][_k]["aspect"])] * 2
+GADGET_NAMES.update({7: ("Cactus", "Tumbleweed"), 8: ("PopcornCart", "Pumpkin"), 9: ("CornHopper", "Cog")})
+INSET_W = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20), 4: (0.15, 0.18), 5: (0.15, 0.18), 6: (0.15, 0.18),
+           7: (0.15, 0.18), 8: (0.15, 0.18), 9: (0.15, 0.18)}   # half the post / pillar width
+
 
 def _rect_poly(cx, cy, w, h, rot):
     c, s_ = math.cos(math.radians(rot)), math.sin(math.radians(rot))
@@ -265,7 +292,7 @@ class Level:
 
     def hut(self, xa, xb, b, h, stone=False, roof_stone=None):
         """Two posts at the ends and a roof across them; returns the roof's top."""
-        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20), 4: (0.15, 0.18), 5: (0.15, 0.18), 6: (0.15, 0.18)}[self.world][1 if stone else 0]   # half the post width
+        inset = INSET_W[self.world][1 if stone else 0]   # half the post width
         top = self.post(xa + inset, b, h, stone)
         self.post(xb - inset, b, h, stone)
         return self.plank(xa, xb, top, stone if roof_stone is None else roof_stone)
@@ -285,7 +312,7 @@ class Level:
         return surface, cx - width / 2 + m["flat"][0] * width, cx - width / 2 + m["flat"][1] * width
 
     def _m(self, kind):
-        names = {2: KIND_W2, 3: KIND_W3, 4: KIND_W4, 5: KIND_W5, 6: KIND_W6}.get(self.world, {})
+        names = {2: KIND_W2, 3: KIND_W3, 4: KIND_W4, 5: KIND_W5, 6: KIND_W6, 7: KIND_W7, 8: KIND_W8, 9: KIND_W9}.get(self.world, {})
         return MOUNTS_W[self.world][names.get(kind, kind)]
 
     def mount(self, kind, x, width):
@@ -470,7 +497,7 @@ def tower(L, xc, base, floors, width=1.9, h=1.15, taper=0.12, stone_floors=0, ro
             if rng.random() < 0.5: ov_l = rng.uniform(0.3, 0.85)
             else: ov_r = rng.uniform(0.3, 0.85)
         if rk: L.robot(c, b, rk)
-        inset = {1: (0.14, 0.175), 2: (0.17, 0.21), 3: (0.16, 0.20), 4: (0.15, 0.18), 5: (0.15, 0.18), 6: (0.15, 0.18)}[L.world][1 if stone else 0]
+        inset = INSET_W[L.world][1 if stone else 0]
         if style == "tee":
             px = c + rng.uniform(-0.18, 0.18) * w
             if sa is not None: px = min(max(px, sa + pw), sb - pw)
@@ -810,7 +837,7 @@ wobble_stack(L, 6.4, G, n=4, s=0.8, lean_by=0.15, stone=True, top="pawn")
 LAUNCH = (-2.62, -2.69)          # barrel tip with the haybale mount (CatapultLauncher.ApplyMount)
 # Raised launch points (2026-11-12): World 4's floating mount (CatapultLauncher.SkyMountShift) and World 1's taller bale
 # pyramid (two more rows, 1.6 u, + FarmMountShift's 1.2 u to the left); Worlds 2 and 3 got the same pyramid.
-LAUNCH_SHIFT = {1: (-1.2, 1.6), 2: (-1.2, 1.6), 3: (-1.2, 1.6), 4: (-1.2, 1.6), 5: (-1.2, 1.6), 6: (-1.2, 1.6)}
+LAUNCH_SHIFT = {w: (-1.2, 1.6) for w in range(1, 10)}   # Worlds 1-9: the raised cannon (pyramid / floating)
 ROOM_STRIDE = 32.0               # LevelData.RoomStride: room r is laid out (and the cannon moves) r * this to the right
 GRAV, VMIN, VMAX = 8.0, 5.6, 13.6
 
@@ -858,7 +885,8 @@ def check(L, reach_world=None):
     # contraptions: reachable; a hoist's bucket hangs clear of everything and has a target below it
     for g in L.gadgets:
         gdx = g.get("room", 0) * ROOM_STRIDE
-        if g["type"] in ("Sunflower", "IceCrystal", "IceBoulder", "WaterPump", "Millstone", "StormCloud", "ThunderWheel", "Clam", "ShipsWheel", "LaserEmitter", "GravityRing"):
+        if g["type"] in ("Sunflower", "IceCrystal", "IceBoulder", "WaterPump", "Millstone", "StormCloud", "ThunderWheel", "Clam", "ShipsWheel", "LaserEmitter", "GravityRing",
+                         "Cactus", "Tumbleweed", "PopcornCart", "Pumpkin", "CornHopper", "Cog"):
             if not reachable(g["head"][0] - gdx, g["head"][1], world=rw): issues.append(f"{g['type']} at x={g['x']:.2f} out of reach")
             continue
         bl, br, bb, bt = g["bucket"]

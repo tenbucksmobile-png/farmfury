@@ -65,6 +65,7 @@ public static partial class SceneSetup
         EnsureStormBaronPrefab();   // StormBaronRobot.prefab (World 4 boss, 2026-11-11) — same reason
         EnsureDeepDredgerPrefab();  // DeepDredgerRobot.prefab (World 5 boss, 2026-11-12) — same reason
         EnsureFactoryMachinePrefab(); // FactoryMachineRobot.prefab (World 6 boss, 2026-11-12) — same reason
+        EnsurePaidWorldBossPrefabs(); // DrillRig / Ringmaster / HarvesterPrime (Worlds 7-9 bosses, 2026-11-12) — same reason
         WireLevelLoader();      // 8 animal prefab refs + block/robot + 2 parent transforms
         WireAbilityProjectiles(); // Gerald/Woolly/Billy thrown-ability art (SceneSetup.Cornfield.cs)
         WireBessieAudio();      // BessieAnimal.prefab: _earthquakeClip <- Bessie_Earthquake.mp3
@@ -1442,6 +1443,31 @@ public static partial class SceneSetup
         if (beacon != null) so.FindProperty("_beaconBackSprite").objectReferenceValue = beacon;
         var rockWipe = so.FindProperty("_wipeAsteroid");
         if (rockWipe != null) rockWipe.objectReferenceValue = LoadSpriteAt("Assets/Sprites/Environment/Mothership/Decor_Asteroid.png", false);
+        // Paid worlds (2026-11-12, tools/import_paid_worlds_art.py): the three Kling cannons (PPU 384), the bale mounts, the
+        // landmarks behind the cannon.
+        foreach (var (field, path) in new[] { ("_cannonSpriteW7", "Assets/Sprites/Environment/Launchers/ProspectorCannon.png"),
+                                              ("_cannonSpriteW8", "Assets/Sprites/Environment/Launchers/CircusCannon.png"),
+                                              ("_cannonSpriteW9", "Assets/Sprites/Environment/Launchers/PneumaticCannon.png") })
+        {
+            EnsureSingleSprite(path, 384);
+            var sp = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sp != null) so.FindProperty(field).objectReferenceValue = sp;
+        }
+        foreach (var (field, path) in new[] { ("_mountBaleSpriteW7", "Assets/Sprites/Environment/Canyon/DustyBale.png"),
+                                              ("_mountBaleSpriteW8", "Assets/Sprites/Environment/Fair/PrizeBale.png"),
+                                              ("_mountBaleSpriteW9", "Assets/Sprites/Environment/Factory/ProduceCrate.png") })
+        {
+            EnsureSingleSprite(path, 500);
+            var sp = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sp != null) so.FindProperty(field).objectReferenceValue = sp;
+        }
+        foreach (var (field, path) in new[] { ("_waterTowerBackSprite", "Assets/Sprites/Environment/Canyon/WaterTower.png"),
+                                              ("_ferrisWheelBackSprite", "Assets/Sprites/Environment/Fair/FerrisWheel.png"),
+                                              ("_grainSiloBackSprite", "Assets/Sprites/Environment/Factory/GrainSilo.png") })
+        {
+            var sp = LoadSpriteAt(path, false);
+            if (sp != null) so.FindProperty(field).objectReferenceValue = sp;
+        }
         var tablet = LoadSpriteAt("Assets/Sprites/Environment/Sky/SkyTablet.png", false);   // World 4 landmark (2026-11-12)
         if (tablet != null) so.FindProperty("_tabletBackSprite").objectReferenceValue = tablet;
         WireRoomWipes(so);
@@ -1674,6 +1700,30 @@ public static partial class SceneSetup
         {
             ("_sprNormalW6", "BatteryPod.png"), ("_sprHorizontalW6", "BatteryPod.png"), ("_sprVerticalW6", "BatteryPod.png"),
         });
+
+        // Paid worlds (2026-11-12, tools/import_paid_worlds_art.py): World 7 ranch timber / red sandstone / dusty hay,
+        // World 8 candy-striped poles / striped crates / prize cushions, World 9 steel beams / steel crates / produce crates.
+        foreach (var (w, paidFolder, post, plank, block, pillar, slab, bale) in new[]
+        {
+            (7, "Assets/Sprites/Environment/Canyon",  "RanchPost",   "RanchPlank",   "SandBlock",    "SandPillar",    "SandSlab",    "DustyBale"),
+            (8, "Assets/Sprites/Environment/Fair",    "FairPost",    "FairPlank",    "FairBlock",    "FairPillar",    "FairSlab",    "PrizeBale"),
+            (9, "Assets/Sprites/Environment/Factory", "FactoryPost", "FactoryPlank", "FactoryBlock", "FactoryPillar", "FactorySlab", "ProduceCrate"),
+        })
+        {
+            WireBlockPrefab("Assets/Prefabs/Blocks/WoodBlock.prefab", paidFolder, new[]
+            {
+                ($"_sprVerticalW{w}", $"{post}.png"), ($"_sprHorizontalW{w}", $"{plank}.png"),
+            });
+            WireBlockPrefab("Assets/Prefabs/Blocks/StoneBlock.prefab", paidFolder, new[]
+            {
+                ($"_sprNormalW{w}", $"{block}.png"), ($"_sprShortW{w}", $"{block}.png"),
+                ($"_sprVerticalW{w}", $"{pillar}.png"), ($"_sprHorizontalW{w}", $"{slab}.png"),
+            });
+            WireBlockPrefab("Assets/Prefabs/Blocks/HaybaleBlock.prefab", paidFolder, new[]
+            {
+                ($"_sprNormalW{w}", $"{bale}.png"), ($"_sprHorizontalW{w}", $"{bale}.png"), ($"_sprVerticalW{w}", $"{bale}.png"),
+            });
+        }
     }
 
     // ── HaybaleBlock: a WoodBlock variant rendered with Haybail.png ─────────────
@@ -2414,6 +2464,20 @@ public static partial class SceneSetup
         }
         One("_wipeBalloon", "Assets/Sprites/Environment/Sky/Decor_Balloon.png");
         One("_wipeKite", "Assets/Sprites/Environment/Sky/Decor_Kite.png");
+        // Paid worlds (2026-11-12).
+        One("_wipeTumbleweed", "Assets/Sprites/Environment/Canyon/Tumbleweed.png");
+        One("_wipePopcorn", "Assets/Sprites/Environment/Fair/Popcorn.png");
+        One("_wipePumpkin", "Assets/Sprites/Environment/Fair/Pumpkin.png");
+        One("_wipeKernel", "Assets/Sprites/Environment/Factory/Kernel.png");
+        One("_wipeCrate", "Assets/Sprites/Environment/Factory/ProduceCrate.png");
+    }
+
+    // Paid-world bosses (2026-11-12, tools/import_paid_worlds_art.py): taunt poses + the mothership drop-in.
+    static void EnsurePaidWorldBossPrefabs()
+    {
+        EnsureBossRobotPrefab("DrillRigRobot", "Assets/Sprites/Enemies/Robot/DrillRig");
+        EnsureBossRobotPrefab("RingmasterRobot", "Assets/Sprites/Enemies/Robot/Ringmaster");
+        EnsureBossRobotPrefab("HarvesterPrimeRobot", "Assets/Sprites/Enemies/Robot/HarvesterPrime");
     }
 
     static void EnsureFactoryMachinePrefab() =>

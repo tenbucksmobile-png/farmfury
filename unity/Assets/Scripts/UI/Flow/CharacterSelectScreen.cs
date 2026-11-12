@@ -13,8 +13,8 @@ namespace FarmFury.UI
     /// slots below") the eight framed animal cards sit in Stampede's carousel (CardCarouselController, as in its
     /// SwapCharacterScreen): drag, or tap a side card, to bring a card to the centre; tap the centred card to pick it.
     /// A picked card's art flies out of the carousel on a short arc and drops into the next open lineup slot with a
-    /// bounce. Locked animals (SaveManager.IsAnimalUnlocked: intro world not open) are dark silhouettes — browsable,
-    /// not pickable. The lineup row has one open slot per shot the level allows (LevelData.LineupSize: the level's
+    /// bounce. Locked animals (SaveManager.IsAnimalUnlocked: not yet released - AnimalRoster.UnlockAfter levels of its
+    /// world, 2026-11-12) are greyed out with Stampede's "LOCKED / clear N levels" label — browsable, not pickable. The lineup row has one open slot per shot the level allows (LevelData.LineupSize: the level's
     /// queue, capped at three), empty on open; tap a filled slot to empty it. Play is enabled once every slot is filled and starts
     /// the level with that lineup (GameManager.StartLevel). Back returns to Level Select.
     /// Not yet seen in Play mode — positions are from the 1920x1080 reference-canvas maths only.
@@ -35,6 +35,7 @@ namespace FarmFury.UI
         private readonly CardCarouselController _carousel;
         private readonly List<RectTransform> _items = new();
         private readonly List<Button> _cardButtons = new();
+        private readonly List<Text> _lockLabels = new();
         private readonly List<Image> _slotImages = new();
         private readonly List<Image> _slotBadges = new();
         private readonly Text _pickHeader;
@@ -55,7 +56,8 @@ namespace FarmFury.UI
         private const float EdgeMargin = 16f;
         private const float FlightSeconds = 0.5f, ArcHeight = 140f, LandBounceSeconds = 0.22f, LandBounce = 0.18f;
         private static readonly Color EmptySlot = new(0f, 0f, 0f, 0.45f);
-        private static readonly Color Silhouette = new(0.08f, 0.07f, 0.12f, 1f);
+        // Locked cards are greyed out like Stampede's disabled character buttons (was a near-black silhouette).
+        private static readonly Color LockedTint = new(0.38f, 0.38f, 0.42f, 1f);
 
         public CharacterSelectScreen(Transform canvas, Action<LevelData, AnimalType[]> onLaunch, Action onBack, MenuArt art)
         {
@@ -91,6 +93,13 @@ namespace FarmFury.UI
                 if (sprite != null) { button.image.sprite = sprite; button.image.preserveAspect = true; }
                 UIKit.Stretch(button.image.rectTransform);
                 AddBadge(button.image.rectTransform, _art.AbilityBadge(animal));
+                var lockLabel = UIKit.Label(button.image.rectTransform, "Locked", "", 34, TextAnchor.MiddleCenter, Color.white);
+                UIKit.Stretch(lockLabel.rectTransform, 12f, 12f, 12f, 12f);
+                var outline = lockLabel.gameObject.AddComponent<Outline>();
+                outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
+                outline.effectDistance = new Vector2(3f, -3f);
+                lockLabel.gameObject.SetActive(false);
+                _lockLabels.Add(lockLabel);
                 _items.Add(item);
                 _cardButtons.Add(button);
             }
@@ -175,7 +184,9 @@ namespace FarmFury.UI
                 var animal = AnimalRoster.All[i];
                 bool unlocked = IsUnlocked(animal);
                 var image = _cardButtons[i].image;
-                image.color = image.sprite != null ? (unlocked ? Color.white : Silhouette) : (unlocked ? UIKit.Card : UIKit.CardLocked);
+                image.color = image.sprite != null ? (unlocked ? Color.white : LockedTint) : (unlocked ? UIKit.Card : UIKit.CardLocked);
+                _lockLabels[i].gameObject.SetActive(!unlocked);
+                if (!unlocked) { _lockLabels[i].text = LockedText(animal); }
                 if (unlocked && lead.HasValue && animal == lead.Value) { start = i; }
             }
 
@@ -199,6 +210,17 @@ namespace FarmFury.UI
         {
             _driver.StopAllCoroutines();
             Root.SetActive(false);
+        }
+
+        // "LOCKED / Clear 8 levels in Frozen Tundra (3/8)" - the progress only once that world is open.
+        private static string LockedText(AnimalType animal)
+        {
+            var world = AnimalRoster.IntroWorld(animal);
+            int need = Mathf.Max(1, AnimalRoster.UnlockAfter(animal));
+            string text = $"LOCKED\nClear {need} level{(need == 1 ? "" : "s")} in\n{LeaderboardsScreen.WorldName(world)}";
+            var save = SaveManager.Instance;
+            if (save != null && save.IsWorldUnlocked(world)) { text += $"\n({Mathf.Min(save.LevelsCompletedIn(world), need)}/{need})"; }
+            return text;
         }
 
         private static bool IsUnlocked(AnimalType animal) =>

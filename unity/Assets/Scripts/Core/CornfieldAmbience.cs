@@ -268,8 +268,44 @@ public class CornfieldAmbience : MonoBehaviour
         crows = false, groundFog = 0.3f,
     };
 
+    // ── Paid worlds (2026-11-12) ────────────────────────────────────────────────────────────────────────────
+    // World 7 Dustbowl Canyon: noon sun, sandstorm (dust grade, driving chaff, dust rolling along the floor), dusk,
+    // starry canyon night, heat haze; crows stand in for vultures. World 8 Harvest Fairground: day, carnival night
+    // (fireworks in PaidWorldDecor), harvest moon, drizzle, golden hour. World 9 Crop Factory is indoors: no clouds or
+    // crows, the 'sun' is the lamps, dust motes, steam rolling along the floor, a warm overdrive grade (no flashing).
+    static readonly Profile HighNoon = new() { sky = new Color(1.0f, 1.0f, 1.0f), land = new Color(1.0f, 1.0f, 1.0f), haze = new Color(1.0f, 0.86f, 0.66f), hazeAlpha = 0.22f, mistAlpha = 0.3f, grade = new Color(1.0f, 0.8f, 0.5f, 0.04f), wind = 0.6f, sun = 1.0f, sunColour = new Color(1.0f, 0.95f, 0.75f), clouds = 2, cloudTint = new Color(1.0f, 1.0f, 1.0f), pollen = 0.4f, speckKind = 2, crows = true, groundFog = 0.06f };
+    static readonly Profile Sandstorm = new() { sky = new Color(1.0f, 0.8f, 0.6f), land = new Color(1.0f, 0.86f, 0.7f), haze = new Color(0.9f, 0.6f, 0.35f), hazeAlpha = 0.5f, mistAlpha = 0.75f, grade = new Color(0.9f, 0.5f, 0.2f, 0.16f), wind = 2.1f, sun = 0.3f, sunColour = new Color(1.0f, 0.8f, 0.55f), clouds = 5, cloudTint = new Color(0.95f, 0.72f, 0.5f), pollen = 1.0f, speckKind = 2, crows = false, groundFog = 0.6f };
+    static readonly Profile DesertDusk = new() { sky = new Color(1.0f, 0.74f, 0.7f), land = new Color(0.95f, 0.76f, 0.74f), haze = new Color(0.9f, 0.5f, 0.5f), hazeAlpha = 0.3f, mistAlpha = 0.5f, grade = new Color(0.6f, 0.2f, 0.4f, 0.12f), wind = 0.5f, sun = 1.0f, sunColour = new Color(1.0f, 0.55f, 0.35f), clouds = 3, cloudTint = new Color(1.0f, 0.66f, 0.6f), pollen = 0.6f, speckKind = 1, crows = true, groundFog = 0.15f };
+    static readonly Profile CanyonNight = new() { sky = new Color(0.45f, 0.48f, 0.7f), land = new Color(0.6f, 0.58f, 0.78f), haze = new Color(0.35f, 0.32f, 0.55f), hazeAlpha = 0.3f, mistAlpha = 0.45f, grade = new Color(0.12f, 0.1f, 0.35f, 0.22f), wind = 0.3f, sun = 0.25f, sunColour = new Color(0.85f, 0.9f, 1.0f), clouds = 1, cloudTint = new Color(0.5f, 0.5f, 0.7f), pollen = 1.0f, speckKind = 1, crows = false, groundFog = 0.15f };
+    static readonly Profile HeatHaze = new() { sky = new Color(1.0f, 0.95f, 0.85f), land = new Color(1.0f, 0.94f, 0.86f), haze = new Color(1.0f, 0.85f, 0.65f), hazeAlpha = 0.4f, mistAlpha = 0.65f, grade = new Color(1.0f, 0.7f, 0.35f, 0.08f), wind = 0.3f, sun = 1.0f, sunColour = new Color(1.0f, 0.92f, 0.7f), clouds = 0, cloudTint = new Color(1.0f, 1.0f, 1.0f), pollen = 0.3f, speckKind = 2, crows = true, groundFog = 0.35f };
+    static readonly Profile FairDay = new() { sky = new Color(1.0f, 1.0f, 1.0f), land = new Color(1.0f, 1.0f, 1.0f), haze = new Color(0.9f, 0.92f, 1.0f), hazeAlpha = 0.2f, mistAlpha = 0.3f, grade = new Color(1.0f, 0.9f, 0.7f, 0.0f), wind = 0.7f, sun = 1.0f, sunColour = new Color(1.0f, 0.95f, 0.8f), clouds = 4, cloudTint = new Color(1.0f, 1.0f, 1.0f), pollen = 0.6f, speckKind = 2, crows = true, groundFog = 0.05f };
+    static readonly Profile CarnivalNight = new() { sky = new Color(1.0f, 1.0f, 1.0f), land = new Color(0.8f, 0.78f, 0.95f), haze = new Color(0.35f, 0.3f, 0.6f), hazeAlpha = 0.22f, mistAlpha = 0.35f, grade = new Color(0.25f, 0.15f, 0.5f, 0.12f), wind = 0.4f, sun = 0.2f, sunColour = new Color(1.0f, 0.85f, 0.6f), clouds = 1, cloudTint = new Color(0.5f, 0.5f, 0.7f), pollen = 1.0f, speckKind = 1, crows = false, groundFog = 0.15f };
+    static readonly Profile HarvestMoon = new() { sky = new Color(1.0f, 0.9f, 0.8f), land = new Color(0.9f, 0.82f, 0.85f), haze = new Color(0.6f, 0.4f, 0.4f), hazeAlpha = 0.25f, mistAlpha = 0.45f, grade = new Color(0.6f, 0.3f, 0.25f, 0.1f), wind = 0.5f, sun = 0.8f, sunColour = new Color(1.0f, 0.75f, 0.45f), clouds = 2, cloudTint = new Color(0.8f, 0.65f, 0.6f), pollen = 0.8f, speckKind = 1, crows = true, groundFog = 0.3f };
+    static readonly Profile FairDrizzle = new() { sky = new Color(0.7f, 0.74f, 0.82f), land = new Color(0.8f, 0.82f, 0.86f), haze = new Color(0.65f, 0.68f, 0.76f), hazeAlpha = 0.35f, mistAlpha = 0.55f, grade = new Color(0.2f, 0.25f, 0.4f, 0.14f), wind = 1.1f, rain = 0.6f, sun = 0.0f, sunColour = new Color(1.0f, 1.0f, 1.0f), clouds = 6, cloudTint = new Color(0.65f, 0.68f, 0.75f), pollen = 0.3f, speckKind = 2, crows = false, groundFog = 0.25f };
+    static readonly Profile GoldenHour = new() { sky = new Color(1.0f, 0.88f, 0.72f), land = new Color(1.0f, 0.9f, 0.78f), haze = new Color(1.0f, 0.75f, 0.5f), hazeAlpha = 0.26f, mistAlpha = 0.45f, grade = new Color(1.0f, 0.6f, 0.3f, 0.08f), wind = 0.5f, sun = 1.0f, sunColour = new Color(1.0f, 0.75f, 0.45f), clouds = 3, cloudTint = new Color(1.0f, 0.82f, 0.68f), pollen = 0.8f, speckKind = 0, crows = true, groundFog = 0.12f };
+    static readonly Profile ShiftStart = new() { sky = new Color(1.0f, 1.0f, 1.0f), land = new Color(1.0f, 1.0f, 1.0f), haze = new Color(0.7f, 0.85f, 0.82f), hazeAlpha = 0.15f, mistAlpha = 0.25f, grade = new Color(0.6f, 0.9f, 0.85f, 0.03f), wind = 0.2f, sun = 0.4f, sunColour = new Color(1.0f, 0.95f, 0.8f), clouds = 0, cloudTint = new Color(1.0f, 1.0f, 1.0f), pollen = 0.5f, speckKind = 2, crows = false, groundFog = 0.1f };
+    static readonly Profile SteamWorks = new() { sky = new Color(0.9f, 0.95f, 0.95f), land = new Color(0.92f, 0.96f, 0.96f), haze = new Color(0.85f, 0.9f, 0.9f), hazeAlpha = 0.42f, mistAlpha = 0.8f, grade = new Color(0.8f, 0.9f, 0.9f, 0.08f), wind = 0.4f, sun = 0.3f, sunColour = new Color(1.0f, 0.95f, 0.85f), clouds = 0, cloudTint = new Color(1.0f, 1.0f, 1.0f), pollen = 0.4f, speckKind = 2, crows = false, groundFog = 0.6f };
+    static readonly Profile NightShift = new() { sky = new Color(0.55f, 0.65f, 0.75f), land = new Color(0.65f, 0.72f, 0.82f), haze = new Color(0.15f, 0.22f, 0.3f), hazeAlpha = 0.32f, mistAlpha = 0.45f, grade = new Color(0.05f, 0.12f, 0.25f, 0.22f), wind = 0.2f, sun = 0.2f, sunColour = new Color(1.0f, 0.8f, 0.5f), clouds = 0, cloudTint = new Color(1.0f, 1.0f, 1.0f), pollen = 0.8f, speckKind = 1, crows = false, groundFog = 0.25f };
+    static readonly Profile Overdrive = new() { sky = new Color(1.0f, 0.85f, 0.75f), land = new Color(1.0f, 0.9f, 0.82f), haze = new Color(0.8f, 0.45f, 0.25f), hazeAlpha = 0.25f, mistAlpha = 0.4f, grade = new Color(0.9f, 0.4f, 0.1f, 0.1f), wind = 0.5f, sun = 0.5f, sunColour = new Color(1.0f, 0.6f, 0.3f), clouds = 0, cloudTint = new Color(1.0f, 1.0f, 1.0f), pollen = 0.8f, speckKind = 2, crows = false, groundFog = 0.3f };
+    static readonly Profile Overtime = new() { sky = new Color(0.85f, 0.85f, 0.8f), land = new Color(0.9f, 0.9f, 0.85f), haze = new Color(0.55f, 0.55f, 0.45f), hazeAlpha = 0.3f, mistAlpha = 0.5f, grade = new Color(0.55f, 0.5f, 0.3f, 0.1f), wind = 0.3f, sun = 0.35f, sunColour = new Color(1.0f, 0.85f, 0.6f), clouds = 0, cloudTint = new Color(1.0f, 1.0f, 1.0f), pollen = 0.6f, speckKind = 2, crows = false, groundFog = 0.35f };
+
     public static Profile For(LevelWeather w) => w switch
     {
+        LevelWeather.HighNoon => HighNoon,
+        LevelWeather.Sandstorm => Sandstorm,
+        LevelWeather.DesertDusk => DesertDusk,
+        LevelWeather.CanyonNight => CanyonNight,
+        LevelWeather.HeatHaze => HeatHaze,
+        LevelWeather.FairDay => FairDay,
+        LevelWeather.CarnivalNight => CarnivalNight,
+        LevelWeather.HarvestMoon => HarvestMoon,
+        LevelWeather.FairDrizzle => FairDrizzle,
+        LevelWeather.GoldenHour => GoldenHour,
+        LevelWeather.ShiftStart => ShiftStart,
+        LevelWeather.SteamWorks => SteamWorks,
+        LevelWeather.NightShift => NightShift,
+        LevelWeather.Overdrive => Overdrive,
+        LevelWeather.Overtime => Overtime,
         LevelWeather.StarField  => StarField,
         LevelWeather.RedAlert   => RedAlert,
         LevelWeather.NebulaGlow => NebulaGlow,

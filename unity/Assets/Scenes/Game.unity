@@ -305,6 +305,22 @@ MonoBehaviour:
   _sprSpaceComet: {fileID: 21300000, guid: af7351a5e0788cd4295bac3c02619fab, type: 3}
   _sprSpaceGalaxy: {fileID: 21300000, guid: 0ca0520de6b9d734994e5c6f60e28418, type: 3}
   _sprSpaceMilkyWay: {fileID: 21300000, guid: a8aa184da77362541827e1f08ea73352, type: 3}
+  _sprCanyonFar: {fileID: 21300000, guid: 16a4eb6eac38b4e449980187afbf760e, type: 3}
+  _sprCanyonSoil: {fileID: 21300000, guid: dde7acb4eb66c5d4eb92100aba8ca80b, type: 3}
+  _sprCanyonSilhouetteL: {fileID: 21300000, guid: c721e45bcc6d8f94eb22f4eae8591c34, type: 3}
+  _sprCanyonSilhouetteR: {fileID: 21300000, guid: af989cf6bbfe9b946a02af4146b8e4c7, type: 3}
+  _sprCanyonTumbleweed: {fileID: 21300000, guid: 9c319821eb96efb438cbf08fbba9141d, type: 3}
+  _sprCanyonDust: {fileID: 21300000, guid: b53ca87046a0e574896b622bd843266a, type: 3}
+  _sprFairFar: {fileID: 21300000, guid: 93c65dc63b4342741bb92db8a28b4023, type: 3}
+  _sprFairSoil: {fileID: 21300000, guid: c9027c220802d864ab65f1196cdc1ebf, type: 3}
+  _sprFairSilhouetteL: {fileID: 21300000, guid: c6711ad63748f0448991e46704505a0d, type: 3}
+  _sprFairSilhouetteR: {fileID: 21300000, guid: ac4b25f6828ad574fb2242c689eb660e, type: 3}
+  _sprFactoryFar: {fileID: 21300000, guid: 46f89499c269f334e907a5da176a9bfb, type: 3}
+  _sprFactorySoil: {fileID: 21300000, guid: b981b1431a828a44f8afee9958327892, type: 3}
+  _sprFactorySilhouetteL: {fileID: 21300000, guid: 0a07aaacedda49b4191bdf5e18c71a82, type: 3}
+  _sprFactorySilhouetteR: {fileID: 21300000, guid: 001972f7ce1cf0f4282b8ed95cad72dd, type: 3}
+  _sprFactorySteam: {fileID: 21300000, guid: b68544c6b7c3a1d46944e531b7b267e4, type: 3}
+  _sprFactoryDrone: {fileID: 21300000, guid: ea4a225c448b9ac4a9dc2fe4e8ac9bbb, type: 3}
   _farHillsClipAbove: 1
   _midgroundClipAbove: 0.23
   _foregroundClipAbove: 0.3
@@ -907,6 +923,9 @@ MonoBehaviour:
   _cannonSpriteW4: {fileID: 21300000, guid: 94cbb88aeb9b6b0409bf9a3d34db735d, type: 3}
   _cannonSpriteW5: {fileID: 21300000, guid: 798233d27960bd2439ac4475e38da878, type: 3}
   _cannonSpriteW6: {fileID: 21300000, guid: 925ab4c8015028c469cf2430f09604e3, type: 3}
+  _cannonSpriteW7: {fileID: 21300000, guid: 49542b4b4ce4ddf45a9a795bb62d7e0c, type: 3}
+  _cannonSpriteW8: {fileID: 21300000, guid: c3463ea4cdbec9f4c83e33b87e0a5ef4, type: 3}
+  _cannonSpriteW9: {fileID: 21300000, guid: ed9d8d1edcc245846aed990892b967e0, type: 3}
   _trajectoryDots: 20
   _trajectorySubsteps: 3
   _trajectoryDotRadius: 0.08
@@ -950,17 +969,28 @@ MonoBehaviour:
   _wipeBalloon: {fileID: 21300000, guid: 954c8547bf7509d4594655006b05b6d5, type: 3}
   _wipeKite: {fileID: 21300000, guid: 541cbd1b79501eb4995443f3a210e226, type: 3}
   _wipeAsteroid: {fileID: 21300000, guid: d45ae338f9a62a041a3fcfb0819aa7a8, type: 3}
+  _wipeTumbleweed: {fileID: 21300000, guid: 9c319821eb96efb438cbf08fbba9141d, type: 3}
+  _wipePopcorn: {fileID: 21300000, guid: 3f8ddbb8049615242a25499b71f9e6a9, type: 3}
+  _wipePumpkin: {fileID: 21300000, guid: e8433cbb7c137a9418e2f109904e264b, type: 3}
+  _wipeKernel: {fileID: 21300000, guid: b2ca4064ee2e1a14f9051949126346c6, type: 3}
+  _wipeCrate: {fileID: 21300000, guid: 1c663113e6dad354cb59b30fd2b16cdf, type: 3}
   _mountBaleSprite: {fileID: 21300000, guid: 7d8dd52190664fa40841c1e389047d5f, type: 3}
   _mountBaleSpriteW2: {fileID: 21300000, guid: e85ec2bfceee6f1478fa6fa4ed1f52cc, type: 3}
   _mountBaleSpriteW3: {fileID: 21300000, guid: 5b4f5a559ad6a0544aef63b378475243, type: 3}
   _mountBaleSpriteW4: {fileID: 21300000, guid: f97543461c6194e48afce455818902d4, type: 3}
   _mountBaleSpriteW5: {fileID: 21300000, guid: b73af25b79b98874fabad81c1207ad7a, type: 3}
   _mountBaleSpriteW6: {fileID: 21300000, guid: 956bfa7e38ff3354ca07aea607c8143f, type: 3}
+  _mountBaleSpriteW7: {fileID: 21300000, guid: 971dd441f4fcf444ea493f1d5ef9072a, type: 3}
+  _mountBaleSpriteW8: {fileID: 21300000, guid: 3565a7fd21298b94d9e6d350bb0ce844, type: 3}
+  _mountBaleSpriteW9: {fileID: 21300000, guid: 1c663113e6dad354cb59b30fd2b16cdf, type: 3}
   _siloSprite: {fileID: 21300000, guid: 743d67ad0db06df40bc8f8521cd91fd0, type: 3}
   _iceCrystalsBackSprite: {fileID: 21300000, guid: 5315c756cac486444ae482e10171cfcc, type: 3}
   _waterWheelBackSprite: {fileID: 21300000, guid: 1b3fed5427d56fe43b17fb7ebc5b69ed, type: 3}
   _statueBackSprite: {fileID: 21300000, guid: a5d43ee35d6c99748bfe0b2c49fcdc1f, type: 3}
   _beaconBackSprite: {fileID: 21300000, guid: ff3085e4592c8e0428b6bf691860bdaf, type: 3}
+  _waterTowerBackSprite: {fileID: 21300000, guid: 5f2dbf6c1f34c0b4bbb1dda2a0ebb11d, type: 3}
+  _ferrisWheelBackSprite: {fileID: 21300000, guid: 4a9d30ec779570845b15388024058682, type: 3}
+  _grainSiloBackSprite: {fileID: 21300000, guid: def891938f7cc2f4a82570caf3962003, type: 3}
   _tabletBackSprite: {fileID: 21300000, guid: fb5bd83b668035b419e601ea6f15abaa, type: 3}
 --- !u!4 &364537116
 Transform:
@@ -1886,39 +1916,39 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1049d0a69d6d395428465b6d21959ca9, type: 2}
   - {fileID: 11400000, guid: 435e3a047ef3b6b488060d08ab11325e, type: 2}
   - {fileID: 11400000, guid: 5ddc678c8102ba54f922aa465e034914, type: 2}
-  - {fileID: 11400000, guid: 2c613999f35fa3147a732562a83b711f, type: 2}
+  - {fileID: 11400000, guid: d7e234958e6aac844b1b8b6d73fe91f9, type: 2}
   - {fileID: 11400000, guid: 79daeb792265fe44a846d76fa0859b07, type: 2}
   - {fileID: 11400000, guid: bbb621cdc491073428b4b1309b9cf21b, type: 2}
-  - {fileID: 11400000, guid: 3d8c92e3ef4de3c4d98abc6df034f99e, type: 2}
-  - {fileID: 11400000, guid: a5685b266d8ab714b81787ed49ed42dd, type: 2}
-  - {fileID: 11400000, guid: 74fd5446532f7c248b9561c6ab502336, type: 2}
-  - {fileID: 11400000, guid: b3a519bc3dc939240b0139ac3d5d2269, type: 2}
-  - {fileID: 11400000, guid: ac42e429150126442a346de3b501a58a, type: 2}
+  - {fileID: 11400000, guid: 031b656801ae6fa49b278288eb860073, type: 2}
+  - {fileID: 11400000, guid: aae4cc775a35f7f45b2e136d11967126, type: 2}
+  - {fileID: 11400000, guid: 32cf868e35608804c8bbea408caca59f, type: 2}
+  - {fileID: 11400000, guid: babec2e2b959ddd43abec4d630a6bb52, type: 2}
+  - {fileID: 11400000, guid: e0180fae81903d64c919bdcd4f15fa68, type: 2}
   - {fileID: 11400000, guid: e2e87dd05c6ff4c408a50e292a90e55e, type: 2}
-  - {fileID: 11400000, guid: 2de78c2961e067e40925aecdba6d39bd, type: 2}
-  - {fileID: 11400000, guid: 2d1f61018750e5d4391cf61f92de8093, type: 2}
-  - {fileID: 11400000, guid: 21d306a913916f24f8d75bd7e1c0acac, type: 2}
-  - {fileID: 11400000, guid: f63f8bda323926e449215e4bc0966709, type: 2}
-  - {fileID: 11400000, guid: 28c3c336e0e71cb47b05dce364762478, type: 2}
-  - {fileID: 11400000, guid: 2a226d10877562f40859e26403174bb8, type: 2}
-  - {fileID: 11400000, guid: 80d79006f9b537d4d9841a3537e94242, type: 2}
-  - {fileID: 11400000, guid: a030ed538c78dfa4d8144796fdb47375, type: 2}
-  - {fileID: 11400000, guid: 0b23bd3c4ae32c849bd6700ce9e0cefb, type: 2}
-  - {fileID: 11400000, guid: 5c68b533e4ef5464ebc74b1d6f604da1, type: 2}
-  - {fileID: 11400000, guid: e94674659cd3c6d4f8ec5ba9effc2227, type: 2}
-  - {fileID: 11400000, guid: 6802f1d7429c29c4dbb26f9201439aa4, type: 2}
-  - {fileID: 11400000, guid: 4ea0966b31477014eb6a18c251e7608d, type: 2}
-  - {fileID: 11400000, guid: 15ab6c6bd633a6948ac5b79fc296d1ed, type: 2}
-  - {fileID: 11400000, guid: 126f65a909fb5dd468bea0bf4d568e3e, type: 2}
-  - {fileID: 11400000, guid: 3d06d021de6e5774c89c4a499146203a, type: 2}
-  - {fileID: 11400000, guid: 4fc7fca4acce4474186158987f5d94aa, type: 2}
-  - {fileID: 11400000, guid: 39b8cb7c6f2403948a6a6b981baa2761, type: 2}
-  - {fileID: 11400000, guid: 0c91f36b3954d8b4fad7f7bd0780720f, type: 2}
-  - {fileID: 11400000, guid: 5aea8910b334f1b43868a2b9acec3cd3, type: 2}
-  - {fileID: 11400000, guid: d9f1ee31805c8b04fa5c354e74163ece, type: 2}
-  - {fileID: 11400000, guid: 8bc74e72bde894e4a9937b8df79bd1a7, type: 2}
-  - {fileID: 11400000, guid: fbe188fead0ee6741aaa99e4c97fb1aa, type: 2}
-  - {fileID: 11400000, guid: 1b25b975b48717142a97d75a53b78773, type: 2}
+  - {fileID: 11400000, guid: df746eccf0138f747b6104c467e78cb2, type: 2}
+  - {fileID: 11400000, guid: 95dfee263f62a3e4083182d8a4a535ff, type: 2}
+  - {fileID: 11400000, guid: 9a9d148f6ca4ad84095675f4aa233da8, type: 2}
+  - {fileID: 11400000, guid: 948e4a1f5716d794aa28ebee7adf7158, type: 2}
+  - {fileID: 11400000, guid: 84072bb882b8a4c4e8c28e44488f9817, type: 2}
+  - {fileID: 11400000, guid: 11d5659493a2ea54b86cca42e4f0df87, type: 2}
+  - {fileID: 11400000, guid: e757e30cf2a971c47bcaf1e35361422b, type: 2}
+  - {fileID: 11400000, guid: 89cfd2f85bb6d91489265393d6c1213a, type: 2}
+  - {fileID: 11400000, guid: 99f510d9f13d12d4d9ed7be57c098f37, type: 2}
+  - {fileID: 11400000, guid: c34ab1994eb84c849a8c5727fb157eb7, type: 2}
+  - {fileID: 11400000, guid: e939c50274b172c4f974cc63e5d3de4f, type: 2}
+  - {fileID: 11400000, guid: 8f7e42f2f57f2924787c0915cc41dfa4, type: 2}
+  - {fileID: 11400000, guid: ca759f96eeea509408b9e67dcc7841b0, type: 2}
+  - {fileID: 11400000, guid: 06cb63a8ef2ccc84bade7eb002905a11, type: 2}
+  - {fileID: 11400000, guid: c1727642f19dedf409067d97fa891ae4, type: 2}
+  - {fileID: 11400000, guid: f7592ba75381d8145beba93ecb41d2bc, type: 2}
+  - {fileID: 11400000, guid: 3601689c019d5d24d9e02aafb817ec0e, type: 2}
+  - {fileID: 11400000, guid: b0fa4952fead25d4c99aa12d90105e40, type: 2}
+  - {fileID: 11400000, guid: 27015e7313128cf4cbeabe84f02de093, type: 2}
+  - {fileID: 11400000, guid: c54d697c14a03b047a7163bcdc8af5fd, type: 2}
+  - {fileID: 11400000, guid: a73d171dafef74244a61cfc5dbbcd03d, type: 2}
+  - {fileID: 11400000, guid: a607d3ce4a10d8c4fb790149cc05a63d, type: 2}
+  - {fileID: 11400000, guid: 558712fd442d26f40b718fa09e3a50a5, type: 2}
+  - {fileID: 11400000, guid: f29188863f39de24e85941139f7c018a, type: 2}
 --- !u!4 &809980729
 Transform:
   m_ObjectHideFlags: 0
@@ -5086,15 +5116,15 @@ MonoBehaviour:
   - basic: {fileID: 6619721217228099596, guid: eb173b8f21770a84fa4102c5b333cfea, type: 3}
     harvester: {fileID: 3827859369906158350, guid: 685c7a09902d50f44a4e490a74d7dae9, type: 3}
     semiHarvester: {fileID: 6123012312470703315, guid: 88442299c3493fe4d9f4eea98c3fc534, type: 3}
-    boss: {fileID: 1060061373999662948, guid: 4388c8323c7d77b41a17c330346eaaac, type: 3}
+    boss: {fileID: 6126140883117203023, guid: 166e16c0320a7fc4f90a87e22e899345, type: 3}
   - basic: {fileID: 5236481763180734258, guid: 289df3a38fd86e543bdbd93517bd3003, type: 3}
     harvester: {fileID: 6432267808558077087, guid: 0a9af8fbaa2d40f468b98f08d58f853a, type: 3}
     semiHarvester: {fileID: 706226668845595927, guid: 5dff3347a9211d24abd1962735796bca, type: 3}
-    boss: {fileID: 2230084217410904449, guid: 02bacb186c195404399c56e474064de0, type: 3}
+    boss: {fileID: 2315159503929679753, guid: 841ee4f722ec5ed46b88427cd97311f6, type: 3}
   - basic: {fileID: 2368223714289748206, guid: 8d4f857c57b3a9d48971bd5e62ecbf2d, type: 3}
     harvester: {fileID: 2916087797309354558, guid: b9cd1c7dc50b41f4ab401fc3be292a9f, type: 3}
     semiHarvester: {fileID: 4916011443015034347, guid: 9b42c5b21058d9d47b806022f5e38745, type: 3}
-    boss: {fileID: 713649539132475618, guid: 1ef3f213b21de2d4580c5a7c3a6c6eef, type: 3}
+    boss: {fileID: 2062084416003034974, guid: 5248c137291a2b54db00480a09779728, type: 3}
   _blockParent: {fileID: 1511578342}
   _robotParent: {fileID: 322750861}
   _platformSprites:
@@ -5145,6 +5175,30 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  _platformSpritesW7:
+  - {fileID: 21300000, guid: 71dae3d6ef957f2469da58d4f8693986, type: 3}
+  - {fileID: 21300000, guid: ae3b7106bb124cc4085ef75cf35db4b3, type: 3}
+  - {fileID: 21300000, guid: 5c0bfb7d2ab8c284899da4a6515d7bee, type: 3}
+  - {fileID: 21300000, guid: 5c0bfb7d2ab8c284899da4a6515d7bee, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  _platformSpritesW8:
+  - {fileID: 21300000, guid: 94372dc9131e5f34b9c51dbd46dad8dd, type: 3}
+  - {fileID: 21300000, guid: ec2826aa93811fd499dc3a80b9cb06cb, type: 3}
+  - {fileID: 21300000, guid: 34d33b5d387a7a64a8f206b1215f6d1b, type: 3}
+  - {fileID: 21300000, guid: 34d33b5d387a7a64a8f206b1215f6d1b, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  _platformSpritesW9:
+  - {fileID: 21300000, guid: 16fb1739bcc5fbd4abf92098d7d49ba3, type: 3}
+  - {fileID: 21300000, guid: 9a7ac8b6c72b26c449fdf127e6deac35, type: 3}
+  - {fileID: 21300000, guid: 0d0736da0d893c549870179fe51038a7, type: 3}
+  - {fileID: 21300000, guid: 0d0736da0d893c549870179fe51038a7, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   _mothershipSprite: {fileID: 21300000, guid: aedf0dcc043eb96468cc881558708834, type: 3}
   _sunflowerSprite: {fileID: 21300000, guid: 993cfd2e108e60747964039bb0d8d185, type: 3}
   _sunflowerSeedSprite: {fileID: 21300000, guid: 00537f9649f66aa40ac532b188db7b0f, type: 3}
@@ -5169,6 +5223,15 @@ MonoBehaviour:
   _laserEmitterSprite: {fileID: 21300000, guid: abdeb331916da0340a44f33ac80967c1, type: 3}
   _plasmaOrbSprite: {fileID: 21300000, guid: df96d33cbf89bcb46b3fb1cb38df80cf, type: 3}
   _gravityRingSprite: {fileID: 21300000, guid: 588c93c362bc06d4d96c47170345a8a3, type: 3}
+  _cactusSprite: {fileID: 21300000, guid: 65837af78a0189041b70393604609242, type: 3}
+  _spineSprite: {fileID: 21300000, guid: 3264f67d7a179e04586fc66d0d3f8baf, type: 3}
+  _tumbleweedSprite: {fileID: 21300000, guid: 9c319821eb96efb438cbf08fbba9141d, type: 3}
+  _popcornCartSprite: {fileID: 21300000, guid: 52ec1404b53af4345bcbb6d0fc8a5922, type: 3}
+  _popcornSprite: {fileID: 21300000, guid: 3f8ddbb8049615242a25499b71f9e6a9, type: 3}
+  _pumpkinSprite: {fileID: 21300000, guid: e8433cbb7c137a9418e2f109904e264b, type: 3}
+  _cornHopperSprite: {fileID: 21300000, guid: af551aa9bf7b6894288f64530d676a6d, type: 3}
+  _kernelSprite: {fileID: 21300000, guid: b2ca4064ee2e1a14f9051949126346c6, type: 3}
+  _cogSprite: {fileID: 21300000, guid: 9a3162ef122b36d4b9ccd04105af31d3, type: 3}
 --- !u!4 &2045008050
 Transform:
   m_ObjectHideFlags: 0

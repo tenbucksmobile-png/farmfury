@@ -230,8 +230,10 @@ public class GameManager : MonoBehaviour
         }
         RunState.bossCleared = level != null && level.isBossLevel;
         RunState.newlyUnlockedAnimals.Clear();
-        if (RunState.worldUnlocked.HasValue)
-            RunState.newlyUnlockedAnimals.AddRange(FarmFury.Core.SaveManager.AnimalsIntroducedBy(RunState.worldUnlocked.Value));
+        // The animals this clear released (2026-11-12: each joins after a number of levels in its world, not with the
+        // world). ScoreManager.FinaliseLevel recorded the completion just before this.
+        if (FarmFury.Core.SaveManager.Instance != null)
+            RunState.newlyUnlockedAnimals.AddRange(FarmFury.Core.SaveManager.Instance.TakeNewlyUnlockedAnimals());
 
         // Coins for the clear (franchise payout). firstClear/previousBestStars were read before the result was saved.
         var save = FarmFury.Core.SaveManager.Instance;

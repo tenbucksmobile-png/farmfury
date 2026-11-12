@@ -225,6 +225,18 @@ MonoBehaviour:
   _sprVerticalW6: {fileID: 0}
   _sprHorizontalW6: {fileID: 0}
   _sprShortW6: {fileID: 0}
+  _sprNormalW7: {fileID: 0}
+  _sprVerticalW7: {fileID: 0}
+  _sprHorizontalW7: {fileID: 0}
+  _sprShortW7: {fileID: 0}
+  _sprNormalW8: {fileID: 0}
+  _sprVerticalW8: {fileID: 0}
+  _sprHorizontalW8: {fileID: 0}
+  _sprShortW8: {fileID: 0}
+  _sprNormalW9: {fileID: 0}
+  _sprVerticalW9: {fileID: 0}
+  _sprHorizontalW9: {fileID: 0}
+  _sprShortW9: {fileID: 0}
   _sprDamaged: {fileID: 0}
   _sprExplode: {fileID: 21300000, guid: 4f6ed50ed421ceb41b2606157c2ba1ea, type: 3}
   _explodeSizeMultiplier: 1

@@ -555,6 +555,10 @@ public class LevelLoader : MonoBehaviour
     // World 6 (Robot Mothership, 2026-11-12): 0/1/2 machinery pedestals low / mid / tall standing on the deck (stretched to
     // height like the reefs), 3 = the tall pedestal. tools/import_mothership_art.py.
     [SerializeField] private Sprite[] _platformSpritesW6 = new Sprite[MountCount];
+    // Paid worlds (2026-11-12, tools/import_paid_worlds_art.py): canyon mesas, circus podiums, machine housings (low/mid/tall).
+    [SerializeField] private Sprite[] _platformSpritesW7 = new Sprite[MountCount];
+    [SerializeField] private Sprite[] _platformSpritesW8 = new Sprite[MountCount];
+    [SerializeField] private Sprite[] _platformSpritesW9 = new Sprite[MountCount];
     const int PlatformSortingOrder = 1;   // decorative band (<= 1): behind blocks (2) and robots (3)
 
     // Mount kinds (LevelData.PlatformSpawnData.variant), 2026-11-08. surfaceUV = the walkable top's height from the
@@ -628,6 +632,30 @@ public class LevelLoader : MonoBehaviour
         new() { surfaceUV = MountMeasurementsW6.DeckTallUV, solids = MountMeasurementsW6.DeckTallSolids },
         default, default, default,
     };
+    static readonly MountSpec[] MountsW7 =
+    {
+        new() { surfaceUV = MountMeasurementsW7.MesaLowUV,  solids = MountMeasurementsW7.MesaLowSolids },
+        new() { surfaceUV = MountMeasurementsW7.MesaMidUV,  solids = MountMeasurementsW7.MesaMidSolids },
+        new() { surfaceUV = MountMeasurementsW7.MesaTallUV, solids = MountMeasurementsW7.MesaTallSolids },
+        new() { surfaceUV = MountMeasurementsW7.MesaTallUV, solids = MountMeasurementsW7.MesaTallSolids },
+        default, default, default,
+    };
+    static readonly MountSpec[] MountsW8 =
+    {
+        new() { surfaceUV = MountMeasurementsW8.PodiumLowUV,  solids = MountMeasurementsW8.PodiumLowSolids },
+        new() { surfaceUV = MountMeasurementsW8.PodiumMidUV,  solids = MountMeasurementsW8.PodiumMidSolids },
+        new() { surfaceUV = MountMeasurementsW8.PodiumTallUV, solids = MountMeasurementsW8.PodiumTallSolids },
+        new() { surfaceUV = MountMeasurementsW8.PodiumTallUV, solids = MountMeasurementsW8.PodiumTallSolids },
+        default, default, default,
+    };
+    static readonly MountSpec[] MountsW9 =
+    {
+        new() { surfaceUV = MountMeasurementsW9.HousingLowUV,  solids = MountMeasurementsW9.HousingLowSolids },
+        new() { surfaceUV = MountMeasurementsW9.HousingMidUV,  solids = MountMeasurementsW9.HousingMidSolids },
+        new() { surfaceUV = MountMeasurementsW9.HousingTallUV, solids = MountMeasurementsW9.HousingTallSolids },
+        new() { surfaceUV = MountMeasurementsW9.HousingTallUV, solids = MountMeasurementsW9.HousingTallSolids },
+        default, default, default,
+    };
     int _loadingWorld = 1;
 
     readonly List<GameObject> _spawnedPlatforms = new();
@@ -640,9 +668,13 @@ public class LevelLoader : MonoBehaviour
         bool w4 = _loadingWorld == 4 && _platformSpritesW4 != null && v < _platformSpritesW4.Length && _platformSpritesW4[v] != null;
         bool w5 = _loadingWorld == 5 && _platformSpritesW5 != null && v < _platformSpritesW5.Length && _platformSpritesW5[v] != null;
         bool w6 = _loadingWorld == 6 && _platformSpritesW6 != null && v < _platformSpritesW6.Length && _platformSpritesW6[v] != null;
-        var spec = w2 ? MountsW2[v] : w3 ? MountsW3[v] : w4 ? MountsW4[v] : w5 ? MountsW5[v] : w6 ? MountsW6[v] : Mounts[v];
+        bool w7 = _loadingWorld == 7 && _platformSpritesW7 != null && v < _platformSpritesW7.Length && _platformSpritesW7[v] != null;
+        bool w8 = _loadingWorld == 8 && _platformSpritesW8 != null && v < _platformSpritesW8.Length && _platformSpritesW8[v] != null;
+        bool w9 = _loadingWorld == 9 && _platformSpritesW9 != null && v < _platformSpritesW9.Length && _platformSpritesW9[v] != null;
+        var spec = w2 ? MountsW2[v] : w3 ? MountsW3[v] : w4 ? MountsW4[v] : w5 ? MountsW5[v] : w6 ? MountsW6[v]
+                 : w7 ? MountsW7[v] : w8 ? MountsW8[v] : w9 ? MountsW9[v] : Mounts[v];
         Sprite sprite = w2 ? _platformSpritesW2[v] : w3 ? _platformSpritesW3[v] : w4 ? _platformSpritesW4[v] : w5 ? _platformSpritesW5[v]
-                      : w6 ? _platformSpritesW6[v]
+                      : w6 ? _platformSpritesW6[v] : w7 ? _platformSpritesW7[v] : w8 ? _platformSpritesW8[v] : w9 ? _platformSpritesW9[v]
                       : _platformSprites != null && v < _platformSprites.Length ? _platformSprites[v] : null;
         var go = new GameObject($"Mount_{_spawnedPlatforms.Count}");
         go.transform.SetParent(_blockParent, false);
@@ -744,6 +776,19 @@ public class LevelLoader : MonoBehaviour
     [SerializeField] private Sprite _laserEmitterSprite;
     [SerializeField] private Sprite _plasmaOrbSprite;
     [SerializeField] private Sprite _gravityRingSprite;
+    // Paid worlds (2026-11-12, tools/import_paid_worlds_art.py): World 7 the saguaro that fires a volley of spines when hit
+    // (Stampede Saguaro + a drawn spine) and a rolling tumbleweed; World 8 the popcorn cart that blasts popcorn (Stampede
+    // PopcornCart + a drawn kernel) and a rolling pumpkin; World 9 the corn hopper that sprays kernels (Stampede Hopper +
+    // CornKernel) and a rolling cog (drawn). All Sunflower pump mode / RollingBoulder.
+    [SerializeField] private Sprite _cactusSprite;
+    [SerializeField] private Sprite _spineSprite;
+    [SerializeField] private Sprite _tumbleweedSprite;
+    [SerializeField] private Sprite _popcornCartSprite;
+    [SerializeField] private Sprite _popcornSprite;
+    [SerializeField] private Sprite _pumpkinSprite;
+    [SerializeField] private Sprite _cornHopperSprite;
+    [SerializeField] private Sprite _kernelSprite;
+    [SerializeField] private Sprite _cogSprite;
     readonly List<GameObject> _spawnedGadgets = new();
 
     void SpawnGadget(LevelData.GadgetSpawnData data)
@@ -757,6 +802,18 @@ public class LevelLoader : MonoBehaviour
                 HayHoist.Spawn(_blockParent, _skyCraneSprite, _thunderWheelSprite, data.position,
                                Mathf.Max(1f, data.size), data.ropeLength, data.faceLeft, 0.99f,
                                MountMeasurementsW4.SkyCraneAnchor, MountMeasurementsW4.SkyCranePost).gameObject,
+            GadgetType.Cactus => Sunflower.Spawn(_blockParent, _cactusSprite, _spineSprite, data.position,
+                                                 Mathf.Max(0.5f, data.size), pump: true).gameObject,
+            GadgetType.Tumbleweed => RollingBoulder.Spawn(_blockParent, _tumbleweedSprite, data.position,
+                                                          Mathf.Max(0.5f, data.size)).gameObject,
+            GadgetType.PopcornCart => Sunflower.Spawn(_blockParent, _popcornCartSprite, _popcornSprite, data.position,
+                                                      Mathf.Max(0.5f, data.size), pump: true).gameObject,
+            GadgetType.Pumpkin => RollingBoulder.Spawn(_blockParent, _pumpkinSprite, data.position,
+                                                       Mathf.Max(0.5f, data.size)).gameObject,
+            GadgetType.CornHopper => Sunflower.Spawn(_blockParent, _cornHopperSprite, _kernelSprite, data.position,
+                                                     Mathf.Max(0.5f, data.size), pump: true).gameObject,
+            GadgetType.Cog => RollingBoulder.Spawn(_blockParent, _cogSprite, data.position,
+                                                   Mathf.Max(0.5f, data.size)).gameObject,
             GadgetType.LaserEmitter => Sunflower.Spawn(_blockParent, _laserEmitterSprite, _plasmaOrbSprite, data.position,
                                                        Mathf.Max(0.5f, data.size), pump: true).gameObject,
             GadgetType.GravityRing => RollingBoulder.Spawn(_blockParent, _gravityRingSprite, data.position,

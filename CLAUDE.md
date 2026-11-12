@@ -84,12 +84,10 @@ needing a live pass before shipping.
 - **Not ported yet:** Stampede's Boot scene / Android AAB split + store build scripts, the iOS privacy manifest,
   the Character Story Cosmetics tab.
 - **World 2 (Frozen Tundra) was rebuilt 2026-11-09** and **World 3 (Watermill Village) built 2026-11-10** as 22 framed
-  designs each (`tools/design_world2.py`, `tools/design_world3.py`) — probe-clean but unseen in Play mode. **Worlds 4-9
-  levels (2026-11-02) are generated, not hand-built, and unseen in Play mode.** 98
-  levels from `WorldLevelGenerator` (see Recent work). Difficulty and solvability are inherited from World 1's towers but untested
-  with the new animals' abilities; the Mothership backdrop has no painted ground (towers stand in space); prop placement
-  (`SceneryBuilder.BuildWorldProps`) is code-placed and may crowd at wide zooms. Ducky/Horace/Gerald/Billy poses are
-  Stampede platformer frames standing in for cannon poses (no Idle/Impact pose).
+  designs each (`tools/design_world2.py`, `tools/design_world3.py`) — probe-clean but unseen in Play mode. Worlds 4-9
+  are framed designer levels too now (World 4 2026-11-11, Worlds 5-9 2026-11-12); `WorldLevelGenerator` generates
+  nothing any more. Solvability with 3 animals over two rooms is untested in every world. Ducky/Horace/Gerald/Billy
+  poses are Stampede platformer frames standing in for cannon poses (no Idle/Impact pose).
 
 - **L19 ("Frostbound Watch") was re-dumped 2026-08-09**, replacing its earlier 6-block/3-robot
   layout with a simpler one — 3 `BlockType.Wood` blocks (artVariant `Block`, rendering with the
@@ -138,6 +136,56 @@ needing a live pass before shipping.
   place: this machine's disk — if lost, recovery means restoring `assets/` and re-running the art
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
+
+- **2026-11-12 (latest) — Characters released per level, two per world** (user: "released after certain amount of
+  levels on each world - not together, but two per world; so it goes to 'unlock character' as per stampede and arcade -
+  on the carousel they are greyed out and cannot be selected until they are released"). `AnimalRoster.UnlockAfter`
+  (levels completed in the animal's own world): Cluck 0 / Bessie 1 (W1), Percy 1 / Woolly 8 (W2), Ducky 1 / Horace 8
+  (W3), Gerald 1 / Billy 8 (W4) - Horace, Gerald and Billy moved from Worlds 4 / 5 / 6. Derived in
+  `SaveManager.IsAnimalUnlocked` (nothing stored; old saves re-evaluate). The releasing clear shows the New Character
+  page (`TakeNewlyUnlockedAnimals`). Character Select: locked cards greyed (`LockedTint`, was a silhouette) with a
+  "LOCKED / Clear N levels in <World> (k/N)" label. Compiled; unverified in Play mode. Level lineups still lead with
+  the old intro order (only the slot count matters).
+
+- **2026-11-12 (latest) — The paid worlds (7 Dustbowl Canyon, 8 Harvest Fairground, 9 Crop Factory) built on the
+  World 1-6 template** (user: "recall your process of building the worlds, apply this and build the pay worlds ...
+  utilise artwork available, otherwise access kling AI ... apply the structure plan (be creative)"). Compiled;
+  unverified in Play mode.
+  - **Art:** `python tools/import_paid_worlds_art.py` -> `Sprites/Environment/{Canyon,Fair,Factory}/`,
+    `Launchers/{Prospector,Circus,Pneumatic}Cannon.png`, `Enemies/Robot/{DrillRig,Ringmaster,HarvesterPrime}*.png`,
+    `Scripts/Level/MountMeasurementsW7-9.cs`, `tools/mounts_w7-9.json`. Reused (Stampede `UI/DustbowlCanyon`,
+    `HarvestFairground`, `CropFactory`): DC/HF/CF_Parallax_Far (far), GroundStrip / DeckStrip + fills (floor), Saguaro /
+    LampPost / RobotArm (corner silhouettes), WaterTower / FerrisWheel / GrainSilo (landmarks), Saguaro / Tumbleweed /
+    PopcornCart / Pumpkin / Hopper + CornKernel (contraptions), SandstormDust / Drone (decor), the three bosses. Drawn:
+    cactus spine, popcorn, the cog. Kling 9 images / 18 credits, all first try, in
+    `FarmFury_Artwork/{DustbowlCanyon,HarvestFairground,CropFactory}/Framed/` (W<N>Cannon, W<N>Pieces, W<N>Mounts). New
+    trick: Kling was given a grey SILHOUETTE TEMPLATE on magenta (six pieces / three flat-topped mounts) + a 2x2 Stampede
+    style sheet (inputs must be <= 2:1 aspect) - no colour bleed from earlier worlds' sheets (World 6's did). W7Cannon
+    came back on red (`rekey_border`); the canyon mesas' foot shrubs join them, so mounts are cut at column-occupancy
+    minima (`column_part`); Kling painted W7's plank red, so it is re-hued to timber (`weathered_wood`).
+  - **Code:** `EnvironmentDepthSystem` themes Canyon / Fair / Factory (`_sprCanyon*` etc., all "Flat" stacks like Worlds
+    4-6; `Flat` replaces the old `Space || Sea || Sky` chains); `Core/PaidWorldDecor.cs` (tumbleweeds bouncing along the
+    ground, sandstorm banks, a circling hawk / hot-air balloons, fireworks at CarnivalNight / HarvestMoon / steam plumes,
+    sparks, a crate drone); 15 weathers (HighNoon Sandstorm DesertDusk CanyonNight HeatHaze / FairDay CarnivalNight
+    HarvestMoon FairDrizzle GoldenHour / ShiftStart SteamWorks NightShift Overdrive Overtime); `BlockBase._spr*W7-9`;
+    `CatapultLauncher._cannonSpriteW7-9`, `_mountBaleSpriteW7-9` (dusty hay, prize cushions, produce crates), the 4-row
+    pyramid + FarmMountShift, landmarks (`_waterTowerBackSprite` etc.), wipes (sandstorm, confetti cannon, steam blast);
+    `LevelLoader._platformSpritesW7-9` + `MountsW7-9`; `GadgetType` Cactus / PopcornCart / CornHopper (Sunflower pump mode)
+    and Tumbleweed / Pumpkin / Cog (RollingBoulder); boss prefabs `DrillRigRobot` / `RingmasterRobot` /
+    `HarvesterPrimeRobot` (`EnsurePaidWorldBossPrefabs`) on `_worldRobots[7-9].boss`. `SceneryBuilder` skips framed
+    Worlds 2-9.
+  - **Levels:** `tools/design_paid.py` (shared kit) + `tools/design_world7.py` / `8` / `9` -> `LevelDataGenerator.World7-9.cs`
+    (`MakeWorld<N>Framed`, ids `W<N>_L01..L12`). World 4's city generator on each world's mounts, two rooms per level,
+    level 12 = outer works + the boss's keep (room 2). Each world adds its own robot-built set pieces to the generator's
+    table: W7 headframe / water_tower / saloon / rock_arch, W8 carousel / high_striker (dynamite bell) / prize_stack /
+    big_top, W9 conveyor / press / silo_stack / crane_arm. A level that finds no valid seed relaxes (one district fewer,
+    a 'fall' skyline -> random, one robot fewer at the minimum) and says so in the designer output. Designer: W7 12
+    levels / 135 robots / 0 issues (L10, L11 relaxed to 4 districts), W8 12 / 133 / 0 (L07, L10 relaxed), W9 12 / 136 /
+    0. World 8's podiums are boxes: their solid band / plateau are inset to the middle 80% (`import_paid_worlds_art`)
+    and World 8 sizes mounts with `design_paid._shape_narrowest` (design_world4._shape's tie-break picked the low, wide
+    shape for tall mounts; kept for Worlds 4-7 and 9 so their output is unchanged). PhysicsProbe (no input): all 72 rooms
+    (Worlds 7-9, both rooms) stand untouched, no exceptions (`unity/Logs/probe_w7/8/9_room1/2.log`).
+    `WorldLevelGenerator` now skips Worlds 2-9 (generates nothing) and keeps `W02_`-`W09_` files.
 
 - **2026-11-12 (latest) — Polish round before the paid worlds** (user list). Compiled; unverified in Play mode.
   - **Robots hidden behind a mound:** `design_world1.prune_hidden_robots` / `prune_all` (called by every designer's
@@ -1043,8 +1091,14 @@ Overlays (OverlayScreen) open on top of any screen; Esc / Android back closes th
 
 - **Save** (`SaveManager`, `FF_` keys): stars/completion/records by `levelId`; a world unlocks when the previous
   world's boss level (`LevelData.isBossLevel`, L18 for World 1) is cleared, a paid world by purchase; levels unlock
-  in order, the boss after all others. Animals: `AnimalRoster.IntroWorld` (Cluck/Bessie W1, Percy/Woolly W2,
-  Ducky W3, Horace W4, Gerald W5, Billy W6) — unlocked with their world, nothing stored. Coins, Remove Ads, worlds
+  in order, the boss after all others. Animals (2026-11-12, Stampede/Arcade-style "clear N levels" unlocks, but per
+  world): `AnimalRoster.IntroWorld` + `UnlockAfter` - two per world, the whole roster out by Sky Islands, each released
+  after N levels of its world are completed: Cluck from the start / Bessie after 1 (W1), Percy 1 / Woolly 8 (W2), Ducky
+  1 / Horace 8 (W3), Gerald 1 / Billy 8 (W4); Worlds 5-9 introduce nobody. Derived, nothing stored
+  (`SaveManager.IsAnimalUnlocked` / `LevelsCompletedIn`); `RecordLevelCompleted` notes what a clear released
+  (`TakeNewlyUnlockedAnimals`) and GameManager.CompleteLevel shows the New Character page for it. Character Select
+  greys locked cards (not pickable) with a "LOCKED / Clear N levels in <World> (k/N)" label; Character Story says when
+  each joins. Debug "Unlock All Levels" releases everyone. Coins, Remove Ads, worlds
   and cosmetics are checksum-protected (Stampede's FNV salt scheme).
 - **Worlds**: 9 `WorldData` assets (`WorldDataGenerator`); `LevelData.world` (1-based int) maps to `WorldType`.
 - **Monetisation**: `farmfury_` store ids (`StoreProducts`); Arcade prices (Remove Ads $4.99 +100 coins; coins
@@ -1066,11 +1120,13 @@ Overlays (OverlayScreen) open on top of any screen; Esc / Android back closes th
 | Percy (pig) | Bounce Roll — curls, bounces 3× gaining speed | World 2 |
 | Woolly (sheep) | Wool Balls — throws 3 bouncy wool balls ahead (each hits up to 3 times) | World 2 |
 | Ducky (duck) | Water Swirls — fires 3 spinning water swirls that grow in flight and splash (push + damage) over a widening radius | World 3 |
-| Horace (horse) | Horseshoe Throw — hurls 2 heavy horseshoes ahead that ricochet through the structure (3 hits each) | World 4 |
-| Gerald (turkey) | Feather Bombs — drops 3 bombs that burst in a small radius | World 5 |
-| Billy (goat) | Mud Throw — hurls a mud ball that splats over a wide radius | World 6 |
+| Horace (horse) | Horseshoe Throw — hurls 2 heavy horseshoes ahead that ricochet through the structure (3 hits each) | World 3 (after 8 levels) |
+| Gerald (turkey) | Feather Bombs — drops 3 bombs that burst in a small radius | World 4 (after 1 level) |
+| Billy (goat) | Mud Throw — hurls a mud ball that splats over a wide radius | World 4 (after 8 levels) |
 
-All eight are scripted and art-wired; each leads the lineups of the world that introduces it (Worlds 2-6).
+All eight are scripted and art-wired. Two per world since 2026-11-12, each released after a number of levels in its
+world (`AnimalRoster.UnlockAfter`): all eight are out by World 4. The level lineups were written for the old one-per-world order (Horace leads World 4, Gerald
+World 5, Billy World 6); they only set the slot count, since Character Select starts empty and offers whoever is unlocked.
 
 ### 9 Worlds (160 levels: 6 story + 3 paid) — per-world launchers/mechanics below are PLANNED; every world uses the Farm Cannon today
 | World | Launcher | Key mechanic | Levels |
@@ -1085,7 +1141,7 @@ All eight are scripted and art-wired; each leads the lineups of the world that i
 | 8 — Harvest Fairground (paid) | Farm Cannon | — | 12 |
 | 9 — Crop Factory (paid) | Farm Cannon | — | 12 |
 
-World 1 (L01-L18, `tools/design_world1.py`), World 2 (W2_L01-L22, `tools/design_world2.py`, 2026-11-09), World 3 (W3_L01-L22, `tools/design_world3.py`, 2026-11-10), World 4 (W4_L01-L24, `tools/design_world4.py`, 2026-11-11) and World 5 (W5_L01-L22, `tools/design_world5.py`, 2026-11-12) are designed framed levels (Worlds 1-5 all two rooms per level); every level of Worlds 6-9 is generated from World 1's towers by `WorldLevelGenerator` (2026-11-02, see Recent work), with each world's own robots, boss, backdrop and props. None of it verified in Play mode.
+World 1 (L01-L18, `tools/design_world1.py`), World 2 (W2_L01-L22, `tools/design_world2.py`, 2026-11-09), World 3 (W3_L01-L22, `tools/design_world3.py`, 2026-11-10), World 4 (W4_L01-L24, `tools/design_world4.py`, 2026-11-11) World 5 (W5_L01-L22, `tools/design_world5.py`, 2026-11-12), World 6 (W6_L01-L16, `tools/design_world6.py`, 2026-11-12) and the paid Worlds 7-9 (W<N>_L01-L12, `tools/design_world7.py` / `8` / `9` on `tools/design_paid.py`, 2026-11-12) are designed framed levels, all two rooms per level. None of it verified in Play mode.
 
 ### Star System
 - 1★ — all robots dead (progress gate)

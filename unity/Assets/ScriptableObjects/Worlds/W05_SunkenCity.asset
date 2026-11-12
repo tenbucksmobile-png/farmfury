@@ -18,7 +18,7 @@ MonoBehaviour:
   bossLevelId: W5_L22
   launcherName: Torpedo Tube
   blurb: Currents, bubbles and lever switches under the waves.
-  introducedAnimals: 06000000
+  introducedAnimals: 
   selectBadge: {fileID: 21300000, guid: 995bfdd519aa7674cb88d30c5b10ec92, type: 3}
   levelSelectBackground: {fileID: 21300000, guid: 9665ee9ed63ff464db21f3958b6abe14, type: 3}
   levelCompleteBackground: {fileID: 21300000, guid: a0e1e3f59c2e0c740a9395d6b7e4e429, type: 3}

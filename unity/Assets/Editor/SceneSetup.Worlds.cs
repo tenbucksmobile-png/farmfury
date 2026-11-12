@@ -167,6 +167,13 @@ public static partial class SceneSetup
                 var machine = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/FactoryMachineRobot.prefab");
                 if (machine != null) set.FindPropertyRelative("boss").objectReferenceValue = machine.GetComponent<RobotEnemy>();
             }
+            // The paid worlds' framed boss levels (2026-11-12): the Drill Rig, the Ringmaster, the Harvester Prime.
+            string paidBoss = world switch { 7 => "DrillRigRobot", 8 => "RingmasterRobot", 9 => "HarvesterPrimeRobot", _ => null };
+            if (paidBoss != null)
+            {
+                var b = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Prefabs/Enemies/{paidBoss}.prefab");
+                if (b != null) set.FindPropertyRelative("boss").objectReferenceValue = b.GetComponent<RobotEnemy>();
+            }
         }
     }
 

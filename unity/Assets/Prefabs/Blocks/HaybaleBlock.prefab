@@ -225,6 +225,18 @@ MonoBehaviour:
   _sprVerticalW6: {fileID: 21300000, guid: 956bfa7e38ff3354ca07aea607c8143f, type: 3}
   _sprHorizontalW6: {fileID: 21300000, guid: 956bfa7e38ff3354ca07aea607c8143f, type: 3}
   _sprShortW6: {fileID: 0}
+  _sprNormalW7: {fileID: 21300000, guid: 971dd441f4fcf444ea493f1d5ef9072a, type: 3}
+  _sprVerticalW7: {fileID: 21300000, guid: 971dd441f4fcf444ea493f1d5ef9072a, type: 3}
+  _sprHorizontalW7: {fileID: 21300000, guid: 971dd441f4fcf444ea493f1d5ef9072a, type: 3}
+  _sprShortW7: {fileID: 0}
+  _sprNormalW8: {fileID: 21300000, guid: 3565a7fd21298b94d9e6d350bb0ce844, type: 3}
+  _sprVerticalW8: {fileID: 21300000, guid: 3565a7fd21298b94d9e6d350bb0ce844, type: 3}
+  _sprHorizontalW8: {fileID: 21300000, guid: 3565a7fd21298b94d9e6d350bb0ce844, type: 3}
+  _sprShortW8: {fileID: 0}
+  _sprNormalW9: {fileID: 21300000, guid: 1c663113e6dad354cb59b30fd2b16cdf, type: 3}
+  _sprVerticalW9: {fileID: 21300000, guid: 1c663113e6dad354cb59b30fd2b16cdf, type: 3}
+  _sprHorizontalW9: {fileID: 21300000, guid: 1c663113e6dad354cb59b30fd2b16cdf, type: 3}
+  _sprShortW9: {fileID: 0}
   _sprDamaged: {fileID: 21300000, guid: c1fecff9eff0f3d40bc0b56bf284aae8, type: 3}
   _sprExplode: {fileID: 21300000, guid: c1fecff9eff0f3d40bc0b56bf284aae8, type: 3}
   _explodeSizeMultiplier: 1

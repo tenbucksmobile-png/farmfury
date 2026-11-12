@@ -80,6 +80,7 @@ public static partial class SceneSetup
         WireSeaSprite(eds, "_sprSeaJelly",  "Decor_Jelly.png");
         WireSeaSprite(eds, "_sprSeaBubble", "Decor_Bubble.png");
         WireSpaceSprites(eds);   // World 6 Robot Mothership (2026-11-12, tools/import_mothership_art.py)
+        WirePaidWorldSprites(eds);   // Worlds 7-9 (2026-11-12, tools/import_paid_worlds_art.py)
         var fish = eds.FindProperty("_sprSeaFish");
         if (fish != null)
         {
@@ -91,6 +92,34 @@ public static partial class SceneSetup
 
     const string SeaFolder = "Assets/Sprites/Environment/Sunken";
     const string SpaceFolder = "Assets/Sprites/Environment/Mothership";
+
+    const string CanyonFolder  = "Assets/Sprites/Environment/Canyon";
+    const string FairFolder    = "Assets/Sprites/Environment/Fair";
+    const string FactoryFolder = "Assets/Sprites/Environment/Factory";
+
+    // The paid worlds' flat stacks (far painting, ground strip, silhouettes) and PaidWorldDecor's art.
+    static void WirePaidWorldSprites(SerializedObject eds)
+    {
+        void One(string field, string path, bool opaque = false)
+        {
+            var sp = LoadSpriteAt(path, opaque);
+            var prop = eds.FindProperty(field);
+            if (sp != null && prop != null) prop.objectReferenceValue = sp;
+            else Debug.LogWarning($"[FarmFury] Paid worlds: {field} not wired ({path} missing?)");
+        }
+        foreach (var (prefix, folder) in new[] { ("Canyon", CanyonFolder), ("Fair", FairFolder), ("Factory", FactoryFolder) })
+        {
+            One($"_spr{prefix}Far", $"{folder}/{prefix}Far.png", opaque: true);
+            One($"_spr{prefix}Soil", $"{folder}/{prefix}Soil.png");
+            One($"_spr{prefix}SilhouetteL", $"{folder}/{prefix}SilhouetteL.png");
+            One($"_spr{prefix}SilhouetteR", $"{folder}/{prefix}SilhouetteR.png");
+        }
+        One("_sprCanyonTumbleweed", $"{CanyonFolder}/Tumbleweed.png");
+        One("_sprCanyonDust", $"{CanyonFolder}/Decor_Dust.png");
+        One("_sprFactoryDrone", $"{FactoryFolder}/Decor_Drone.png");
+        var steam = eds.FindProperty("_sprFactorySteam");
+        if (steam != null) steam.objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Effects/DustCloud.png");
+    }
 
     static void WireSpaceSprites(SerializedObject eds)
     {
@@ -226,6 +255,15 @@ public static partial class SceneSetup
             ("_laserEmitterSprite", $"{SpaceFolder}/LaserEmitter.png"),   // World 6 (2026-11-12)
             ("_plasmaOrbSprite",    $"{SpaceFolder}/PlasmaOrb.png"),
             ("_gravityRingSprite",  $"{SpaceFolder}/GravityRing.png"),
+            ("_cactusSprite",       $"{CanyonFolder}/Cactus.png"),       // Worlds 7-9 (2026-11-12)
+            ("_spineSprite",        $"{CanyonFolder}/Spine.png"),
+            ("_tumbleweedSprite",   $"{CanyonFolder}/Tumbleweed.png"),
+            ("_popcornCartSprite",  $"{FairFolder}/PopcornCart.png"),
+            ("_popcornSprite",      $"{FairFolder}/Popcorn.png"),
+            ("_pumpkinSprite",      $"{FairFolder}/Pumpkin.png"),
+            ("_cornHopperSprite",   $"{FactoryFolder}/CornHopper.png"),
+            ("_kernelSprite",       $"{FactoryFolder}/Kernel.png"),
+            ("_cogSprite",          $"{FactoryFolder}/Cog.png"),
         };
         foreach (var (field, path) in w5)
         {
@@ -286,6 +324,18 @@ public static partial class SceneSetup
         w6.arraySize = filesW6.Length;
         for (int i = 0; i < filesW6.Length; i++)
             w6.GetArrayElementAtIndex(i).objectReferenceValue = filesW6[i] == null ? null : LoadSpriteAt($"{SpaceFolder}/{filesW6[i]}", opaque: false);
+        // Paid worlds (2026-11-12): canyon mesas, circus podiums, machine housings - low / mid / tall, the tall one as the mesa.
+        foreach (var (field, folder, kind) in new[] { ("_platformSpritesW7", CanyonFolder, "Mesa"),
+                                                       ("_platformSpritesW8", FairFolder, "Podium"),
+                                                       ("_platformSpritesW9", FactoryFolder, "Housing") })
+        {
+            var mountArr = loader.FindProperty(field);
+            if (mountArr == null) continue;
+            string[] mountFiles = { $"Mount_{kind}Low.png", $"Mount_{kind}Mid.png", $"Mount_{kind}Tall.png", $"Mount_{kind}Tall.png", null, null, null };
+            mountArr.arraySize = mountFiles.Length;
+            for (int i = 0; i < mountFiles.Length; i++)
+                mountArr.GetArrayElementAtIndex(i).objectReferenceValue = mountFiles[i] == null ? null : LoadSpriteAt($"{folder}/{mountFiles[i]}", opaque: false);
+        }
     }
 
     // Thrown-ability art (AbilityProjectile, 2026-11-08): Gerald's feather bombs, Woolly's wool balls, Billy's mud,

@@ -18,7 +18,7 @@ MonoBehaviour:
   bossLevelId: W4_L24
   launcherName: Airdrop Biplane
   blurb: Drop in from the biplane and ride the updrafts.
-  introducedAnimals: 05000000
+  introducedAnimals: 0600000007000000
   selectBadge: {fileID: 21300000, guid: 95a8c8556417db8488ef69fa59068669, type: 3}
   levelSelectBackground: {fileID: 21300000, guid: 47d6e5a79d1aa3d4687979aad1cdd99c, type: 3}
   levelCompleteBackground: {fileID: 21300000, guid: 5dd2e28df6a16094893b71d2fce68f4b, type: 3}

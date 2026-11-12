@@ -90,6 +90,21 @@ public abstract class BlockBase : MonoBehaviour
     [SerializeField] protected Sprite _sprVerticalW6;
     [SerializeField] protected Sprite _sprHorizontalW6;
     [SerializeField] protected Sprite _sprShortW6;
+    // Paid worlds (2026-11-12, tools/import_paid_worlds_art.py), same slots again: World 7 ranch timber / red sandstone /
+    // dusty hay, World 8 candy-striped poles / striped crates / prize cushions, World 9 steel beams / steel crates /
+    // produce crates.
+    [SerializeField] protected Sprite _sprNormalW7;
+    [SerializeField] protected Sprite _sprVerticalW7;
+    [SerializeField] protected Sprite _sprHorizontalW7;
+    [SerializeField] protected Sprite _sprShortW7;
+    [SerializeField] protected Sprite _sprNormalW8;
+    [SerializeField] protected Sprite _sprVerticalW8;
+    [SerializeField] protected Sprite _sprHorizontalW8;
+    [SerializeField] protected Sprite _sprShortW8;
+    [SerializeField] protected Sprite _sprNormalW9;
+    [SerializeField] protected Sprite _sprVerticalW9;
+    [SerializeField] protected Sprite _sprHorizontalW9;
+    [SerializeField] protected Sprite _sprShortW9;
 
     // Optional hit-reaction art (e.g. Haybail_Damaged.png) — null on block types that don't
     // have one wired, in which case TakeDamage() only does the existing colour-tint/crack
@@ -372,10 +387,14 @@ public abstract class BlockBase : MonoBehaviour
         bool   isW5       = world == 5;
         bool   isW6       = world == 6;
         // Worlds 4-6 share one set of slots: the sky, sunken-city or mothership art (2026-11-12).
-        Sprite hiNormal   = isW6 ? _sprNormalW6     : isW5 ? _sprNormalW5     : isW4 ? _sprNormalW4     : null;
-        Sprite hiVertical = isW6 ? _sprVerticalW6   : isW5 ? _sprVerticalW5   : isW4 ? _sprVerticalW4   : null;
-        Sprite hiHoriz    = isW6 ? _sprHorizontalW6 : isW5 ? _sprHorizontalW5 : isW4 ? _sprHorizontalW4 : null;
-        Sprite hiShort    = isW6 ? _sprShortW6      : isW5 ? _sprShortW5      : isW4 ? _sprShortW4      : null;
+        Sprite hiNormal   = world switch { 9 => _sprNormalW9, 8 => _sprNormalW8, 7 => _sprNormalW7,
+                                       _ => isW6 ? _sprNormalW6     : isW5 ? _sprNormalW5     : isW4 ? _sprNormalW4     : null };
+        Sprite hiVertical = world switch { 9 => _sprVerticalW9, 8 => _sprVerticalW8, 7 => _sprVerticalW7,
+                                       _ => isW6 ? _sprVerticalW6   : isW5 ? _sprVerticalW5   : isW4 ? _sprVerticalW4   : null };
+        Sprite hiHoriz    = world switch { 9 => _sprHorizontalW9, 8 => _sprHorizontalW8, 7 => _sprHorizontalW7,
+                                       _ => isW6 ? _sprHorizontalW6 : isW5 ? _sprHorizontalW5 : isW4 ? _sprHorizontalW4 : null };
+        Sprite hiShort    = world switch { 9 => _sprShortW9, 8 => _sprShortW8, 7 => _sprShortW7,
+                                       _ => isW6 ? _sprShortW6      : isW5 ? _sprShortW5      : isW4 ? _sprShortW4      : null };
         Sprite normal     = hiNormal   != null ? hiNormal   : (isW2 && _sprNormalW2     != null) ? _sprNormalW2     : (isW3 && _sprNormalW3     != null) ? _sprNormalW3     : _sprNormal;
         Sprite vertical   = hiVertical != null ? hiVertical : (isW2 && _sprVerticalW2   != null) ? _sprVerticalW2   : (isW3 && _sprVerticalW3   != null) ? _sprVerticalW3   : _sprVertical;
         Sprite horizontal = hiHoriz    != null ? hiHoriz    : (isW2 && _sprHorizontalW2 != null) ? _sprHorizontalW2 : (isW3 && _sprHorizontalW3 != null) ? _sprHorizontalW3 : _sprHorizontal;

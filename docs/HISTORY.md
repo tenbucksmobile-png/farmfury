@@ -631,3 +631,39 @@ floating), replace every isle/rock, Kling up to ~12 credits.
   touching contact ends. Old balanced roofs survived the wake; unbalanced caps did not. The designer's robot box was
   also too small (0.4 wide, 0.69 tall vs the real 0.6 x 0.9), which let a robot be placed under a cap 0.88 u above.
   Both fixed (robot colliders off before blocks go live; generator uses the real box).
+
+## 2026-11-12 (evening) — The paid worlds: 7 Dustbowl Canyon, 8 Harvest Fairground, 9 Crop Factory
+
+User: "recall your process of building the worlds, apply this and build the pay worlds. utilise artwork available,
+otherwise access kling AI (most efficient use of credits) for art required. apply the structure plan (be creative)".
+
+- **Process (the World 5/6 template, unchanged):** Stampede art first (per-world `UI/<World>/` sets + `<XX>_Parallax_Far`),
+  Kling only for the cannon, the six construction pieces and the three mounts per world; an import script that cuts,
+  measures and writes the mount tables; runtime themes keyed on `LevelData.world`; a designer that writes the
+  `LevelDataGenerator.World<N>.cs`; then `levels` + `setup` + PhysicsProbe on both rooms.
+- **Kling, 9 images / 18 credits, all usable first try.** New prompt recipe: image 1 = a grey SILHOUETTE TEMPLATE drawn
+  in code on magenta (six pieces in the split_pieces layout / three flat-topped trapezoids), image 2 = a 2x2 sheet of
+  the world's Stampede props as the style. World 6's pieces sheet had used World 4/5's sheets for layout and picked up
+  their post / column; with neutral silhouettes nothing bled across. Gotchas: style sheets must be <= 2:1 (a 4:1 strip
+  is rejected before charging); W7Cannon came back on red, not magenta (`rekey_border`, which also catches the dark red
+  ground shadow); the canyon mesas' foot shrubs join the three shapes (`column_part` cuts at column-occupancy minima);
+  Kling painted the ranch plank red like the slab (`weathered_wood` re-hues it).
+- **Structure plan:** World 4's city generator with each world's own robot-built set pieces mixed into its piece
+  table (`tools/design_paid.py`). First runs failed on the 5-district levels: the themed pieces were wider than World
+  4's and collided with neighbours / widened the flat-topped podiums into each other, and two fairground pieces put
+  robots where the real 0.62 x 0.93 collider can't stand (carousel riders against the canopy poles, a robot inside a
+  tent whose sides are lower than it), so `settle_robots` dropped them and levels fell short of their minimum. Pieces
+  slimmed; `World._pick_relaxing` now relaxes a level that finds no seed (one district fewer, 'fall' skyline -> random,
+  one robot fewer) and logs it.
+- **World 8 needed two more fixes.** Even with slim pieces it found ~1 valid city in 200 seeds; nearly every failure was
+  "block inside the cloud", for every piece kind. Two causes: (1) the podiums are straight-sided boxes whose bulb rim
+  measured as a full-width plateau and solid band (0.01-0.99, vs ~0.2-0.8 for every other world's tapering mounts), so
+  no neighbouring district could overhang a podium's edge - inset to 0.1-0.9 in the import; (2) `design_world4._shape`
+  scores shapes by stretch, and for a mount taller than any shape allows every shape ends clamped at MAX_STRETCH with an
+  equal score, so the FIRST (low, wide) shape won and was widened to ~6 u, swallowing its neighbours. World 8 uses
+  `design_paid._shape_narrowest` (same maths, narrowest of equal scores); Worlds 4-7 and 9 keep the original so their
+  already-probed output doesn't change. After both: room 2 of L09 went 1 -> 15 valid in 200 seeds.
+- **Results:** World 7: 12 levels, 135 robots, 0 designer issues (L10, L11 relaxed to 4 districts). World 8: 12, 133, 0
+  (L07, L10 relaxed to 4). World 9: 12, 136, 0. PhysicsProbe (no input, `unity/Logs/probe_w7/8/9_room1/2.log`): all 72
+  rooms untouched (0 awake, 0 movement), no exceptions. Compile clean; Wire Scene References wired every new field (no "not wired" warnings) and
+  created DrillRigRobot / RingmasterRobot / HarvesterPrimeRobot (no _Explode art: generic death burst).

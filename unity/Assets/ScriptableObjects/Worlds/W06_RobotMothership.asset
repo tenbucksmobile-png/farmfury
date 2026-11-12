@@ -18,7 +18,7 @@ MonoBehaviour:
   bossLevelId: W6_L16
   launcherName: Gravity Sling
   blurb: Zero-G showdown with the Robot Overlord.
-  introducedAnimals: 07000000
+  introducedAnimals: 
   selectBadge: {fileID: 21300000, guid: 5c9b97542377a2f4f9cd885658b0ffd0, type: 3}
   levelSelectBackground: {fileID: 21300000, guid: 7933eb2d9700cf84c9838b5a5e1d301e, type: 3}
   levelCompleteBackground: {fileID: 21300000, guid: 5204c14a3b64a6142ba99918272b3b9b, type: 3}
