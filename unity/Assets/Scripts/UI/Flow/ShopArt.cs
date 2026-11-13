@@ -22,13 +22,6 @@ namespace FarmFury.UI
         public Sprite crossPromoStampede;
         public Sprite crossPromoArcade;
 
-        [Header("Settings icons")]
-        [Tooltip("Music on/off, dimmed while muted. (Btn_music-remove.png)")]
-        public Sprite musicIcon;
-        public Sprite leaderboardIcon;
-        public Sprite characterStoryIcon;
-        public Sprite policiesIcon;
-
         [Header("Purchase screens")]
         [Tooltip("World purchase price sign. (Shop/3.99.png)")]
         public Sprite worldPrice;

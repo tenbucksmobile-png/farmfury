@@ -413,14 +413,7 @@ namespace FarmFury.UI
         /// Places a child of the backdrop over a box given in the original 1280x720 art's pixels (origin top-left),
         /// by anchors on the widened sprite, so it scales and moves with the backdrop. Shared by the overlays.
         /// </summary>
-        public static void PlaceInArt(RectTransform rt, Rect box)
-        {
-            float wide = ArtSize.x + 2f * ArtPad;
-            rt.anchorMin = new Vector2((box.xMin + ArtPad) / wide, 1f - box.yMax / ArtSize.y);
-            rt.anchorMax = new Vector2((box.xMax + ArtPad) / wide, 1f - box.yMin / ArtSize.y);
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
-        }
+        public static void PlaceInArt(RectTransform rt, Rect box) => WideArt.Place(rt, box);
 
         private static Button RoundButton(Transform parent, string name, Sprite sprite, string fallbackLabel, Action onClick,
             Vector2 corner, Vector2 offset)

@@ -24,20 +24,6 @@ namespace FarmFury.UI
         [Tooltip("A heavily blurred copy of the poster (LandingPage_Blur.png, tools/brand_cannonfire.py): fills the side gaps on screens wider than the poster.")]
         public Sprite landingPosterBlur;
 
-        [Header("World Select")]
-        [Tooltip("World Select backdrop (Franchise/Canvas/Canvas.png, the sunset field).")]
-        public Sprite worldSelectBackground;
-        [Tooltip("Header banner (World Unlocked sign). Null = 'SELECT A WORLD' text.")]
-        public Sprite worldSelectBanner;
-
-        [Header("Level Select tiles")]
-        public Sprite levelTileLocked;
-        public Sprite levelTileNext;
-        public Sprite bossShield;
-        public Sprite oneStarBoard;
-        public Sprite twoStarBoard;
-        public Sprite threeStarBoard;
-
         [Header("Character Select")]
         [Tooltip("Backdrop with 'Character' lettering. A world's WorldData.characterSelectBackground replaces it.")]
         public Sprite characterSelectBackground;
@@ -57,26 +43,10 @@ namespace FarmFury.UI
         public Sprite levelFailedBackground;
         [Tooltip("Greyed star drawn over each painted star not earned.")]
         public Sprite levelCompleteStarEmpty;
-        public Sprite newCharacterBackground;
-        public Sprite newCharacterTitle;
         public Sprite newCharacterSign;
-        public Sprite worldUnlockedSign;
-
-        public Sprite StarBoard(int stars) => stars switch
-        {
-            >= 3 => threeStarBoard,
-            2 => twoStarBoard,
-            1 => oneStarBoard,
-            _ => null,
-        };
-
         public Sprite AbilityBadge(AnimalType animal) =>
             abilityBadges != null && (int)animal < abilityBadges.Length ? abilityBadges[(int)animal] : null;
 
         public Sprite AnimalCard(AnimalType animal) =>
-            animalCards != null && (int)animal < animalCards.Length ? animalCards[(int)animal] : null;
-
-        /// <summary>A world's override when set, else the shared one.</summary>
-        public static Sprite Either(Sprite world, Sprite shared) => world != null ? world : shared;
-    }
+            animalCards != null && (int)animal < animalCards.Length ? animalCards[(int)animal] : null;    }
 }

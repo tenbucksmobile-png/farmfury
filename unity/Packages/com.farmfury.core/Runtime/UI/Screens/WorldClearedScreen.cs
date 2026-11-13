@@ -1,9 +1,7 @@
-using FarmFury.Core;
 using UnityEngine;
 using UnityEngine.UI;
-using FarmFury.Shared.UI;
 
-namespace FarmFury.UI
+namespace FarmFury.Shared.UI
 {
     /// <summary>
     /// The World Unlocked page after a world's boss falls, when the clear opened the next world — ported from
@@ -21,9 +19,6 @@ namespace FarmFury.UI
     /// </summary>
     public class WorldClearedScreen : OverlayScreen
     {
-        // This game's MenuArt (the shared base holds it as MenuArtBase).
-        private new MenuArt Art => (MenuArt)base.Art;
-
         private static readonly Rect TitleBox = new(240f, 40f, 800f, 170f);
         private static readonly Rect SignBox = new(440f, 30f, 400f, 200f);
         private static readonly Rect CardBox = new(490f, 215f, 300f, 300f);    // square world badge
@@ -42,7 +37,7 @@ namespace FarmFury.UI
         private readonly Image _backdrop;
         private System.Action _onClosed;
 
-        public WorldClearedScreen(Transform canvas, MenuArt art, ShopArt shop) : base(canvas, "WorldCleared", art, shop, posterBackdrop: false)
+        public WorldClearedScreen(Transform canvas, MenuArtBase art, ShopArtBase shop) : base(canvas, "WorldCleared", art, shop, posterBackdrop: false)
         {
             BackButton.gameObject.SetActive(false);
             var rootImage = Root.GetComponent<Image>();
@@ -60,26 +55,26 @@ namespace FarmFury.UI
             frame.SetAsFirstSibling();
             var fit = frame.gameObject.AddComponent<FitContent>();
             fit.contentSize = new Vector2(1280f, 720f);
-            fit.spriteSize = new Vector2(1280f + 2f * ResultsScreen.ArtPad, 720f);
+            fit.spriteSize = new Vector2(1280f + 2f * WideArt.Pad, 720f);
 
             _rays = UIKit.Picture(frame, "Rays", NewCharacterPage.SunburstSprite());
             _rays.color = new Color(1f, 0.9f, 0.5f, 0.6f);
-            ResultsScreen.PlaceInArt(_rays.rectTransform, RaysBox);
+            WideArt.Place(_rays.rectTransform, RaysBox);
 
             _title = OutlinedText(frame, "Title", "NEW WORLD UNLOCKED!", 120, 4f);
-            ResultsScreen.PlaceInArt(_title.rectTransform, TitleBox);
+            WideArt.Place(_title.rectTransform, TitleBox);
 
             _sign = UIKit.Picture(frame, "WorldUnlockedSign", Art.worldUnlockedSign);
-            ResultsScreen.PlaceInArt(_sign.rectTransform, SignBox);
+            WideArt.Place(_sign.rectTransform, SignBox);
             _sign.gameObject.SetActive(false);
 
             _card = UIKit.Picture(frame, "WorldCard", null);
-            ResultsScreen.PlaceInArt(_card.rectTransform, CardBox);
+            WideArt.Place(_card.rectTransform, CardBox);
             _flash = UIKit.Picture(_card.transform, "Flash", null);
             UIKit.Stretch(_flash.rectTransform);
 
             _message = OutlinedText(frame, "Message", "", 56, 3f);
-            ResultsScreen.PlaceInArt(_message.rectTransform, MessageBox);
+            WideArt.Place(_message.rectTransform, MessageBox);
 
             var particles = UIKit.NewRect("Confetti", Rect);
             UIKit.Stretch(particles);
@@ -94,24 +89,22 @@ namespace FarmFury.UI
         /// Shows the world this boss clear opened (LevelRunState.worldUnlocked) over the beaten world's backdrop and
         /// calls onClosed when tapped away; returns false (showing nothing) when the clear opened no world.
         /// </summary>
-        public bool ShowFor(WorldType cleared, WorldType? unlocked, System.Action onClosed = null)
+        public bool ShowFor(WorldView cleared, WorldView? unlocked, System.Action onClosed = null)
         {
-            var data = DataManager.Instance;
-            var next = unlocked.HasValue && data != null ? data.GetWorldData(unlocked.Value) : null;
-            if (next == null) { return false; }
+            if (!unlocked.HasValue || !unlocked.Value.HasData) { return false; }
+            var next = unlocked.Value;
             _onClosed = onClosed;
-            var world = data.GetWorldData(cleared);
             if (_backdrop != null)   // the beaten world's own backdrop, else the shared sunset
             {
-                _backdrop.sprite = world != null && world.newCharacterBackground != null ? world.newCharacterBackground : Art.newCharacterBackground;
+                _backdrop.sprite = MenuArtBase.Either(cleared.NewCharacterBackground, Art.newCharacterBackground);
             }
 
             Show();
             bool sign = Art.worldUnlockedSign != null;
             _sign.gameObject.SetActive(sign);
             _title.gameObject.SetActive(!sign);
-            _message.text = $"Next stop: {next.displayName}!";
-            SetCard(next.selectBadge, next.displayName);
+            _message.text = $"Next stop: {next.DisplayName}!";
+            SetCard(next.Badge, next.DisplayName);
             _anim.Play(silhouette: true);
             return true;
         }

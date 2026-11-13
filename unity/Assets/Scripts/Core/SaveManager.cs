@@ -21,7 +21,7 @@ namespace FarmFury.Core
     ///    GameManager's level index) onto levelIds, so existing World 1 progress survives the port.
     /// Lives on the GameManager GameObject (DontDestroyOnLoad).
     /// </summary>
-    public class SaveManager : MonoSingleton<SaveManager>, IAdPolicy
+    public class SaveManager : MonoSingleton<SaveManager>, IAdPolicy, IPromoState
     {
         private const string LevelStarsKeyPrefix = "FF_Stars_";
         private const string LevelCompletedKeyPrefix = "FF_Completed_";

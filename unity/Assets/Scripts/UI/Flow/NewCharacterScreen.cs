@@ -28,7 +28,7 @@ namespace FarmFury.UI
             tap.transition = Selectable.Transition.None;
             tap.onClick.AddListener(Next);
 
-            _page = new NewCharacterPage(Rect, Art);
+            _page = new NewCharacterPage(Rect, Art, CannonfireMenuData.CurrentWorldNewCharacterBackground);
             _page.Frame.SetAsFirstSibling();
             rootImage.color = _page.HasBackdrop ? Color.black : UIKit.Dark;
             Root.AddComponent<RaysSpinner>().Page = _page;
@@ -52,7 +52,7 @@ namespace FarmFury.UI
         private void ShowNext()
         {
             var animal = _queue.Dequeue();
-            _page.SetCharacter(animal, Art.AnimalCard(animal));
+            _page.SetCharacter(Art.AnimalCard(animal), animal.ToString());
             _page.Burst();
         }
 

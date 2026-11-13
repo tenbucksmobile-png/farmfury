@@ -1,8 +1,8 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
-using FarmFury.Shared.UI;
 
-namespace FarmFury.UI
+namespace FarmFury.Shared.UI
 {
     /// <summary>
     /// The New Character page's look (the 2026-09-29 mockup), shared by the rare-pellet reveal in a level
@@ -32,10 +32,13 @@ namespace FarmFury.UI
         public readonly bool HasBackdrop;
         private readonly Image _backdrop;
         private readonly Sprite _defaultBackdrop;
+        private readonly Func<Sprite> _worldBackdrop;
 
-        public NewCharacterPage(RectTransform parent, MenuArt art)
+        /// <param name="worldBackdrop">The current world's own New Character backdrop, or null for the shared one.</param>
+        public NewCharacterPage(RectTransform parent, MenuArtBase art, Func<Sprite> worldBackdrop = null)
         {
-            art ??= new MenuArt();
+            art ??= new MenuArtBase();
+            _worldBackdrop = worldBackdrop;
             HasBackdrop = art.newCharacterBackground != null;
 
             Image frameImage = HasBackdrop ? UIKit.Picture(parent, "Backdrop", art.newCharacterBackground) : null;
@@ -45,11 +48,11 @@ namespace FarmFury.UI
             _defaultBackdrop = art.newCharacterBackground;
             var fit = Frame.gameObject.AddComponent<FitContent>();
             fit.contentSize = new Vector2(1280f, 720f);
-            fit.spriteSize = new Vector2(1280f + 2f * ResultsScreen.ArtPad, 720f);
+            fit.spriteSize = new Vector2(1280f + 2f * WideArt.Pad, 720f);
 
             Rays = UIKit.Picture(Frame, "Rays", SunburstSprite());
             Rays.color = new Color(1f, 0.9f, 0.5f, 0.6f);
-            ResultsScreen.PlaceInArt(Rays.rectTransform, RaysBox);
+            WideArt.Place(Rays.rectTransform, RaysBox);
 
             if (art.newCharacterTitle != null)
             {
@@ -66,10 +69,10 @@ namespace FarmFury.UI
                 outline.effectColor = OutlineColor;
                 Title = text;
             }
-            ResultsScreen.PlaceInArt(Title.rectTransform, TitleBox);
+            WideArt.Place(Title.rectTransform, TitleBox);
 
             Card = UIKit.Picture(Frame, "CharacterCard", null);
-            ResultsScreen.PlaceInArt(Card.rectTransform, CardBox);
+            WideArt.Place(Card.rectTransform, CardBox);
             Flash = UIKit.Picture(Card.transform, "Flash", null);
             UIKit.Stretch(Flash.rectTransform);
 
@@ -79,7 +82,7 @@ namespace FarmFury.UI
             var messageOutline = Message.gameObject.AddComponent<Outline>();
             messageOutline.effectDistance = new Vector2(3f, -3f);
             messageOutline.effectColor = OutlineColor;
-            ResultsScreen.PlaceInArt(Message.rectTransform, MessageBox);
+            WideArt.Place(Message.rectTransform, MessageBox);
 
             var particles = UIKit.NewRect("Confetti", parent);
             UIKit.Stretch(particles);
@@ -95,15 +98,12 @@ namespace FarmFury.UI
         public void UseWorldBackdrop()
         {
             if (_backdrop == null) { return; }
-            var gm = GameManager.Instance;
-            var data = FarmFury.Core.DataManager.Instance;
-            var level = gm != null ? gm.CurrentLevel : null;
-            var world = level != null && data != null ? data.GetWorldData(level.WorldType) : null;
-            _backdrop.sprite = world != null && world.newCharacterBackground != null ? world.newCharacterBackground : _defaultBackdrop;
+            _backdrop.sprite = MenuArtBase.Either(_worldBackdrop?.Invoke(), _defaultBackdrop);
         }
 
         /// <summary>Shows the animal's framed card (name baked in); without a card, its name as text.</summary>
-        public void SetCharacter(AnimalType animal, Sprite card)
+        /// <summary>The unlocked character's card (name baked in); without art, fallbackName as text.</summary>
+        public void SetCharacter(Sprite card, string fallbackName)
         {
             Card.sprite = card;
             Card.gameObject.SetActive(true);
@@ -112,7 +112,7 @@ namespace FarmFury.UI
             Flash.preserveAspect = true;
             Flash.gameObject.SetActive(card != null);
             Flash.color = new Color(1f, 1f, 1f, 0f);
-            Message.text = card == null ? animal.ToString() : "";
+            Message.text = card == null ? fallbackName : "";
         }
 
         public void Spin()

@@ -1,5 +1,28 @@
 # Changelog – com.farmfury.core
 
+## 0.4.1 – 2026-11-13
+- `WideArt.Place` no longer resets the pivot (identical to the games' `ResultsScreen.PlaceInArt`).
+
+## 0.4.0 – 2026-11-13
+- The drifted menus are now one shared version (Cannonfire's newer text, Stampede's GUIDs; `FarmFury.Shared.UI`):
+  - `WorldSelectScreen<TWorld>` and `LevelSelectScreen<TWorld, TLevel>`: generic over the game's world enum and
+    level asset. They read worlds and levels through the new `IMenuData<TWorld, TLevel>` seam (`WorldView`,
+    `LevelView`), which each game implements once over its DataManager + SaveManager. A game keeps its old class
+    names with a one-line subclass. Level Select: 6 columns up to 12 levels, `LargeWorldColumns` (default 8) above.
+    World Select: no price sign (Stampede's was always hidden).
+  - `NewCharacterPage`: `SetCharacter(Sprite card, string fallbackName)`; the current world's backdrop comes from an
+    optional `Func<Sprite>`.
+  - `WorldClearedScreen.ShowFor(WorldView cleared, WorldView? unlocked, onClosed)`.
+  - `SettingsScreen`: the sound icon is the game's: `soundLabel`, `isSoundOn`, `setSoundOn` (Stampede: music only;
+    Cannonfire: music + effects).
+- `MenuArtBase` gains World Select, Level Select tile, star board, New Character and World Unlocked fields, plus
+  `StarBoard()` and `Either()`; `ShopArtBase` gains the four Settings icons. **Games delete these fields (and those
+  two methods) from their own MenuArt / ShopArt.**
+- New `WideArt` (1280x720 + `Pad` 160: `Place`, `Fit`); `OverlayScreen.WideArtPad` = `WideArt.Pad`. Replaces
+  `ResultsScreen.PlaceInArt` / `ArtPad` in shared code.
+- New `ShopPromoPacer` + `IPromoState` (`FarmFury.Shared.Monetisation`): Stampede's Level Complete shop-card pacing
+  as pure logic over category indices; the game keeps its promo enum, art and analytics.
+
 ## 0.3.0 – 2026-11-13
 - Overlay screens seeded from Stampede (GUIDs kept): `OverlayScreen`, `PauseScreen`, `ParentalGate`, `LegalScreen`,
   `ShopScreen`, `CoinPurchaseScreen`, `ItemPurchaseScreen`, `UseCoinsPrompt`, `LeaderboardPage` (`FarmFury.Shared.UI`).

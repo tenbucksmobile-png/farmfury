@@ -22,6 +22,13 @@ namespace FarmFury.Shared.UI
         public Sprite legalSign;
         public Sprite leaderboardSign;
 
+        [Header("Shared: Settings icons")]
+        [Tooltip("Sound / music on-off, dimmed while off.")]
+        public Sprite musicIcon;
+        public Sprite leaderboardIcon;
+        public Sprite characterStoryIcon;
+        public Sprite policiesIcon;
+
         [Header("Shared: shop icons")]
         [Tooltip("Cash: opens the coin packs.")]
         public Sprite cashIcon;

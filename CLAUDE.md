@@ -1152,7 +1152,7 @@ needing a live pass before shipping.
 (source: `Desktop\FarmFury_Shared`, GitHub `farmfury_shared`; plan: `Desktop\Farm Fury Shared Architecture – Reference
 for Claude Code.md`). **Never edit it here** - change FarmFury_Shared, release a tag, then
 `python ..\FarmFury_Shared\Tools\sync_shared.py unity core <version>` from this repo's root (the script refuses
-hand-edited copies). Current: core 0.3.0.
+hand-edited copies). Current: core 0.4.1.
 
 - It provides (Cannonfire's own copies were deleted): `MonoSingleton` (`FarmFury.Shared.Utilities`); `UIKit`,
   `SafeAreaFitter`, `FitContent`, `HoldButton`, `HoldThenFade`, `HangingSignDrop`, `SpinAroundY`, `ZoomedCover`,
@@ -1160,9 +1160,18 @@ hand-edited copies). Current: core 0.3.0.
   `AnalyticsManager` (`FarmFury.Shared.Monetisation`). Since core 0.3.0 also the overlay screens `OverlayScreen`,
   `PauseScreen`, `ParentalGate`, `LegalScreen`, `ShopScreen`, `CoinPurchaseScreen`, `ItemPurchaseScreen`,
   `UseCoinsPrompt`, `LeaderboardPage`, plus `LeaderboardArt` and the `Store` facade (`FarmFury.Shared.Monetisation`).
-  Everything else under `Scripts/` is still Cannonfire's own.
+  Since core 0.4.x also `NewCharacterPage`, `WorldClearedScreen` (World Unlocked page), `SettingsScreen`, `WideArt`
+  (= `ResultsScreen.PlaceInArt`) and the generic World / Level Select. Everything else under `Scripts/` is still
+  Cannonfire's own.
+- World / Level Select: `UI/Flow/WorldSelectScreen.cs` and `LevelSelectScreen.cs` are now one-line subclasses of the
+  package's `WorldSelectScreen<WorldType>` / `LevelSelectScreen<WorldType, LevelData>`. They read data through
+  `UI/Flow/CannonfireMenuData.cs` (`IMenuData`: DataManager + SaveManager -> `WorldView` / `LevelView`); change what
+  the menus show there, not in the package. Level Select uses 8 columns above 12 levels (package default).
+- Settings: the sound icon (label "SOUND") mutes music and effects together, passed in by GameFlow.
+- `ShopPromos` keeps the promo enum, art and analytics; the pacing is the package's `ShopPromoPacer`
+  (`SaveManager` implements `IPromoState`, same `FF_` keys).
 - `MenuArt : MenuArtBase` and `ShopArt : ShopArtBase`: the fields the shared screens use (landing poster, round
-  buttons, pause backdrop; page backdrop, signs, shop icons, plaque, coin packs, owned badge, purchase banner, coin,
+  buttons, pause backdrop, World/Level Select tiles and star boards, New Character / World Unlocked art; Settings icons, page backdrop, signs, shop icons, plaque, coin packs, owned badge, purchase banner, coin,
   Yes/No, Use Coins) are declared in the package base class. **Never redeclare them in MenuArt / ShopArt** (Unity
   would serialize the name twice). Scene values survived the move (checked 2026-11-13: every field still set).
   Overlay subclasses that need Cannonfire-only sprites declare `private new MenuArt Art => (MenuArt)base.Art;`

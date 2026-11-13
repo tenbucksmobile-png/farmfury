@@ -23,55 +23,35 @@ namespace FarmFury.UI
     /// </summary>
     public static class ShopPromos
     {
-        public const int LevelsBetweenCards = 3;
-        public const int InterstitialsBeforeAdsCard = 2;
+        // Category order for ShopPromoPacer (its index = position here); cannons are offered after a new animal.
+        private static readonly ShopPromo[] Categories = { ShopPromo.Cannons, ShopPromo.Trails, ShopPromo.Impacts };
 
-        /// <summary>Call once per Level Complete: counts the clear and uses up the card it returns.</summary>
         public static ShopPromo PickForLevelComplete(LevelData level, LevelRunState run)
         {
             var save = SaveManager.Instance;
-            if (save == null || level == null || level.isBossLevel)
+            if (save == null || level == null)
             {
                 return ShopPromo.None;
             }
 
-            save.LevelsSincePromo++;
-            bool newCharacter = run.newlyUnlockedAnimals.Count > 0;
-            if (save.LevelsSincePromo < LevelsBetweenCards && !newCharacter)
-            {
-                return ShopPromo.None;
-            }
-
-            var promo = Choose(save, run, newCharacter);
+            // FarmFury: cosmetics are shared by every animal, so "unowned" doesn't depend on who's playing.
+            int pick = ShopPromoPacer.Pick(save, level.isBossLevel, run.newlyUnlockedAnimals.Count > 0, Categories.Length,
+                i => AnyUnowned(save, Products(Categories[i])), newCharacterCategory: 0);
+            var promo = pick == ShopPromoPacer.RemoveAds ? ShopPromo.RemoveAds
+                : pick >= 0 ? Categories[pick] : ShopPromo.None;
             if (promo != ShopPromo.None)
             {
-                save.LevelsSincePromo = 0;
                 AnalyticsManager.Instance?.LogPromoShown(Id(promo));
             }
             return promo;
         }
 
-        private static ShopPromo Choose(SaveManager save, LevelRunState run, bool newCharacter)
+        private static string[] Products(ShopPromo promo) => promo switch
         {
-            // FarmFury: hats and trails are shared by every animal, so "unowned" doesn't depend on who's playing.
-            if (newCharacter && AnyUnowned(save, StoreProducts.Cannons)) { return ShopPromo.Cannons; }
-
-            if (!save.AdsRemoved && save.InterstitialsSinceAdsCard >= InterstitialsBeforeAdsCard)
-            {
-                save.InterstitialsSinceAdsCard = 0;
-                return ShopPromo.RemoveAds;
-            }
-
-            // Next category in turn that still has something to sell.
-            for (int i = 0; i < 3; i++)
-            {
-                int turn = save.PromoTurn++ % 3;
-                if (turn == 0 && AnyUnowned(save, StoreProducts.Cannons)) { return ShopPromo.Cannons; }
-                if (turn == 1 && AnyUnowned(save, StoreProducts.Trails)) { return ShopPromo.Trails; }
-                if (turn == 2 && AnyUnowned(save, StoreProducts.Impacts)) { return ShopPromo.Impacts; }
-            }
-            return ShopPromo.None;
-        }
+            ShopPromo.Cannons => StoreProducts.Cannons,
+            ShopPromo.Trails => StoreProducts.Trails,
+            _ => StoreProducts.Impacts,
+        };
 
         private static bool AnyUnowned(SaveManager save, string[] products)
         {

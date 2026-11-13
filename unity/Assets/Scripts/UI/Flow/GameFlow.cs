@@ -94,7 +94,10 @@ namespace FarmFury.UI
             var story = Add(new CharacterStoryScreen(c, _menuArt, _shopArt));
             var worldDetail = Add(new WorldDetailScreen(c, _menuArt, _shopArt, _leaderboardArt));
             var leaderboards = Add(new LeaderboardsScreen(c, _menuArt, _shopArt, _leaderboardArt, worldDetail.Show, OpenWorldShop));
-            Settings = Add(new SettingsScreen(c, _menuArt, _shopArt, leaderboards.Show, story.Show, legal.Show));
+            // The sound icon mutes music AND effects together (it replaced the old in-level Mute button).
+            Settings = Add(new SettingsScreen(c, _menuArt, _shopArt, leaderboards.Show, story.Show, legal.Show, "SOUND",
+                () => AudioManager.MusicEnabled || AudioManager.SfxEnabled,
+                on => { AudioManager.SetMusicEnabled(on); AudioManager.SetSfxEnabled(on); }));
 
             // Shop family (franchise Phase 5, Arcade's catalogue and layout).
             var useCoins = Add(new UseCoinsPrompt(c, _menuArt, _shopArt, IAPManager.CosmeticCoinCost));
@@ -318,7 +321,8 @@ namespace FarmFury.UI
             Results.Hide();
             var level = _gm.CurrentLevel;
             if (level != null && level.isBossLevel && WorldCleared != null
-                && WorldCleared.ShowFor(level.WorldType, _gm.RunState.worldUnlocked, ContinueAfterLevel))
+                && WorldCleared.ShowFor(CannonfireMenuData.Instance.World(level.WorldType),
+                    CannonfireMenuData.Instance.WorldOrNull(_gm.RunState.worldUnlocked), ContinueAfterLevel))
             {
                 return;
             }

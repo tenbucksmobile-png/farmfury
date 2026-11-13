@@ -30,7 +30,7 @@ namespace FarmFury.Shared.UI
 
         /// <summary>Mirrored columns each game's setup paints onto each side of a 1280x720 backdrop (the *_Wide.png
         /// copies), so a phone wider than 16:9 sees art instead of bars.</summary>
-        public const int WideArtPad = 160;
+        public const int WideArtPad = WideArt.Pad;
 
         public const float IconSize = 240f;          // Arcade: StandardIconButtonSize (160) x 1.5
         public const float IconSpacing = 77f;
