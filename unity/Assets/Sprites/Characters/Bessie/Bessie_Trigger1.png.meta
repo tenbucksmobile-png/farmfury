@@ -1,0 +1,546 @@
+fileFormatVersion: 2
+guid: 72c4409cbcb3de34b8a35814a14aecc1
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5321888442754330218
+    second: Bessie_Trigger1_0
+  - first:
+      213: -7214217281154384594
+    second: Bessie_Trigger1_1
+  - first:
+      213: -6287346924628875119
+    second: Bessie_Trigger1_2
+  - first:
+      213: 537012097392479654
+    second: Bessie_Trigger1_3
+  - first:
+      213: 2193642703615517830
+    second: Bessie_Trigger1_4
+  - first:
+      213: 7112253277502424679
+    second: Bessie_Trigger1_5
+  - first:
+      213: 5477673722647698372
+    second: Bessie_Trigger1_6
+  - first:
+      213: -1259332964224964059
+    second: Bessie_Trigger1_7
+  - first:
+      213: 7808331809764970211
+    second: Bessie_Trigger1_8
+  - first:
+      213: 6161479513598862922
+    second: Bessie_Trigger1_9
+  - first:
+      213: 7897114475632916343
+    second: Bessie_Trigger1_10
+  - first:
+      213: 4578521424893283637
+    second: Bessie_Trigger1_11
+  - first:
+      213: -2588421711428542526
+    second: Bessie_Trigger1_12
+  - first:
+      213: 3761129676414024931
+    second: Bessie_Trigger1_13
+  - first:
+      213: -2067511359994707259
+    second: Bessie_Trigger1_14
+  - first:
+      213: -4034038693431306181
+    second: Bessie_Trigger1_15
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 1424
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Bessie_Trigger1_0
+      rect:
+        serializedVersion: 2
+        x: 104
+        y: 204
+        width: 280
+        height: 242
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6ee0a497552bd940800000000000000
+      internalID: 5321888442754330218
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_1
+      rect:
+        serializedVersion: 2
+        x: 137
+        y: 198
+        width: 10
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e2dfe48fa93f1eb90800000000000000
+      internalID: -7214217281154384594
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_2
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 174
+        width: 194
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 198e9d9a84bdeb8a0800000000000000
+      internalID: -6287346924628875119
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_3
+      rect:
+        serializedVersion: 2
+        x: 124
+        y: 183
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6ad8a2948a9d37700800000000000000
+      internalID: 537012097392479654
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_4
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 190
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6846121aa62617e10800000000000000
+      internalID: 2193642703615517830
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_5
+      rect:
+        serializedVersion: 2
+        x: 364
+        y: 189
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 766c32e6cacc3b260800000000000000
+      internalID: 7112253277502424679
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_6
+      rect:
+        serializedVersion: 2
+        x: 148
+        y: 179
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4cb58e19a3b940c40800000000000000
+      internalID: 5477673722647698372
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_7
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 124
+        width: 91
+        height: 58
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 52a6e6d5753f58ee0800000000000000
+      internalID: -1259332964224964059
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_8
+      rect:
+        serializedVersion: 2
+        x: 363
+        y: 168
+        width: 11
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ee8c612964cc5c60800000000000000
+      internalID: 7808331809764970211
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_9
+      rect:
+        serializedVersion: 2
+        x: 21
+        y: 62
+        width: 458
+        height: 109
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a4628e209f8f18550800000000000000
+      internalID: 6161479513598862922
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_10
+      rect:
+        serializedVersion: 2
+        x: 97
+        y: 170
+        width: 9
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 777f1be56cf289d60800000000000000
+      internalID: 7897114475632916343
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_11
+      rect:
+        serializedVersion: 2
+        x: 129
+        y: 165
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 53d87475afc2a8f30800000000000000
+      internalID: 4578521424893283637
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_12
+      rect:
+        serializedVersion: 2
+        x: 146
+        y: 163
+        width: 9
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2cf9461ea24141cd0800000000000000
+      internalID: -2588421711428542526
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_13
+      rect:
+        serializedVersion: 2
+        x: 238
+        y: 152
+        width: 11
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ec76dc6387323430800000000000000
+      internalID: 3761129676414024931
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_14
+      rect:
+        serializedVersion: 2
+        x: 250
+        y: 161
+        width: 7
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5c24e6a4f59be43e0800000000000000
+      internalID: -2067511359994707259
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bessie_Trigger1_15
+      rect:
+        serializedVersion: 2
+        x: 258
+        y: 122
+        width: 112
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b3898db7e273408c0800000000000000
+      internalID: -4034038693431306181
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Bessie_Trigger1_0: 5321888442754330218
+      Bessie_Trigger1_1: -7214217281154384594
+      Bessie_Trigger1_10: 7897114475632916343
+      Bessie_Trigger1_11: 4578521424893283637
+      Bessie_Trigger1_12: -2588421711428542526
+      Bessie_Trigger1_13: 3761129676414024931
+      Bessie_Trigger1_14: -2067511359994707259
+      Bessie_Trigger1_15: -4034038693431306181
+      Bessie_Trigger1_2: -6287346924628875119
+      Bessie_Trigger1_3: 537012097392479654
+      Bessie_Trigger1_4: 2193642703615517830
+      Bessie_Trigger1_5: 7112253277502424679
+      Bessie_Trigger1_6: 5477673722647698372
+      Bessie_Trigger1_7: -1259332964224964059
+      Bessie_Trigger1_8: 7808331809764970211
+      Bessie_Trigger1_9: 6161479513598862922
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

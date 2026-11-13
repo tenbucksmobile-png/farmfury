@@ -1,0 +1,442 @@
+fileFormatVersion: 2
+guid: 225ac74e6b962c8479da42ca85f6d60e
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -9213260154298662442
+    second: Cluck_Trigger1_0
+  - first:
+      213: -605456489162404539
+    second: Cluck_Trigger1_1
+  - first:
+      213: 4593050285628990947
+    second: Cluck_Trigger1_2
+  - first:
+      213: 5365649560657097464
+    second: Cluck_Trigger1_3
+  - first:
+      213: -2770958552397870341
+    second: Cluck_Trigger1_4
+  - first:
+      213: 9154451030081436004
+    second: Cluck_Trigger1_5
+  - first:
+      213: -2545996358874182117
+    second: Cluck_Trigger1_6
+  - first:
+      213: 2468178014178669352
+    second: Cluck_Trigger1_7
+  - first:
+      213: 3591986578349563295
+    second: Cluck_Trigger1_8
+  - first:
+      213: 8630724031115929549
+    second: Cluck_Trigger1_9
+  - first:
+      213: 7633785382079801682
+    second: Cluck_Trigger1_10
+  - first:
+      213: 4281806669778273254
+    second: Cluck_Trigger1_11
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 2057
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Cluck_Trigger1_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 365
+        width: 129
+        height: 135
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d184cf14bce32080800000000000000
+      internalID: -9213260154298662442
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cluck_Trigger1_1
+      rect:
+        serializedVersion: 2
+        x: 116
+        y: 378
+        width: 67
+        height: 122
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 54d058ce78cf897f0800000000000000
+      internalID: -605456489162404539
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cluck_Trigger1_2
+      rect:
+        serializedVersion: 2
+        x: 239
+        y: 385
+        width: 10
+        height: 115
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3e52c6656eacdbf30800000000000000
+      internalID: 4593050285628990947
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cluck_Trigger1_3
+      rect:
+        serializedVersion: 2
+        x: 323
+        y: 389
+        width: 61
+        height: 111
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8f27234d8dd967a40800000000000000
+      internalID: 5365649560657097464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cluck_Trigger1_4
+      rect:
+        serializedVersion: 2
+        x: 324
+        y: 401
+        width: 43
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bfa8ef4b0e39b89d0800000000000000
+      internalID: -2770958552397870341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cluck_Trigger1_5
+      rect:
+        serializedVersion: 2
+        x: 361
+        y: 353
+        width: 139
+        height: 147
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 46976b1a5b42b0f70800000000000000
+      internalID: 9154451030081436004
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cluck_Trigger1_6
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 293
+        width: 134
+        height: 69
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b1ecdd50dcdcaacd0800000000000000
+      internalID: -2545996358874182117
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cluck_Trigger1_7
+      rect:
+        serializedVersion: 2
+        x: 73
+        y: 0
+        width: 427
+        height: 387
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8237c81b3dab04220800000000000000
+      internalID: 2468178014178669352
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cluck_Trigger1_8
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 260
+        width: 34
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f9d1f7803cc49d130800000000000000
+      internalID: 3591986578349563295
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cluck_Trigger1_9
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 148
+        width: 118
+        height: 51
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dc7a71d57cd76c770800000000000000
+      internalID: 8630724031115929549
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cluck_Trigger1_10
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 138
+        width: 98
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 259af660c57a0f960800000000000000
+      internalID: 7633785382079801682
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Cluck_Trigger1_11
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 166
+        height: 171
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6e3480dea780c6b30800000000000000
+      internalID: 4281806669778273254
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Cluck_Trigger1_0: -9213260154298662442
+      Cluck_Trigger1_1: -605456489162404539
+      Cluck_Trigger1_10: 7633785382079801682
+      Cluck_Trigger1_11: 4281806669778273254
+      Cluck_Trigger1_2: 4593050285628990947
+      Cluck_Trigger1_3: 5365649560657097464
+      Cluck_Trigger1_4: -2770958552397870341
+      Cluck_Trigger1_5: 9154451030081436004
+      Cluck_Trigger1_6: -2545996358874182117
+      Cluck_Trigger1_7: 2468178014178669352
+      Cluck_Trigger1_8: 3591986578349563295
+      Cluck_Trigger1_9: 8630724031115929549
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

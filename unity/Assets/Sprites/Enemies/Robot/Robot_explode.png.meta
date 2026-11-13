@@ -1,0 +1,650 @@
+fileFormatVersion: 2
+guid: 27f7092393c66944dbd128f273c7defc
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -6378191485820231303
+    second: Robot_explode_0
+  - first:
+      213: 2378926670318479005
+    second: Robot_explode_1
+  - first:
+      213: -2000498196066201526
+    second: Robot_explode_2
+  - first:
+      213: 2453169357916495866
+    second: Robot_explode_3
+  - first:
+      213: 7522184903716732816
+    second: Robot_explode_4
+  - first:
+      213: 5569235376331464826
+    second: Robot_explode_5
+  - first:
+      213: -7145244171985158886
+    second: Robot_explode_6
+  - first:
+      213: -3987564628266176091
+    second: Robot_explode_7
+  - first:
+      213: 9190364827568526829
+    second: Robot_explode_8
+  - first:
+      213: -885857601629816367
+    second: Robot_explode_9
+  - first:
+      213: -7677123339787580382
+    second: Robot_explode_10
+  - first:
+      213: 8320264392360528100
+    second: Robot_explode_11
+  - first:
+      213: 6444680826255058542
+    second: Robot_explode_12
+  - first:
+      213: 4644219978949716035
+    second: Robot_explode_13
+  - first:
+      213: 4591010728410623294
+    second: Robot_explode_14
+  - first:
+      213: 2802595716614568885
+    second: Robot_explode_15
+  - first:
+      213: -8496041034345739304
+    second: Robot_explode_16
+  - first:
+      213: -2291826861536268058
+    second: Robot_explode_17
+  - first:
+      213: 2597313998350914528
+    second: Robot_explode_18
+  - first:
+      213: -7255807287536240014
+    second: Robot_explode_19
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 1746
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Robot_explode_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 19
+        width: 1806
+        height: 2029
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 971a34203ac1c77a0800000000000000
+      internalID: -6378191485820231303
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_1
+      rect:
+        serializedVersion: 2
+        x: 551
+        y: 1712
+        width: 93
+        height: 179
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d96290bd335a30120800000000000000
+      internalID: 2378926670318479005
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_2
+      rect:
+        serializedVersion: 2
+        x: 1429
+        y: 1768
+        width: 93
+        height: 107
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a401aa16d7dcc34e0800000000000000
+      internalID: -2000498196066201526
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_3
+      rect:
+        serializedVersion: 2
+        x: 1654
+        y: 1514
+        width: 254
+        height: 271
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aff5c7898886b0220800000000000000
+      internalID: 2453169357916495866
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_4
+      rect:
+        serializedVersion: 2
+        x: 137
+        y: 1402
+        width: 298
+        height: 339
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 09f77d0d05b246860800000000000000
+      internalID: 7522184903716732816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_5
+      rect:
+        serializedVersion: 2
+        x: 1678
+        y: 1310
+        width: 182
+        height: 167
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a70a6c45116e94d40800000000000000
+      internalID: 5569235376331464826
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_6
+      rect:
+        serializedVersion: 2
+        x: 136
+        y: 1179
+        width: 133
+        height: 134
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a1df46f584ef6dc90800000000000000
+      internalID: -7145244171985158886
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_7
+      rect:
+        serializedVersion: 2
+        x: 1854
+        y: 1248
+        width: 102
+        height: 76
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a1384df81359a8c0800000000000000
+      internalID: -3987564628266176091
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_8
+      rect:
+        serializedVersion: 2
+        x: 121
+        y: 944
+        width: 189
+        height: 117
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de557773e1cba8f70800000000000000
+      internalID: 9190364827568526829
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_9
+      rect:
+        serializedVersion: 2
+        x: 1830
+        y: 930
+        width: 145
+        height: 176
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1d9764d643dc4b3f0800000000000000
+      internalID: -885857601629816367
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_10
+      rect:
+        serializedVersion: 2
+        x: 157
+        y: 801
+        width: 36
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 22cc9136ff0657590800000000000000
+      internalID: -7677123339787580382
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_11
+      rect:
+        serializedVersion: 2
+        x: 1819
+        y: 793
+        width: 180
+        height: 80
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e80bf7d164877370800000000000000
+      internalID: 8320264392360528100
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_12
+      rect:
+        serializedVersion: 2
+        x: 194
+        y: 657
+        width: 47
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e6624bbe01b107950800000000000000
+      internalID: 6444680826255058542
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_13
+      rect:
+        serializedVersion: 2
+        x: 1831
+        y: 562
+        width: 34
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 348e118f675937040800000000000000
+      internalID: 4644219978949716035
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_14
+      rect:
+        serializedVersion: 2
+        x: 1582
+        y: 332
+        width: 239
+        height: 220
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e3d2ceaeeeb86bf30800000000000000
+      internalID: 4591010728410623294
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_15
+      rect:
+        serializedVersion: 2
+        x: 1873
+        y: 348
+        width: 28
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5bbb7d994f1d4e620800000000000000
+      internalID: 2802595716614568885
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_16
+      rect:
+        serializedVersion: 2
+        x: 1805
+        y: 299
+        width: 34
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8db0ea671bff71a80800000000000000
+      internalID: -8496041034345739304
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_17
+      rect:
+        serializedVersion: 2
+        x: 852
+        y: 224
+        width: 30
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6e0be6fac9bc130e0800000000000000
+      internalID: -2291826861536268058
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_18
+      rect:
+        serializedVersion: 2
+        x: 1533
+        y: 218
+        width: 141
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e31bd102538b0420800000000000000
+      internalID: 2597313998350914528
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Robot_explode_19
+      rect:
+        serializedVersion: 2
+        x: 1127
+        y: 140
+        width: 31
+        height: 39
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 27a36b307b13e4b90800000000000000
+      internalID: -7255807287536240014
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Robot_explode_0: -6378191485820231303
+      Robot_explode_1: 2378926670318479005
+      Robot_explode_10: -7677123339787580382
+      Robot_explode_11: 8320264392360528100
+      Robot_explode_12: 6444680826255058542
+      Robot_explode_13: 4644219978949716035
+      Robot_explode_14: 4591010728410623294
+      Robot_explode_15: 2802595716614568885
+      Robot_explode_16: -8496041034345739304
+      Robot_explode_17: -2291826861536268058
+      Robot_explode_18: 2597313998350914528
+      Robot_explode_19: -7255807287536240014
+      Robot_explode_2: -2000498196066201526
+      Robot_explode_3: 2453169357916495866
+      Robot_explode_4: 7522184903716732816
+      Robot_explode_5: 5569235376331464826
+      Robot_explode_6: -7145244171985158886
+      Robot_explode_7: -3987564628266176091
+      Robot_explode_8: 9190364827568526829
+      Robot_explode_9: -885857601629816367
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
