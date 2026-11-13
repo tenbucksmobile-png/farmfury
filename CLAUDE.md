@@ -206,9 +206,10 @@ needing a live pass before shipping.
     `xpfpse4z5v88lglq`. All LevelPlay config is in; untested on a device. Rewarded placements `continue_after_death`,
     `double_coins_level_complete` exist in the Cannonfire LevelPlay apps (user, 2026-11-13). Unity Ads (the network)
     has no Cannonfire app yet - optional; AdMob alone fills. The active build
-    target is now Android (needed by the Android Resolver; `Settings/Build Profiles/Android.asset`). The Unity Cloud
-    project Cannonfire is linked to (`9d682642-…`, not Arcade's `54837130-…`) showed the name "Farm Fury Arcade" on
-    2026-11-13 - a dashboard labelling mistake the user is fixing.
+    target is now Android (needed by the Android Resolver; `Settings/Build Profiles/Android.asset`). Unity Cloud project:
+    re-linked 2026-11-13 to the new **Farm Fury Cannonfire** project `d4373058-3679-483c-a3bc-81226f144cf7` (it was
+    `9d682642-…`, an older project mislabelled "Farm Fury Arcade"; Arcade's own is `54837130-…`, named FarmFuryArcade).
+    The five Android Custom switches are on and the Android Resolver has run (ProjectSettings/AndroidResolverDependencies.xml).
   - **Ads audit:** AdManager is byte-identical to Stampede's. Since the same day's setup (above) Cannonfire has the
     LevelPlay keys / ad unit ids, the AdMob adapter + both app ids and the iOS privacy manifest, matching Stampede.
 
