@@ -2826,10 +2826,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FarmFury.UI.GameFlow
   _menuArt:
-    landingTitle: {fileID: 21300000, guid: 05f0d6c88b354a34b324cc6b1e44a3d7, type: 3}
-    pressStart: {fileID: 21300000, guid: fb26376cb438415faa1c49cbd4a0a17b, type: 3}
     landingPoster: {fileID: 21300000, guid: 97757046d8bee274ebe2f3f843104b7f, type: 3}
-    landingPosterBlur: {fileID: 21300000, guid: b853d29f53f29a24f9c12152a8518a1f, type: 3}
     playButton: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
     exitButton: {fileID: 21300000, guid: 9aa3a95b16cdd3743937018b2a9b1e24, type: 3}
     settingsButton: {fileID: 21300000, guid: 70471a128358f6a4ca9554a97b76abfa, type: 3}
@@ -2845,6 +2842,13 @@ MonoBehaviour:
     oneStarBoard: {fileID: 21300000, guid: 1dcdc7a5a36c8194198e5a65ec5175e1, type: 3}
     twoStarBoard: {fileID: 21300000, guid: 8620bc7ec1992bb45a73b753169f4b39, type: 3}
     threeStarBoard: {fileID: 21300000, guid: 1c1204a8c12cc7949b8dd7cc77ebcbe2, type: 3}
+    newCharacterBackground: {fileID: 21300000, guid: ad2e2821d8a1f0f458afbb6e397582c6, type: 3}
+    newCharacterTitle: {fileID: 21300000, guid: b8ea99e1fd2e329418f236281465fbe3, type: 3}
+    worldUnlockedSign: {fileID: 21300000, guid: d5e2f4cacc7502a41badca56b344af99, type: 3}
+    pauseBackground: {fileID: 21300000, guid: 0c915cc2fa25b154bb53bbcf12ec13d4, type: 3}
+    landingTitle: {fileID: 21300000, guid: 05f0d6c88b354a34b324cc6b1e44a3d7, type: 3}
+    pressStart: {fileID: 21300000, guid: fb26376cb438415faa1c49cbd4a0a17b, type: 3}
+    landingPosterBlur: {fileID: 21300000, guid: b853d29f53f29a24f9c12152a8518a1f, type: 3}
     characterSelectBackground: {fileID: 21300000, guid: e7cb81e4c79ca934d8a5f115d09564a5, type: 3}
     animalCards:
     - {fileID: 21300000, guid: 33fa9f506766cc244ae3be6bfb9d4a36, type: 3}
@@ -2906,21 +2910,14 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 2eae166125e04bd4db05ef50de904c67, type: 3}
     - {fileID: 21300000, guid: d9de74df5818a9b42a9250482419d150, type: 3}
     - {fileID: 21300000, guid: 8312cd987c64b6e48a74c09ca0c2aad5, type: 3}
-    pauseBackground: {fileID: 21300000, guid: 0c915cc2fa25b154bb53bbcf12ec13d4, type: 3}
     levelCompleteBackground: {fileID: 21300000, guid: 9ee46dbd04a965a40b80a67673dc8ec0, type: 3}
     levelFailedBackground: {fileID: 21300000, guid: 189b5fce170824b4aa2c66950f7b005b, type: 3}
     levelCompleteStarEmpty: {fileID: 21300000, guid: 6db872d2479e94b4dafb27affb0ac629, type: 3}
-    newCharacterBackground: {fileID: 21300000, guid: ad2e2821d8a1f0f458afbb6e397582c6, type: 3}
-    newCharacterTitle: {fileID: 21300000, guid: b8ea99e1fd2e329418f236281465fbe3, type: 3}
     newCharacterSign: {fileID: 21300000, guid: aa55b59263914064a90d0b1c64ed943e, type: 3}
-    worldUnlockedSign: {fileID: 21300000, guid: d5e2f4cacc7502a41badca56b344af99, type: 3}
   _shopArt:
     pageBackground: {fileID: 21300000, guid: 628fd68719c3f6d4997a4a133f350927, type: 3}
     settingsSign: {fileID: 21300000, guid: a3863225dcd6b0141a9690d48e72365e, type: 3}
     shopSign: {fileID: 21300000, guid: b5088152c190dc444bee9dd67b7fe904, type: 3}
-    merchBanner: {fileID: 21300000, guid: 7df17461a0e47ce4196d79e10643c44d, type: 3}
-    crossPromoStampede: {fileID: 21300000, guid: 7d323f97926965e41b3ccf686fdfbdcc, type: 3}
-    crossPromoArcade: {fileID: 21300000, guid: 914a0d8ef2c19b74b8b0c7d0ca943e02, type: 3}
     legalSign: {fileID: 21300000, guid: 014a6d4116bd7b64884cfdbc79c808da, type: 3}
     leaderboardSign: {fileID: 21300000, guid: 374f695f53792584fb7b1e364fcacd34, type: 3}
     musicIcon: {fileID: 21300000, guid: fe33c7a168daa5a42a2457c85246a858, type: 3}
@@ -2937,6 +2934,15 @@ MonoBehaviour:
     - {fileID: 21300000, guid: fd1a9eaaf4b9b52419a4eee9605c47ea, type: 3}
     - {fileID: 21300000, guid: 277478f7245b98a47a6a96eb1beb9ba7, type: 3}
     - {fileID: 21300000, guid: 208d5340901752d47a99b087f7ddee5a, type: 3}
+    ownedBadge: {fileID: 21300000, guid: b6585d85573de464c861e48c6cd110bf, type: 3}
+    purchaseComplete: {fileID: 21300000, guid: 296a95b51ff662c488477e15951673a0, type: 3}
+    coinIcon: {fileID: 21300000, guid: 321509b04823b5d418efce3cce145b48, type: 3}
+    yesButton: {fileID: 21300000, guid: 2337e250bf65bc4469d9295e036f19e6, type: 3}
+    noButton: {fileID: 21300000, guid: 53a7ec9b64b404b409114314b2484df2, type: 3}
+    useCoinsSign: {fileID: 21300000, guid: 23f66078bf9284849a338d9b32f40468, type: 3}
+    merchBanner: {fileID: 21300000, guid: 7df17461a0e47ce4196d79e10643c44d, type: 3}
+    crossPromoStampede: {fileID: 21300000, guid: 7d323f97926965e41b3ccf686fdfbdcc, type: 3}
+    crossPromoArcade: {fileID: 21300000, guid: 914a0d8ef2c19b74b8b0c7d0ca943e02, type: 3}
     worldPrice: {fileID: 21300000, guid: 38cf681b7457f3240939fe26dd85fffe, type: 3}
     cannonsBanner: {fileID: 21300000, guid: 19de823a1fc718946bc1a110213e987f, type: 3}
     trailsBanner: {fileID: 21300000, guid: 6ee7067394a92f64588477c85b381167, type: 3}
@@ -2960,15 +2966,9 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 3dbb4923b6be14a44b58ad9eb1c73bac, type: 3}
     - {fileID: 21300000, guid: a6ce5eee63b05714b8ac64ad2a8eb3cb, type: 3}
     - {fileID: 21300000, guid: ab0cdda8237baf24aac2d10dcf85b357, type: 3}
-    ownedBadge: {fileID: 21300000, guid: b6585d85573de464c861e48c6cd110bf, type: 3}
-    purchaseComplete: {fileID: 21300000, guid: 296a95b51ff662c488477e15951673a0, type: 3}
-    coinIcon: {fileID: 21300000, guid: 321509b04823b5d418efce3cce145b48, type: 3}
-    yesButton: {fileID: 21300000, guid: 2337e250bf65bc4469d9295e036f19e6, type: 3}
-    noButton: {fileID: 21300000, guid: 53a7ec9b64b404b409114314b2484df2, type: 3}
     revivePanel: {fileID: 21300000, guid: ad1a7838bcefddb408d81768eb6cddad, type: 3}
     watchAd: {fileID: 21300000, guid: 2d4956a4d81759240b8b3fc0a0b78c37, type: 3}
     doubleCoins: {fileID: 21300000, guid: ba41b4a2e8c120e4cabff5371dfbd494, type: 3}
-    useCoinsSign: {fileID: 21300000, guid: 23f66078bf9284849a338d9b32f40468, type: 3}
     lockerIcon: {fileID: 21300000, guid: e271d648c765f7a4b8e07a7adacddc7d, type: 3}
     lockerBanner: {fileID: 21300000, guid: 80b663dc3fdac624384da7fce8264f8d, type: 3}
     lockerSuggestion: {fileID: 21300000, guid: 8c48c4f631fd2cd4babab6f22e5d2c6c, type: 3}
