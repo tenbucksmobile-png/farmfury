@@ -11,7 +11,7 @@ SESSIONS_DIR = HERE / "sessions"
 BIN_DIRS = [HERE / "bin", Path.home() / "Desktop/FarmFury_Arcade/Tools/content-pipeline/bin"]
 ADB_FALLBACKS = [
     Path(os.environ.get("LOCALAPPDATA", "")) / "Android/Sdk/platform-tools/adb.exe",
-    Path("C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb.exe"),
+    Path("C:/Program Files/Unity/Hub/Editor/6000.5.6f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb.exe"),
 ]
 
 

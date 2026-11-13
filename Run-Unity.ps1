@@ -15,7 +15,7 @@ param(
     [string]$Command
 )
 
-$UnityExe  = "C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe"
+$UnityExe  = "C:\Program Files\Unity\Hub\Editor\6000.5.6f1\Editor\Unity.exe"
 $Project   = "$PSScriptRoot\unity"
 $LogFile   = "$PSScriptRoot\unity\Logs\batch_$Command.log"
 

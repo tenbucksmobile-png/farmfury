@@ -1230,7 +1230,7 @@ World 1 (L01-L18, `tools/design_world1.py`), World 2 (W2_L01-L22, `tools/design_
 ## Commands
 
 ### Unity (Editor)
-Open `unity/` in Unity Hub (Unity 6.5 / 6000.5.0f1). Open `Assets/Scenes/Game.unity`. Press Play — the ground, camera, and LevelLoader reference are all self-wired at runtime.
+Open `unity/` in Unity Hub (Unity 6.5 / 6000.5.6f1 since 2026-11-13; was 6000.5.0f1). Open `Assets/Scenes/Game.unity`. Press Play — the ground, camera, and LevelLoader reference are all self-wired at runtime.
 
 ### Run-Unity.ps1 (batch automation)
 Primary interface for batch Unity operations. Run from the repo root in PowerShell:
@@ -1301,7 +1301,7 @@ World 1 props live directly in Unity (not `assets/`): `unity/Assets/Sprites/Envi
 ## Architecture — Unity Port (`unity/`)
 
 ### Stack
-Unity 6.5 (6000.5.0f1), URP 2D, Physics2D, New Input System, TextMeshPro.
+Unity 6.5 (6000.5.6f1, same as Stampede and Rampage; upgraded from 6000.5.0f1 2026-11-13), URP 2D, Physics2D, New Input System, TextMeshPro.
 
 ### Coordinate System (current — all 6 World 1 levels now use this; do not use older values seen in stale comments)
 - 1 Unity unit = 50 Phaser pixels (`x_unity = x_phaser / 50`, `y_unity = -(y_phaser - 770) / 50` — legacy conversion from the Phaser prototype).
