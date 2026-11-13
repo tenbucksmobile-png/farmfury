@@ -216,8 +216,10 @@ public static partial class SceneSetup
     }
 
     // ── App icon ──────────────────────────────────────────────────────────────
-    // Sprites/AppIcon.png (1024x1024: the Farm Fury Cannonfire logo on orange sunburst rings, Kling 2026-11-10 in
-    // Stampede's icon style; tools/brand_cannonfire.py) as the default icon for every platform. A platform-specific icon set in Player Settings wins.
+    // Sprites/AppIcon.png (1024x1024 RGB) as the default icon for every platform - since 2026-11-13 the user's
+    // FarmFury_Artwork/Cannonfire/AppIcon_A.png (FARM FURY over a firing cannon on a CANNONFIRE sign, orange rings),
+    // resized from 2048. No platform-specific icons are set, so this is what iOS and Android show; a platform icon set
+    // in Player Settings would win.
     static void EnsureAppIcon()
     {
         const string path = "Assets/Sprites/AppIcon.png";

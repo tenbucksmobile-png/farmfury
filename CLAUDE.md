@@ -139,6 +139,16 @@ needing a live pass before shipping.
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
+- **2026-11-13 (latest) — App icon, Arcade promo icon.** `Sprites/AppIcon.png` is now the user's
+  `FarmFury_Artwork/Cannonfire/AppIcon_A.png` (2048 -> 1024 RGB; same file / guid, so Wire Scene References' default
+  icon picks it up; no platform icons override it). The menu hub's Arcade card is rebuilt from Arcade's
+  `UI/FFArcade_Icon.png` (the logo, no characters). Name: phones already show "Cannonfire" (`FarmFuryAndroidBuild`
+  app_name, `FarmFuryIosBuild` CFBundleDisplayName); productName stays "Farm Fury Cannonfire" for now - renaming it
+  moves the Editor's PlayerPrefs registry key (`HKCU\Software\Unity\UnityEditor\Tenbucks Mobile\<productName>`), and
+  the copy to `...\Cannonfire` was only partly done (a PowerShell Copy-Item cast error; reg.exe was not permitted). A
+  partial `...\Tenbucks Mobile\Cannonfire` key exists - delete it or redo the copy with `reg copy ... /s /f` before
+  ever renaming productName.
+
 - **2026-11-13 (later) — Wording, swap advice everywhere, live cannon skins with a glow.** Not compiled by me (the
   Editor was open); unverified in Play mode.
   - Banners: "STAGE CLEARED!" (was ROOM CLEARED) and "ONE SHOT!  ADDING A FARM FURY". Revive prompt: "to add a Farm
@@ -193,8 +203,9 @@ needing a live pass before shipping.
     lives in `SceneSetup.WireAdManagerConfig` constants** (applied by Wire Scene References; empty = leave the field
     alone): Android app key `2985da825`, ad units rewarded `5oi5ruaosq1nuv0p`, interstitial `yzpwovsnpro6lllh`, banner
     `rrhw0hhrp8cbibo3`; iOS app key `2985d6e9d`, rewarded `ucidbb5jdftywed2`, interstitial `wteebsq09o795d9d`, banner
-    `xpfpse4z5v88lglq`. All LevelPlay config is in; untested on a device. Rewarded placements to create in both
-    LevelPlay apps: `continue_after_death`, `double_coins_level_complete` (capping / pacing off). The active build
+    `xpfpse4z5v88lglq`. All LevelPlay config is in; untested on a device. Rewarded placements `continue_after_death`,
+    `double_coins_level_complete` exist in the Cannonfire LevelPlay apps (user, 2026-11-13). Unity Ads (the network)
+    has no Cannonfire app yet - optional; AdMob alone fills. The active build
     target is now Android (needed by the Android Resolver; `Settings/Build Profiles/Android.asset`). The Unity Cloud
     project Cannonfire is linked to (`9d682642-…`, not Arcade's `54837130-…`) showed the name "Farm Fury Arcade" on
     2026-11-13 - a dashboard labelling mistake the user is fixing.
