@@ -1175,7 +1175,9 @@ public static partial class SceneSetup
         int k = 0;
         for (int i = 0; i < animals.Length; i++)
         {
-            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/Audio/Abilities/{animals[i]}_Ability.mp3");
+            // Shared franchise SFX first (com.farmfury.franchise 0.2.0+), then a game-only clip (e.g. Woolly).
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>($"Packages/com.farmfury.franchise/Runtime/Audio/Abilities/{animals[i]}_Ability.mp3")
+                ?? AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/Audio/Abilities/{animals[i]}_Ability.mp3");
             ab.GetArrayElementAtIndex(i).objectReferenceValue = clip;
             if (clip != null) k++;
         }

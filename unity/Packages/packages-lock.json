@@ -11,6 +11,14 @@
         "com.unity.inputsystem": "1.19.0"
       }
     },
+    "com.farmfury.franchise": {
+      "version": "file:com.farmfury.franchise",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.farmfury.core": "0.1.0"
+      }
+    },
     "com.unity.2d.animation": {
       "version": "15.1.0",
       "depth": 0,

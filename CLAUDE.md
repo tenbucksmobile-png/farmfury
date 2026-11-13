@@ -616,7 +616,7 @@ needing a live pass before shipping.
   LevelData.world) plays Stampede's world track in Worlds 2-9 (`Assets/Audio/Worlds/`); World 1 keeps
   SunriseMeadows_Background and the menus keep SunriseMeadows_TransitionMusic. Arcade's tracks are byte-identical
   copies of Stampede's under other names, and Stampede itself reuses three files (Watermill = Sunken City, Sky Island =
-  Crop Factory, Dustbowl = its HarvestMoon). `AudioManager._abilityClips` (index = AnimalType, `Assets/Audio/Abilities/`)
+  Crop Factory, Dustbowl = its HarvestMoon). `AudioManager._abilityClips` (index = AnimalType; the shared clips live in the vendored `com.farmfury.franchise` package, `Runtime/Audio/Abilities/`)
   plays on the ability tap (`AnimalBase.Kind` -> `AudioManager.PlayAbility`); Woolly has no franchise ability sound.
   Wired by `SceneSetup.WireAudioArrays`. Unheard in Play mode.
 

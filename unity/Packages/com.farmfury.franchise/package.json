@@ -1,0 +1,11 @@
+{
+  "name": "com.farmfury.franchise",
+  "version": "0.2.0",
+  "displayName": "Farm Fury Franchise",
+  "description": "Shared Farm Fury content: character identities (the 8 heroes), shared SFX and world music, shared UI art. Assets here are byte-identical in two or more games, with the same import settings.",
+  "unity": "6000.5",
+  "author": { "name": "Tenbucks Mobile" },
+  "dependencies": {
+    "com.farmfury.core": "0.1.0"
+  }
+}

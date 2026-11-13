@@ -29,7 +29,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip[] _worldMusic = new AudioClip[10];
     // Ability sounds (2026-11-10): Stampede's per-character ability SFX, indexed by AnimalType, played on the tap that
     // triggers the ability (AnimalBase.Update). Woolly has none in the franchise (empty slot = silent). Files in
-    // Assets/Audio/Abilities/.
+    // Packages/com.farmfury.franchise/Runtime/Audio/Abilities/ (shared; a game-only clip may sit in Assets/Audio/Abilities/).
     [SerializeField] private AudioClip[] _abilityClips = new AudioClip[8];
     // Per-animal launch scream (2026-11-11, user-supplied clips in Assets/Audio/Falling/<Animal>_Falling.mp3), index =
     // AnimalType. Plays once from the cannon shot and fades on impact; an empty slot falls back to the older

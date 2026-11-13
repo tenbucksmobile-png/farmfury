@@ -1,0 +1,14 @@
+{
+    "name": "FarmFury.Franchise",
+    "rootNamespace": "FarmFury.Franchise",
+    "references": [ "FarmFury.Shared" ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

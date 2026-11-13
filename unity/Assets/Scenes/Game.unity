@@ -165,14 +165,14 @@ MonoBehaviour:
   - {fileID: 8300000, guid: a5529456ef2de4944a34e76e835455ef, type: 3}
   - {fileID: 8300000, guid: b103a5874fc5b8340bb380f633ddb28b, type: 3}
   _abilityClips:
-  - {fileID: 8300000, guid: 060f6d3c8905ee6448e5dcd57513157b, type: 3}
-  - {fileID: 8300000, guid: f90f6fe08a2a5f946b08ecdc56394245, type: 3}
-  - {fileID: 8300000, guid: 439123627392a3949bc28e6e86934352, type: 3}
+  - {fileID: 8300000, guid: b588a20b3e5b0de4fbe494bb08f7a091, type: 3}
+  - {fileID: 8300000, guid: 43cab51026eefac488d84907b660e076, type: 3}
+  - {fileID: 8300000, guid: 97f6a48ce0a63fc4183b1fb0e449089b, type: 3}
   - {fileID: 0}
-  - {fileID: 8300000, guid: f596319d1fdb38c4ead9dff54bdaec16, type: 3}
-  - {fileID: 8300000, guid: 190a43be17e78284cb788333b6dadd21, type: 3}
-  - {fileID: 8300000, guid: b67cf000990a28145b93840bba10354a, type: 3}
-  - {fileID: 8300000, guid: c4f623004e8ba374d922ebe49271b141, type: 3}
+  - {fileID: 8300000, guid: d909e557dff17304c87637bc9177df5d, type: 3}
+  - {fileID: 8300000, guid: b6b25ebfed1fae84c9dd20c628652086, type: 3}
+  - {fileID: 8300000, guid: 43e7156d80989914b98a0202f6f529f0, type: 3}
+  - {fileID: 8300000, guid: cfe90ed133c5ce44c85eb165dad6c676, type: 3}
   _fallingClips:
   - {fileID: 8300000, guid: 75a3051ba71b4de4e8bab6e9fbf1bad5, type: 3}
   - {fileID: 8300000, guid: 87d2eaf890676fa42aa7606080060182, type: 3}
