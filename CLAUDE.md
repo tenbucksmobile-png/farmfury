@@ -134,9 +134,12 @@ needing a live pass before shipping.
 - **No level validator** (GDD calls for a physics-sim stability/solvability check before a level
   ships) — none exists.
 - **`assets/` (raw Kling AI source art) is permanently removed from this repo**, relocated to the
-  Desktop. `unity/Assets/Sprites/` (processed game art) is gitignored and exists in exactly one
-  place: this machine's disk — if lost, recovery means restoring `assets/` and re-running the art
-  pipeline.
+  Desktop. `unity/Assets/Sprites/` (processed game art) is tracked in git since 2026-11-13 (Unity
+  Build Automation builds iOS from GitHub; tool-only `~` folders stay local).
+- **iOS build (2026-11-13):** team `UC5MMY5SW3`, build number 1 (bump + push before every cloud build),
+  landscape only, `Assets/CloudBuildScripts/post-build.bash` uploads to TestFlight (env API_KEY_ID /
+  API_ISSUER_ID / ENCRYPTION_KEY, Stampede's). Build Automation: project subfolder `unity`, branch
+  `align-franchise-ui` until merged. Still needed: App ID + App Store profile + App Store Connect record.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
 - **2026-11-13 (latest) — App icon, Arcade promo icon.** `Sprites/AppIcon.png` is now the user's
