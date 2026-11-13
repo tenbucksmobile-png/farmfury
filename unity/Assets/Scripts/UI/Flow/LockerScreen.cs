@@ -7,15 +7,20 @@ namespace FarmFury.UI
 {
     /// <summary>
     /// The in-level Locker (franchise cosmetics, cut down from Stampede's LockerScreen): opened from the HUD's Locker
-    /// button, it freezes the level while open. The Locker banner on top, then two rows of tiles — Hats (None + the
-    /// five hats) and Trails (None + the six trails), each tile the item's shop icon. An owned tile equips it (a hat
-    /// on every animal — they share hats in FarmFury — and the trail behind all of them), the equipped one gets the
-    /// Equipped badge; an unowned tile is dimmed and opens that category's purchase page. Changes show on the next
-    /// animal loaded into the cannon.
+    /// button, it freezes the level while open. The Locker banner on top, then three rows of tiles - cannon skins,
+    /// trails, impact effects - each tile the item's shop icon. Tapping an owned tile equips it, or takes it off if it
+    /// is already on (no "None" tile since 2026-11-13); the equipped one carries the Equipped tick; an unowned tile is
+    /// dimmed and opens that category's purchase page. A cannon skin shows at once (SaveManager.EquippedChanged); a
+    /// trail on the next animal loaded.
     /// </summary>
     public class LockerScreen : OverlayScreen
     {
-        private const float Tile = 150f, Gap = 22f;
+        // Layout (2026-11-13, user: "remove the none (only ticked and unticked) ... space the items equally so they don't
+        // overlap each other or the banner"): three centred rows of equal tiles and equal gaps, laid out from the top,
+        // starting a clear margin under the Locker banner (HeaderTop + HeaderSize.y); the Equipped tick sits INSIDE its
+        // tile's corner. No "None" tile: tapping the equipped item takes it off again.
+        private const float Tile = 140f, Gap = 50f, RowStep = 185f;
+        private const float FirstRowTop = -HeaderTop + 310f + 45f;   // banner top offset + its height + a margin
         private static readonly Color Unowned = new(0.45f, 0.45f, 0.48f, 1f);
 
         private readonly Action _onCannons, _onTrails, _onImpacts;
@@ -31,46 +36,49 @@ namespace FarmFury.UI
             _onImpacts = onImpacts;
             HeaderSign(Shop.lockerBanner, "LOCKER");
             int trailsFirst = StoreProducts.Cannons.Length, impactsFirst = trailsFirst + StoreProducts.Trails.Length;
-            (_cannonTiles, _cannonBadges) = BuildRow("Cannons", StoreProducts.Cannons, 0, 110f);
-            (_trailTiles, _trailBadges) = BuildRow("Trails", StoreProducts.Trails, trailsFirst, -75f);
-            (_impactTiles, _impactBadges) = BuildRow("Impacts", StoreProducts.Impacts, impactsFirst, -260f);
+            (_cannonTiles, _cannonBadges) = BuildRow("Cannons", StoreProducts.Cannons, 0, 0);
+            (_trailTiles, _trailBadges) = BuildRow("Trails", StoreProducts.Trails, trailsFirst, 1);
+            (_impactTiles, _impactBadges) = BuildRow("Impacts", StoreProducts.Impacts, impactsFirst, 2);
         }
 
-        // Tile 0 = "None"; tile i+1 = product i, its art the shop's cosmetic icon.
-        private (Image[], Image[]) BuildRow(string name, string[] products, int iconOffset, float y)
+        // Tile i = product i, its art the shop's cosmetic icon; the row centred, its top RowStep * row under the first.
+        private (Image[], Image[]) BuildRow(string name, string[] products, int iconOffset, int rowIndex)
         {
-            int count = products.Length + 1;
+            int count = products.Length;
+            float width = count * Tile + (count - 1) * Gap;
             var row = UIKit.NewRect(name + "Row", Rect);
-            UIKit.Place(row, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, y), new Vector2(count * (Tile + Gap), Tile));
+            UIKit.Place(row, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -(FirstRowTop + rowIndex * RowStep)),
+                new Vector2(width, Tile));
             var tiles = new Image[count];
             var badges = new Image[count];
             for (int i = 0; i < count; i++)
             {
                 int index = i;
-                var icon = i == 0 ? null : ShopArt.At(Shop.cosmeticIcons, iconOffset + i - 1);
-                var button = UIKit.MakeButton(row, $"{name}_{i}", i == 0 ? "NONE" : icon != null ? "" : StoreProducts.Cosmetics[iconOffset + i - 1].name,
-                    UIKit.Card, () => Tapped(products, index), 28);
+                var icon = ShopArt.At(Shop.cosmeticIcons, iconOffset + i);
+                var button = UIKit.MakeButton(row, $"{name}_{i}", icon != null ? "" : StoreProducts.Cosmetics[iconOffset + i].name,
+                    UIKit.Card, () => Tapped(products, index), 24);
                 if (icon != null) { button.image.sprite = icon; button.image.preserveAspect = true; }
                 UIKit.Place(button.image.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(i * (Tile + Gap), 0f), new Vector2(Tile, Tile));
                 tiles[i] = button.image;
                 var badge = UIKit.Picture(button.transform, "Equipped", Shop.ownedBadge);
-                UIKit.Place(badge.rectTransform, Vector2.one, Vector2.one, new Vector2(10f, 10f), new Vector2(64f, 64f));
+                UIKit.Place(badge.rectTransform, Vector2.one, Vector2.one, new Vector2(-4f, -4f), new Vector2(52f, 52f));   // inside the corner
                 badges[i] = badge;
             }
             return (tiles, badges);
         }
 
+        // Owned: equip it, or take it off if it's already on. Not owned: that category's purchase page.
         private void Tapped(string[] products, int index)
         {
             var save = SaveManager.Instance;
             if (save == null) { return; }
-            string id = index == 0 ? string.Empty : products[index - 1];
-            if (index > 0 && !save.IsCosmeticOwned(id))
+            string id = products[index];
+            if (!save.IsCosmeticOwned(id))
             {
                 (products == StoreProducts.Cannons ? _onCannons : products == StoreProducts.Impacts ? _onImpacts : _onTrails)?.Invoke();
                 return;
             }
-            save.SetEquipped(products, id);
+            save.SetEquipped(products, save.GetEquipped(products) == id ? string.Empty : id);
             save.SaveProgress();
             Refresh();
         }
@@ -107,9 +115,9 @@ namespace FarmFury.UI
         {
             for (int i = 0; i < tiles.Length; i++)
             {
-                string id = i == 0 ? string.Empty : products[i - 1];
-                bool owned = i == 0 || save.IsCosmeticOwned(id);
-                bool on = owned && (i == 0 ? string.IsNullOrEmpty(equipped) || Array.IndexOf(products, equipped) < 0 : id == equipped);
+                string id = products[i];
+                bool owned = save.IsCosmeticOwned(id);
+                bool on = owned && id == equipped;
                 tiles[i].color = tiles[i].sprite != null ? (owned ? Color.white : Unowned) : (owned ? UIKit.Card : UIKit.CardLocked);
                 badges[i].gameObject.SetActive(on && badges[i].sprite != null);
             }

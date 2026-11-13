@@ -975,6 +975,10 @@ MonoBehaviour:
     position: {x: 14.182, y: 1.832}
     scale: {x: 5.5, y: 5.5}
   - room: 1
+    robotType: 2
+    position: {x: 45.4, y: -3.15}
+    scale: {x: 5.5, y: 5.5}
+  - room: 1
     robotType: 0
     position: {x: 45.4, y: -1.35}
     scale: {x: 5.5, y: 5.5}

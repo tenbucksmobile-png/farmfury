@@ -871,6 +871,10 @@ public static partial class SceneSetup
         var so = new SerializedObject(flow);
         const string icon = "Assets/Sprites/UI/Icon";
         const string fa = FranchiseArt;
+        WireSprite(so, "_shopArt.crossPromoStampede", "Assets/Sprites/UI/Franchise/CrossPromo/Stampede.png");
+        WireSprite(so, "_shopArt.crossPromoArcade",   "Assets/Sprites/UI/Franchise/CrossPromo/Arcade.png");
+        WireSprite(so, "_menuArt.landingTitle",    "Assets/Sprites/UI/LandingTitle.png");
+        WireSprite(so, "_menuArt.pressStart",      "Assets/Sprites/UI/PressStart.png");
         WireSprite(so, "_menuArt.landingPoster",   "Assets/Sprites/UI/LandingPage.png");
         WireSprite(so, "_menuArt.landingPosterBlur", "Assets/Sprites/UI/LandingPage_Blur.png");
         WireSprite(so, "_menuArt.playButton",      icon + "/Btn_play.png");
@@ -914,6 +918,30 @@ public static partial class SceneSetup
         robotsProp.arraySize = robots.Length;
         for (int i = 0; i < robots.Length; i++)
             robotsProp.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Enemies/Robot/" + robots[i] + ".png");
+
+        // Robots tab, per world (2026-11-13, Stampede's ring): each world's pawn / harvester / semi-harvester / boss,
+        // read from the robot prefabs the levels actually spawn (their RobotEnemy._robotSprite). World-major, 4 each.
+        var bossNames = new[] { "CommanderRobot", "FrostTyrantRobot", "MillMaulerRobot", "StormBaronRobot", "DeepDredgerRobot",
+                                "FactoryMachineRobot", "DrillRigRobot", "RingmasterRobot", "HarvesterPrimeRobot" };
+        var worldRobotsProp = so.FindProperty("_menuArt.worldRobots");
+        worldRobotsProp.arraySize = 9 * 4;
+        int wiredRobots = 0;
+        for (int w = 1; w <= 9; w++)
+        {
+            string[] grunts = w == 1 ? new[] { "Robot", "HarvesterRobot", "SemiHarvesterRobot" }
+                            : w == 2 ? new[] { "FrostRobot", "IceHarvestorRobot", "GlacierHarvestorRobot" }
+                            : new[] { $"W{w}_BasicRobot", $"W{w}_HarvesterRobot", $"W{w}_SemiHarvesterRobot" };
+            for (int k = 0; k < 4; k++)
+            {
+                string prefabName = k < 3 ? grunts[k] : bossNames[w - 1];
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Prefabs/Enemies/{prefabName}.prefab");
+                var enemy = prefab != null ? prefab.GetComponent<RobotEnemy>() : null;
+                Sprite sprite = enemy != null ? new SerializedObject(enemy).FindProperty("_robotSprite").objectReferenceValue as Sprite : null;
+                worldRobotsProp.GetArrayElementAtIndex((w - 1) * 4 + k).objectReferenceValue = sprite;
+                if (sprite != null) wiredRobots++;
+            }
+        }
+        Debug.Log($"[FarmFury] Wired _menuArt.worldRobots: {wiredRobots}/36 robot portraits.");
 
         // ShopArt (Settings / Shop overlays) and LeaderboardArt — Stampede's file table (StampedeShopArt /
         // StampedeLeaderboardArt), copied into Franchise/Shop, Franchise/Leaderboard, Franchise/WorldNames.
@@ -1029,6 +1057,41 @@ public static partial class SceneSetup
     {
         var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
         if (spr != null) wso.FindProperty(field).objectReferenceValue = spr;
+    }
+
+    // LevelPlay config for Farm Fury Cannonfire (2026-11-13, Arcade's WireAdManagerConfig pattern): the app keys and
+    // the LevelPlay AD UNIT IDs - the 16-character codes under each ad unit's name in LevelPlay > Setup > Ad units, NOT
+    // the names (Arcade passed the names and every load failed with error 626 "Invalid ad unit id"). The AdMob
+    // ca-app-pub-... ad unit ids live in the LevelPlay dashboard only. An empty value here never overwrites a field, so
+    // one platform can be filled in before the other. Ads stay off until the platform's app key is set.
+    const string LevelPlayAndroidAppKey = "2985da825";
+    const string LevelPlayIosAppKey = "2985d6e9d";
+    const string LevelPlayAndroidRewarded = "5oi5ruaosq1nuv0p";
+    const string LevelPlayAndroidInterstitial = "yzpwovsnpro6lllh";
+    const string LevelPlayAndroidBanner = "rrhw0hhrp8cbibo3";
+    const string LevelPlayIosRewarded = "ucidbb5jdftywed2";
+    const string LevelPlayIosInterstitial = "wteebsq09o795d9d";
+    const string LevelPlayIosBanner = "xpfpse4z5v88lglq";
+
+    static void WireAdManagerConfig(FarmFury.Core.AdManager adManager)
+    {
+        var so = new SerializedObject(adManager);
+        void Set(string field, string value)
+        {
+            if (string.IsNullOrEmpty(value)) return;
+            so.FindProperty(field).stringValue = value;
+        }
+        Set("androidAppKey", LevelPlayAndroidAppKey);
+        Set("iosAppKey", LevelPlayIosAppKey);
+        Set("androidRewardedAdUnitId", LevelPlayAndroidRewarded);
+        Set("androidInterstitialAdUnitId", LevelPlayAndroidInterstitial);
+        Set("androidBannerAdUnitId", LevelPlayAndroidBanner);
+        Set("iosRewardedAdUnitId", LevelPlayIosRewarded);
+        Set("iosInterstitialAdUnitId", LevelPlayIosInterstitial);
+        Set("iosBannerAdUnitId", LevelPlayIosBanner);
+        so.ApplyModifiedProperties();
+        Debug.Log("[FarmFury] AdManager LevelPlay config: Android key " + (string.IsNullOrEmpty(LevelPlayAndroidAppKey) ? "MISSING" : "set") +
+                  ", iOS key " + (string.IsNullOrEmpty(LevelPlayIosAppKey) ? "MISSING" : "set") + ".");
     }
 
     static void WireSprite(SerializedObject so, string fieldName, string path)
@@ -1219,7 +1282,9 @@ public static partial class SceneSetup
         if (dm == null) dm = gm.gameObject.AddComponent<FarmFury.Core.DataManager>();
         if (gm.GetComponent<FarmFury.Core.SaveManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.SaveManager>();
         if (gm.GetComponent<FarmFury.Core.IAPManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.IAPManager>();
-        if (gm.GetComponent<FarmFury.Core.AdManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.AdManager>();
+        var adManager = gm.GetComponent<FarmFury.Core.AdManager>();
+        if (adManager == null) adManager = gm.gameObject.AddComponent<FarmFury.Core.AdManager>();
+        WireAdManagerConfig(adManager);
         if (gm.GetComponent<FarmFury.Core.AnalyticsManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.AnalyticsManager>();
         var dso = new SerializedObject(dm);
         var wprop = dso.FindProperty("_worlds");

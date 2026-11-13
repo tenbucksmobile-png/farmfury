@@ -14,7 +14,11 @@ namespace FarmFury.UI
     public class MenuArt
     {
         [Header("Landing")]
-        [Tooltip("Landing poster, full-screen (LandingPage.png: FARM FURY title + the eight animals).")]
+        [Tooltip("Title page poster shown when the game opens (LandingTitle.png, 2400x1080: Cluck + Ducky by the cannon); tap anywhere to continue.")]
+        public Sprite landingTitle;
+        [Tooltip("The PRESS START lettering over the title page (PressStart.png).")]
+        public Sprite pressStart;
+        [Tooltip("Landing menu page poster, full-screen (LandingPage.png, 2400x1080: the cannon on hay, no characters) under Play / Exit / Settings.")]
         public Sprite landingPoster;
         [Tooltip("A heavily blurred copy of the poster (LandingPage_Blur.png, tools/brand_cannonfire.py): fills the side gaps on screens wider than the poster.")]
         public Sprite landingPosterBlur;
@@ -55,6 +59,8 @@ namespace FarmFury.UI
         [Header("Character Story")]
         [Tooltip("Robot sprites for the Robots tab, in RobotType order (Pawn, Harvester, Semi-Harvester, Commander).")]
         public Sprite[] robotPortraits = new Sprite[4];
+        [Tooltip("Robots tab, per world: 4 per world (pawn, harvester, semi-harvester, boss), Worlds 1-9 in order - the robot prefabs' own art (SceneSetup).")]
+        public Sprite[] worldRobots = new Sprite[36];
 
         [Header("Pause / results")]
         public Sprite pauseBackground;

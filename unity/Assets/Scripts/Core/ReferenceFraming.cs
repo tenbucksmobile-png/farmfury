@@ -42,8 +42,11 @@ public static class ReferenceFraming
     // Gravity from the preview-dot arc (y = 0.52-0.70·x² in sh) and 1.2-1.5 s release-to-impact; launch speed
     // ≈0.85 sh/s. Aim distances keep the finger travel the same fraction of the screen as before the reframe.
 
-    /// <summary>Projectile gravity, sh/s² (AB2 ≈ 0.5; FarmFury was 0.23 at this zoom).</summary>
-    public const float ProjectileGravitySh = 0.5f;
+    /// <summary>Projectile gravity, sh/s² (AB2 ≈ 0.5; FarmFury was 0.23 at this zoom). 0.5 -> 0.38 (2026-11-13, user:
+    /// "it feels like the character can only go so far and not any further, the characters feel heavy" - the launch
+    /// speed was fine): the same launch speeds now carry ~32% further on a flatter, floatier arc. The designers'
+    /// exposure check uses the same value (design_world1.REAL_GRAV).</summary>
+    public const float ProjectileGravitySh = 0.38f;
     /// <summary>Full-pull launch speed, sh/s.</summary>
     public const float MaxLaunchSpeedSh = 0.85f * FlightPace;
     /// <summary>Softest-pull launch speed, sh/s (same min/max ratio as the original 3.8/9.3).</summary>

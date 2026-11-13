@@ -192,6 +192,7 @@ namespace FarmFury.UI
             _gm.OnStateChanged += ApplyState;
             _gm.ReviveOffered += Revive.Show;
             EnterLanding();
+            Landing.ShowTitle();     // the game opens on the PRESS START page; every later return lands on the menu page
             ApplyState(_gm.State);   // the boot state is already MainMenu, so EnterLanding fires no change event
         }
 
@@ -215,6 +216,11 @@ namespace FarmFury.UI
             {
                 HandleBack();
             }
+            else if (Landing.Root.activeSelf && Landing.OnTitlePage && TopOverlay() == null && keyboard != null
+                && (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame))
+            {
+                Landing.ShowMenu();   // PRESS START from the keyboard too (Editor / desktop)
+            }
             else if (Worlds.Root.activeSelf)
             {
                 Worlds.HandleKeys(keyboard);
@@ -235,6 +241,7 @@ namespace FarmFury.UI
 
             switch (_gm.State)
             {
+                case GameState.MainMenu: if (!Landing.OnTitlePage) { Landing.ShowTitle(); } break;   // menu page -> PRESS START
                 case GameState.CharacterSelect: CloseCharacterSelect(); break;
                 case GameState.LevelSelect: EnterWorldSelect(); break;
                 case GameState.WorldSelect: EnterLanding(); break;
@@ -249,6 +256,7 @@ namespace FarmFury.UI
 
         public void EnterLanding()
         {
+            Landing.ShowMenu();   // back from World Select / Home: the Play / Exit / Settings page
             LeaveGameplay();
             _gm.SetState(GameState.MainMenu);
         }

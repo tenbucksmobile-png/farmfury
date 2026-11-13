@@ -213,7 +213,6 @@ public class RobotEnemy : MonoBehaviour
     // straight to _deathExplosionSprite (Commander_Explode.png) before the squish/destroy
     // sequence, matching "once hit and exploding change to" the 4th image.
     private bool _isTauntLoop;
-    private const float TauntFrameDuration = 0.6f;
 
     void Awake()
     {
@@ -262,32 +261,18 @@ public class RobotEnemy : MonoBehaviour
 
         _isTauntLoop = _alertSprite != null;
 
-        // Commander (taunt-loop mode) skips both the walking patrol and the in-place idle-turn —
-        // TauntLoopRoutine() is its own "looks alive" animation. Everything else: robots with a
-        // right-facing sprite wired get the left/right walking patrol; anything with neither gets
-        // the older in-place turn-and-glance. See the field comments on _isTauntLoop/
-        // _sprFacingRight for why each one is a real second/third sprite, not a runtime flip.
+        // Bosses (taunt-loop art wired) hold ONE pose for their whole life (2026-11-13, user: "the images flash
+        // through two, standing and then destroyed even though nothing has happened, only stick to the one image") -
+        // the taunt loop cycled into the Hit / Defeated art, which read as the boss dying on its own. The loop is
+        // gone; _isTauntLoop still keeps the hit/critical swaps off and gives the boss its exploding pose in Die().
+        // Everything else: robots with a right-facing sprite wired get the left/right walking patrol; anything with
+        // neither gets the older in-place turn-and-glance.
         if (_isTauntLoop)
-            StartCoroutine(TauntLoopRoutine());
+            _sr.sprite = hasArt ? _robotSprite : _sr.sprite;
         else if (_sprFacingRight != null)
             StartCoroutine(IdlePatrolRoutine());
         else
             StartCoroutine(IdleLookAroundRoutine());
-    }
-
-    // Cycles _robotSprite -> _alertSprite -> _criticalSprite -> repeat on a fixed timer, for as
-    // long as the robot is alive — continues through damage (unlike the patrol/look-around
-    // routines above), only stopping when IsDestroyed is set in Die().
-    IEnumerator TauntLoopRoutine()
-    {
-        Sprite[] frames = { _robotSprite, _alertSprite, _criticalSprite };
-        int i = 0;
-        while (!IsDestroyed)
-        {
-            _sr.sprite = frames[i % frames.Length];
-            i++;
-            yield return new WaitForSeconds(TauntFrameDuration);
-        }
     }
 
     // Loops while the robot is Static (resting) AND undamaged: pause -> quick turn to one side
@@ -435,6 +420,91 @@ public class RobotEnemy : MonoBehaviour
     const float SupportProbeInterval = 0.3f, SupportProbeDepth = 0.12f;
     float _nextSupportProbe;
 
+    // ── Bosses get back up; nothing rolls away (2026-11-13) ─────────────────────────────────────────────────────
+    // User: "when a boss has been knocked over but not destroyed it must get back up instead of lying, also sometimes
+    // the boss will roll off screen". A boss's collider is the same small 0.6 x 0.9 box as a grunt's under much bigger
+    // art, so once knocked flat it tumbled like a crate. Now a live boss rolls heavily damped, and once it has lain
+    // tilted past GetUpTilt for GetUpDelay with nothing moving it, it pushes itself upright (a short lift + turn, the
+    // way Angry Birds' king pig rights himself). Any live robot that leaves the camera's view, or drops far below
+    // the ground, is destroyed (it counts as a kill) - a robot out of reach would otherwise leave the level unwinnable.
+    public bool IsBoss { get; private set; }
+    public void MarkBoss() => IsBoss = true;
+
+    const float BossAngularDamping = 3f;
+    const float GetUpTilt = 35f, GetUpDelay = 0.7f, GetUpDuration = 0.45f;
+    const float OffScreenMargin = 0.8f, FallKillDepth = 6f;
+    float _tiltedSince = -1f;
+    bool _gettingUp;
+    float _spawnY, _spawnX;
+
+    void Update()
+    {
+        if (!_live || IsDestroyed || _rb == null) return;
+        if (OutOfPlay()) { Die(); return; }
+        if (!IsBoss || _gettingUp || _rb.bodyType != RigidbodyType2D.Dynamic) return;
+
+        float tilt = Mathf.Abs(Mathf.DeltaAngle(0f, transform.eulerAngles.z));
+        bool resting = _rb.linearVelocity.sqrMagnitude < 0.25f && Mathf.Abs(_rb.angularVelocity) < 30f;
+        if (tilt < GetUpTilt || !resting) { _tiltedSince = -1f; return; }
+        if (_tiltedSince < 0f) { _tiltedSince = Time.time; return; }
+        if (Time.time - _tiltedSince >= GetUpDelay) StartCoroutine(GetUp());
+    }
+
+    bool OutOfPlay()
+    {
+        if (transform.position.y < _spawnY - FallKillDepth) return true;
+        var cam = Camera.main;
+        if (cam == null || !cam.orthographic) return false;
+        // Only while the camera holds still on this room (a room pan moves the camera past the old room's robots,
+        // which are destroyed by LevelLoader anyway).
+        if (_loader != null && _loader.InRoomTransition) return false;
+        float half = cam.orthographicSize * cam.aspect;
+        float x = transform.position.x, cx = cam.transform.position.x;
+        // It must have travelled there (a narrow 4:3 screen can start with a far-right robot just past the edge).
+        if (Mathf.Abs(x - _spawnX) < 1.5f) return false;
+        return x > cx + half + OffScreenMargin || x < cx - half - OffScreenMargin;
+    }
+
+    IEnumerator GetUp()
+    {
+        _gettingUp = true;
+        _tiltedSince = -1f;
+        var col = GetComponent<BoxCollider2D>();
+        float startAngle = Mathf.DeltaAngle(0f, transform.eulerAngles.z);
+        Vector2 start = _rb.position;
+        // Upright, the collider's bottom stays where the lowest point is now: lift the body by the difference.
+        float lift = 0f;
+        if (col != null)
+        {
+            Bounds b = col.bounds;
+            float uprightHalf = col.size.y * Mathf.Abs(transform.lossyScale.y) * 0.5f;
+            float uprightCentreOffset = col.offset.y * Mathf.Abs(transform.lossyScale.y);   // pivot -> collider centre
+            float targetPivotY = b.min.y + 0.02f + uprightHalf - uprightCentreOffset;
+            lift = Mathf.Max(0f, targetPivotY - start.y);
+        }
+        float gravity = _rb.gravityScale;
+        _rb.gravityScale = 0f;
+        _rb.linearVelocity = Vector2.zero;
+        _rb.angularVelocity = 0f;
+        float t = 0f;
+        while (t < GetUpDuration && !IsDestroyed && _rb.bodyType == RigidbodyType2D.Dynamic)
+        {
+            t += Time.fixedDeltaTime;
+            float p = Mathf.SmoothStep(0f, 1f, t / GetUpDuration);
+            float hop = Mathf.Sin(p * Mathf.PI) * 0.12f;   // a little bounce as he springs up
+            _rb.MovePosition(new Vector2(start.x, start.y + lift * p + hop));
+            _rb.MoveRotation(Mathf.LerpAngle(startAngle, 0f, p));
+            yield return new WaitForFixedUpdate();
+        }
+        if (!IsDestroyed && _rb != null)
+        {
+            _rb.gravityScale = gravity;
+            _rb.linearVelocity = Vector2.zero;
+            _rb.angularVelocity = 0f;
+        }
+        _gettingUp = false;
+    }
+
     void FixedUpdate()
     {
         if (!_live || IsDestroyed || _rb == null || _rb.bodyType != RigidbodyType2D.Dynamic || _rb.IsAwake()) return;
@@ -471,6 +541,9 @@ public class RobotEnemy : MonoBehaviour
         _rb.bodyType = RigidbodyType2D.Dynamic;
         _rb.mass = LiveMass;
         _rb.gravityScale = BlockBase.LiveGravityScale;
+        if (IsBoss) _rb.angularDamping = BossAngularDamping;   // knocked over, not rolled away
+        _spawnY = transform.position.y;
+        _spawnX = transform.position.x;
         _rb.linearVelocity = Vector2.zero;
         _rb.Sleep();
         _invincibleUntil = Time.time + 0.5f;

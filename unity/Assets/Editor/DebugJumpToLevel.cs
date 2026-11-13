@@ -9,6 +9,23 @@ public static class DebugJumpToLevel
 {
     // Jumps straight to L18 loaded and ready to play — clear it to test the boss clear -> transition video ->
     // World Select (Frozen Tundra unlocked) path for real.
+    // Purchases (2026-11-13, user: "a function in debug that gives me all the purchases of trails, cannons etc").
+    // Work in or out of Play mode (they write the save directly); in Play mode the menus showing are refreshed, and the
+    // Locker / shop pages read ownership each time they open.
+    [MenuItem("FarmFury/Debug/Purchases: Own All Cannons, Trails and Impacts")]
+    public static void OwnAllCosmetics() { SaveManager.DebugSetAllCosmeticsOwned(true); RefreshMenus(); }
+
+    [MenuItem("FarmFury/Debug/Purchases: Own Everything (cosmetics, paid worlds, Remove Ads)")]
+    public static void OwnEverything() { SaveManager.DebugOwnEverything(); RefreshMenus(); }
+
+    [MenuItem("FarmFury/Debug/Purchases: Remove All Cannons, Trails and Impacts")]
+    public static void RemoveAllCosmetics() { SaveManager.DebugSetAllCosmeticsOwned(false); RefreshMenus(); }
+
+    static void RefreshMenus()
+    {
+        if (Application.isPlaying && GameFlow.Instance != null) GameFlow.Instance.RefreshCurrentScreen();
+    }
+
     [MenuItem("FarmFury/Debug/Jump To Level 18 (test World 2 transition)")]
     public static void JumpToLevel18()
     {

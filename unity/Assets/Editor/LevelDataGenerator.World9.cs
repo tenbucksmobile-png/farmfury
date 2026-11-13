@@ -240,7 +240,6 @@ public static partial class LevelDataGenerator
                 R(14.373f, -3.328f, 5.500f, 5.500f, RobotType.Basic),
                 R(14.373f, -1.601f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(39.197f, 0.485f, 5.500f, 5.500f, RobotType.Basic, room: 1),
-                R(41.765f, -1.271f, 5.500f, 5.500f, RobotType.Basic, room: 1),
                 R(43.164f, 2.806f, 5.500f, 5.500f, RobotType.Basic, room: 1),
                 R(39.267f, 4.085f, 5.500f, 5.500f, RobotType.SemiHarvester, room: 1),
             },
@@ -322,7 +321,6 @@ public static partial class LevelDataGenerator
                 R(6.723f, 1.606f, 5.500f, 5.500f, RobotType.Basic),
                 R(10.349f, 0.425f, 5.500f, 5.500f, RobotType.Basic),
                 R(9.402f, 1.699f, 5.500f, 5.500f, RobotType.Basic),
-                R(14.314f, -3.730f, 5.500f, 5.500f, RobotType.Basic),
                 R(14.314f, -1.425f, 5.500f, 5.500f, RobotType.Basic),
                 R(12.796f, 0.068f, 5.500f, 5.500f, RobotType.Basic),
                 R(39.438f, -3.283f, 5.500f, 5.500f, RobotType.Basic, room: 1),
@@ -737,7 +735,6 @@ public static partial class LevelDataGenerator
                 R(9.124f, 1.507f, 5.500f, 5.500f, RobotType.Basic),
                 R(39.881f, 1.304f, 5.500f, 5.500f, RobotType.Basic, room: 1),
                 R(39.881f, 3.528f, 5.500f, 5.500f, RobotType.Basic, room: 1),
-                R(41.942f, -1.400f, 5.500f, 5.500f, RobotType.Basic, room: 1),
                 R(43.442f, 2.903f, 5.500f, 5.500f, RobotType.Basic, room: 1),
             },
             platforms: new[]
@@ -935,7 +932,6 @@ public static partial class LevelDataGenerator
             {
                 R(8.348f, 0.430f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(7.534f, 2.238f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(8.813f, -3.500f, 5.500f, 5.500f, RobotType.Basic),
                 R(11.398f, -1.125f, 5.500f, 5.500f, RobotType.Basic),
                 R(11.398f, 1.248f, 5.500f, 5.500f, RobotType.Basic),
                 R(14.670f, -3.950f, 5.500f, 5.500f, RobotType.Basic),

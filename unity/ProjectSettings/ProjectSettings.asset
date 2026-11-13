@@ -520,7 +520,10 @@ PlayerSettings:
   m_BuildTargetGroupLightmapSettings: []
   m_BuildTargetGroupLoadStoreDebugModeSettings: []
   m_BuildTargetNormalMapEncoding: []
-  m_BuildTargetDefaultTextureCompressionFormat: []
+  m_BuildTargetDefaultTextureCompressionFormat:
+  - serializedVersion: 3
+    m_BuildTarget: Android
+    m_Formats: 01000000
   playModeTestRunnerEnabled: 0
   runPlayModeTestAsEditModeTest: 0
   actionOnDotNetUnhandledException: 1
@@ -893,7 +896,7 @@ PlayerSettings:
   cloudProjectId: 9d682642-97d6-4092-bbdc-78d1be61f607
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: FarmFury
+  projectName: Farm Fury Arcade
   organizationId: bonti27mqp626j6
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0

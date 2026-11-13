@@ -2,7 +2,7 @@
 
 *Renamed from "Farm Fury" on 2026-11-10 to run with Farm Fury Arcade and Farm Fury Stampede. Under the phone icon: "Cannonfire".*
 
-**v3.3** (9 November 2026) · "Physics Destruction · Nine Worlds · One Farm to Save" · A Farm Fury Universe Game
+**v3.4** (13 November 2026) · "Physics Destruction · Nine Worlds · One Farm to Save" · A Farm Fury Universe Game
 Physics Puzzle · Casual · Free-to-Play · iOS & Android · Unity 6.5
 
 This Markdown file replaces `FarmFury_GDD_v2.docx` (June 2026, concept phase) as the living design document, in the
@@ -54,8 +54,12 @@ level rewards the player who spots the clever shot.
    hit, and its blast throws the structure over rather than destroying it. Parked wagons roll off ramps and ledges
    into the structures below. The animal itself doesn't burst on impact: it tumbles on through the wreck, then fades.
    A **switch** button (under the Locker) reopens Character Select between shots to swap the animals still to fire
-   — never more than are left.
-6. Run out of animals with robots left → **revive** offer (+1 animal) or Level Failed.
+   — never more than are left. From World 1 level 5 on, a **swap hint** suggests a better-suited animal from the
+   lineup when a stage calls for it (robots under roofs → Cluck / Gerald; stone → Bessie / Horace; robots spread
+   wide → Ducky / Billy / Woolly; a tall tower → Percy / Horace), at most once per stage.
+   Most levels have **two stages**: clearing the first shows "STAGE CLEARED!" (or "ONE SHOT! ADDING A FARM FURY" —
+   a bonus animal — when it took a single shot) and the camera pans to the second.
+6. Run out of animals with robots left → **revive** offer ("to add a Farm Fury": one more animal) or Level Failed.
 7. **Results:** stars, coin payout, Double Coins (rewarded ad), then on to the next level.
 
 ## 3. Characters (Built — all eight scripted with art)
@@ -84,9 +88,11 @@ Billy furious and unstoppable.
 
 **Art:** each animal has cannon-game poses — Idle, Loaded, In-flight, Impact, Trigger (ability) — plus a framed
 select card and a thumbs-up portrait used in the in-game queue. Horace's ability and impact poses are pending
-(Kling AI). **Physics:** heavier animals (Bessie mass 28 vs Cluck 8) hit harder. World 1 uses Angry-Birds-measured
-framing: the camera is fixed per level, gravity and launch speed are set in screen terms, and typical flights
-last 1–1.5 s.
+(Kling AI). **Physics:** heavier animals (Bessie mass 28 vs Cluck 8) hit harder. Every built world uses
+Angry-Birds-measured framing: the camera is fixed per level and gravity and launch speed are set in screen terms.
+Shots fly in slight slow motion (the anticipation of the shot) on a light, floaty arc — projectile gravity 0.38
+screen heights/s² since 13 Nov 2026 (was 0.5, which felt heavy and short), so a full-power shot carries well past
+the stage.
 
 **Thrown abilities:** Gerald (Feather Bombs), Woolly (Wool Balls) and Billy (Mud Throw) throw projectiles that
 burst in a radius or bounce and hit; robots take egg-strength damage from them.
@@ -107,10 +113,21 @@ hit, one egg or thrown-ability hit, or one crush from a falling piece kills a re
 hit by their resistance (a boss fight). The dynamite blast blows up robots right beside it and throws everything else.
 Thrown abilities always leave forward and down (into the structure, never over it), faster than the animal. Robots stand still on live-physics levels (patrolling would shove the structure) and flash when hit.
 
+**Bosses (13 Nov 2026):** each boss holds a single pose until it is destroyed (no cycling through hurt / defeated
+art). Knocked over but not destroyed, it gets back up after a moment instead of lying there; it resists rolling. Any
+robot — boss or not — that is knocked off the screen or falls far below the ground counts as destroyed, so a level
+can never be left unwinnable. **Fair placement:** the level designers drop any robot sheltered behind a mound that no
+real shot can reach (a shot must be able to hit it, or hit a piece right beside it, at its height, on a fairly flat
+arc).
+
+**Settings → Character Story → Robots** shows one world at a time (< and >): the world's boss in the middle of a
+slowly turning ring of its three robots, and a card with the tapped robot's name and story — each boss has its own
+short write-up.
+
 | World | Basic | Harvester | Semi-Harvester | Boss |
 |---|---|---|---|---|
 | 1 Meadow Ruins | Pawn | Harvester | Semi-Harvester | **The Commander** |
-| 2 Frozen Tundra | Frost Robot | Ice Harvestor | Glacier Harvestor | The Commander (own boss planned) |
+| 2 Frozen Tundra | Frost Robot | Ice Harvestor | Glacier Harvestor | **Frost Tyrant** |
 | 3 Watermill Village | Water Robot | Harvester | Scout | **Mill Stone Mauler** |
 | 4 Sky Islands | Drift Robot | Harvester | Drone | **Storm Baron** |
 | 5 Sunken City | Shrimp | Crab | Jellyfish | **Deep Dredger** |
@@ -233,7 +250,7 @@ solvability.
 ## 8. User Interface (Built — the franchise flow)
 
 ```
-Landing (poster; Play / Exit / Settings)
+Title page (poster + pulsing PRESS START; tap anywhere) -> Landing (poster; Play / Exit / Settings)
   -> World Select (badge carousel: 6 story worlds, then 3 paid)
   -> Level Select (world backdrop; padlock / question / 1-2-3 star boards / boss shield)
   -> Character Select (card carousel; tap the centred card and it drops into the next open lineup slot)
@@ -244,6 +261,12 @@ Settings cog -> Menu hub: Settings (Sound, Leaderboards, Character Story, Polici
 
 Results, Pause and New Character canvases carry the Farm Fury logo; each world has its own versions. Esc / Android
 back closes the top overlay. A brief slow-motion beat plays between the last robot falling and the results.
+
+The game opens on the title page; coming back from World Select or a Home button lands on the Play / Exit /
+Settings page. Both posters are 20:9, filling a phone screen. The **menu hub** advertises the sister games: a card
+for **Farm Fury Stampede** (left) and **Farm Fury Arcade** (right) — the app icon, PLAY FREE — opening the store page
+behind the parental gate (no rewards for installing; store policy). The **Locker** (in-level) shows three rows —
+cannon skins, trails, impact effects — each tile ticked when equipped; tap again to take it off.
 
 ## 9. Monetisation (Built; needs store accounts)
 
@@ -257,12 +280,17 @@ loot boxes, every level completable without spending. The model now matches the 
 | Paid worlds (Dustbowl, Fairground, Crop Factory) | $3.99 each |
 | Cosmetics: cannon skins (Golden, Pumpkin, Corncob, Milk Churn, Tractor), flight trails, impact effects (Confetti, Popcorn, Fireworks, Feathers, Egg Splat) — shared by every animal | $1.99 or 2,500 coins |
 
-- **Ads:** rewarded (revive, Double Coins); interstitial every 6 level loads; banner on Pause / Level Failed —
-  none with Remove Ads. Inert until FarmFury's LevelPlay keys are entered.
+- **Ads:** rewarded (revive — placement `continue_after_death`; Double Coins — `double_coins_level_complete`);
+  interstitial every 6 level loads; banner on Pause / Level Failed — none with Remove Ads. LevelPlay mediation with
+  AdMob and Unity Ads, set up like Stampede (13 Nov 2026: Cannonfire's own LevelPlay apps, ad units and AdMob apps;
+  child-directed). Not yet tested on a device.
 - **Revive:** +1 animal for 5 coins (once) or a rewarded ad (unlimited).
+- **Cosmetics show off:** an equipped cannon skin appears the moment it is chosen and wears a golden glow (a gold
+  outline, a halo and twinkling stars), so a bought cannon never looks like the standard one.
 - Purchases and external links go through a parental gate. Coins, purchases and cosmetics are checksum-protected.
+- **Cross-promotion:** the menu hub links to Farm Fury Stampede and Farm Fury Arcade (see section 8).
 - **Dropped from v2:** season pass, starter pack, power-ups. **Still open:** creating the `farmfury_` products in App
-  Store Connect / Play Console, ad unit ids, bundle id (currently a Unity default).
+  Store Connect / Play Console.
 
 ## 10. Visual & Audio Design
 
@@ -287,7 +315,8 @@ loot boxes, every level completable without spending. The model now matches the 
   `LevelDataGenerator` (World 1 + L19) and `WorldLevelGenerator` (Worlds 2–9) — replaces v2's JSON descriptors.
 - **Backend:** none yet. Saves are local (PlayerPrefs via SaveManager). Planned: Supabase (economy/backend) and
   Crashlytics, per the July 2026 plan. Analytics via Unity Gaming Services; ads via LevelPlay; purchases via Unity IAP.
-- **Platforms:** iOS and Android (landscape, safe-area aware). Home-screen name "Farm Fury".
+- **Platforms:** iOS and Android (landscape, safe-area aware), bundle id `com.farmfury.cannonfire`. Home-screen
+  name "Cannonfire".
 - **Automation:** `Run-Unity.ps1` (levels / setup / check / builds); a Phaser 3 prototype (`index.html`) remains as
   the frozen physics reference.
 
@@ -327,4 +356,4 @@ leaderboards on the "Perfect" goal, seasonal cosmetics.
 
 ---
 
-*Farm Fury Cannonfire — Game Design Document v3.2. Built by one developer, powered by AI. One farm to save.*
+*Farm Fury Cannonfire — Game Design Document v3.4. Built by one developer, powered by AI. One farm to save.*

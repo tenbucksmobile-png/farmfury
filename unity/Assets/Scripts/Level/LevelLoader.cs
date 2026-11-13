@@ -78,6 +78,10 @@ public class LevelLoader : MonoBehaviour
 
     // Snapshot of the queue at this moment (copy — safe to iterate while the queue changes)
     public AnimalType[] BirdQueueSnapshot => _birdQueue.ToArray();
+    /// <summary>The current room's live pieces and robots (one room is spawned at a time) - read by TutorialHints'
+    /// swap advice.</summary>
+    public IReadOnlyList<BlockBase> SpawnedBlocks => _spawnedBlocks;
+    public IReadOnlyList<RobotEnemy> SpawnedRobots => _spawnedRobots;
 
     public bool TryConsumeBird(out AnimalType type)
     {
@@ -263,9 +267,9 @@ public class LevelLoader : MonoBehaviour
         {
             AddBird(CatapultLauncher.LastAnimalUsed);
             ScoreManager.Instance?.AddBird();
-            if (hud != null) hud.ShowBanner("ONE SHOT!  ADDING FARMFURY");   // user: "change +1 animal to adding FarmFury" (2026-11-12)
+            if (hud != null) hud.ShowBanner("ONE SHOT!  ADDING A FARM FURY");   // 2026-11-12 "+1 animal" -> FarmFury wording
         }
-        else if (hud != null) hud.ShowBanner("ROOM CLEARED!");
+        else if (hud != null) hud.ShowBanner("STAGE CLEARED!");   // was "ROOM CLEARED!" (2026-11-13, user)
         yield return new WaitForSeconds(0.7f);
 
         int next = _room + 1;
@@ -516,6 +520,7 @@ public class LevelLoader : MonoBehaviour
         // LevelData, not static scene objects that could hold a fixed reference. Blocks are
         // always spawned before robots in LoadLevel(), so every Indestructible block for this
         // level is already in _spawnedBlocks by the time any robot spawns.
+        if (data.robotType == RobotType.Commander) robot.MarkBoss();
         if (data.robotType == RobotType.Commander)
             foreach (var block in _spawnedBlocks)
                 if (block != null && block.Indestructible)

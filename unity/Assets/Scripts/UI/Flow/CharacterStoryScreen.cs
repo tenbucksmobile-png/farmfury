@@ -9,8 +9,8 @@ namespace FarmFury.UI
     /// Settings -> Character Story (franchise layout, ported from Stampede's CharacterStoryScreen): five wooden tabs
     /// over a scrolling list of cream rows. FarmFury's own text: Story (StoryContent.Story + Credits), How to Play
     /// (the cannon game), Characters (each animal's framed card, StoryContent entry and which world it joins in),
-    /// Worlds (each world's badge, launcher and StoryContent entry), Robots (FarmFury's four robot types with their
-    /// sprites — MenuArt.robotPortraits). Stampede's Cosmetics tab is added with the shop (franchise Phase 5).
+    /// Worlds (each world's badge, launcher and StoryContent entry), Robots (since 2026-11-13 Stampede's design: one
+    /// world at a time, its boss inside a turning ring of its robots, a card for the tapped one - see RobotsPage).
     /// Replaces the old Settings popup's Story / About tabs.
     /// </summary>
     public class CharacterStoryScreen : OverlayScreen
@@ -59,8 +59,117 @@ namespace FarmFury.UI
                 _tabs[i].gameObject.AddComponent<Outline>().effectColor = RowBorder;
                 UIKit.Place(_tabs[i].image.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                     new Vector2((i - (TabNames.Length - 1) * 0.5f) * (tabWidth + tabGap), -50f), new Vector2(tabWidth, 90f));
-                (_pages[i], _lists[i]) = ScrollList(TabNames[i]);
+                if (i == RobotsTab) { _pages[i] = RobotsPage(); }   // a ring per world instead of a list
+                else { (_pages[i], _lists[i]) = ScrollList(TabNames[i]); }
             }
+        }
+
+        // ------------------------------------------------------------ robots page (2026-11-13, Stampede's design)
+        // User: "because there are different robots for each world, we placed them in a circulating rotation which
+        // works better, also create one and a small description for each world boss". One world at a time (< and >
+        // step through, wrapping): the world's boss in the middle of a slowly turning ring of its three robots
+        // (RobotRing), and a card with the tapped robot's name and story (StoryContent.Bosses / RobotTypes). Art:
+        // MenuArt.worldRobots, the robot prefabs' own sprites.
+        private const int RobotsTab = 4;
+        private const int Boss = 3;   // index of the boss within a world's four
+        private readonly List<(string title, int world)> _robotWorlds = new();
+        private int _robotWorld;
+        private RectTransform _robotStage;
+        private RobotRing _ring;
+        private Text _robotWorldTitle, _robotName, _robotStory;
+        private readonly List<(Image image, int kind)> _robotButtons = new();
+
+        private GameObject RobotsPage()
+        {
+            var page = UIKit.NewRect("RobotsPage", Rect);
+            page.anchorMin = new Vector2(0.5f, 0f);
+            page.anchorMax = new Vector2(0.5f, 1f);
+            page.offsetMin = new Vector2(-(RowWidth + 40f) * 0.5f, 180f);
+            page.offsetMax = new Vector2((RowWidth + 40f) * 0.5f, -170f);
+
+            var prev = UIKit.MakeButton(page, "PrevWorld", "<", TabInactive, () => ShowRobotWorld(_robotWorld - 1), 60);
+            UIKit.Place(prev.image.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-560f, -10f), new Vector2(110f, 90f));
+            var next = UIKit.MakeButton(page, "NextWorld", ">", TabInactive, () => ShowRobotWorld(_robotWorld + 1), 60);
+            UIKit.Place(next.image.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(560f, -10f), new Vector2(110f, 90f));
+            foreach (var b in new[] { prev, next })
+            {
+                b.GetComponentInChildren<Text>().fontStyle = FontStyle.Bold;
+                b.gameObject.AddComponent<Outline>().effectColor = RowBorder;
+            }
+            _robotWorldTitle = UIKit.Label(page, "WorldTitle", "", 54, TextAnchor.MiddleCenter, UIKit.Accent);
+            _robotWorldTitle.fontStyle = FontStyle.Bold;
+            _robotWorldTitle.gameObject.AddComponent<Outline>().effectDistance = new Vector2(3f, -3f);
+            UIKit.Place(_robotWorldTitle.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(980f, 90f));
+
+            _robotStage = UIKit.NewRect("RobotRing", page);
+            UIKit.Place(_robotStage, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-400f, -55f), new Vector2(860f, 600f));
+            _ring = _robotStage.gameObject.AddComponent<RobotRing>();
+            _ring.radius = new Vector2(300f, 170f);
+
+            var card = Row(page, "RobotCard");
+            UIKit.Place(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(430f, -55f), new Vector2(760f, 520f));
+            _robotName = UIKit.Label(card, "Name", "", 50, TextAnchor.UpperLeft, TitleColor);
+            _robotName.fontStyle = FontStyle.Bold;
+            UIKit.Place(_robotName.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(680f, 70f));
+            _robotStory = UIKit.Label(card, "Story", "", 34, TextAnchor.UpperLeft, Color.black);
+            UIKit.Place(_robotStory.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -126f), new Vector2(680f, 370f));
+            return page.gameObject;
+        }
+
+        private void ShowRobotWorld(int index)
+        {
+            if (_robotWorlds.Count == 0 || _robotStage == null) { return; }
+            _robotWorld = (index % _robotWorlds.Count + _robotWorlds.Count) % _robotWorlds.Count;   // wraps both ways
+            var (title, world) = _robotWorlds[_robotWorld];
+            _robotWorldTitle.text = title;
+
+            for (int i = _robotStage.childCount - 1; i >= 0; i--) { Object.Destroy(_robotStage.GetChild(i).gameObject); }
+            _robotButtons.Clear();
+
+            var ringItems = new List<RectTransform>();
+            foreach (int kind in new[] { Boss, 0, 1, 2 })   // the boss first, in the middle
+            {
+                int slot = world * 4 + kind;
+                var art = Art.worldRobots != null && slot < Art.worldRobots.Length ? Art.worldRobots[slot] : null;
+                bool boss = kind == Boss;
+                var image = UIKit.Picture(_robotStage, boss ? "Boss" : $"Robot_{kind}", art);
+                image.gameObject.SetActive(true);
+                image.raycastTarget = true;
+                image.color = art != null ? Color.white : new Color(1f, 1f, 1f, 0f);
+                var rt = image.rectTransform;
+                UIKit.Place(rt, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, boss ? new Vector2(320f, 320f) : new Vector2(190f, 190f));
+                var outline = image.gameObject.AddComponent<Outline>();
+                outline.effectColor = UIKit.Accent;
+                outline.effectDistance = new Vector2(5f, -5f);
+                outline.enabled = false;
+                int picked = kind;
+                image.gameObject.AddComponent<Button>().onClick.AddListener(() => SelectRobot(picked));
+                _robotButtons.Add((image, kind));
+                if (!boss) { ringItems.Add(rt); }
+            }
+            _ring.SetItems(ringItems);
+            SelectRobot(Boss);
+        }
+
+        private void SelectRobot(int kind)
+        {
+            if (_robotWorlds.Count == 0) { return; }
+            int world = _robotWorlds[_robotWorld].world;
+            foreach (var (image, k) in _robotButtons)
+            {
+                var outline = image.GetComponent<Outline>();
+                if (outline != null) { outline.enabled = k == kind; }
+            }
+            if (kind == Boss)
+            {
+                var boss = world < StoryContent.Bosses.Length ? StoryContent.Bosses[world] : new StoryContent.Entry("The Boss", "");
+                _robotName.text = boss.Title + " (Boss)";
+                _robotStory.text = boss.Body;
+                return;
+            }
+            var names = world < StoryContent.RobotTypeNames.Length ? StoryContent.RobotTypeNames[world] : null;
+            _robotName.text = names != null ? names[kind] : StoryContent.RobotTypes[kind].Title;
+            _robotStory.text = StoryContent.RobotTypes[kind].Body;
         }
 
         protected override void OnShow()
@@ -76,7 +185,7 @@ namespace FarmFury.UI
                 _pages[i].SetActive(i == index);
                 _tabs[i].image.color = i == index ? TabActive : TabInactive;
             }
-            _lists[index].anchoredPosition = Vector2.zero;
+            if (_lists[index] != null) { _lists[index].anchoredPosition = Vector2.zero; }   // the Robots page has no list
         }
 
         private (GameObject, RectTransform) ScrollList(string name)
@@ -144,11 +253,20 @@ namespace FarmFury.UI
                 }
             }
 
-            for (int i = 0; i < StoryContent.Robots.Length; i++)
+            _robotWorlds.Clear();
+            if (dm != null)
             {
-                var portrait = Art.robotPortraits != null && i < Art.robotPortraits.Length ? Art.robotPortraits[i] : null;
-                InfoRow(_lists[4], portrait, 220f, StoryContent.Robots[i].Title, StoryContent.Robots[i].Body);
+                foreach (var world in dm.GetAllWorlds())
+                {
+                    int w = (int)world.worldType;
+                    if (w >= 0 && w < 9) { _robotWorlds.Add((world.displayName, w)); }
+                }
             }
+            if (_robotWorlds.Count == 0)
+            {
+                for (int w = 0; w < 9; w++) { _robotWorlds.Add(($"World {w + 1}", w)); }
+            }
+            ShowRobotWorld(0);
         }
 
         private void InfoRow(Transform list, Sprite icon, float iconSize, string title, string body)

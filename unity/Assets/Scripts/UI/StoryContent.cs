@@ -64,6 +64,55 @@ This is Farm Fury: not a war between armies, but a farmyard's answer to being to
 @"The largest Robot unit ever fielded against Sunrise Meadows, and the first true commanding officer the animals have faced. Strengths: far more durable than any standard unit, guards a fortified stone tower, and visibly escalates through Alert and Critical states as the fight wears on. Weaknesses: everything he protects goes down with him — destroy the Commander and his entire guarded structure collapses in one motion. How to defeat: this is not a one-shot fight. Watch for his pose changes — Alert means he's hurt, Critical means he's close. Finish him there."),
     };
 
+    // Robots tab, per world (2026-11-13, Stampede's ring of each world's robots around its boss). Every world dresses
+    // the same three kinds of robot in its own look; each world has its own boss. Short enough for the tab's card.
+    public static readonly Entry[] RobotTypes =
+    {
+        new Entry("Robot Pawn",
+@"The robot army's foot soldier: cheap, everywhere and not very sturdy. One good hit knocks it out - and so does a plank falling on its head. Topple the structure and the pawns go down with it."),
+        new Entry("Harvester",
+@"A farm harvester turned against the farm. Heavier than a pawn, it usually guards the base of a structure. Hit it straight on, or bring the whole tower down on top of it."),
+        new Entry("Semi-Harvester",
+@"The harvester's taller cousin, perched up high where it can watch the whole field. Knock out whatever it's standing on and the fall does the rest."),
+    };
+
+    // Per-world names for the three kinds (index 0-8 = World 1-9; null = the plain name above).
+    public static readonly string[][] RobotTypeNames =
+    {
+        null,
+        new[] { "Frost Pawn", "Ice Harvester", "Glacier Harvester" },
+        new[] { "Mill Pawn", "Mill Harvester", "Mill Semi-Harvester" },
+        new[] { "Sky Pawn", "Sky Harvester", "Sky Semi-Harvester" },
+        new[] { "Deep Pawn", "Deep Harvester", "Deep Semi-Harvester" },
+        new[] { "Ship Pawn", "Ship Harvester", "Ship Semi-Harvester" },
+        new[] { "Canyon Pawn", "Canyon Harvester", "Canyon Semi-Harvester" },
+        new[] { "Fairground Pawn", "Fairground Harvester", "Fairground Semi-Harvester" },
+        new[] { "Factory Pawn", "Factory Harvester", "Factory Semi-Harvester" },
+    };
+
+    // One boss per world (index 0-8 = World 1-9).
+    public static readonly Entry[] Bosses =
+    {
+        new Entry("The Commander",
+@"The officer who led the robots' first landing on Sunrise Meadows. The mothership drops him onto his keep, and he dares the animals to knock him off. Falling planks barely dent him - hit him straight on, and if he goes down, finish him before he gets back up."),
+        new Entry("Frost Tyrant",
+@"He froze the north fields solid and rules them from an ice keep, frost hissing off his armour. Shattering ice doesn't bother him - bring his keep down beneath him, then land the knockout blow."),
+        new Entry("Mill Stone Mauler",
+@"Built from the village's own millworks, with a grinding stone for a fist. He pounds the river dry to drive the robot mills. Heavy and slow to rise - topple his keep and catch him while he's down."),
+        new Entry("Storm Baron",
+@"He rides the thunderclouds above the floating isles and calls lightning down on anything with feathers. His keep sits high in the clouds: aim high, and set off the storm clouds to shake him loose."),
+        new Entry("Deep Dredger",
+@"A giant dredging sub, digging through the drowned city for something the robots won't name. Wide, heavy and armour-plated - it takes more than one hit, so knock it off its keep first."),
+        new Entry("Factory Machine",
+@"The machine that builds the robot army, bolted into the heart of the mothership. Every robot the animals have ever faced rolled off its line. Shut it down and the invasion runs out of robots."),
+        new Entry("Drill Rig",
+@"It strip-mines the canyon from a tower of scaffolding, drill spinning day and night. Built for rock, not for flying cows - bring the rig down and it can't dig its way back up."),
+        new Entry("Ringmaster Bot",
+@"He runs the robot fair under the big top, top hat and all. Every ride is rigged and every prize is a trap. Steal the show: knock him off his stage."),
+        new Entry("Harvester Prime",
+@"The first Harvester ever built, and the biggest - every crop on the farm passes through its blades on the way to the factory. The last machine standing between the animals and their fields."),
+    };
+
     // Credits (2026-07-13, Settings > About) — only verifiably-true project facts per explicit
     // user decision; Team/Special Thanks are left as empty placeholder sections rather than
     // invented names. Fill those in once real names are provided.

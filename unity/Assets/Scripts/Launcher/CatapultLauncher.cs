@@ -235,12 +235,14 @@ public class CatapultLauncher : MonoBehaviour
     {
         if (GameManager.Instance != null)
             GameManager.Instance.OnLevelStarted += OnLevelStarted;
+        FarmFury.Core.SaveManager.EquippedChanged += OnEquippedChanged;
     }
 
     void OnDisable()
     {
         if (GameManager.Instance != null)
             GameManager.Instance.OnLevelStarted -= OnLevelStarted;
+        FarmFury.Core.SaveManager.EquippedChanged -= OnEquippedChanged;
     }
 
     void Start()
@@ -872,6 +874,29 @@ public class CatapultLauncher : MonoBehaviour
             PrepareNextBird();
     }
 
+    // ── Cannon skin (cosmetic) ────────────────────────────────────────────────────────────────────────────────────
+    // Equipped skin (2026-11-08): same pose and canvas as Cannon.png, so it swaps in place. Since 2026-11-13 (user: "the
+    // custom cannon only appears once the level is replayed - it should change automatically when selected (lets also
+    // put a golden glow around it to show it is special)") it is applied the moment it is equipped
+    // (SaveManager.EquippedChanged, e.g. from the Locker mid-level), and a skinned cannon gets CannonSkinGlow behind it.
+    Sprite _cannonWorldSprite;   // this world's own cannon, chosen at level start
+    CannonSkinGlow _skinGlow;
+
+    void ApplyCannonSkin()
+    {
+        if (_cannonSR == null) return;
+        var skin = FarmFury.Core.CosmeticEffects.CannonSkin();
+        if (skin != null) _cannonSR.sprite = skin;
+        else if (_cannonWorldSprite != null) _cannonSR.sprite = _cannonWorldSprite;
+        if (skin != null) _skinGlow = CannonSkinGlow.Attach(_cannonSR);
+        if (_skinGlow != null) _skinGlow.gameObject.SetActive(skin != null);
+    }
+
+    void OnEquippedChanged(string[] category)
+    {
+        if (category == FarmFury.Core.StoreProducts.Cannons) ApplyCannonSkin();
+    }
+
     void OnLevelStarted(LevelData data)
     {
         if (_readyBird != null) { Destroy(_readyBird.gameObject); _readyBird = null; }
@@ -895,9 +920,8 @@ public class CatapultLauncher : MonoBehaviour
                              : (data != null && data.world == 8 && _cannonSpriteW8 != null) ? _cannonSpriteW8
                              : (data != null && data.world == 9 && _cannonSpriteW9 != null) ? _cannonSpriteW9
                              : _cannonSprite;
-        // Equipped cannon skin (cosmetic, 2026-11-08): same pose and canvas as Cannon.png, so it swaps in place.
-        var skin = FarmFury.Core.CosmeticEffects.CannonSkin();
-        if (_cannonSR != null && skin != null) _cannonSR.sprite = skin;
+        _cannonWorldSprite = _cannonSR != null ? _cannonSR.sprite : null;
+        ApplyCannonSkin();
         _framed = ReferenceFraming.Active(data);
         _mountWorld = data != null ? data.world : 1;
         // Rooms: every attempt starts in the first room.

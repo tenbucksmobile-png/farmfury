@@ -418,7 +418,6 @@ public static partial class LevelDataGenerator
                 R(11.519f, 1.795f, 5.500f, 5.500f, RobotType.Basic),
                 R(6.836f, 3.888f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(11.398f, 2.995f, 5.500f, 5.500f, RobotType.SemiHarvester),
-                R(44.715f, -2.488f, 5.500f, 5.500f, RobotType.Basic, room: 1),
                 R(39.750f, 1.070f, 5.500f, 5.500f, RobotType.Basic, room: 1),
                 R(43.710f, 1.770f, 5.500f, 5.500f, RobotType.Basic, room: 1),
                 R(41.739f, 0.820f, 5.500f, 5.500f, RobotType.Basic, room: 1),
@@ -762,7 +761,6 @@ public static partial class LevelDataGenerator
             },
             robots: new[]
             {
-                R(9.484f, -1.361f, 5.500f, 5.500f, RobotType.Basic),
                 R(9.338f, 1.039f, 5.500f, 5.500f, RobotType.SemiHarvester),
                 R(14.240f, 0.628f, 5.500f, 5.500f, RobotType.Basic),
                 R(6.818f, 2.606f, 5.500f, 5.500f, RobotType.Basic),

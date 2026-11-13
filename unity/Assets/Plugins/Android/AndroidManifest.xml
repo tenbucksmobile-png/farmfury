@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Custom main manifest (ProjectSettings useCustomMainManifest = 1), copied from Farm Fury Stampede (2026-11-13), itself from Farm Fury: Arcade.
+  It REPLACES Unity's generated manifest, so it must carry the launcher activity itself (Arcade's first version
+  had only the AdMob tag and installed with no launcher). Only the GameActivity block is kept because
+  ProjectSettings androidApplicationEntry = 2 (GameActivity); swap in UnityPlayerActivity if that ever changes.
+
+  The AdMob APPLICATION_ID is Cannonfire's Android AdMob app (the iOS one, once created, goes into Info.plist via
+  FarmFuryIosBuild): Google Mobile Ads throws at process start without it.
+-->
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      Child-directed app: Google Play's Families policy forbids collecting the advertising ID from children.
+      The Google Mobile Ads / LevelPlay SDKs merge these permissions in on their own, so strip them out of the
+      final merged manifest.
+    -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_TOPICS" tools:node="remove" />
+
+    <application>
+        <activity android:name="com.unity3d.player.UnityPlayerGameActivity"
+                  android:theme="@style/BaseUnityGameActivityTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+            <meta-data android:name="android.app.lib_name" android:value="game" />
+        </activity>
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1264425755955045~6913458246" />
+    </application>
+</manifest>

@@ -23,6 +23,9 @@ namespace FarmFury.UI
         public Sprite shopSign;
         [Tooltip("Menu hub 'Visit Our Store' link-out. (MerchBanner.png)")]
         public Sprite merchBanner;
+        [Tooltip("Menu hub cross-promo cards for the sister games: each game's app icon on a wood rim (Franchise/CrossPromo/Stampede.png, Arcade.png).")]
+        public Sprite crossPromoStampede;
+        public Sprite crossPromoArcade;
         public Sprite legalSign;
         public Sprite leaderboardSign;
 

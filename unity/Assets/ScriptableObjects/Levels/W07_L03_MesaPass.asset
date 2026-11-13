@@ -656,10 +656,6 @@ MonoBehaviour:
     scale: {x: 5.5, y: 5.5}
   - room: 0
     robotType: 0
-    position: {x: 14.027, y: -3.312}
-    scale: {x: 5.5, y: 5.5}
-  - room: 0
-    robotType: 0
     position: {x: 13.856, y: -2.002}
     scale: {x: 5.5, y: 5.5}
   - room: 0
@@ -677,10 +673,6 @@ MonoBehaviour:
   - room: 1
     robotType: 0
     position: {x: 39.2, y: -0.434}
-    scale: {x: 5.5, y: 5.5}
-  - room: 1
-    robotType: 0
-    position: {x: 41.749, y: -2.232}
     scale: {x: 5.5, y: 5.5}
   - room: 1
     robotType: 0

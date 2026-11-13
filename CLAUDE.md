@@ -59,9 +59,9 @@ needing a live pass before shipping.
   OpenCV Telea; clean on sky backdrops, a soft smudge on the busier paid-world ones); the Leaderboard has no logo. Full list in `docs/ART_REQUIREMENTS.md` (Kling checklist for all nine worlds).
 - **Monetisation needs the user's accounts:** create the `farmfury_`-prefixed products (Remove Ads, 4 coin packs,
   3 worlds, 5 cannon skins, 6 trails, 5 impact effects) in App Store Connect / Play Console; enter FarmFury's LevelPlay app keys and ad unit
-  ids on the GameManager's AdManager (ads are inert until then); register the analytics events. No AdMob adapter is
-  included until FarmFury has its own AdMob app id (the adapter crashes Android at launch without one; the id would
-  go in the Android manifest and `FarmFuryIosBuild`).
+  ids on the GameManager's AdManager (ads are inert until then); register the analytics events. AdMob (2026-11-13):
+  the adapter is in, with Cannonfire's own AdMob app ids in the Android manifest and `FarmFuryIosBuild` (see the
+  2026-11-13 entry below).
 - **Identity (2026-11-10):** productName "Farm Fury Cannonfire", company "Tenbucks Mobile", bundle id
   `com.farmfury.cannonfire` (Android + iOS; Standalone still `com.DefaultCompany.2D-URP`). The home-screen label is
   "Cannonfire" — subtitle only, like "Stampede" / "Arcade" — set at build time by `FarmFuryAndroidBuild` /
@@ -77,10 +77,12 @@ needing a live pass before shipping.
   in `Cannonfire/originals/`, inpainted, logo at 1.4x the mark's width). Other attempts (Logo2_*, Logo_Cannonfire*,
   Poster_*, Landing_*) stay in that folder; `tools/compose_cannonfire_logo.py` builds the blast-lettering variant. Kling
   total for the rename 26 credits. The pale purple band at the canvases' left edge predates this (2026-11-02 inpaint).
-- **Landing poster ratio (2026-11-11):** `LandingPage.png` is 1280x720 (16:9); phones are ~19.5:9, so `LandingScreen`
-  shows it contained with blurred side bars. Fix = a 2400x1080 (20:9) poster with the title / CANNONFIRE sign /
-  characters inside the centre 1920x1080 and the bottom-left (Play/Exit) and bottom-right (cog) corners clear; then
-  switch LandingScreen's ZoomedCover to cover. Not done yet (needs the art; Kling outpaint ~2 credits is an option).
+- **Landing is two pages (2026-11-13, user's own 2400x1080 posters, drawn as cover):** page 1 `Sprites/UI/LandingTitle.png`
+  (from `Cannonfire/ic.png`, Cluck + Ducky by the cannon) with a pulsing `PressStart.png` (`Rough_Text/Press Start.png`,
+  only 323x60 - upscaled ~1.7x, may look soft; `UI/Kit/PulseScale.cs`); tap anywhere (or Enter / Space) -> page 2
+  `Sprites/UI/LandingPage.png` (from `Cannonfire/LandingPage2.png`, no characters) with Play / Exit / cog. The game boots
+  on page 1; `GameFlow.EnterLanding` (World Select back, Home) lands on page 2; Esc on page 2 -> page 1. Both imported at
+  maxTextureSize 4096 (SpriteAutoImporter). `LandingPage_Blur.png` is wired but unused by the landing now. Unseen in Play mode.
 - **Not ported yet:** Stampede's Boot scene / Android AAB split + store build scripts, the iOS privacy manifest,
   the Character Story Cosmetics tab.
 - **World 2 (Frozen Tundra) was rebuilt 2026-11-09** and **World 3 (Watermill Village) built 2026-11-10** as 22 framed
@@ -136,6 +138,68 @@ needing a live pass before shipping.
   place: this machine's disk — if lost, recovery means restoring `assets/` and re-running the art
   pipeline.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
+
+- **2026-11-13 (later) — Wording, swap advice everywhere, live cannon skins with a glow.** Not compiled by me (the
+  Editor was open); unverified in Play mode.
+  - Banners: "STAGE CLEARED!" (was ROOM CLEARED) and "ONE SHOT!  ADDING A FARM FURY". Revive prompt: "to add a Farm
+    Fury" beside Yes / Watch Ad, the button column moved left (`RevivePromptScreen.ButtonsX` -170).
+  - `TutorialHints.SwapAdvice` on every level except the W1_L01-L04 lessons: between shots it reads the current room
+    (`LevelLoader.SpawnedBlocks` / `SpawnedRobots`) - robots under a roof -> Cluck / Gerald, a third stone -> Bessie /
+    Horace, robots spread > 6.5 u -> Ducky / Billy / Woolly, a tower > 5.5 u -> Percy / Horace - and, if the cannon's
+    animal isn't a fit and a fitting one waits in the lineup, says "Try <animal> here - <why>. Press here to switch!"
+    with the hand at the swap button. Once per stage, 6 s or until the shot. Thresholds are first guesses.
+  - Cannon skins apply the moment they're equipped: `SaveManager.EquippedChanged` (raised by SetEquippedCannon /
+    Trail / Impact) -> `CatapultLauncher.ApplyCannonSkin` (also on level start). A skinned cannon gets
+    `Launcher/CannonSkinGlow.cs`, made more prominent the same day: a gold OUTLINE (the cannon sprite drawn by
+    `Resources/Shaders/SpriteSilhouette.shader` 12% larger about the art's centre), a 1.75x radial halo, both pulsing
+    (order 3 at z -0.05/-0.04: in front of the bales, behind the cannon), and 8 twinkling stars circling it (order 5).
+  - Locker: no "None" tile (tap the equipped item to take it off); three centred rows of equal 140 tiles / 50 gaps laid
+    out from the top under the banner (`FirstRowTop`, `RowStep` 185); the Equipped tick inside the tile's corner.
+
+- **2026-11-13 — Hidden robots, bosses, lighter flight, cross-promo, Robots tab, two-page landing.** Compiled, levels
+  regenerated, scene wired; unverified in Play mode.
+  - **Hidden robots** (user screenshots, Worlds 7/8): `design_world1.robot_exposed` replaces `reachable_clear` in
+    `prune_hidden_robots`: numpy arcs (20-80 deg, `REAL_GRAV`, animal radius 0.22) stop at mounds AND blocks; a robot
+    behind a mound stays only if some arc's first contact is the robot (box not padded upward, ties go to the block in
+    front) or a piece within 1.6 u at the robot's height hit <= 50 deg down. `reachable()` keeps GRAV 8.0 on purpose
+    (seed picks unchanged). All nine designers re-run: only `R(...)` lines changed (W4 -2, W5 -4, W6 -3 +1, W7 -4,
+    W9 -4 vs the last commit; Worlds 1-3 and 8 unchanged). W8's screenshot robot was NOT caught - recheck in Play mode.
+  - **Bosses:** `RobotEnemy` no longer runs the taunt loop (it cycled into the Hit/Defeated poses); one pose until
+    death. `IsBoss` (`LevelLoader` marks RobotType.Commander): angular damping 3; tilted > 35 deg and resting 0.7 s ->
+    `GetUp()` (lift + turn upright, 0.45 s). Any live robot that travels > 1.5 u and leaves the camera view, or falls
+    6 u below its spawn, dies (counts as a kill).
+  - **Flight:** `ReferenceFraming.ProjectileGravitySh` 0.5 -> 0.38 (user: "can only go so far ... feel heavy"; speed
+    unchanged): ~32% more range, flatter arcs, ~15% longer in the air.
+  - **Cross-promo:** `Core/CrossPromo.cs` (Stampede App Store 6825786519 / `com.farmfury.stampede`, Arcade 6804415300 /
+    `com.farmfury.arcade`; Play referrer utm_source=cannonfire). Menu hub cards either side (`MenuHubScreen.PromoCard`,
+    app icons on a wood rim, `Franchise/CrossPromo/*.png`, PLAY FREE plaque, parental gate, `promo_shown/tapped`
+    xpromo_stampede / xpromo_arcade). No install rewards (store policy).
+  - **Robots tab** (Character Story): Stampede's design - one world at a time (< >), the boss inside a turning
+    `UI/Kit/RobotRing.cs` of its three robots, a card for the tapped one. Art `MenuArt.worldRobots` (36, the robot
+    prefabs' `_robotSprite`, SceneSetup); copy `StoryContent.Bosses` (one per world), `RobotTypes`, `RobotTypeNames`
+    (World 3-9 grunt names are placeholders).
+  - **AdMob Android ad units (2026-11-13, user-created; dashboard-only - entered as AdMob instances in the LevelPlay
+    Cannonfire Android app, never in the game):** banner `ca-app-pub-1264425755955045/4953509317`, interstitial
+    `/6075019298`, rewarded `/6258852120`. AdMob Android APP id `ca-app-pub-1264425755955045~6913458246` is in
+    `Assets/Plugins/Android/AndroidManifest.xml` (copied from Stampede: GameActivity launcher, AD_ID / ad-services
+    permissions removed for Families) with Stampede's `mainTemplate.gradle` / `settingsTemplate.gradle` /
+    `gradleTemplate.properties` / `proguard-user.txt` and `LevelPlay/Editor/ISAdMobAdapterDependencies.xml` (Android
+    packages + the iOS pod IronSourceAdMobAdapter 5.12.0.0). **iOS (same day):** AdMob app id
+    `ca-app-pub-1264425755955045~9969711472` written as GADApplicationIdentifier by `FarmFuryIosBuild` (which also
+    adds `Assets/iOS/PrivacyInfo.xcprivacy`, Stampede's); iOS ad units (LevelPlay dashboard only): banner
+    `ca-app-pub-1264425755955045/4586677801`, interstitial `/8273486420`, rewarded `/1792993501`.
+    The Player Settings switches (useCustomMainManifest / MainGradleTemplate / GradlePropertiesTemplate /
+    GradleSettingsTemplate / ProguardFile = 1, as in Stampede) must be ON or the files are ignored. **LevelPlay config
+    lives in `SceneSetup.WireAdManagerConfig` constants** (applied by Wire Scene References; empty = leave the field
+    alone): Android app key `2985da825`, ad units rewarded `5oi5ruaosq1nuv0p`, interstitial `yzpwovsnpro6lllh`, banner
+    `rrhw0hhrp8cbibo3`; iOS app key `2985d6e9d`, rewarded `ucidbb5jdftywed2`, interstitial `wteebsq09o795d9d`, banner
+    `xpfpse4z5v88lglq`. All LevelPlay config is in; untested on a device. Rewarded placements to create in both
+    LevelPlay apps: `continue_after_death`, `double_coins_level_complete` (capping / pacing off). The active build
+    target is now Android (needed by the Android Resolver; `Settings/Build Profiles/Android.asset`). The Unity Cloud
+    project Cannonfire is linked to (`9d682642-…`, not Arcade's `54837130-…`) showed the name "Farm Fury Arcade" on
+    2026-11-13 - a dashboard labelling mistake the user is fixing.
+  - **Ads audit:** AdManager is byte-identical to Stampede's. Since the same day's setup (above) Cannonfire has the
+    LevelPlay keys / ad unit ids, the AdMob adapter + both app ids and the iOS privacy manifest, matching Stampede.
 
 - **2026-11-12 (latest) — Characters released per level, two per world** (user: "released after certain amount of
   levels on each world - not together, but two per world; so it goes to 'unlock character' as per stampede and arcade -
@@ -1078,7 +1142,7 @@ needs otherwise. New code lives in namespaces `FarmFury.UI` (Scripts/UI/Flow, Sc
 (SaveManager, DataManager, monetisation) and `FarmFury.Utilities`; the older gameplay code stays global.
 
 ```
-Landing (LandingPage.png poster; Play / Exit (not iOS) / Settings cog)
+Landing title (LandingTitle.png + PRESS START; tap) -> Landing menu (LandingPage.png; Play / Exit (not iOS) / Settings cog)
   -> World Select (badge carousel; 6 story worlds, then 3 paid worlds; paid & unbought -> world shop)
   -> Level Select (world backdrop; padlock / question / 1-2-3 star boards / boss shield; 6 cols, 8 above 12 levels)
   -> Character Select (Stampede's card carousel; tap the centred card and it flies down into the next open lineup

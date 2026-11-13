@@ -839,6 +839,9 @@ LAUNCH = (-2.62, -2.69)          # barrel tip with the haybale mount (CatapultLa
 # pyramid (two more rows, 1.6 u, + FarmMountShift's 1.2 u to the left); Worlds 2 and 3 got the same pyramid.
 LAUNCH_SHIFT = {w: (-1.2, 1.6) for w in range(1, 10)}   # Worlds 1-9: the raised cannon (pyramid / floating)
 ROOM_STRIDE = 32.0               # LevelData.RoomStride: room r is laid out (and the cannon moves) r * this to the right
+# GRAV stays at the pre-2026-11-13 gravity (0.5 sh/s^2) for reachable(): every generated city was picked as the first seed
+# passing check(), so changing it would re-roll Worlds 4-9. The game now flies lighter (0.38, REAL_GRAV below), which only
+# reaches further - anything reachable here still is. The exposure check uses REAL_GRAV.
 GRAV, VMIN, VMAX = 8.0, 5.6, 13.6
 
 
@@ -1064,9 +1067,86 @@ def reachable_clear(tx, ty, walls, tol=0.45, world=1):
     return False
 
 
+# Exposure check (2026-11-13, user screenshots of Worlds 7/8: "the robot that is too protected by structure behind a
+# mount, there is no way the player will be able to reach and destroy"). reachable_clear() only asked whether some arc
+# gets within 0.45 u of the robot's centre without crossing a mound - a near-vertical lob dropping onto the roof of the
+# hut it stands in counted, though every real shot hits that roof (or the mound) first. Now the arcs (the game's real
+# angles 20-80 deg, real gravity, the animal's radius) also stop at every block, and a robot behind a mound counts as
+# hittable only when some arc's FIRST contact is the robot itself, or a piece right beside it (within 1.6 u) struck at
+# the robot's own height while the arc is still fairly flat (<= 50 deg down) - a hit that shoves that piece into it.
+REAL_GRAV = 8.0 * 0.38 / 0.5      # ReferenceFraming.ProjectileGravitySh 0.38 (2026-11-13, was 0.5) at the framed zoom
+ANIMAL_R = 0.22                   # the flying animal's collider radius, roughly
+BESIDE = 1.6                      # how far from the robot a struck piece still knocks into it
+MAX_DESCENT = math.tan(math.radians(50))
+
+
+def _arc_grid(world):
+    import numpy as np
+    dx, dy = LAUNCH_SHIFT.get(world, (0.0, 0.0))
+    lx, ly = LAUNCH[0] + dx, LAUNCH[1] + dy
+    a, v = np.meshgrid(np.radians(np.arange(20, 81, 2)), np.linspace(VMIN, VMAX, 21))
+    vx, vy = (v * np.cos(a)).ravel()[:, None], (v * np.sin(a)).ravel()[:, None]
+    t = np.arange(0.0, 6.0, 0.008)[None, :]
+    return lx + vx * t, ly + vy * t - REAL_GRAV * t * t / 2, np.broadcast_to(vx, (vx.shape[0], t.shape[1])), vy - REAL_GRAV * t
+
+
+_ARCS = {}
+
+
+def robot_exposed(L, r):
+    """True when some shot's first contact is this robot, or a piece beside it at its height hit fairly flat."""
+    import numpy as np
+    if L.world not in _ARCS: _ARCS[L.world] = _arc_grid(L.world)
+    X, Y, VX, VY = _ARCS[L.world]
+    room = r.get("room", 0); dx = room * ROOM_STRIDE
+    rx, bot = r["x"] - dx, r["surface"]
+    top = bot + 0.85 * r["vis"]
+    never = X.shape[1]
+
+    def first(mask):
+        return np.where(mask.any(axis=1), mask.argmax(axis=1), never)
+
+    hits = []   # (index array, kind, payload)
+    hits.append((first(Y < G + ANIMAL_R), "ground", None))
+    for (x0, x1, lo, hi) in _walls(L, room):
+        hits.append((first((X > x0 - ANIMAL_R) & (X < x1 + ANIMAL_R) & (Y > lo) & (Y < hi + ANIMAL_R)), "wall", None))
+    # The robot itself goes in LAST so a tie (the same step) goes to the piece in front of it, and its box is not
+    # padded upward: padded, it reached past a canopy / roof just over its head and "won" shots that hit the roof.
+    hw = 0.25 * r["vis"] + 0.5 * ANIMAL_R
+    robot_hit = first((np.abs(X - rx) < hw) & (Y > bot - 0.05) & (Y < top))
+    for b in L.blocks:
+        if b.get("room", 0) != room: continue
+        poly = [(x - dx, y) for x, y in b["poly"]]
+        xs, ys = [p[0] for p in poly], [p[1] for p in poly]
+        box = (X > min(xs) - ANIMAL_R) & (X < max(xs) + ANIMAL_R) & (Y > min(ys) - ANIMAL_R) & (Y < max(ys) + ANIMAL_R)
+        if not box.any(): continue
+        area = sum(poly[i][0] * poly[i - 1][1] - poly[i - 1][0] * poly[i][1] for i in range(len(poly)))
+        inside = box.copy()
+        for i in range(len(poly)):
+            (ax, ay), (bx, by) = poly[i - 1], poly[i]
+            ln = math.hypot(bx - ax, by - ay) or 1.0
+            cross = ((bx - ax) * (Y - ay) - (by - ay) * (X - ax)) * (1 if area > 0 else -1)
+            inside &= cross >= -ANIMAL_R * ln
+        hits.append((first(inside), "block", b))
+    hits.append((robot_hit, "robot", None))
+    idx = np.stack([h[0] for h in hits])          # obstacles x arcs
+    win = idx.argmin(axis=0)
+    rows = np.arange(X.shape[0])
+    for arc in rows:
+        k = win[arc]; step = idx[k, arc]
+        if step >= never: continue
+        kind, b = hits[k][1], hits[k][2]
+        if kind == "robot": return True
+        if kind != "block": continue
+        cy, vx_, vy_ = Y[arc, step], VX[arc, step], VY[arc, step]
+        if abs(b["vc"][0] - dx - rx) <= BESIDE and bot - 0.2 <= cy <= top + 0.2 and (vy_ >= 0 or -vy_ <= MAX_DESCENT * vx_):
+            return True
+    return False
+
+
 def prune_hidden_robots(L):
-    """Drops robots behind a mound that no shot can reach (never a boss, never the last robot of a room). Returns how
-    many were dropped."""
+    """Drops robots behind a mound that no shot can really hit (robot_exposed); never a boss, never the last robot of
+    a room (those are reported instead). Returns how many were dropped."""
     keep, dropped = [], 0
     for r in L.robots:
         room = r.get("room", 0)
@@ -1074,14 +1154,18 @@ def prune_hidden_robots(L):
         walls = [w for w in _walls(L, room)
                  if w[0] < rx + 0.3 and w[3] > r["y"] - 0.6                                  # left of it, above its feet
                  and not (w[0] - 0.2 <= rx <= w[1] + 0.2 and r["surface"] >= w[3] - 0.15)]    # not the mount it stands on
-        if r["kind"] == "boss" or not walls or reachable_clear(rx, r["y"], walls, world=L.world):
+        if not walls or robot_exposed(L, r):
             keep.append(r)
+        elif r["kind"] == "boss":
+            keep.append(r); print(f"  {L.id}: WARNING the boss at x={r['x']:.2f} is hidden behind a mound")
         else:
             dropped += 1
     for room in range(L.rooms):   # never empty a room
         if not any(r.get("room", 0) == room for r in keep):
             lost = [r for r in L.robots if r.get("room", 0) == room]
-            if lost: keep.append(lost[0]); dropped -= 1
+            if lost:
+                keep.append(lost[0]); dropped -= 1
+                print(f"  {L.id}: WARNING room {room + 1}'s only robot is hidden behind a mound (kept)")
     L.robots = [r for r in L.robots if r in keep]
     return dropped
 

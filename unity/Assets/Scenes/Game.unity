@@ -780,7 +780,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
+  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -1126,7 +1126,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
+  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -2022,14 +2022,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4de9f7ae6a5ec24197f0f094e05c1d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FarmFury.Core.AdManager
-  androidAppKey: 
-  iosAppKey: 
-  androidRewardedAdUnitId: 
-  iosRewardedAdUnitId: 
-  androidInterstitialAdUnitId: 
-  iosInterstitialAdUnitId: 
-  androidBannerAdUnitId: 
-  iosBannerAdUnitId: 
+  androidAppKey: 2985da825
+  iosAppKey: 2985d6e9d
+  androidRewardedAdUnitId: 5oi5ruaosq1nuv0p
+  iosRewardedAdUnitId: ucidbb5jdftywed2
+  androidInterstitialAdUnitId: yzpwovsnpro6lllh
+  iosInterstitialAdUnitId: wteebsq09o795d9d
+  androidBannerAdUnitId: rrhw0hhrp8cbibo3
+  iosBannerAdUnitId: xpfpse4z5v88lglq
   enableTestSuite: 1
   autoLaunchTestSuite: 1
   interstitialLevelInterval: 6
@@ -2409,7 +2409,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 0.5859375, y: 0.5859375, z: 1}
+  m_LocalScale: {x: 0.7160633, y: 0.7160633, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 33297441}
@@ -2826,6 +2826,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FarmFury.UI.GameFlow
   _menuArt:
+    landingTitle: {fileID: 21300000, guid: 05f0d6c88b354a34b324cc6b1e44a3d7, type: 3}
+    pressStart: {fileID: 21300000, guid: fb26376cb438415faa1c49cbd4a0a17b, type: 3}
     landingPoster: {fileID: 21300000, guid: 97757046d8bee274ebe2f3f843104b7f, type: 3}
     landingPosterBlur: {fileID: 21300000, guid: b853d29f53f29a24f9c12152a8518a1f, type: 3}
     playButton: {fileID: 21300000, guid: a3a2c9ba4627e664ca2b4db87db9544f, type: 3}
@@ -2867,6 +2869,43 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 07886339befb9504eb55ae959d3e12c4, type: 3}
     - {fileID: 21300000, guid: 9dbb3e4297a7c2a4e8c23f09ad28d4c3, type: 3}
     - {fileID: 21300000, guid: dd524b014eaae754d9638df78da5ea80, type: 3}
+    worldRobots:
+    - {fileID: 21300000, guid: 0c334c6f665217f4abb2ec6c28ec34b2, type: 3}
+    - {fileID: 21300000, guid: 07886339befb9504eb55ae959d3e12c4, type: 3}
+    - {fileID: 21300000, guid: 9dbb3e4297a7c2a4e8c23f09ad28d4c3, type: 3}
+    - {fileID: 21300000, guid: dd524b014eaae754d9638df78da5ea80, type: 3}
+    - {fileID: 21300000, guid: 48895c23470e2554b9120e58efbbaafc, type: 3}
+    - {fileID: 21300000, guid: d1b2de61460f768478a0e2c412658190, type: 3}
+    - {fileID: 21300000, guid: 19a7382388978f04c8b0fd3bdf8ba80f, type: 3}
+    - {fileID: 21300000, guid: 22d97d4de7935754a88423da24f348e2, type: 3}
+    - {fileID: 21300000, guid: 8fa92c6c307908a4e92436e0af415fc7, type: 3}
+    - {fileID: 21300000, guid: 9baf2854ac6cd914d9ae39b672e0fe0b, type: 3}
+    - {fileID: 21300000, guid: c3fe0fd47449fce4a9f2eed6363f2acc, type: 3}
+    - {fileID: 21300000, guid: 67a06b5097316ff43b143e5f63817a28, type: 3}
+    - {fileID: 21300000, guid: 11490da8e70886a4e8fb3c1e7cafddbb, type: 3}
+    - {fileID: 21300000, guid: 5d42f15d69bfdac458ffd9f29608c303, type: 3}
+    - {fileID: 21300000, guid: 7611bdeec1db3ba44a08e69f1949e68f, type: 3}
+    - {fileID: 21300000, guid: c70484f0412aab44e82f02c5b1f2ae78, type: 3}
+    - {fileID: 21300000, guid: cdbcdfeed8fc2b54ea45eb7f1d389cdd, type: 3}
+    - {fileID: 21300000, guid: 4dc4ceeff1556824da621d4dd861c5ca, type: 3}
+    - {fileID: 21300000, guid: b7f073e6e985824418e4d6f62df2b281, type: 3}
+    - {fileID: 21300000, guid: 08f3c677586fa8a4e9d4142858450f8b, type: 3}
+    - {fileID: 21300000, guid: 8b26211c66eb85f4087c15022292a890, type: 3}
+    - {fileID: 21300000, guid: 7c6b0e5000126f74288d5411dff8cbcc, type: 3}
+    - {fileID: 21300000, guid: 6fcc019816d847c429e462dafb70faeb, type: 3}
+    - {fileID: 21300000, guid: c04c2796b94264648b94be740ca5dfce, type: 3}
+    - {fileID: 21300000, guid: 95d86c29e475ec8459370ff7c920e866, type: 3}
+    - {fileID: 21300000, guid: 127788f7bed233f4e8266c4c8c9bd4af, type: 3}
+    - {fileID: 21300000, guid: 324830eb56f3a0c468e35aecef0707eb, type: 3}
+    - {fileID: 21300000, guid: 93d53476b2dc87f4caae6e8f1fbabb03, type: 3}
+    - {fileID: 21300000, guid: 5af8ce76b3917fd48b9dc8f24419b9e2, type: 3}
+    - {fileID: 21300000, guid: 1de35403916f07d43baf91b9de5ac838, type: 3}
+    - {fileID: 21300000, guid: b563e5ee7771d7844a7aee5e73a45099, type: 3}
+    - {fileID: 21300000, guid: 391cbf73426b5b043aaa6b4b809b2c74, type: 3}
+    - {fileID: 21300000, guid: 3529d55aff1a37645bcc5d7e27060e2c, type: 3}
+    - {fileID: 21300000, guid: 2eae166125e04bd4db05ef50de904c67, type: 3}
+    - {fileID: 21300000, guid: d9de74df5818a9b42a9250482419d150, type: 3}
+    - {fileID: 21300000, guid: 8312cd987c64b6e48a74c09ca0c2aad5, type: 3}
     pauseBackground: {fileID: 21300000, guid: 0c915cc2fa25b154bb53bbcf12ec13d4, type: 3}
     levelCompleteBackground: {fileID: 21300000, guid: 9ee46dbd04a965a40b80a67673dc8ec0, type: 3}
     levelFailedBackground: {fileID: 21300000, guid: 189b5fce170824b4aa2c66950f7b005b, type: 3}
@@ -2880,6 +2919,8 @@ MonoBehaviour:
     settingsSign: {fileID: 21300000, guid: a3863225dcd6b0141a9690d48e72365e, type: 3}
     shopSign: {fileID: 21300000, guid: b5088152c190dc444bee9dd67b7fe904, type: 3}
     merchBanner: {fileID: 21300000, guid: 7df17461a0e47ce4196d79e10643c44d, type: 3}
+    crossPromoStampede: {fileID: 21300000, guid: 7d323f97926965e41b3ccf686fdfbdcc, type: 3}
+    crossPromoArcade: {fileID: 21300000, guid: 914a0d8ef2c19b74b8b0c7d0ca943e02, type: 3}
     legalSign: {fileID: 21300000, guid: 014a6d4116bd7b64884cfdbc79c808da, type: 3}
     leaderboardSign: {fileID: 21300000, guid: 374f695f53792584fb7b1e364fcacd34, type: 3}
     musicIcon: {fileID: 21300000, guid: fe33c7a168daa5a42a2457c85246a858, type: 3}

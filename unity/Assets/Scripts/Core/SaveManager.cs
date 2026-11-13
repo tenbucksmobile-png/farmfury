@@ -165,12 +165,24 @@ namespace FarmFury.Core
         /// <summary>The cannon skin (empty = the standard cannon).</summary>
         public string GetEquippedCannon() => PlayerPrefs.GetString(EquippedCannonKey, string.Empty);
 
-        public void SetEquippedCannon(string cosmeticId) => PlayerPrefs.SetString(EquippedCannonKey, cosmeticId ?? string.Empty);
+        public void SetEquippedCannon(string cosmeticId)
+        {
+            PlayerPrefs.SetString(EquippedCannonKey, cosmeticId ?? string.Empty);
+            EquippedChanged?.Invoke(StoreProducts.Cannons);   // the FarmCannon re-skins at once (2026-11-13)
+        }
+
+        /// <summary>Raised when a cosmetic is equipped or unequipped; the argument is its category (StoreProducts.Cannons /
+        /// Trails / Impacts). CatapultLauncher listens so a cannon skin applies the moment it is chosen.</summary>
+        public static event System.Action<string[]> EquippedChanged;
 
         /// <summary>The robot-defeat impact effect (empty = none, just the standard explosion).</summary>
         public string GetEquippedImpact() => PlayerPrefs.GetString(EquippedImpactKey, string.Empty);
 
-        public void SetEquippedImpact(string cosmeticId) => PlayerPrefs.SetString(EquippedImpactKey, cosmeticId ?? string.Empty);
+        public void SetEquippedImpact(string cosmeticId)
+        {
+            PlayerPrefs.SetString(EquippedImpactKey, cosmeticId ?? string.Empty);
+            EquippedChanged?.Invoke(StoreProducts.Impacts);
+        }
 
         /// <summary>The equipped id for a category (one of StoreProducts.Cannons / Trails / Impacts).</summary>
         public string GetEquipped(string[] category) =>
@@ -187,7 +199,11 @@ namespace FarmFury.Core
         /// <summary>The trail is shared by every animal.</summary>
         public string GetEquippedTrail() => PlayerPrefs.GetString(EquippedTrailKey, string.Empty);
 
-        public void SetEquippedTrail(string cosmeticId) => PlayerPrefs.SetString(EquippedTrailKey, cosmeticId ?? string.Empty);
+        public void SetEquippedTrail(string cosmeticId)
+        {
+            PlayerPrefs.SetString(EquippedTrailKey, cosmeticId ?? string.Empty);
+            EquippedChanged?.Invoke(StoreProducts.Trails);
+        }
 
         public bool IsWorldPurchased(WorldType world) => GetProtectedBool(WorldPurchasedKeyPrefix + world, false);
 
@@ -468,6 +484,40 @@ namespace FarmFury.Core
         }
 
         public void DebugAddCoins(int amount) => AddCoins(amount);
+
+        // DEBUG purchases (2026-11-13, menu FarmFury > Debug, DebugJumpToLevel.cs): static, so they work in or out of
+        // Play mode - they write the same checksum-protected prefs a real purchase does.
+
+        /// <summary>Every cannon skin, trail and impact effect owned, or none of them (taking them away also unequips
+        /// them, so nothing equipped is left unowned).</summary>
+        public static void DebugSetAllCosmeticsOwned(bool owned)
+        {
+            foreach (var id in StoreProducts.AllCosmetics)
+            {
+                if (owned) { SetProtectedBool(CosmeticOwnedKeyPrefix + id, true); continue; }
+                PlayerPrefs.DeleteKey(CosmeticOwnedKeyPrefix + id);
+                PlayerPrefs.DeleteKey(CosmeticOwnedKeyPrefix + id + "_chk");
+            }
+            if (!owned)
+            {
+                PlayerPrefs.SetString(EquippedCannonKey, string.Empty);
+                PlayerPrefs.SetString(EquippedTrailKey, string.Empty);
+                PlayerPrefs.SetString(EquippedImpactKey, string.Empty);
+                EquippedChanged?.Invoke(StoreProducts.Cannons);   // a playing level drops the skin at once
+            }
+            PlayerPrefs.Save();
+            Debug.Log($"[SaveManager] DEBUG: all {StoreProducts.AllCosmetics.Length} cosmetics (cannons, trails, impacts) {(owned ? "owned" : "removed")}.");
+        }
+
+        /// <summary>Every purchase: all cosmetics, the paid worlds and Remove Ads.</summary>
+        public static void DebugOwnEverything()
+        {
+            DebugSetAllCosmeticsOwned(true);
+            foreach (var world in IAPManager.PurchasableWorlds()) { SetProtectedBool(WorldPurchasedKeyPrefix + world, true); }
+            SetProtectedBool(AdsRemovedKey, true);
+            PlayerPrefs.Save();
+            Debug.Log("[SaveManager] DEBUG: every purchase owned (cosmetics, paid worlds, Remove Ads).");
+        }
 
         public void DebugSetWorldPurchased(WorldType world, bool bought)
         {

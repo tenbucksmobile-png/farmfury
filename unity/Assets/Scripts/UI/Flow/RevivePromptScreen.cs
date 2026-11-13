@@ -22,6 +22,10 @@ namespace FarmFury.UI
         private const float PlankCentreY = 15f;
         private const float CoinSize = 90f;
         private const float CornerMargin = 40f;
+        // The button column sits left of centre so the button + "to add a Farm Fury" read as one centred group on the
+        // sign (2026-11-13, user: "change text to 'to add a Farm Fury' - perhaps we could shift the buttons left").
+        private const float ButtonsX = -170f;
+        private const string RewardText = "to add a Farm Fury";
         private static readonly Color CountGold = new(1f, 0.84f, 0.25f, 1f);
         private static readonly Color CountOutline = new(0.24f, 0.11f, 0.03f, 1f);
         private static readonly Color AdNotReadyTint = new(1f, 1f, 1f, 0.45f);
@@ -61,7 +65,7 @@ namespace FarmFury.UI
 
             // Remove Ads owners: the same slot, on the wooden plaque (the Watch Ad art has its label baked in).
             _free = PlaqueButton(_sign, "FreeReviveButton", "FREE", 40, AcceptFree);
-            UIKit.Place(_free.image.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, RowY(1)), new Vector2(width, ButtonHeight));
+            UIKit.Place(_free.image.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(ButtonsX, RowY(1)), new Vector2(width, ButtonHeight));
             _free.colors = colors;
 
             RewardLabel("YesReward", 0, width);
@@ -97,7 +101,7 @@ namespace FarmFury.UI
         private Button StackedButton(string name, Sprite sprite, string fallback, int row, float width, System.Action onClick)
         {
             var button = IconButton(_sign, name, sprite, fallback, onClick);
-            UIKit.Place(button.image.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, RowY(row)), new Vector2(width, ButtonHeight));
+            UIKit.Place(button.image.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(ButtonsX, RowY(row)), new Vector2(width, ButtonHeight));
             return button;
         }
 
@@ -106,16 +110,17 @@ namespace FarmFury.UI
             return PlankCentreY + (1 - row) * (ButtonHeight + ButtonGap);
         }
 
-        // "Adding FarmFury" just right of a button, in the coin count's gold lettering (was "+1 animal"; user, 2026-11-12:
-        // "change +1 animal to 'adding FarmFury'").
+        // "to add a Farm Fury" just right of a button, in the coin count's gold lettering (was "+1 animal", then "Adding
+        // FarmFury"; 2026-11-13 the wording and the buttons moved left to fit).
         private void RewardLabel(string name, int row, float buttonWidth)
         {
-            var label = UIKit.Label(_sign, name, "Adding FarmFury", 36, TextAnchor.MiddleLeft, CountGold);
+            var label = UIKit.Label(_sign, name, RewardText, 36, TextAnchor.MiddleLeft, CountGold);
+            label.horizontalOverflow = HorizontalWrapMode.Overflow;
             label.fontStyle = FontStyle.Bold;
             var outline = label.gameObject.AddComponent<Outline>();
             outline.effectColor = CountOutline;
             outline.effectDistance = new Vector2(2f, -2f);
-            UIKit.Place(label.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(buttonWidth * 0.5f + 16f, RowY(row)), new Vector2(360f, ButtonHeight));
+            UIKit.Place(label.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(ButtonsX + buttonWidth * 0.5f + 16f, RowY(row)), new Vector2(380f, ButtonHeight));
         }
 
         protected override void OnShow()
