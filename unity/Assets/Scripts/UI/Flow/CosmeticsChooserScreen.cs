@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using FarmFury.Shared.UI;
 
 namespace FarmFury.UI
 {
@@ -10,6 +11,9 @@ namespace FarmFury.UI
     /// </summary>
     public class CosmeticsChooserScreen : OverlayScreen
     {
+        // This game's ShopArt (the shared base holds it as ShopArtBase).
+        private new ShopArt Shop => (ShopArt)base.Shop;
+
         private const float BannerGap = 30f;
 
         public CosmeticsChooserScreen(Transform canvas, MenuArt art, ShopArt shop, Action onCannons, Action onTrails, Action onImpacts)

@@ -1,7 +1,6 @@
 using UnityEngine;
-using FarmFury.Shared.UI;
 
-namespace FarmFury.UI
+namespace FarmFury.Shared.UI
 {
     /// <summary>
     /// Arcade's Legal screen (Settings -> Policies): the Legal sign and two plaque buttons that open the franchise
@@ -14,7 +13,7 @@ namespace FarmFury.UI
         private static readonly Vector2 ButtonSize = new(460f, 110f);
         private const float ButtonGap = 24f;
 
-        public LegalScreen(Transform canvas, MenuArt art, ShopArt shop, ParentalGate gate) : base(canvas, "Legal", art, shop)
+        public LegalScreen(Transform canvas, MenuArtBase art, ShopArtBase shop, ParentalGate gate) : base(canvas, "Legal", art, shop)
         {
             HeaderSign(Shop.legalSign, "LEGAL");
 

@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using FarmFury.Shared.Monetisation;
+using UnityEngine;
 
 namespace FarmFury.Core
 {
@@ -63,72 +66,43 @@ namespace FarmFury.Core
     }
 
     /// <summary>
-    /// What the shop screens buy through: a thin callback-style facade over <see cref="IAPManager"/> (Arcade's screens
-    /// subscribe to IAPManager's events directly; this keeps that in one place). One purchase at a time.
+    /// Cannonfire's <see cref="IStoreBackend"/> for com.farmfury.core's <see cref="Store"/> facade, which the shop
+    /// screens buy through: a stateless adapter over <see cref="IAPManager"/> (static ownership checks work before
+    /// the IAPManager exists, as before). Registered before the first scene loads, so it is there when GameFlow
+    /// builds its screens.
     /// </summary>
-    public static class Store
+    public sealed class CannonfireStoreBackend : IStoreBackend
     {
-        public const string UnavailableMessage = "Store unavailable.";
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Register() => Store.Backend = new CannonfireStoreBackend();
 
-        public static bool IsOwned(string productId) => IAPManager.IsProductOwned(productId);
+        public bool IsAvailable => IAPManager.Instance != null;
+        public string RemoveAdsId => StoreProducts.RemoveAds;
+        public IReadOnlyList<string> CoinPackIds => StoreProducts.CoinPacks;
+        public bool IsOwned(string productId) => IAPManager.IsProductOwned(productId);
+        public int CoinBalance => SaveManager.Instance != null ? SaveManager.Instance.CoinBalance : 0;
+        public bool TryGetCoinCost(string productId, out int coinCost) => IAPManager.TryGetCoinCost(productId, out coinCost);
+        public void PurchaseProduct(string productId) => IAPManager.Instance.PurchaseProduct(productId);
+        public bool PurchaseProductWithCoins(string productId) => IAPManager.Instance.PurchaseProductWithCoins(productId);
+        public void RestorePurchases(Action<bool> callback) => IAPManager.Instance.RestorePurchases(callback);
 
-        /// <summary>Calls back once with (succeeded, message for the status line).</summary>
-        public static void Purchase(string productId, Action<bool, string> onDone)
+        // Store hooks these only while IsAvailable, for the length of one purchase.
+        public event Action<string> OnPurchaseSucceeded
         {
-            var iap = IAPManager.Instance;
-            if (iap == null)
-            {
-                onDone?.Invoke(false, UnavailableMessage);
-                return;
-            }
-
-            void Succeeded(string id)
-            {
-                if (id != productId) { return; }
-                Unhook();
-                onDone?.Invoke(true, "Purchase complete!");
-            }
-
-            void Failed(string id, string reason)
-            {
-                if (id != productId) { return; }
-                Unhook();
-                onDone?.Invoke(false, reason == "StoreNotConnected" ? "Store unavailable - check your connection."
-                    : reason != null && reason.Contains("Cancel") ? "Purchase cancelled." : "Purchase failed.");
-            }
-
-            void Deferred(string id)
-            {
-                if (id != productId) { return; }
-                Unhook();
-                onDone?.Invoke(false, "Waiting for approval.");   // granted later if approved
-            }
-
-            void Unhook()
-            {
-                iap.OnPurchaseSucceeded -= Succeeded;
-                iap.OnPurchaseFailed -= Failed;
-                iap.OnPurchaseDeferred -= Deferred;
-            }
-
-            iap.OnPurchaseSucceeded += Succeeded;
-            iap.OnPurchaseFailed += Failed;
-            iap.OnPurchaseDeferred += Deferred;
-            iap.PurchaseProduct(productId);
+            add { if (IAPManager.Instance != null) IAPManager.Instance.OnPurchaseSucceeded += value; }
+            remove { if (IAPManager.Instance != null) IAPManager.Instance.OnPurchaseSucceeded -= value; }
         }
 
-        /// <summary>A cosmetic bought with coins (Arcade: 2500), no store involved.</summary>
-        public static bool PurchaseWithCoins(string productId) =>
-            IAPManager.Instance != null && IAPManager.Instance.PurchaseProductWithCoins(productId);
-
-        public static void RestorePurchases(Action<bool, string> onDone)
+        public event Action<string, string> OnPurchaseFailed
         {
-            if (IAPManager.Instance == null)
-            {
-                onDone?.Invoke(false, UnavailableMessage);
-                return;
-            }
-            IAPManager.Instance.RestorePurchases(ok => onDone?.Invoke(ok, ok ? "Purchases restored!" : "Restore failed."));
+            add { if (IAPManager.Instance != null) IAPManager.Instance.OnPurchaseFailed += value; }
+            remove { if (IAPManager.Instance != null) IAPManager.Instance.OnPurchaseFailed -= value; }
+        }
+
+        public event Action<string> OnPurchaseDeferred
+        {
+            add { if (IAPManager.Instance != null) IAPManager.Instance.OnPurchaseDeferred += value; }
+            remove { if (IAPManager.Instance != null) IAPManager.Instance.OnPurchaseDeferred -= value; }
         }
     }
 }

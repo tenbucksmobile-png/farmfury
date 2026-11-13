@@ -18,6 +18,9 @@ namespace FarmFury.UI
     /// </summary>
     public class RevivePromptScreen : OverlayScreen
     {
+        // This game's ShopArt (the shared base holds it as ShopArtBase).
+        private new ShopArt Shop => (ShopArt)base.Shop;
+
         private static readonly Vector2 PanelSize = new(1300f, 731f);    // the 666x375 sign, enlarged
         private const float ButtonHeight = 84f;
         private const float ButtonGap = 16f;

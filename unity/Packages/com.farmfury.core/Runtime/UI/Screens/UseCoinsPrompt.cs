@@ -1,9 +1,8 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using FarmFury.Shared.UI;
 
-namespace FarmFury.UI
+namespace FarmFury.Shared.UI
 {
     /// <summary>
     /// Arcade's Use Coins prompt: tapping a hat or trail the player can afford with coins asks first - the "Use
@@ -17,7 +16,8 @@ namespace FarmFury.UI
 
         private Action _onYes, _onNo;
 
-        public UseCoinsPrompt(Transform canvas, MenuArt art, ShopArt shop) : base(canvas, "UseCoinsPrompt", art, shop, posterBackdrop: false)
+        /// <param name="coinCost">Shown only in the text fallback when there is no useCoinsSign art.</param>
+        public UseCoinsPrompt(Transform canvas, MenuArtBase art, ShopArtBase shop, int coinCost) : base(canvas, "UseCoinsPrompt", art, shop, posterBackdrop: false)
         {
             Root.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
             BackButton.gameObject.SetActive(false);
@@ -30,7 +30,7 @@ namespace FarmFury.UI
             }
             else
             {
-                var text = UIKit.Label(Rect, "Sign", $"Use {Core.IAPManager.CosmeticCoinCost} coins?", 64, TextAnchor.MiddleCenter, UIKit.Accent);
+                var text = UIKit.Label(Rect, "Sign", $"Use {coinCost} coins?", 64, TextAnchor.MiddleCenter, UIKit.Accent);
                 UIKit.Place(text.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 80f), new Vector2(SignWidth, signHeight));
             }
 

@@ -1,9 +1,8 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using FarmFury.Shared.UI;
 
-namespace FarmFury.UI
+namespace FarmFury.Shared.UI
 {
     /// <summary>
     /// Arcade's arithmetic parental gate (ParentalGateController), shown in front of every real-money purchase:
@@ -17,7 +16,7 @@ namespace FarmFury.UI
         private int _correctIndex;
         private Action _onPassed;
 
-        public ParentalGate(Transform canvas, MenuArt art, ShopArt shop) : base(canvas, "ParentalGate", art, shop, posterBackdrop: false)
+        public ParentalGate(Transform canvas, MenuArtBase art, ShopArtBase shop) : base(canvas, "ParentalGate", art, shop, posterBackdrop: false)
         {
             var heading = UIKit.Label(Rect, "Heading", "Ask a grown-up", 56, TextAnchor.MiddleCenter, UIKit.Accent);
             heading.fontStyle = FontStyle.Bold;

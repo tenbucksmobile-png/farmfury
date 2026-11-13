@@ -1,8 +1,8 @@
 {
   "name": "com.farmfury.core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "displayName": "Farm Fury Core",
-  "description": "Shared code for every Farm Fury game: UI kit and effects, ads (LevelPlay) and analytics wrappers, utilities, GameIdentity. Edit only in the FarmFury_Shared repo; games receive it as a vendored copy via Tools/sync_shared.py.",
+  "description": "Shared code for every Farm Fury game: UI kit, effects and the shared overlay screens (Settings/Shop family, Pause, parental gate, Legal, leaderboard page), ads (LevelPlay) and analytics wrappers, a Store facade, utilities, GameIdentity. Edit only in the FarmFury_Shared repo; games receive it as a vendored copy via Tools/sync_shared.py.",
   "unity": "6000.5",
   "author": {
     "name": "Tenbucks Mobile"

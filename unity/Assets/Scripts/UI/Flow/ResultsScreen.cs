@@ -57,7 +57,7 @@ namespace FarmFury.UI
         // The canvases are 1280x720 (Stampede's mockup); the painted stars are 76px boxes centred on these points.
         // The score goes under them; the World Unlocked sign sits in the open hills to the right.
         public static readonly Vector2 ArtSize = new(1280f, 720f);
-        public const int ArtPad = 160;   // the *_Wide.png copies add this many mirrored columns each side
+        public const int ArtPad = OverlayScreen.WideArtPad;   // the *_Wide.png copies add this many mirrored columns each side
         private static readonly float[] StarCentresX = { 551.5f, 639.5f, 727.5f };
         private const float StarCentreY = 369.5f, StarBox = 76f;
         // Sized to sit under the three stars (2026-11-08: the score was drawing far larger than this box, see GoldText).

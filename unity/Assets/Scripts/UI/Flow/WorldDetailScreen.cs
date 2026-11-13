@@ -18,6 +18,9 @@ namespace FarmFury.UI
     /// </summary>
     public class WorldDetailScreen : LeaderboardPage
     {
+        // This game's MenuArt (the shared base holds it as MenuArtBase).
+        private new MenuArt Art => (MenuArt)base.Art;
+
         private static readonly float[] RowY = { 345f, 425f, 505f };
         private const float LabelLeft = 128f, LabelHeight = 56f, LabelMaxWidth = 360f;
         private const float ValueX = 595f, IconX = 868f, SecondValueX = 1068f;
@@ -100,7 +103,7 @@ namespace FarmFury.UI
 
         public void Show(WorldType world)
         {
-            var sprite = Boards.WorldName(world);
+            var sprite = Boards.WorldName((int)world);
             _title.sprite = sprite;
             _title.gameObject.SetActive(sprite != null);
             _titleText.text = sprite == null ? LeaderboardsScreen.WorldName(world) : "";

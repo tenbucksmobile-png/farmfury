@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using FarmFury.Shared.UI;
 
 namespace FarmFury.UI
 {
@@ -8,26 +9,18 @@ namespace FarmFury.UI
     /// Shop, coin-pack, cosmetics, world-purchase, Leaderboards, Character Story and Legal screens. Assigned to
     /// GameFlow by Phase 5a setup (StampedeShopArt) from Sprites/UI and Sprites/UI/Shop (the files Stampede didn't
     /// have, copied from Arcade). Any sprite left null falls back to a plain labelled button or text.
+    /// The fields the shared overlay screens use (page backdrop, signs, shop icons, plaque, coin packs, Yes/No...) live
+    /// on com.farmfury.core's ShopArtBase; only Cannonfire's own sprites are declared here (never redeclare a base field).
     /// </summary>
     [Serializable]
-    public class ShopArt
+    public class ShopArt : ShopArtBase
     {
-        [Tooltip("Backdrop of every Settings / Shop page: Cluck bursting through the wooden sign (Environment/Settings_Canvas.png, " +
-            "widened by setup to Settings_Canvas_Wide.png, the Leaderboard's backdrop). Null = the dimmed landing poster.")]
-        public Sprite pageBackground;
-
         [Header("Wood-sign headers")]
-        [Tooltip("Menu hub + Settings header. (Shop/SettingsSign.png)")]
-        public Sprite settingsSign;
-        [Tooltip("Menu hub + Shop / coin-pack header. (ShopBanner.png)")]
-        public Sprite shopSign;
         [Tooltip("Menu hub 'Visit Our Store' link-out. (MerchBanner.png)")]
         public Sprite merchBanner;
         [Tooltip("Menu hub cross-promo cards for the sister games: each game's app icon on a wood rim (Franchise/CrossPromo/Stampede.png, Arcade.png).")]
         public Sprite crossPromoStampede;
         public Sprite crossPromoArcade;
-        public Sprite legalSign;
-        public Sprite leaderboardSign;
 
         [Header("Settings icons")]
         [Tooltip("Music on/off, dimmed while muted. (Btn_music-remove.png)")]
@@ -36,18 +29,7 @@ namespace FarmFury.UI
         public Sprite characterStoryIcon;
         public Sprite policiesIcon;
 
-        [Header("Shop icons")]
-        [Tooltip("Cash: opens the coin packs. (Shop/Shop.png)")]
-        public Sprite cashIcon;
-        public Sprite worldsIcon;
-        public Sprite removeAdsIcon;
-        public Sprite cosmeticsIcon;
-
         [Header("Purchase screens")]
-        [Tooltip("Wooden plaque behind text buttons (Restore Purchases, Legal, parental gate); 9-sliced. (Shop/Btn_plaque.png)")]
-        public Sprite plaque;
-        [Tooltip("Coin-pack plaques, price baked in: 100 / 500 / 5000 / 15000.")]
-        public Sprite[] coinPacks = new Sprite[0];
         [Tooltip("World purchase price sign. (Shop/3.99.png)")]
         public Sprite worldPrice;
         public Sprite cannonsBanner;
@@ -57,25 +39,14 @@ namespace FarmFury.UI
         public Sprite[] cannonItems = new Sprite[0];
         public Sprite[] trailItems = new Sprite[0];
         public Sprite[] impactItems = new Sprite[0];
-        [Tooltip("Tick badge over an owned item. (Shop/EquippedBadge_Icon.png)")]
-        public Sprite ownedBadge;
-        [Tooltip("Banner that fades in after a purchase. (PurchaseComplete.png)")]
-        public Sprite purchaseComplete;
 
         [Header("Coins, ads and the Locker (Phase 6)")]
-        [Tooltip("Coin glyph: HUD balance, Level Complete payout. (Shop/Coin_UI.png)")]
-        public Sprite coinIcon;
-        [Tooltip("Yes / No buttons, labels baked in: revive prompt, Use Coins prompt. (Shop/Yes.png, Shop/No.png)")]
-        public Sprite yesButton;
-        public Sprite noButton;
         [Tooltip("Revive prompt sign, 'Revive for 5 coins' baked in. (Shop/Revive Prompt panel background.png)")]
         public Sprite revivePanel;
         [Tooltip("'Watch Ad' banner: the revive prompt's ad button and the label under Double Coins. (WatchAd.png)")]
         public Sprite watchAd;
         [Tooltip("Level Complete's rewarded Double Coins button. (DoubleCoins.png)")]
         public Sprite doubleCoins;
-        [Tooltip("'Use Coins x2500' sign, asked before buying a hat or trail with coins. (UseCoins.png)")]
-        public Sprite useCoinsSign;
         [Tooltip("HUD Locker button. (Locker.png)")]
         public Sprite lockerIcon;
         [Tooltip("Locker header sign. (LockerBanner.png)")]
@@ -113,8 +84,5 @@ namespace FarmFury.UI
         public Sprite[] trailArt = new Sprite[0];
 
         public Sprite AbilityIcon(AnimalType type) => At(abilityIcons, (int)type);
-
-        public static Sprite At(Sprite[] sprites, int index) =>
-            sprites != null && index >= 0 && index < sprites.Length ? sprites[index] : null;
     }
 }

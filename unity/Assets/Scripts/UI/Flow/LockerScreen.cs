@@ -16,6 +16,9 @@ namespace FarmFury.UI
     /// </summary>
     public class LockerScreen : OverlayScreen
     {
+        // This game's ShopArt (the shared base holds it as ShopArtBase).
+        private new ShopArt Shop => (ShopArt)base.Shop;
+
         // Layout (2026-11-13, user: "remove the none (only ticked and unticked) ... space the items equally so they don't
         // overlap each other or the banner"): three centred rows of equal tiles and equal gaps, laid out from the top,
         // starting a clear margin under the Locker banner (HeaderTop + HeaderSize.y); the Equipped tick sits INSIDE its

@@ -1,12 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
-using FarmFury.Shared.UI;
 
-namespace FarmFury.UI
+namespace FarmFury.Shared.UI
 {
     /// <summary>
     /// Shared look of the two Leaderboard screens, copied from the Leaderboard mockups (1280x720): the Settings
-    /// backdrop every Settings / Shop page shares (OverlayScreen, ShopArt.pageBackground), the LeaderBoard sign top-right and the round back button bottom-right.
+    /// backdrop every Settings / Shop page shares (OverlayScreen, ShopArtBase.pageBackground), the LeaderBoard sign top-right and the round back button bottom-right.
     /// Everything on top is placed in the mockup's pixel coordinates on a 16:9 board fitted inside the device safe
     /// area, so it scales as one piece and never leaves the safe area on any aspect.
     /// </summary>
@@ -22,7 +21,7 @@ namespace FarmFury.UI
         /// <summary>The mockup's 1280x720 frame, fitted inside the safe area; place children with <see cref="PlaceInArt"/>.</summary>
         protected readonly RectTransform Board;
 
-        protected LeaderboardPage(Transform canvas, string name, MenuArt art, ShopArt shop, LeaderboardArt boards)
+        protected LeaderboardPage(Transform canvas, string name, MenuArtBase art, ShopArtBase shop, LeaderboardArt boards)
             : base(canvas, name, art, shop)
         {
             Boards = boards ?? new LeaderboardArt();

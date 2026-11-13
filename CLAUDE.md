@@ -1152,12 +1152,24 @@ needing a live pass before shipping.
 (source: `Desktop\FarmFury_Shared`, GitHub `farmfury_shared`; plan: `Desktop\Farm Fury Shared Architecture – Reference
 for Claude Code.md`). **Never edit it here** - change FarmFury_Shared, release a tag, then
 `python ..\FarmFury_Shared\Tools\sync_shared.py unity core <version>` from this repo's root (the script refuses
-hand-edited copies). Current: core 0.2.0.
+hand-edited copies). Current: core 0.3.0.
 
 - It provides (Cannonfire's own copies were deleted): `MonoSingleton` (`FarmFury.Shared.Utilities`); `UIKit`,
   `SafeAreaFitter`, `FitContent`, `HoldButton`, `HoldThenFade`, `HangingSignDrop`, `SpinAroundY`, `ZoomedCover`,
   `CardCarouselController`, `RobotRing`, `ConfettiBurst`, `CosmeticTrailGhost` (`FarmFury.Shared.UI`); `AdManager`,
-  `AnalyticsManager` (`FarmFury.Shared.Monetisation`). Everything else under `Scripts/` is still Cannonfire's own.
+  `AnalyticsManager` (`FarmFury.Shared.Monetisation`). Since core 0.3.0 also the overlay screens `OverlayScreen`,
+  `PauseScreen`, `ParentalGate`, `LegalScreen`, `ShopScreen`, `CoinPurchaseScreen`, `ItemPurchaseScreen`,
+  `UseCoinsPrompt`, `LeaderboardPage`, plus `LeaderboardArt` and the `Store` facade (`FarmFury.Shared.Monetisation`).
+  Everything else under `Scripts/` is still Cannonfire's own.
+- `MenuArt : MenuArtBase` and `ShopArt : ShopArtBase`: the fields the shared screens use (landing poster, round
+  buttons, pause backdrop; page backdrop, signs, shop icons, plaque, coin packs, owned badge, purchase banner, coin,
+  Yes/No, Use Coins) are declared in the package base class. **Never redeclare them in MenuArt / ShopArt** (Unity
+  would serialize the name twice). Scene values survived the move (checked 2026-11-13: every field still set).
+  Overlay subclasses that need Cannonfire-only sprites declare `private new MenuArt Art => (MenuArt)base.Art;`
+  (or `ShopArt Shop`).
+- Purchases: `Core/Store.cs` keeps `StoreProducts` (the catalogue) and `CannonfireStoreBackend`, the `IStoreBackend`
+  adapter over IAPManager that registers itself in `Store.Backend` before the first scene loads.
+  `ResultsScreen.ArtPad` = `OverlayScreen.WideArtPad` (160); `LeaderboardArt.WorldName((int)world)`.
 - `SaveManager` implements `IAdPolicy` (same `FF_` keys) and sets `AdManager.Policy` in Awake.
 - Round menu buttons are 112: `UI/Kit/SharedUISettings.cs` sets `UIKit.RoundButtonSize` before any scene loads (and
   on Editor reload). `UIKit.RoundButtonSize` is no longer a const - never use it in a `const` declaration.

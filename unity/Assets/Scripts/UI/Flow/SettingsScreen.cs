@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using FarmFury.Shared.UI;
 
 namespace FarmFury.UI
 {
@@ -13,6 +14,9 @@ namespace FarmFury.UI
     /// </summary>
     public class SettingsScreen : OverlayScreen
     {
+        // This game's ShopArt (the shared base holds it as ShopArtBase).
+        private new ShopArt Shop => (ShopArt)base.Shop;
+
         private readonly Button _music;
 
         public SettingsScreen(Transform canvas, MenuArt art, ShopArt shop, Action onLeaderboards, Action onCharacterStory, Action onPolicies)

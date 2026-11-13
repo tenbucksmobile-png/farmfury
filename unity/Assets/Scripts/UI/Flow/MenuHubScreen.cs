@@ -17,6 +17,9 @@ namespace FarmFury.UI
     /// </summary>
     public class MenuHubScreen : OverlayScreen
     {
+        // This game's ShopArt (the shared base holds it as ShopArtBase).
+        private new ShopArt Shop => (ShopArt)base.Shop;
+
         private const string MerchUrl = "https://www.farmfurygames.com/";
         private static readonly Vector2 SignSize = new(550f, 190f);
         private const float SignGap = 30f;

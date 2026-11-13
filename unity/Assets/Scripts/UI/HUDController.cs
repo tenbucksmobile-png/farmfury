@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using FarmFury.Shared.UI;
 
 // In-level HUD: the animal-card queue (top-left, animated) and the round pause button (top-right).
 // Creates its own Canvas (sortingOrder 100) procedurally in Awake(); nothing needs pre-wiring beyond the

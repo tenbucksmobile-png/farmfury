@@ -1,19 +1,18 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using FarmFury.Shared.UI;
 
-namespace FarmFury.UI
+namespace FarmFury.Shared.UI
 {
     /// <summary>
     /// Base for the Settings / Shop family of screens ported from Farm Fury: Arcade (menu hub, Settings, Shop, coin
     /// packs, cosmetics, world purchase, Leaderboards, Character Story, Legal, parental gate). Arcade's overlay
     /// convention: each opens on top of whatever is showing (SetAsLastSibling, so it always draws above the screen
     /// that opened it) and its back button just closes it, revealing that screen again - no navigation state.
-    /// GameFlow keeps the list: it closes every open overlay on a game-state change, and Esc closes the top one.
+    /// The game's flow controller keeps the list: it closes every open overlay on a game-state change, and Esc closes the top one.
     ///
     /// Shared layout, in the 1920x1080 reference canvas with Arcade's numbers: the Settings backdrop
-    /// (ShopArt.pageBackground, Cluck bursting through the wooden sign - the Leaderboard's backdrop; its whole 1280x720
+    /// (ShopArtBase.pageBackground, Cluck bursting through the wooden sign - the Leaderboard's backdrop; its whole 1280x720
     /// middle always on screen, fitted like the results art) over opaque black, or without it the landing poster
     /// dimmed; a 550x310 wood-sign header 55 below the top
     /// centre, and the round back button bottom-right of the safe area (where the landing screen's cog sits).
@@ -26,8 +25,12 @@ namespace FarmFury.UI
 
         protected readonly RectTransform Rect;
         protected readonly RectTransform Safe;
-        protected readonly MenuArt Art;
-        protected readonly ShopArt Shop;
+        protected readonly MenuArtBase Art;
+        protected readonly ShopArtBase Shop;
+
+        /// <summary>Mirrored columns each game's setup paints onto each side of a 1280x720 backdrop (the *_Wide.png
+        /// copies), so a phone wider than 16:9 sees art instead of bars.</summary>
+        public const int WideArtPad = 160;
 
         public const float IconSize = 240f;          // Arcade: StandardIconButtonSize (160) x 1.5
         public const float IconSpacing = 77f;
@@ -41,10 +44,10 @@ namespace FarmFury.UI
         public static readonly Color Wood = new(0.62f, 0.38f, 0.17f, 1f);
         public static readonly Color OwnedTint = new(0.5f, 0.5f, 0.5f, 1f);
 
-        protected OverlayScreen(Transform canvas, string name, MenuArt art, ShopArt shop, bool posterBackdrop = true)
+        protected OverlayScreen(Transform canvas, string name, MenuArtBase art, ShopArtBase shop, bool posterBackdrop = true)
         {
-            Art = art ?? new MenuArt();
-            Shop = shop ?? new ShopArt();
+            Art = art ?? new MenuArtBase();
+            Shop = shop ?? new ShopArtBase();
             Rect = UIKit.NewRect(name, canvas);
             UIKit.Stretch(Rect);
             Root = Rect.gameObject;
@@ -92,7 +95,7 @@ namespace FarmFury.UI
         // ------------------------------------------------------------ shared building blocks
 
         /// <summary>
-        /// The Settings backdrop: the widened 1280x720 art (ResultsScreen.ArtPad mirrored columns each side), fitted so
+        /// The Settings backdrop: the widened 1280x720 art (OverlayScreen.WideArtPad mirrored columns each side), fitted so
         /// the middle 1280x720 is always whole and wider screens see the padding instead of bars.
         /// </summary>
         private static void PageBackdrop(RectTransform parent, Sprite sprite)
@@ -101,7 +104,7 @@ namespace FarmFury.UI
             backdrop.preserveAspect = false;
             var fit = backdrop.gameObject.AddComponent<FitContent>();
             fit.contentSize = new Vector2(1280f, 720f);
-            fit.spriteSize = new Vector2(1280f + 2f * ResultsScreen.ArtPad, 720f);
+            fit.spriteSize = new Vector2(1280f + 2f * OverlayScreen.WideArtPad, 720f);
             backdrop.transform.SetAsFirstSibling();
         }
 

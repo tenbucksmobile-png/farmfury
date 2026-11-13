@@ -21,6 +21,9 @@ namespace FarmFury.UI
     /// </summary>
     public class WorldClearedScreen : OverlayScreen
     {
+        // This game's MenuArt (the shared base holds it as MenuArtBase).
+        private new MenuArt Art => (MenuArt)base.Art;
+
         private static readonly Rect TitleBox = new(240f, 40f, 800f, 170f);
         private static readonly Rect SignBox = new(440f, 30f, 400f, 200f);
         private static readonly Rect CardBox = new(490f, 215f, 300f, 300f);    // square world badge

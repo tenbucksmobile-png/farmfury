@@ -59,7 +59,7 @@ namespace FarmFury.UI
             for (int i = 0; i < GridOrder.Length; i++)
             {
                 var world = GridOrder[i];
-                var sprite = Boards.WorldName(world);
+                var sprite = Boards.WorldName((int)world);
                 var button = UIKit.MakeButton(Board, $"World_{world}", "", Color.white, () => Tapped(world));
                 if (sprite != null)
                 {

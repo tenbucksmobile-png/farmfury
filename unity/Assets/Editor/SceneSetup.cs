@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using FarmFury.Shared.Monetisation;
+using FarmFury.Shared.UI;
 
 public static partial class SceneSetup
 {

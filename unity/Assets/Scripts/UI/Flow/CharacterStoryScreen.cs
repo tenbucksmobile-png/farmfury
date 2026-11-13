@@ -16,6 +16,9 @@ namespace FarmFury.UI
     /// </summary>
     public class CharacterStoryScreen : OverlayScreen
     {
+        // This game's MenuArt (the shared base holds it as MenuArtBase).
+        private new MenuArt Art => (MenuArt)base.Art;
+
         private static readonly Color TabActive = new(0.85f, 0.65f, 0.2f);
         private static readonly Color TabInactive = new(0.35f, 0.28f, 0.18f);
         private static readonly Color RowBorder = new(0.70f, 0.55f, 0.20f);

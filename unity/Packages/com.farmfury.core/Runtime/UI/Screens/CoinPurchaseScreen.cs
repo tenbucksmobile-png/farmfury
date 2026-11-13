@@ -1,9 +1,8 @@
-using FarmFury.Core;
+using FarmFury.Shared.Monetisation;
 using UnityEngine;
 using UnityEngine.UI;
-using FarmFury.Shared.UI;
 
-namespace FarmFury.UI
+namespace FarmFury.Shared.UI
 {
     /// <summary>
     /// Arcade's coin-pack screen (Shop -> Cash): the Shop sign, the four price plaques (100 / 500 / 5000 / 15000,
@@ -22,17 +21,17 @@ namespace FarmFury.UI
         private readonly Text _status;
         private readonly Text _restoreStatus;
 
-        public CoinPurchaseScreen(Transform canvas, MenuArt art, ShopArt shop, ParentalGate gate) : base(canvas, "CoinPurchase", art, shop)
+        public CoinPurchaseScreen(Transform canvas, MenuArtBase art, ShopArtBase shop, ParentalGate gate) : base(canvas, "CoinPurchase", art, shop)
         {
             _gate = gate;
             HeaderSign(Shop.shopSign, "SHOP");
 
-            int count = StoreProducts.CoinPacks.Length;
+            int count = Store.CoinPackIds.Count;
             var row = Row("CoinRow", count, new Vector2(ItemWidth, ItemHeight), IconSpacing, -92.5f);
             for (int i = 0; i < count; i++)
             {
-                string productId = StoreProducts.CoinPacks[i];
-                IconButton(row, productId + "Button", ShopArt.At(Shop.coinPacks, i), FallbackLabels[i] + " coins", () => _gate.Ask(() => Buy(productId)));
+                string productId = Store.CoinPackIds[i];
+                IconButton(row, productId + "Button", ShopArtBase.At(Shop.coinPacks, i), (i < FallbackLabels.Length ? FallbackLabels[i] + " coins" : productId), () => _gate.Ask(() => Buy(productId)));
             }
 
             _status = StatusText(150f);

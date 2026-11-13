@@ -1,9 +1,8 @@
-using FarmFury.Core;
+using FarmFury.Shared.Monetisation;
 using UnityEngine;
 using UnityEngine.UI;
-using FarmFury.Shared.UI;
 
-namespace FarmFury.UI
+namespace FarmFury.Shared.UI
 {
     /// <summary>
     /// Arcade's CosmeticPurchaseScreen: one centred row of purchasable items under a header, used for the Hats &amp;
@@ -41,7 +40,7 @@ namespace FarmFury.UI
         private readonly HoldThenFade _complete;
 
         /// <param name="banner">Cosmetics-style 700-wide banner; null uses <paramref name="headerSign"/> as a standard sign instead.</param>
-        public ItemPurchaseScreen(Transform canvas, string name, MenuArt art, ShopArt shop, ParentalGate gate, UseCoinsPrompt useCoins,
+        public ItemPurchaseScreen(Transform canvas, string name, MenuArtBase art, ShopArtBase shop, ParentalGate gate, UseCoinsPrompt useCoins,
             Sprite banner, Sprite headerSign, string title, Item[] items, Vector2 cell, float spacing, Sprite priceSign = null)
             : base(canvas, name, art, shop)
         {
@@ -109,8 +108,7 @@ namespace FarmFury.UI
             }
 
             _complete.gameObject.SetActive(false);
-            bool canPayInCoins = IAPManager.TryGetCoinCost(productId, out int cost) &&
-                SaveManager.Instance != null && SaveManager.Instance.CoinBalance >= cost;
+            bool canPayInCoins = Store.CanAffordWithCoins(productId);
             if (canPayInCoins && _useCoins != null)
             {
                 _useCoins.Ask(() => BuyWithCoins(productId), () => BuyWithMoney(productId));

@@ -13,6 +13,9 @@ namespace FarmFury.UI
     /// </summary>
     public class NewCharacterScreen : OverlayScreen
     {
+        // This game's MenuArt (the shared base holds it as MenuArtBase).
+        private new MenuArt Art => (MenuArt)base.Art;
+
         private readonly NewCharacterPage _page;
         private readonly Queue<AnimalType> _queue = new();
 

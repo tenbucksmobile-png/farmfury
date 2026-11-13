@@ -97,7 +97,7 @@ namespace FarmFury.UI
             Settings = Add(new SettingsScreen(c, _menuArt, _shopArt, leaderboards.Show, story.Show, legal.Show));
 
             // Shop family (franchise Phase 5, Arcade's catalogue and layout).
-            var useCoins = Add(new UseCoinsPrompt(c, _menuArt, _shopArt));
+            var useCoins = Add(new UseCoinsPrompt(c, _menuArt, _shopArt, IAPManager.CosmeticCoinCost));
             Revive = Add(new RevivePromptScreen(c, _menuArt, _shopArt));
             _worldShop = Add(new ItemPurchaseScreen(c, "WorldPurchase", _menuArt, _shopArt, Gate, useCoins, null, _menuArt.worldUnlockedSign,
                 "NEW WORLDS", WorldItems(), new Vector2(380f, 380f), 40f, _shopArt.worldPrice));

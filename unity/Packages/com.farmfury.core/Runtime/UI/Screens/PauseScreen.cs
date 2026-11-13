@@ -1,12 +1,11 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using FarmFury.Shared.UI;
 
-namespace FarmFury.UI
+namespace FarmFury.Shared.UI
 {
     /// <summary>
-    /// Pause. Art look (per the Pause mockup, when MenuArt.pauseBackground is set): the full-screen Pause canvas
+    /// Pause. Art look (per the Pause mockup, when MenuArtBase.pauseBackground is set): the full-screen Pause canvas
     /// ("Pause" and the logo painted in), fitted like the results screens (the whole 1280x720 art always on screen,
     /// the widened copy's extra sides filling wider phones), with round buttons in the safe area at the results
     /// screens' positions: play (resume) + X (quit to Level Select) bottom-left, home (landing) + cog (Settings,
@@ -25,9 +24,9 @@ namespace FarmFury.UI
         private const float BottomMargin = 40f;
         private const float ButtonGap = 30f;
 
-        public PauseScreen(Transform canvas, Action onPlay, Action onSettings, Action onRestart, Action onQuit, Action onHome, MenuArt art)
+        public PauseScreen(Transform canvas, Action onPlay, Action onSettings, Action onRestart, Action onQuit, Action onHome, MenuArtBase art)
         {
-            art ??= new MenuArt();
+            art ??= new MenuArtBase();
             var root = UIKit.NewRect("Pause", canvas);
             UIKit.Stretch(root);
             Root = root.gameObject;
@@ -44,14 +43,14 @@ namespace FarmFury.UI
             Root.SetActive(false);
         }
 
-        private void BuildArtLook(RectTransform root, MenuArt art, Action onPlay, Action onSettings, Action onQuit, Action onHome)
+        private void BuildArtLook(RectTransform root, MenuArtBase art, Action onPlay, Action onSettings, Action onQuit, Action onHome)
         {
             Root.AddComponent<Image>().color = UIKit.Dark;
             var backdrop = UIKit.Picture(root, "Backdrop", art.pauseBackground);
             backdrop.gameObject.SetActive(true);
             var fit = backdrop.gameObject.AddComponent<FitContent>();
             fit.contentSize = new Vector2(1280f, 720f);
-            fit.spriteSize = new Vector2(1280f + 2f * ResultsScreen.ArtPad, 720f);
+            fit.spriteSize = new Vector2(1280f + 2f * OverlayScreen.WideArtPad, 720f);
 
             var safe = UIKit.NewRect("SafeArea", root);
             safe.gameObject.AddComponent<SafeAreaFitter>();

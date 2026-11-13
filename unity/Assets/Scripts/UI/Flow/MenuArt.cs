@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using FarmFury.Shared.UI;
 
 namespace FarmFury.UI
 {
@@ -9,30 +10,19 @@ namespace FarmFury.UI
     /// (Assets/Sprites/UI/Franchise/), FarmFury's own button set from Assets/Sprites/UI/Icon/. Every screen has a
     /// plain fallback when a field is empty. Per-world art lives on WorldData and overrides these.
     /// See docs/ART_REQUIREMENTS.md for which of these still need FarmFury-branded versions.
+    /// The fields the shared screens use (landing poster, round buttons, pause backdrop) live on com.farmfury.core's
+    /// MenuArtBase; only Cannonfire's own sprites are declared here (never redeclare a base field).
     /// </summary>
     [Serializable]
-    public class MenuArt
+    public class MenuArt : MenuArtBase
     {
         [Header("Landing")]
         [Tooltip("Title page poster shown when the game opens (LandingTitle.png, 2400x1080: Cluck + Ducky by the cannon); tap anywhere to continue.")]
         public Sprite landingTitle;
         [Tooltip("The PRESS START lettering over the title page (PressStart.png).")]
         public Sprite pressStart;
-        [Tooltip("Landing menu page poster, full-screen (LandingPage.png, 2400x1080: the cannon on hay, no characters) under Play / Exit / Settings.")]
-        public Sprite landingPoster;
         [Tooltip("A heavily blurred copy of the poster (LandingPage_Blur.png, tools/brand_cannonfire.py): fills the side gaps on screens wider than the poster.")]
         public Sprite landingPosterBlur;
-        public Sprite playButton;
-        [Tooltip("Exit, beside Play (hidden on iOS). (Franchise/Menu/Exit.png)")]
-        public Sprite exitButton;
-        public Sprite settingsButton;
-
-        [Header("Round buttons")]
-        public Sprite homeButton;
-        public Sprite backButton;
-        [Tooltip("Round X: back to Level Select from Pause / results.")]
-        public Sprite quitButton;
-        public Sprite pauseButton;
 
         [Header("World Select")]
         [Tooltip("World Select backdrop (Franchise/Canvas/Canvas.png, the sunset field).")]
@@ -63,7 +53,6 @@ namespace FarmFury.UI
         public Sprite[] worldRobots = new Sprite[36];
 
         [Header("Pause / results")]
-        public Sprite pauseBackground;
         public Sprite levelCompleteBackground;
         public Sprite levelFailedBackground;
         [Tooltip("Greyed star drawn over each painted star not earned.")]

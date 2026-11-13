@@ -1,9 +1,9 @@
 using System;
-using FarmFury.Core;
+using FarmFury.Shared.Monetisation;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace FarmFury.UI
+namespace FarmFury.Shared.UI
 {
     /// <summary>
     /// Arcade's Shop hub: the Shop sign and one row of four icons - Cash (the coin packs), Worlds (world purchase),
@@ -16,7 +16,7 @@ namespace FarmFury.UI
         private readonly Button _removeAds;
         private readonly Text _status;
 
-        public ShopScreen(Transform canvas, MenuArt art, ShopArt shop, ParentalGate gate, Action onCash, Action onWorlds, Action onCosmetics)
+        public ShopScreen(Transform canvas, MenuArtBase art, ShopArtBase shop, ParentalGate gate, Action onCash, Action onWorlds, Action onCosmetics)
             : base(canvas, "Shop", art, shop)
         {
             _gate = gate;
@@ -39,7 +39,7 @@ namespace FarmFury.UI
 
         private void BuyRemoveAds()
         {
-            Store.Purchase(StoreProducts.RemoveAds, (ok, message) =>
+            Store.Purchase(Store.RemoveAdsId, (ok, message) =>
             {
                 _status.text = ok ? "Ads removed!" : message;
                 RefreshRemoveAds();
@@ -49,7 +49,7 @@ namespace FarmFury.UI
         /// <summary>A non-consumable can't be bought twice: dim and disable the icon once owned.</summary>
         private void RefreshRemoveAds()
         {
-            bool owned = Store.IsOwned(StoreProducts.RemoveAds);
+            bool owned = Store.IsOwned(Store.RemoveAdsId);
             _removeAds.interactable = !owned;
             if (Shop.removeAdsIcon != null)
             {

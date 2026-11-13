@@ -8,6 +8,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using FarmFury.Shared.UI;
 
 public static class PanelPreview
 {
