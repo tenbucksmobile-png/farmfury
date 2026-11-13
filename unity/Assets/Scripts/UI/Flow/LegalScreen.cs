@@ -1,4 +1,5 @@
 using UnityEngine;
+using FarmFury.Shared.UI;
 
 namespace FarmFury.UI
 {

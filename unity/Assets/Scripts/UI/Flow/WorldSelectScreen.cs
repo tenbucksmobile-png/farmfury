@@ -4,6 +4,7 @@ using FarmFury.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using FarmFury.Shared.UI;
 
 namespace FarmFury.UI
 {
@@ -42,7 +43,7 @@ namespace FarmFury.UI
         private readonly CardCarouselController _carousel;
         private static readonly Color LockedTint = new(0.4f, 0.4f, 0.42f, 1f);
         // Same size as every other round menu button.
-        private const float HomeButtonSize = UIKit.RoundButtonSize;
+        private static float HomeButtonSize => UIKit.RoundButtonSize;   // settable since core 0.2.0
         private const float EdgeMargin = 40f;
         private const float HomeMargin = 16f;   // Level Select's back-button margin
         // Space kept for the banner above the carousel (from the top of the safe area), and below it.

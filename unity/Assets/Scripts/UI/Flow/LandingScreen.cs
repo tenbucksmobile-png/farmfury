@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using FarmFury.Shared.UI;
 
 namespace FarmFury.UI
 {
@@ -36,7 +37,7 @@ namespace FarmFury.UI
         private const float BottomMargin = 40f;
         // Round buttons share the game-wide size; Exit (552x256 art, same height as the 256px round art) is drawn at
         // the same scale, so all three are the same height and sit level.
-        private const float ButtonSize = UIKit.RoundButtonSize;
+        private static float ButtonSize => UIKit.RoundButtonSize;   // settable since core 0.2.0 (Cannonfire: 112)
         private static readonly Vector2 ExitSize = new(ButtonSize * 552f / 256f, ButtonSize);
         private const float ButtonGap = 30f;
         // PRESS START (323x60 art): centred low on the title page, over the grass between the hay and the tower.

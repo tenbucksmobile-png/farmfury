@@ -1,5 +1,16 @@
 {
   "dependencies": {
+    "com.farmfury.core": {
+      "version": "file:com.farmfury.core",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.ugui": "2.5.0",
+        "com.unity.services.levelplay": "9.5.0",
+        "com.unity.services.analytics": "6.3.0",
+        "com.unity.inputsystem": "1.19.0"
+      }
+    },
     "com.unity.2d.animation": {
       "version": "15.1.0",
       "depth": 0,

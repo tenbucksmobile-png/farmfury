@@ -64,7 +64,7 @@ public class AnimalCosmeticRenderer : MonoBehaviour
             var go = new GameObject("TrailGhost");
             go.transform.position = _body.bounds.center;
             float scale = _body.bounds.size.x * GhostScale / Mathf.Max(0.0001f, _trail.bounds.size.x);
-            go.AddComponent<FarmFury.Core.CosmeticTrailGhost>().Configure(_trail, _body.sortingLayerID, _body.sortingOrder - 1, scale, GhostLifetime);
+            go.AddComponent<FarmFury.Shared.UI.CosmeticTrailGhost>().Configure(_trail, _body.sortingLayerID, _body.sortingOrder - 1, scale, GhostLifetime);
         }
     }
 }

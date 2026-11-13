@@ -2,6 +2,8 @@ using System;
 using FarmFury.Core;
 using UnityEngine;
 using UnityEngine.UI;
+using FarmFury.Shared.Monetisation;
+using FarmFury.Shared.UI;
 
 namespace FarmFury.UI
 {

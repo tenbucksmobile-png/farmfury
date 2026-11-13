@@ -356,14 +356,14 @@ public class HUDController : MonoBehaviour
                           pos:       new Vector2(-24f - coinSize * 0.5f, 0f),
                           size:      new Vector2(coinSize, coinSize));
         coinImg.raycastTarget = false;
-        coinImg.gameObject.AddComponent<FarmFury.UI.SpinAroundY>();
-        _coinText = FarmFury.UI.UIKit.Label(_topRightRoot, "CoinCount", "0", 52, TextAnchor.MiddleRight, new Color(1f, 0.84f, 0.25f));
+        coinImg.gameObject.AddComponent<FarmFury.Shared.UI.SpinAroundY>();
+        _coinText = FarmFury.Shared.UI.UIKit.Label(_topRightRoot, "CoinCount", "0", 52, TextAnchor.MiddleRight, new Color(1f, 0.84f, 0.25f));
         _coinText.fontStyle = FontStyle.Bold;
         _coinText.horizontalOverflow = HorizontalWrapMode.Overflow;
         var outline = _coinText.gameObject.AddComponent<Outline>();
         outline.effectColor = new Color(0.24f, 0.11f, 0.03f);
         outline.effectDistance = new Vector2(3f, -3f);
-        FarmFury.UI.UIKit.Place(_coinText.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
+        FarmFury.Shared.UI.UIKit.Place(_coinText.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
             new Vector2(-24f - coinSize - 12f, 0f), new Vector2(300f, coinSize));
     }
 

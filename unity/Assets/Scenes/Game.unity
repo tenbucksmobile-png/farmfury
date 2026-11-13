@@ -2007,7 +2007,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 809980727}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b3b504cc1e0e8b1449908399eec5ba7c, type: 3}
+  m_Script: {fileID: 11500000, guid: c59c458039104274ca7bab8223fe4319, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FarmFury.Core.AnalyticsManager
 --- !u!114 &809980733
@@ -2019,7 +2019,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 809980727}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4de9f7ae6a5ec24197f0f094e05c1d6, type: 3}
+  m_Script: {fileID: 11500000, guid: 33944350f19d1fe4a933905dd12affb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FarmFury.Core.AdManager
   androidAppKey: 2985da825

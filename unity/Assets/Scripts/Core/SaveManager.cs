@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using FarmFury.Utilities;
+using FarmFury.Shared.Monetisation;
+using FarmFury.Shared.Utilities;
 using UnityEngine;
 
 namespace FarmFury.Core
@@ -20,7 +21,7 @@ namespace FarmFury.Core
     ///    GameManager's level index) onto levelIds, so existing World 1 progress survives the port.
     /// Lives on the GameManager GameObject (DontDestroyOnLoad).
     /// </summary>
-    public class SaveManager : MonoSingleton<SaveManager>
+    public class SaveManager : MonoSingleton<SaveManager>, IAdPolicy
     {
         private const string LevelStarsKeyPrefix = "FF_Stars_";
         private const string LevelCompletedKeyPrefix = "FF_Completed_";
@@ -54,6 +55,7 @@ namespace FarmFury.Core
         {
             base.Awake();
             CoinBalance = GetProtectedInt(CoinBalanceKey, 0);
+            if (Instance == this) AdManager.Policy = this;   // shared AdManager reads Remove Ads / pacing from here
         }
 
         // After every Awake: GameManager's level registry (Editor auto-load included) is ready by then.
@@ -145,6 +147,15 @@ namespace FarmFury.Core
             get => PlayerPrefs.GetInt("FF_InterstitialsSinceAdsCard", 0);
             set => PlayerPrefs.SetInt("FF_InterstitialsSinceAdsCard", value);
         }
+
+        // IAdPolicy (com.farmfury.core AdManager): the same FF_ keys as before the shared package.
+        int IAdPolicy.LevelsSinceLastInterstitial
+        {
+            get => LevelsSinceLastInterstitial;
+            set => SetLevelsSinceLastInterstitial(value);
+        }
+
+        void IAdPolicy.OnInterstitialShown() => InterstitialsSinceAdsCard++;   // paces the Remove Ads card (ShopPromos)
 
         public int PromoTurn
         {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using FarmFury.Core;
 using UnityEngine;
 using UnityEngine.UI;
+using FarmFury.Shared.UI;
 
 namespace FarmFury.UI
 {
@@ -89,7 +90,7 @@ namespace FarmFury.UI
         private const float BoardScale = 1f / 0.698f;
         private const float ShieldScale = 1f / 0.986f;
         private static readonly Vector2 BoardCentreOffset = new(0.5f - 0.485f, 0.519f - 0.5f);   // x right, y up, in frames
-        private const float BackButtonSize = UIKit.RoundButtonSize;
+        private static float BackButtonSize => UIKit.RoundButtonSize;   // settable since core 0.2.0
 
         public LevelSelectScreen(Transform canvas, Action<LevelData> onPick, Action onBack, MenuArt art)
         {

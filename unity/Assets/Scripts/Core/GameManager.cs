@@ -65,8 +65,8 @@ public class GameManager : MonoBehaviour
         // Franchise monetisation (Phase 5): store, ads, analytics. AdManager stays inert until FarmFury's own
         // LevelPlay keys are entered on it (Inspector); IAP uses the fake store in the Editor.
         if (GetComponent<FarmFury.Core.IAPManager>() == null) gameObject.AddComponent<FarmFury.Core.IAPManager>();
-        if (GetComponent<FarmFury.Core.AdManager>() == null) gameObject.AddComponent<FarmFury.Core.AdManager>();
-        if (GetComponent<FarmFury.Core.AnalyticsManager>() == null) gameObject.AddComponent<FarmFury.Core.AnalyticsManager>();
+        if (GetComponent<FarmFury.Shared.Monetisation.AdManager>() == null) gameObject.AddComponent<FarmFury.Shared.Monetisation.AdManager>();
+        if (GetComponent<FarmFury.Shared.Monetisation.AnalyticsManager>() == null) gameObject.AddComponent<FarmFury.Shared.Monetisation.AnalyticsManager>();
 
         // Eggs spawn AT the firing Cluck's own position (see CluckAnimal.SpawnEggs()), so with
         // every layer pair colliding by default (Physics2D's project-wide matrix), each egg
@@ -192,7 +192,7 @@ public class GameManager : MonoBehaviour
             FarmFury.Core.SaveManager.Instance.LastPlayedWorld = (int)data.WorldType;
         TransitionTo(GameState.Playing);
         OnLevelStarted?.Invoke(data);
-        FarmFury.Core.AnalyticsManager.Instance?.LogLevelStart(CurrentLevelIndex + 1, data.levelId);
+        FarmFury.Shared.Monetisation.AnalyticsManager.Instance?.LogLevelStart(CurrentLevelIndex + 1, data.levelId);
         ShowInterstitialIfDue();
     }
 
@@ -200,7 +200,7 @@ public class GameManager : MonoBehaviour
     // is frozen (time and audio) until the ad closes or times out.
     void ShowInterstitialIfDue()
     {
-        var ads = FarmFury.Core.AdManager.Instance;
+        var ads = FarmFury.Shared.Monetisation.AdManager.Instance;
         if (ads == null) return;
         Time.timeScale = 0f;
         AudioListener.pause = true;
@@ -246,7 +246,7 @@ public class GameManager : MonoBehaviour
             save.AddWorldCoinsEarned(level.WorldType, RunState.coinsEarned);
             save.SaveProgress();
         }
-        FarmFury.Core.AnalyticsManager.Instance?.LogLevelComplete(CurrentLevelIndex + 1, RunState.starsEarned, RunState.score, Elapsed);
+        FarmFury.Shared.Monetisation.AnalyticsManager.Instance?.LogLevelComplete(CurrentLevelIndex + 1, RunState.starsEarned, RunState.score, Elapsed);
         TransitionTo(GameState.LevelComplete);
     }
 
@@ -327,7 +327,7 @@ public class GameManager : MonoBehaviour
     {
         if (State != GameState.Playing) return;
         ReviveDecisionPending = false;
-        FarmFury.Core.AnalyticsManager.Instance?.LogLevelFailed(CurrentLevelIndex + 1, Elapsed);
+        FarmFury.Shared.Monetisation.AnalyticsManager.Instance?.LogLevelFailed(CurrentLevelIndex + 1, Elapsed);
         TransitionTo(GameState.LevelFailed);
     }
 

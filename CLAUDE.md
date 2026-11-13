@@ -1146,6 +1146,24 @@ needing a live pass before shipping.
   `WoodArtVariant` sprite-shape system, and the block/robot damage-factor model (`RobotEnemy`'s
   `DirectHitDamageFraction`/`ExplosionDamageFraction`/`EggDamageFraction`/`FallDamageFraction`)
   still in use today.
+## Shared package: com.farmfury.core (since 2026-11-13, shared-architecture Phase 3)
+
+`unity/Packages/com.farmfury.core/` is a **vendored copy** of the Farm Fury shared package
+(source: `Desktop\FarmFury_Shared`, GitHub `farmfury_shared`; plan: `Desktop\Farm Fury Shared Architecture – Reference
+for Claude Code.md`). **Never edit it here** - change FarmFury_Shared, release a tag, then
+`python ..\FarmFury_Shared\Tools\sync_shared.py unity core <version>` from this repo's root (the script refuses
+hand-edited copies). Current: core 0.2.0.
+
+- It provides (Cannonfire's own copies were deleted): `MonoSingleton` (`FarmFury.Shared.Utilities`); `UIKit`,
+  `SafeAreaFitter`, `FitContent`, `HoldButton`, `HoldThenFade`, `HangingSignDrop`, `SpinAroundY`, `ZoomedCover`,
+  `CardCarouselController`, `RobotRing`, `ConfettiBurst`, `CosmeticTrailGhost` (`FarmFury.Shared.UI`); `AdManager`,
+  `AnalyticsManager` (`FarmFury.Shared.Monetisation`). Everything else under `Scripts/` is still Cannonfire's own.
+- `SaveManager` implements `IAdPolicy` (same `FF_` keys) and sets `AdManager.Policy` in Awake.
+- Round menu buttons are 112: `UI/Kit/SharedUISettings.cs` sets `UIKit.RoundButtonSize` before any scene loads (and
+  on Editor reload). `UIKit.RoundButtonSize` is no longer a const - never use it in a `const` declaration.
+- `Game.unity`'s AdManager / AnalyticsManager components now point at the package scripts (GUIDs remapped
+  2026-11-13; LevelPlay keys and ad units kept - verified).
+
 ## Franchise flow (outside gameplay) — current truth as of 2026-11-02
 
 Ported from `C:\Users\Personel\Desktop\FarmFury_Stampede` (code-built uGUI, itself ported from FarmFury_Arcade).

@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using FarmFury.Shared.Monetisation;
 
 public static partial class SceneSetup
 {
@@ -1073,7 +1074,7 @@ public static partial class SceneSetup
     const string LevelPlayIosInterstitial = "wteebsq09o795d9d";
     const string LevelPlayIosBanner = "xpfpse4z5v88lglq";
 
-    static void WireAdManagerConfig(FarmFury.Core.AdManager adManager)
+    static void WireAdManagerConfig(FarmFury.Shared.Monetisation.AdManager adManager)
     {
         var so = new SerializedObject(adManager);
         void Set(string field, string value)
@@ -1282,10 +1283,10 @@ public static partial class SceneSetup
         if (dm == null) dm = gm.gameObject.AddComponent<FarmFury.Core.DataManager>();
         if (gm.GetComponent<FarmFury.Core.SaveManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.SaveManager>();
         if (gm.GetComponent<FarmFury.Core.IAPManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.IAPManager>();
-        var adManager = gm.GetComponent<FarmFury.Core.AdManager>();
-        if (adManager == null) adManager = gm.gameObject.AddComponent<FarmFury.Core.AdManager>();
+        var adManager = gm.GetComponent<FarmFury.Shared.Monetisation.AdManager>();
+        if (adManager == null) adManager = gm.gameObject.AddComponent<FarmFury.Shared.Monetisation.AdManager>();
         WireAdManagerConfig(adManager);
-        if (gm.GetComponent<FarmFury.Core.AnalyticsManager>() == null) gm.gameObject.AddComponent<FarmFury.Core.AnalyticsManager>();
+        if (gm.GetComponent<FarmFury.Shared.Monetisation.AnalyticsManager>() == null) gm.gameObject.AddComponent<FarmFury.Shared.Monetisation.AnalyticsManager>();
         var dso = new SerializedObject(dm);
         var wprop = dso.FindProperty("_worlds");
         wprop.arraySize = worlds.Length;

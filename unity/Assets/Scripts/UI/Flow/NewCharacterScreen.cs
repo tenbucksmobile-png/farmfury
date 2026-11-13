@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using FarmFury.Shared.UI;
 
 namespace FarmFury.UI
 {

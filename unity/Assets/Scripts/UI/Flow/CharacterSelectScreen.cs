@@ -4,6 +4,7 @@ using System.Linq;
 using FarmFury.Core;
 using UnityEngine;
 using UnityEngine.UI;
+using FarmFury.Shared.UI;
 
 namespace FarmFury.UI
 {

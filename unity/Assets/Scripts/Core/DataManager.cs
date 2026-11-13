@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using FarmFury.Utilities;
+using FarmFury.Shared.Utilities;
 using UnityEngine;
 
 namespace FarmFury.Core
