@@ -410,12 +410,16 @@ public static partial class SceneSetup
             if (imp.spriteImportMode != SpriteImportMode.Single)          { imp.spriteImportMode = SpriteImportMode.Single; dirty = true; }
             if (imp.spritePixelsPerUnit != 100)                           { imp.spritePixelsPerUnit = 100; dirty = true; }
             if (imp.alphaIsTransparency == opaque)                        { imp.alphaIsTransparency = !opaque; dirty = true; }
-            if (imp.maxTextureSize < 4096)                                { imp.maxTextureSize = 4096; dirty = true; }
+            // The cover-fit far painting (opaque) is drawn near full size: up to 4096. Everything else (tiled strips,
+            // mounts, props) is drawn several times smaller than its source: capped at 2048, so Unity's import resize
+            // does the downscaling that mipmaps used to.
+            int maxSize = opaque ? 4096 : 2048;
+            if (imp.maxTextureSize != maxSize)                            { imp.maxTextureSize = maxSize; dirty = true; }
             if (imp.textureCompression != TextureImporterCompression.CompressedHQ) { imp.textureCompression = TextureImporterCompression.CompressedHQ; dirty = true; }
             if (imp.crunchedCompression)                                  { imp.crunchedCompression = false; dirty = true; }
-            // Tiled strips and islands are drawn several times smaller than the source: keep mipmaps. The cover-fit
-            // far painting is drawn near full size: none.
-            if (imp.mipmapEnabled == opaque)                              { imp.mipmapEnabled = !opaque; dirty = true; }
+            // No mipmaps (2026-11-14): Unity 6.5 will not ASTC/ETC2-compress a non-power-of-two sprite WITH mipmaps -
+            // it silently ships it as raw RGBA32 (148 sprites, ~600 MB of the first 878 MB iOS build).
+            if (imp.mipmapEnabled)                                        { imp.mipmapEnabled = false; dirty = true; }
             if (imp.wrapMode != TextureWrapMode.Clamp)                    { imp.wrapMode = TextureWrapMode.Clamp; dirty = true; }
             // Full-rect meshes: the clump sprites EnvironmentDepthSystem cuts from CornWall need the whole texture.
             var settings = new TextureImporterSettings();
