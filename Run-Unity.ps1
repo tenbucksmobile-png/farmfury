@@ -7,11 +7,12 @@
 #   build           Windows 64-bit build  -> unity/Builds/Windows/
 #   build-webgl     WebGL build           -> unity/Builds/WebGL/
 #   build-android   Android APK           -> unity/Builds/Android/
+#   build-ios       iOS Xcode project     -> unity/Builds/iOS/ (switches the active target to iOS)
 #   build-android-dev  Development APK with review markers -> unity/Builds/Android/FarmFury_dev.apk
 
 param(
     [Parameter(Mandatory=$true, Position=0)]
-    [ValidateSet("levels","setup","check","build","build-webgl","build-android","build-android-dev")]
+    [ValidateSet("levels","setup","check","build","build-webgl","build-android","build-android-dev","build-ios")]
     [string]$Command
 )
 
@@ -27,6 +28,7 @@ $MethodMap = @{
     "build-webgl"   = "BuildScript.BuildWebGL"
     "build-android" = "BuildScript.BuildAndroid"
     "build-android-dev" = "BuildScript.BuildAndroidDev"
+    "build-ios"     = "BuildScript.BuildIOS"
 }
 
 $Method = $MethodMap[$Command]
@@ -49,6 +51,8 @@ $unityArgs = @(
     "-logFile", $LogFile,
     "-quit"
 )
+# iOS export: start Unity on the iOS target (a full reimport the first time; reopen the Editor on Android after).
+if ($Command -eq "build-ios") { $unityArgs = @("-buildTarget", "iOS") + $unityArgs }
 
 Write-Host "Running Unity (this may take a minute on first run)..." -ForegroundColor Yellow
 

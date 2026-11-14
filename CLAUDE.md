@@ -139,7 +139,9 @@ needing a live pass before shipping.
 - **iOS build (2026-11-13):** team `UC5MMY5SW3`, build number 1 (bump + push before every cloud build),
   landscape only, `Assets/CloudBuildScripts/post-build.bash` uploads to TestFlight (env API_KEY_ID /
   API_ISSUER_ID / ENCRYPTION_KEY, Stampede's). Build Automation: project subfolder `unity`, branch
-  `align-franchise-ui` until merged. Still needed: App ID + App Store profile + App Store Connect record.
+  `align-franchise-ui` until merged. App ID + App Store profile done 2026-11-13 (`FarmFury_Secrets\iOS_Cannonfire\`,
+  Stampede's distribution cert); App Store Connect record Apple ID **6834522614** (2026-11-14). Still needed: the Build
+  Automation iOS target and the first build.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
 - **2026-11-13 (latest) — App icon, Arcade promo icon.** `Sprites/AppIcon.png` is now the user's

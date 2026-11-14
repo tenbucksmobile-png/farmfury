@@ -56,6 +56,14 @@ public static class BuildScript
               Path.Combine(ProjectRoot, "Builds", "Android", "FarmFury.apk"));
     }
 
+    // iOS Xcode project export (no Mac needed): the same Unity step Build Automation runs before Xcode, so it
+    // catches iOS-only compile errors and runs FarmFuryIosBuild's post-process. Uses the committed LevelData as
+    // the cloud does (no GenerateLevels). Run-Unity.ps1 passes -buildTarget iOS; switch back with -buildTarget Android.
+    public static void BuildIOS()
+    {
+        Build(BuildTarget.iOS, Path.Combine(ProjectRoot, "Builds", "iOS"));
+    }
+
     // Development APK for the video review pipeline (tools/review): keeps HighlightMarkers' log lines,
     // which are compiled out of release builds. Install with `adb install -r`.
     public static void BuildAndroidDev()
