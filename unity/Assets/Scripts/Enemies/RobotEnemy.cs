@@ -410,7 +410,8 @@ public class RobotEnemy : MonoBehaviour
     const float LiveMass = 4f;
     // Scaled with the slower falls (LiveGravityScale 0.6 -> 0.42 cuts fall speeds ~16%), 2026-11-09: was 2.5 / 6.
     // A crush is a kill (2026-11-10: no "half" tier any more). SmashImpulse kept for reference/tuning.
-    const float CrushImpulse = 2.1f, SmashImpulse = 5f;
+    // 2.1 -> 1.7 (2026-11-14, user: robots buried by a fallen structure took several retries to finish).
+    const float CrushImpulse = 1.7f, SmashImpulse = 5f;
     bool _live;
 
     // Floating-robot watchdog (2026-11-10, user screenshot: a robot left hanging in mid-air after its tower fell, W2
@@ -599,6 +600,14 @@ public class RobotEnemy : MonoBehaviour
     // breaking is structural only, falling presents fractional damage", per the 2026-07-10 fifth
     // balance pass. Weaker than a real explosion. See the damage-model comment at the top of
     // this class.
+    /// <summary>An animal or thrown ability struck fallen wreckage beside this robot hard enough to crush it
+    /// (BlockBase.CrushRobotsUnderWreckage). A kill for an ordinary robot; bosses scale by their structural resistance.</summary>
+    public void TakeWreckageHit()
+    {
+        if (!_live || IsDestroyed) return;
+        TakeDamage(_maxHealth * _structuralDamageResistance);
+    }
+
     public void TakeFallDamage() => TakeDamage(_maxHealth * FallDamageFraction * _structuralDamageResistance);
 
     public void TakeDamage(float amount)

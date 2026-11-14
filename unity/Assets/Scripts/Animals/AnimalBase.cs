@@ -11,7 +11,9 @@ public abstract class AnimalBase : MonoBehaviour
     // Share of an animal's design mass its body carries into a hit (2026-11-11, user: impacts "too high and shoot the
     // structure apart"). Cluck 8 -> 3.2, Bessie 28 -> 11.2: about a block's weight, enough to tip a well-struck piece,
     // not to blast a tower apart. Flight is unaffected (gravity doesn't depend on mass). Ability projectiles share it.
-    public const float ImpactMassScale = 0.4f;
+    // 0.4 -> 0.6 (2026-11-14, user on device: "the character hardly makes a dent ... almost feels like the character has
+    // no impact at all on fallen structure"): Cluck 4.8, Bessie 16.8. See also BlockBase.CrushRobotsUnderWreckage.
+    public const float ImpactMassScale = 0.6f;
     /// <summary>The level's flight pace (ReferenceFraming.FlightPace on framed levels, else 1), set by
     /// CatapultLauncher.ApplyFlightTuning. Slower shots carry 1/Pace the mass so their momentum - and their hits - stay
     /// the same; abilities fly and fall at the same pace.</summary>

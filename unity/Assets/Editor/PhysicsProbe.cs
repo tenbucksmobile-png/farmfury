@@ -132,6 +132,35 @@ public class PhysicsProbeRunner : MonoBehaviour
                           $"thrown>3u {thrown}, topSpeed {topSpeed:F1} u/s, robots lost {robotsLost}/{robots.Length}");
             }
 
+            // Second shot (2026-11-14): FF_PROBE_SHOT2=1 fires again, at the fallen piece nearest a surviving robot -
+            // the "structure fell and covers a robot, the next shot hardly dents it" case.
+            if (!string.IsNullOrEmpty(shot) && System.Environment.GetEnvironmentVariable("FF_PROBE_SHOT2") == "1")
+            {
+                RobotEnemy survivor = null; BlockBase wreck = null; float best = float.MaxValue;
+                foreach (var r in robots)
+                {
+                    if (r == null || r.IsDestroyed) continue;
+                    foreach (var b in blocks)
+                    {
+                        if (b == null || b.IsDestroyed || !b.HasToppled) continue;
+                        float d = Vector2.Distance(b.GetComponent<Collider2D>().bounds.center, r.transform.position);
+                        if (d < best) { best = d; survivor = r; wreck = b; }
+                    }
+                }
+                if (wreck == null || best > 2.5f)
+                    Debug.Log($"[Probe] SHOT2 {i} {gm.CurrentLevel?.levelId}: no fallen piece within 2.5 u of a surviving robot");
+                else
+                {
+                    string survivorName = survivor.name, wreckName = wreck.name;
+                    int before = 0; foreach (var r in robots) if (r == null || r.IsDestroyed) before++;
+                    yield return ShootAt(wreck);
+                    yield return new WaitForSeconds(4f);
+                    int after = 0; foreach (var r in robots) if (r == null || r.IsDestroyed) after++;
+                    Debug.Log($"[Probe] SHOT2 {i} {gm.CurrentLevel?.levelId}: at fallen {wreckName} {best:F1} u from {survivorName}: " +
+                              $"robots lost {before} -> {after} of {robots.Length}");
+                }
+            }
+
             int blocksLeft = 0, robotsLeft = 0, awake = 0;
             float maxMove = 0f; string mover = "";
             foreach (var b in blocks)
@@ -194,6 +223,23 @@ public class PhysicsProbeRunner : MonoBehaviour
             foreach (var b in blocks)
                 if (b != null && b.TryGetComponent<Rigidbody2D>(out var rb)) speedSample(rb.linearVelocity.magnitude);
         }
+    }
+
+    IEnumerator ShootAt(BlockBase target)
+    {
+        var bb = target.GetComponent<Collider2D>().bounds;
+        string animal = System.Environment.GetEnvironmentVariable("FF_PROBE_ANIMAL");
+        if (string.IsNullOrEmpty(animal)) animal = "Cluck";
+        float speed = float.TryParse(System.Environment.GetEnvironmentVariable("FF_PROBE_SPEED"), out var sp) ? sp : 10f;
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Prefabs/Animals/{animal}Animal.prefab");
+        if (prefab == null) yield break;
+        // From up-left, 35 deg down onto the piece (a lobbed shot landing on a heap).
+        Vector2 dir = new Vector2(Mathf.Cos(-35f * Mathf.Deg2Rad), Mathf.Sin(-35f * Mathf.Deg2Rad));
+        var go = Object.Instantiate(prefab, (Vector2)bb.center - dir * 1.4f, Quaternion.identity);
+        var ab = go.GetComponent<AnimalBase>();
+        yield return null;
+        ab.Launch(dir * speed, 0f);
+        yield return new WaitForSeconds(1.5f);
     }
 
     static int CountAwake(BlockBase[] blocks, RobotEnemy[] robots)

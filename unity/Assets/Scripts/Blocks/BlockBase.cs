@@ -224,6 +224,30 @@ public abstract class BlockBase : MonoBehaviour
         _rb.AddForceAtPosition(new Vector2(side, 0f) * push, at, ForceMode2D.Impulse);
     }
 
+    // Wreckage hit (2026-11-14, user on device: "the structure falls and covers a robot, but the character hardly makes
+    // a dent to try and destroy that robot - leading to multiple re trys"). A piece that has ALREADY fallen (toppled
+    // past ToppleAngle or dropped ToppleDrop) and is struck by an animal or a thrown ability at real speed crushes the
+    // robots within WreckageCrushRadius of the impact - the strike drives the debris into them, as in Angry Birds. A
+    // standing structure gets nothing extra: hitting an intact hut's roof still doesn't kill the robot inside.
+    const float WreckageCrushSpeed = 2f, WreckageCrushRadius = 1.1f;
+    static readonly System.Collections.Generic.List<Collider2D> _wreckageHits = new();
+
+    void CrushRobotsUnderWreckage(Collision2D col)
+    {
+        if (!_toppleScored || !IsLive || col.relativeVelocity.magnitude < WreckageCrushSpeed) return;
+        var other = col.rigidbody;
+        if (other == null || (other.GetComponent<AnimalBase>() == null && other.GetComponent<AbilityProjectile>() == null)) return;
+        Vector2 at = col.contactCount > 0 ? col.GetContact(0).point : (Vector2)transform.position;
+        Physics2D.OverlapCircle(at, WreckageCrushRadius, ContactFilter2D.noFilter, _wreckageHits);
+        foreach (var hit in _wreckageHits)
+        {
+            var robot = hit != null ? hit.GetComponentInParent<RobotEnemy>() : null;
+            if (robot == null || robot.IsDestroyed) continue;
+            if (ProbeLog) Debug.Log($"[Probe] WRECKAGE CRUSH {robot.name} via {name} relVel={col.relativeVelocity.magnitude:F2}");
+            robot.TakeWreckageHit();
+        }
+    }
+
     // DestroyBlock wakes the neighbours, but the block's collider lingers for DestroyDelay (0.12 s) — long enough for
     // something resting on it to be put back to sleep on top of a body that is about to vanish. Wake them again as it
     // actually goes (2026-11-10, floating-robot report).
@@ -636,6 +660,7 @@ public abstract class BlockBase : MonoBehaviour
         if (IsDestroyed) return;
         if (IsLive && Time.time < _graceUntil) return;   // settling, not a hit
         ShoveOnHit(col);
+        CrushRobotsUnderWreckage(col);
         if (_rb.bodyType == RigidbodyType2D.Static &&
             col.rigidbody != null &&
             col.rigidbody.bodyType == RigidbodyType2D.Static)
@@ -680,6 +705,8 @@ public abstract class BlockBase : MonoBehaviour
     // it falls (user: "structures that topple should not remain in the air randomly ... everything falls down").
     const float ToppleAngle = 40f, ToppleDrop = 0.6f, SupportProbeInterval = 0.35f, SupportProbeDepth = 0.25f;
     bool _toppleScored;
+    /// <summary>True once this piece has fallen (turned past ToppleAngle or dropped ToppleDrop).</summary>
+    public bool HasToppled => _toppleScored;
     Vector2 _restPos;
     float _restAngle, _nextSupportProbe;
 
