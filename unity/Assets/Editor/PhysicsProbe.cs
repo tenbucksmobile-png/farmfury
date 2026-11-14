@@ -9,13 +9,15 @@ using UnityEngine;
 
 public static class PhysicsProbe
 {
-    const string Key = "FF_PhysicsProbe_Levels";   // "first,last" level indices; deleted when done
+    const string Key = "FF_PhysicsProbe_Levels";   // "first,last" level indices; deleted when done. SessionState, not
+    // EditorPrefs (2026-11-14): a probe stopped part-way left the EditorPrefs key behind and the next interactive Play
+    // ran the probe ("the game is playing automatically"). SessionState dies with the Editor process.
 
     [MenuItem("FarmFury/Debug/Physics Probe (World 1, no input)")]
     public static void Run()
     {
         string levels = System.Environment.GetEnvironmentVariable("FF_PROBE_LEVELS");
-        EditorPrefs.SetString(Key, string.IsNullOrEmpty(levels) ? "0,17" : levels);
+        SessionState.SetString(Key, string.IsNullOrEmpty(levels) ? "0,17" : levels);
         EditorSceneManager.OpenScene("Assets/Scenes/Game.unity");
         EditorApplication.EnterPlaymode();
     }
@@ -23,7 +25,7 @@ public static class PhysicsProbe
     [InitializeOnLoadMethod]
     static void Hook()
     {
-        if (!EditorPrefs.HasKey(Key)) return;
+        if (string.IsNullOrEmpty(SessionState.GetString(Key, ""))) return;
         EditorApplication.playModeStateChanged += s => { if (s == PlayModeStateChange.EnteredPlayMode) Begin(); };
         if (EditorApplication.isPlaying) Begin();
     }
@@ -31,13 +33,13 @@ public static class PhysicsProbe
     static bool _begun;
     static void Begin()
     {
-        if (_begun || !EditorPrefs.HasKey(Key)) return;
+        if (_begun || string.IsNullOrEmpty(SessionState.GetString(Key, ""))) return;
         _begun = true;
-        var parts = EditorPrefs.GetString(Key).Split(',');
+        var parts = SessionState.GetString(Key, "").Split(',');
         new GameObject("PhysicsProbeRunner").AddComponent<PhysicsProbeRunner>()
             .Init(int.Parse(parts[0]), int.Parse(parts[1]), () =>
             {
-                EditorPrefs.DeleteKey(Key);
+                SessionState.EraseString(Key);
                 _begun = false;
                 if (Application.isBatchMode) EditorApplication.Exit(0); else EditorApplication.ExitPlaymode();
             });
