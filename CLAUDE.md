@@ -142,6 +142,10 @@ needing a live pass before shipping.
   `align-franchise-ui` until merged. App ID + App Store profile done 2026-11-13 (`FarmFury_Secrets\iOS_Cannonfire\`,
   Stampede's distribution cert); App Store Connect record Apple ID **6834522614** (2026-11-14). Still needed: the Build
   Automation iOS target and the first build.
+- **Texture compression (2026-11-14):** a non-power-of-two sprite WITH mipmaps is never ASTC/ETC2-compressed by
+  Unity 6.5 - it ships raw RGBA32. Keep sprite mipmaps off (`SceneSetup.Cornfield.LoadSpriteAt` caps non-opaque art at
+  2048 instead) and run `python tools/pad_sprites_to_4.py` after cutting new art (block compression needs sizes that
+  are multiples of 4). First cloud iOS build was 878 MB; local textures 702 -> 237 MB after the fix.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
 - **2026-11-13 (latest) — App icon, Arcade promo icon.** `Sprites/AppIcon.png` is now the user's
