@@ -8,11 +8,12 @@
 #   build-webgl     WebGL build           -> unity/Builds/WebGL/
 #   build-android   Android APK           -> unity/Builds/Android/
 #   build-ios       iOS Xcode project     -> unity/Builds/iOS/ (switches the active target to iOS)
+#   build-aab       Google Play AAB       -> unity/Builds/Android/Cannonfire.aab (+ symbols zip)
 #   build-android-dev  Development APK with review markers -> unity/Builds/Android/FarmFury_dev.apk
 
 param(
     [Parameter(Mandatory=$true, Position=0)]
-    [ValidateSet("levels","setup","check","build","build-webgl","build-android","build-android-dev","build-ios")]
+    [ValidateSet("levels","setup","check","build","build-webgl","build-android","build-aab","build-android-dev","build-ios")]
     [string]$Command
 )
 
@@ -27,6 +28,7 @@ $MethodMap = @{
     "build"         = "BuildScript.BuildWindows"
     "build-webgl"   = "BuildScript.BuildWebGL"
     "build-android" = "BuildScript.BuildAndroid"
+    "build-aab"     = "BuildScript.BuildAndroidAab"
     "build-android-dev" = "BuildScript.BuildAndroidDev"
     "build-ios"     = "BuildScript.BuildIOS"
 }

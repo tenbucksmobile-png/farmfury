@@ -4,3 +4,6 @@ tools/review/sessions/
 tools/review/bin/
 tools/review/comparison.md
 __pycache__/
+
+# Unity Android AAB build temp (asset-pack split)
+unity/.utmp/

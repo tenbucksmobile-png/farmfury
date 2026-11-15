@@ -52,8 +52,20 @@ public static class BuildScript
     public static void BuildAndroid()
     {
         GenerateLevels();
+        CannonfireBuildSettings.SetUpApk();
         Build(BuildTarget.Android,
               Path.Combine(ProjectRoot, "Builds", "Android", "FarmFury.apk"));
+    }
+
+    // Google Play App Bundle (CannonfireBuildSettings.SetUpGooglePlay: Boot scene first, art in an install-time
+    // asset pack, public symbols). Uses the committed LevelData like the iOS cloud build (no GenerateLevels).
+    // Signed with cannonfire.keystore when it exists and FF_KEYSTORE_PASS / FF_KEYALIAS_PASS are set, else debug.
+    public static void BuildAndroidAab()
+    {
+        CannonfireBuildSettings.SetUpGooglePlay();
+        Build(BuildTarget.Android,
+              Path.Combine(ProjectRoot, "Builds", "Android", "Cannonfire.aab"),
+              BuildOptions.CompressWithLz4HC);
     }
 
     // iOS Xcode project export (no Mac needed): the same Unity step Build Automation runs before Xcode, so it
@@ -69,6 +81,7 @@ public static class BuildScript
     public static void BuildAndroidDev()
     {
         GenerateLevels();
+        CannonfireBuildSettings.SetUpApk();
         Build(BuildTarget.Android,
               Path.Combine(ProjectRoot, "Builds", "Android", "FarmFury_dev.apk"),
               BuildOptions.Development);
