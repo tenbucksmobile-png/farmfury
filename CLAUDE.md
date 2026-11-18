@@ -149,6 +149,9 @@ needing a live pass before shipping.
   Unity 6.5 - it ships raw RGBA32. Keep sprite mipmaps off (`SceneSetup.Cornfield.LoadSpriteAt` caps non-opaque art at
   2048 instead) and run `python tools/pad_sprites_to_4.py` after cutting new art (block compression needs sizes that
   are multiples of 4). First cloud iOS build was 878 MB; local textures 702 -> 237 MB after the fix.
+- **Website demo (2026-11-18):** Meadow Ruins only, for `www.farmfurygames.com/play/cannonfire/`, lives in a separate
+  worktree `Desktop\FarmFury_Technical\FarmFury_Cannonfire_Web`, branch `web-demo` (never merged; cherry-pick fixes in).
+  Read its `WEB_DEMO_PLAN.md`. Built (31.5 MB) and tested in headless Edge; not yet uploaded.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
 - **2026-11-13 (latest) — App icon, Arcade promo icon.** `Sprites/AppIcon.png` is now the user's
