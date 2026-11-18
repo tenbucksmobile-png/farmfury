@@ -217,9 +217,7 @@ namespace FarmFury.UI
         private static string LockedText(AnimalType animal)
         {
             var world = AnimalRoster.IntroWorld(animal);
-            if (!WebDemo.IsPlayable(world)) { return $"FULL GAME
-Joins in
-{LeaderboardsScreen.WorldName(world)}"; }
+            if (!WebDemo.IsPlayable(world)) { return $"FULL GAME\nJoins in\n{LeaderboardsScreen.WorldName(world)}"; }
             int need = Mathf.Max(1, AnimalRoster.UnlockAfter(animal));
             string text = $"LOCKED\nClear {need} level{(need == 1 ? "" : "s")} in\n{LeaderboardsScreen.WorldName(world)}";
             var save = SaveManager.Instance;
