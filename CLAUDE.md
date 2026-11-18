@@ -154,7 +154,7 @@ needing a live pass before shipping.
   Read its `WEB_DEMO_PLAN.md`. Built (31.5 MB) and tested in headless Edge; upload zip
   `unity/Builds/farmfury-cannonfire-web.zip` (into `public_html/play/cannonfire/` only).
 - **farmfurygames.com v2 (2026-11-18, user's mockup):** plain HTML/CSS (replaces the Claude Design React/Babel export), not
-  in git - source + upload zip + README in `Desktop\FarmFury_Technicalarmfurygames-website\site-v2-2026-11-18\`.
+  in git - source + upload zip + README in `Desktop\FarmFury_Technical\farmfurygames-website\site-v2-2026-11-18\`.
   Home: game cards (Stampede, Arcade, Cannonfire, Raceway "coming soon"; logos from `FarmFury_Artwork/Logo`) in a
   scroll-snap carousel, the animal crew below; `/story/` "Farm Fury Universe" - Eps 1-9 grid + vertical video player
   (self-hosted 720p mp4s; Ep 10 left out until finished); `/shop/` merch placeholder grid. Checked at phone / tablet /
