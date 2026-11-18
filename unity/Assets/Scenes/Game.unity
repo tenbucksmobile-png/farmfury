@@ -230,8 +230,8 @@ MonoBehaviour:
   _sprFarHills: {fileID: 21300000, guid: 471ed735230857c4f8ff2f71c1510c47, type: 3}
   _sprMidground: {fileID: 21300000, guid: f82b5914d04aacb489f032a069d608e7, type: 3}
   _sprForeground: {fileID: 21300000, guid: f6e84d14e14e53a488852bdf05464c98, type: 3}
-  _sprFarHillsW2: {fileID: 21300000, guid: b7abd7aa4159785459e45213a64c4ad5, type: 3}
-  _sprMidgroundW2: {fileID: 21300000, guid: 1db879101fb9b24419bf0c468f1ffe6d, type: 3}
+  _sprFarHillsW2: {fileID: 0}
+  _sprMidgroundW2: {fileID: 0}
   _worldBackdrops:
   - {fileID: 0}
   - {fileID: 0}
@@ -1088,7 +1088,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -100
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: b7abd7aa4159785459e45213a64c4ad5, type: 3}
+  m_Sprite: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -1096,7 +1096,7 @@ SpriteRenderer:
   m_Size: {x: 27.2, y: 15.36}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1 &476566251
@@ -2172,7 +2172,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 894bdfe61cb187f499946446c4fefb2e, type: 3}
   _pauseButtonSprite: {fileID: 21300000, guid: 31a8c674f4922e443a427e353a35d515, type: 3}
   _coinSprite: {fileID: 21300000, guid: 321509b04823b5d418efce3cce145b48, type: 3}
-  _lockerSprite: {fileID: 21300000, guid: e271d648c765f7a4b8e07a7adacddc7d, type: 3}
+  _lockerSprite: {fileID: 0}
   _swapSprite: {fileID: 21300000, guid: 06ebfb736e198a647b966fbed071c6fb, type: 3}
   _hintHandSprite: {fileID: 21300000, guid: 3d787f7e07a98a04a958ef8f8ce108af, type: 3}
 --- !u!4 &1148615753
@@ -2729,19 +2729,19 @@ MonoBehaviour:
     legalSign: {fileID: 21300000, guid: 014a6d4116bd7b64884cfdbc79c808da, type: 3}
     leaderboardSign: {fileID: 21300000, guid: 374f695f53792584fb7b1e364fcacd34, type: 3}
     musicIcon: {fileID: 21300000, guid: fe33c7a168daa5a42a2457c85246a858, type: 3}
-    leaderboardIcon: {fileID: 21300000, guid: f651cf09db3f36c4a91ad4cd725c0af6, type: 3}
+    leaderboardIcon: {fileID: 0}
     characterStoryIcon: {fileID: 21300000, guid: ac9418eb99def4948bdd4d9cb285e631, type: 3}
     policiesIcon: {fileID: 21300000, guid: 3de0d08fbcf7cb24883a10b7df02e266, type: 3}
-    cashIcon: {fileID: 21300000, guid: 62a4f770bb5c21a4589f7c85063c1a54, type: 3}
-    worldsIcon: {fileID: 21300000, guid: 22c631fd9722de14ca776d8c421728aa, type: 3}
-    removeAdsIcon: {fileID: 21300000, guid: b610fbe70622e7042833ffd16284cd43, type: 3}
-    cosmeticsIcon: {fileID: 21300000, guid: 6b8044c06d99fbb43a011613115e5451, type: 3}
+    cashIcon: {fileID: 0}
+    worldsIcon: {fileID: 0}
+    removeAdsIcon: {fileID: 0}
+    cosmeticsIcon: {fileID: 0}
     plaque: {fileID: 21300000, guid: 5794c251e57d7e14ca97721cd33826a5, type: 3}
     coinPacks:
-    - {fileID: 21300000, guid: bbc5395c4dd553c4c973df3e619914e5, type: 3}
-    - {fileID: 21300000, guid: fd1a9eaaf4b9b52419a4eee9605c47ea, type: 3}
-    - {fileID: 21300000, guid: 277478f7245b98a47a6a96eb1beb9ba7, type: 3}
-    - {fileID: 21300000, guid: 208d5340901752d47a99b087f7ddee5a, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
     ownedBadge: {fileID: 21300000, guid: b6585d85573de464c861e48c6cd110bf, type: 3}
     purchaseComplete: {fileID: 21300000, guid: 296a95b51ff662c488477e15951673a0, type: 3}
     coinIcon: {fileID: 21300000, guid: 321509b04823b5d418efce3cce145b48, type: 3}
@@ -2752,37 +2752,37 @@ MonoBehaviour:
     crossPromoStampede: {fileID: 21300000, guid: 7d323f97926965e41b3ccf686fdfbdcc, type: 3}
     crossPromoArcade: {fileID: 21300000, guid: 914a0d8ef2c19b74b8b0c7d0ca943e02, type: 3}
     worldPrice: {fileID: 21300000, guid: 38cf681b7457f3240939fe26dd85fffe, type: 3}
-    cannonsBanner: {fileID: 21300000, guid: 19de823a1fc718946bc1a110213e987f, type: 3}
-    trailsBanner: {fileID: 21300000, guid: 6ee7067394a92f64588477c85b381167, type: 3}
-    impactsBanner: {fileID: 21300000, guid: 5c63963943f1ba046bf122606db16948, type: 3}
+    cannonsBanner: {fileID: 0}
+    trailsBanner: {fileID: 0}
+    impactsBanner: {fileID: 0}
     cannonItems:
-    - {fileID: 21300000, guid: 40264fa0add771b4cb2a56e89b4c75d5, type: 3}
-    - {fileID: 21300000, guid: af80edda45e89664bb7ff963c34c6d59, type: 3}
-    - {fileID: 21300000, guid: 734f7231a0b6b9a42ab749a7953fa86d, type: 3}
-    - {fileID: 21300000, guid: a6030d854e3860c4baa283618a5e7cb0, type: 3}
-    - {fileID: 21300000, guid: 96ef84d1a4cacc0468df210d25e7adaf, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
     trailItems:
-    - {fileID: 21300000, guid: ce223dba768242f43b9cebff2cf35c3d, type: 3}
-    - {fileID: 21300000, guid: 07aaabe13bda69e40b8d27d8b5d76029, type: 3}
-    - {fileID: 21300000, guid: 4160505b2e916d34591e449e10a1d6f9, type: 3}
-    - {fileID: 21300000, guid: 02dcbee60d56d0043b9738b1d5a80333, type: 3}
-    - {fileID: 21300000, guid: f19dfeec21918054f870600e02edf787, type: 3}
-    - {fileID: 21300000, guid: d5c66f3e9ae71d9408795c47b26b40a9, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
     impactItems:
-    - {fileID: 21300000, guid: ac2e35bbf80ddb24eaf670d9eb9d20f5, type: 3}
-    - {fileID: 21300000, guid: 9eb580d6e789fc9438b8e420abd860a2, type: 3}
-    - {fileID: 21300000, guid: 3dbb4923b6be14a44b58ad9eb1c73bac, type: 3}
-    - {fileID: 21300000, guid: a6ce5eee63b05714b8ac64ad2a8eb3cb, type: 3}
-    - {fileID: 21300000, guid: ab0cdda8237baf24aac2d10dcf85b357, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
     revivePanel: {fileID: 21300000, guid: ad1a7838bcefddb408d81768eb6cddad, type: 3}
     watchAd: {fileID: 21300000, guid: 2d4956a4d81759240b8b3fc0a0b78c37, type: 3}
     doubleCoins: {fileID: 21300000, guid: ba41b4a2e8c120e4cabff5371dfbd494, type: 3}
-    lockerIcon: {fileID: 21300000, guid: e271d648c765f7a4b8e07a7adacddc7d, type: 3}
-    lockerBanner: {fileID: 21300000, guid: 80b663dc3fdac624384da7fce8264f8d, type: 3}
-    lockerSuggestion: {fileID: 21300000, guid: 8c48c4f631fd2cd4babab6f22e5d2c6c, type: 3}
-    cardFrame: {fileID: 21300000, guid: d3cb9c9429c3fdb4e84b77892575741a, type: 3}
-    promoNewWorlds: {fileID: 21300000, guid: 71fbff720a5dcab45b515200087af896, type: 3}
-    promoNoAds: {fileID: 21300000, guid: 515b6708eff7b4740adc99e2fc24c57d, type: 3}
+    lockerIcon: {fileID: 0}
+    lockerBanner: {fileID: 0}
+    lockerSuggestion: {fileID: 0}
+    cardFrame: {fileID: 0}
+    promoNewWorlds: {fileID: 0}
+    promoNoAds: {fileID: 0}
     moveLeftButton: {fileID: 0}
     moveRightButton: {fileID: 0}
     jumpButton: {fileID: 0}
@@ -2796,22 +2796,22 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 85c0180c288cef841a91f98640bb9075, type: 3}
     - {fileID: 21300000, guid: 534972f80ceddf74e8a622f13a4ac8b2, type: 3}
     cosmeticIcons:
-    - {fileID: 21300000, guid: 035227875a682154d9ba5569b73e89b4, type: 3}
-    - {fileID: 21300000, guid: cdbf6adf4d0f49a45979fc829153d8bb, type: 3}
-    - {fileID: 21300000, guid: 277e701c22ee829458dc0d6570755390, type: 3}
-    - {fileID: 21300000, guid: 5d0f0acbcb431fd4186a5a22a01b5923, type: 3}
-    - {fileID: 21300000, guid: caedf37808873e446a0beebd40020eb8, type: 3}
-    - {fileID: 21300000, guid: 483ea64550ae07e49863ccdb71b27c77, type: 3}
-    - {fileID: 21300000, guid: 4da83b12fee26fa45b8ed26180236256, type: 3}
-    - {fileID: 21300000, guid: 74afd0659cb28474a8d672cbdcd84b06, type: 3}
-    - {fileID: 21300000, guid: 335838cacf0b29f42bef377356326810, type: 3}
-    - {fileID: 21300000, guid: 6b1d2e2c76bfd52408d9b22a8bd507f2, type: 3}
-    - {fileID: 21300000, guid: d6cb2bed56aed2942adc54abe9a47bf0, type: 3}
-    - {fileID: 21300000, guid: 68ec476f2fb3df841aa3860d0d2e6976, type: 3}
-    - {fileID: 21300000, guid: cd72099d9bf93ed4db3880ac917bc152, type: 3}
-    - {fileID: 21300000, guid: 52b78ae7287ff0f49b6c8d31f3728eb3, type: 3}
-    - {fileID: 21300000, guid: 094c4a31746728041a3606f7f2183d30, type: 3}
-    - {fileID: 21300000, guid: d92d43d2d981a34439ce816451501bf0, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
     cannonArt:
     - {fileID: 0}
     - {fileID: 0}
@@ -5269,7 +5269,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -10
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 1db879101fb9b24419bf0c468f1ffe6d, type: 3}
+  m_Sprite: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -5277,7 +5277,7 @@ SpriteRenderer:
   m_Size: {x: 27.2, y: 15.36}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1660057539 &9223372036854775807
