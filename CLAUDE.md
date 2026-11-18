@@ -151,7 +151,20 @@ needing a live pass before shipping.
   are multiples of 4). First cloud iOS build was 878 MB; local textures 702 -> 237 MB after the fix.
 - **Website demo (2026-11-18):** Meadow Ruins only, for `www.farmfurygames.com/play/cannonfire/`, lives in a separate
   worktree `Desktop\FarmFury_Technical\FarmFury_Cannonfire_Web`, branch `web-demo` (never merged; cherry-pick fixes in).
-  Read its `WEB_DEMO_PLAN.md`. Built (31.5 MB) and tested in headless Edge; not yet uploaded.
+  Read its `WEB_DEMO_PLAN.md`. Built (31.5 MB) and tested in headless Edge; upload zip
+  `unity/Builds/farmfury-cannonfire-web.zip` (into `public_html/play/cannonfire/` only).
+- **farmfurygames.com v2 (2026-11-18, user's mockup):** plain HTML/CSS (replaces the Claude Design React/Babel export), not
+  in git - source + upload zip + README in `Desktop\FarmFury_Technicalarmfurygames-website\site-v2-2026-11-18\`.
+  Home: game cards (Stampede, Arcade, Cannonfire, Raceway "coming soon"; logos from `FarmFury_Artwork/Logo`) in a
+  scroll-snap carousel, the animal crew below; `/story/` "Farm Fury Universe" - Eps 1-9 grid + vertical video player
+  (self-hosted 720p mp4s; Ep 10 left out until finished); `/shop/` merch placeholder grid. Checked at phone / tablet /
+  desktop sizes. The host caches CSS 7 days and pages a day: pages link `site.css?v=...` (bump it on every CSS change);
+  `htaccess-cache-rules.txt` (paste at the top of `public_html/.htaccess`) makes pages always revalidate. Cannonfire's
+  Google Play badge is a greyed "Coming soon" until the Play release. Updated privacy/terms v2.0
+  (`policies-2026-11-14/`) were not yet live on 2026-11-18.
+- **Cross-promo (2026-11-18):** Stampede (`fce0746`) and Arcade (`8047602`) menu hubs now advertise Cannonfire (App Store
+  6834522614); their `CrossPromo.CannonfireOnGooglePlay` keeps the card off Android - set it true in both once Cannonfire
+  is on Google Play. Card art `Sprites/UI/Franchise/CrossPromo/Cannonfire.png`.
 ### Recent major work (newest first — see `docs/HISTORY.md` for full detail on each)
 
 - **2026-11-13 (latest) — App icon, Arcade promo icon.** `Sprites/AppIcon.png` is now the user's
