@@ -47,3 +47,12 @@ the server is case-sensitive), upload the zip into that folder, Extract there, d
 ## Progress
 
 - 2026-11-18: branch, Meadow-only flow, Full Game panel, trim/build tools, embed template written.
+- 2026-11-18 (later): website build works - 31.5 MB (data 21.3 MB + wasm 11.6 MB; the wasm is bigger than Stampede's
+  7.1 MB because LevelPlay / IAP / UGS code stays compiled in). Trim removed 142 other-world levels, ~500 references.
+  Tested in headless Edge (DevTools protocol, 1280x720): title -> landing (Play + cog, no Exit) -> World Select (Meadow
+  Ruins centred) -> Watermill Village opens the Full Game panel -> Level Select (17 + boss) -> Character Select (Cluck;
+  Bessie "clear 1 level"; the rest FULL GAME) -> W1_L01 plays (tutorial hint, a shot fired, next Cluck loaded) -> Pause
+  -> Settings (Sound / Story / Policies). **Local testing gotcha:** this PC's antivirus cuts off Edge's download of
+  `Website.framework.js.unityweb` from a plain local server ("unityFramework is not defined"); serving the .unityweb
+  files with `Content-Encoding: gzip` works. Upload zip: `unity/Builds/farmfury-cannonfire-web.zip`. Not yet uploaded.
+  Polish: the Full Game panel's body text is faint over the bright backdrop.
