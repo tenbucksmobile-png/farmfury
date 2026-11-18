@@ -39,7 +39,11 @@ public static class WebDemoBuilder
         @"|/Franchise/Canvas/(CF|DC|FT|HF|RM|SC|SI|WV)_" +
         @"|/Franchise/LevelSelect/(?!MeadowRuins)" +
         @"|/Sprites/UI/Matchup_W2/" +
-        @"|/Sprites/Cosmetics/|/Franchise/Cosmetics/",
+        @"|/Sprites/Cosmetics/|/Franchise/Cosmetics/" +
+        @"|_W[2-9]\.png$" +
+        // Shop-only art (the demo sells nothing): cosmetic tiles and price cards, coin packs, shop / locker icons.
+        @"|/Franchise/Shop/(Impact|Cannon|Trail|SparkleDust|CornHusk|Confetti|Ember|RainbowRibbon|Ribbon|Bubble|bubbles" +
+        @"|100\.|500\.|5000\.|15000\.|Cosmetics_Icon|WorldMaze|Locker|PurchaseCardFrame|Ads\.|Shop\.png|Btn_LeaderBoard|Promo_)",
         RegexOptions.IgnoreCase);
 
     public static bool IsOtherWorldArt(Object asset)

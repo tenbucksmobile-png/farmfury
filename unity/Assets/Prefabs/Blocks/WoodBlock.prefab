@@ -202,40 +202,40 @@ MonoBehaviour:
   _sprSkew: {fileID: 21300000, guid: 7552f6f4757155447aa2b33c6846a7a3, type: 3}
   _sprDiagonal: {fileID: 21300000, guid: daac862704d95ad458c3fc02526b4ac6, type: 3}
   _sprFlat: {fileID: 21300000, guid: c64e339064fee444d97cd67028436ed8, type: 3}
-  _sprNormalW2: {fileID: 21300000, guid: 75888731e598d334bbf253277a8ce3c0, type: 3}
-  _sprVerticalW2: {fileID: 21300000, guid: f3c5bf0f9df50704889d2c0962f623b9, type: 3}
-  _sprHorizontalW2: {fileID: 21300000, guid: b675603d7e136c74ea5a8aa1aea415c9, type: 3}
-  _sprDiagonalW2: {fileID: 21300000, guid: 29557a4f0b3722940b6df5d13467c915, type: 3}
-  _sprShortW2: {fileID: 21300000, guid: 75888731e598d334bbf253277a8ce3c0, type: 3}
+  _sprNormalW2: {fileID: 0}
+  _sprVerticalW2: {fileID: 0}
+  _sprHorizontalW2: {fileID: 0}
+  _sprDiagonalW2: {fileID: 0}
+  _sprShortW2: {fileID: 0}
   _sprExplodeW2: {fileID: 0}
   _sprNormalW3: {fileID: 0}
-  _sprVerticalW3: {fileID: 21300000, guid: 6ec27819772248747aa16465e5069cc1, type: 3}
-  _sprHorizontalW3: {fileID: 21300000, guid: a04ec0237d03f0344bc6917d44e813c9, type: 3}
+  _sprVerticalW3: {fileID: 0}
+  _sprHorizontalW3: {fileID: 0}
   _sprShortW3: {fileID: 0}
   _sprExplodeW3: {fileID: 0}
   _sprNormalW4: {fileID: 0}
-  _sprVerticalW4: {fileID: 21300000, guid: 99db702169719834ba2c271f90971192, type: 3}
-  _sprHorizontalW4: {fileID: 21300000, guid: ce36b16b5bdb9904c88a700285221799, type: 3}
+  _sprVerticalW4: {fileID: 0}
+  _sprHorizontalW4: {fileID: 0}
   _sprShortW4: {fileID: 0}
   _sprNormalW5: {fileID: 0}
-  _sprVerticalW5: {fileID: 21300000, guid: 9735926f6c962e746bd505421848aa1d, type: 3}
-  _sprHorizontalW5: {fileID: 21300000, guid: fba888b917d0fd74b8a63b5d30a100fc, type: 3}
+  _sprVerticalW5: {fileID: 0}
+  _sprHorizontalW5: {fileID: 0}
   _sprShortW5: {fileID: 0}
   _sprNormalW6: {fileID: 0}
-  _sprVerticalW6: {fileID: 21300000, guid: 7b2a1d6ebd319154fb82fe5976e1c5dc, type: 3}
-  _sprHorizontalW6: {fileID: 21300000, guid: 75432eed3268a3f4a86b7490f1050cb9, type: 3}
+  _sprVerticalW6: {fileID: 0}
+  _sprHorizontalW6: {fileID: 0}
   _sprShortW6: {fileID: 0}
   _sprNormalW7: {fileID: 0}
-  _sprVerticalW7: {fileID: 21300000, guid: ceb4506b806a0844f8373aecbcfef795, type: 3}
-  _sprHorizontalW7: {fileID: 21300000, guid: f9403825b27fa934f9d6eb79dbd301cd, type: 3}
+  _sprVerticalW7: {fileID: 0}
+  _sprHorizontalW7: {fileID: 0}
   _sprShortW7: {fileID: 0}
   _sprNormalW8: {fileID: 0}
-  _sprVerticalW8: {fileID: 21300000, guid: eb74f1bbf829d644aaa768aa04d6c25f, type: 3}
-  _sprHorizontalW8: {fileID: 21300000, guid: 2dc22166dfff33d4c94ef9ab819a1835, type: 3}
+  _sprVerticalW8: {fileID: 0}
+  _sprHorizontalW8: {fileID: 0}
   _sprShortW8: {fileID: 0}
   _sprNormalW9: {fileID: 0}
-  _sprVerticalW9: {fileID: 21300000, guid: 82b444350619ae340ac7e2d3d031092a, type: 3}
-  _sprHorizontalW9: {fileID: 21300000, guid: e364e34e544001a4ba190aa7d2aa4010, type: 3}
+  _sprVerticalW9: {fileID: 0}
+  _sprHorizontalW9: {fileID: 0}
   _sprShortW9: {fileID: 0}
   _sprDamaged: {fileID: 21300000, guid: e26731f087630b8408032cf83ab56319, type: 3}
   _sprExplode: {fileID: 21300000, guid: e26731f087630b8408032cf83ab56319, type: 3}
