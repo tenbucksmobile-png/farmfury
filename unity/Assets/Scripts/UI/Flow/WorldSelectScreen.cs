@@ -10,6 +10,20 @@ namespace FarmFury.UI
     public sealed class WorldSelectScreen : FarmFury.Shared.UI.WorldSelectScreen<WorldType>
     {
         public WorldSelectScreen(Transform canvas, Action<WorldType> onEnter, Action onBuyWorld, Action onHome, MenuArt art)
-            : base(canvas, CannonfireMenuData.Instance.World, onEnter, onBuyWorld, onHome, art) { }
+            : base(canvas, WebView, onEnter, onBuyWorld, onHome, art) { }
+
+        // Web demo: every world but Meadow Ruins reads as "unlocked" (bright, tappable - GameFlow.EnterLevelSelect opens
+        // the Full Game panel for it) and as paid, so it sorts after Meadow Ruins and Meadow Ruins stays the centred,
+        // furthest-unlocked world.
+        private static FarmFury.Shared.UI.WorldView WebView(WorldType world)
+        {
+            var view = CannonfireMenuData.Instance.World(world);
+            if (!FarmFury.Core.WebDemo.IsPlayable(world))
+            {
+                view.Unlocked = true;
+                view.PurchaseRequired = true;
+            }
+            return view;
+        }
     }
 }

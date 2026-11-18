@@ -254,6 +254,7 @@ namespace FarmFury.UI
                 ShopPromo.RemoveAds => _shop.promoNoAds,
                 _ => null,
             };
+            if (promo != ShopPromo.None) { promo = ShopPromo.None; art = null; }   // web demo: nothing is sold
             _promo = promo;
             _promoCard.image.sprite = art;
             _promoCard.gameObject.SetActive(art != null);
@@ -387,7 +388,7 @@ namespace FarmFury.UI
             NextButton.gameObject.SetActive(complete);
             RetryButton.gameObject.SetActive(!complete);
             SettingsButton.gameObject.SetActive(complete);
-            _shopSign.gameObject.SetActive(!complete);
+            _shopSign.gameObject.SetActive(false);   // web demo: no shop
             float homeX = complete ? -EdgeMargin - UIKit.RoundButtonSize - ButtonGap : -EdgeMargin;
             HomeButton.image.rectTransform.anchoredPosition = new Vector2(homeX, BottomMargin);
         }

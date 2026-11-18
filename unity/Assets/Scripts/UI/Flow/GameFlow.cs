@@ -43,6 +43,8 @@ namespace FarmFury.UI
         public RevivePromptScreen Revive { get; private set; }
         public ShopScreen ShopHub { get; private set; }
         public LockerScreen Locker { get; private set; }
+        /// <summary>Web demo: the "in the full game" panel (other worlds, and after the Meadow Ruins boss).</summary>
+        public FullGameScreen FullGame { get; private set; }
         public MenuArt Art => _menuArt;
         public ShopArt Shop => _shopArt;
         public WorldType CurrentWorld { get; private set; } = WorldType.MeadowRuins;
@@ -64,6 +66,7 @@ namespace FarmFury.UI
             CanvasTransform = canvas.transform;
 
             Landing = new LandingScreen(canvas.transform, EnterWorldSelect, ExitGame, OpenMenuHub, _menuArt);
+            if (Landing.ExitButton != null) { Landing.ExitButton.gameObject.SetActive(false); }   // web demo: a page can't quit
             Worlds = new WorldSelectScreen(canvas.transform, EnterLevelSelect, OpenWorldShop, EnterLanding, _menuArt);
             Levels = new LevelSelectScreen(canvas.transform, PickLevel, EnterWorldSelect, _menuArt);
             CharacterSelect = new CharacterSelectScreen(canvas.transform, LaunchLevel, CloseCharacterSelect, _menuArt);
@@ -127,6 +130,13 @@ namespace FarmFury.UI
             ShopHub = Add(new ShopScreen(c, _menuArt, _shopArt, Gate, coins.Show, _worldShop.Show, chooser.Show));
 
             MenuHub = Add(new MenuHubScreen(c, _menuArt, _shopArt, Gate, Settings.Show, OpenShop));
+
+            // Web demo: no leaderboards (Settings keeps Sound / Story / Policies), and the Full Game panel.
+            foreach (var t in Settings.Root.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name == "LeaderboardCell") { t.gameObject.SetActive(false); }
+            }
+            FullGame = Add(new FullGameScreen(c, _menuArt, _shopArt, Gate));
         }
 
         private ItemPurchaseScreen _worldShop, _worldPromo, _cannonsPage, _trailsPage, _impactsPage;
@@ -274,6 +284,7 @@ namespace FarmFury.UI
 
         public void EnterLevelSelect(WorldType world)
         {
+            if (!WebDemo.IsPlayable(world)) { FullGame?.ShowLockedWorld(world); return; }   // web demo
             CurrentWorld = world;
             LeaveGameplay();
             _gm.SetState(GameState.LevelSelect);
@@ -320,6 +331,11 @@ namespace FarmFury.UI
         {
             Results.Hide();
             var level = _gm.CurrentLevel;
+            if (level != null && level.isBossLevel && FullGame != null)   // web demo: the demo is over
+            {
+                FullGame.ShowDemoComplete(EnterWorldSelect);
+                return;
+            }
             if (level != null && level.isBossLevel && WorldCleared != null
                 && WorldCleared.ShowFor(CannonfireMenuData.Instance.World(level.WorldType),
                     CannonfireMenuData.Instance.WorldOrNull(_gm.RunState.worldUnlocked), ContinueAfterLevel))
@@ -361,7 +377,7 @@ namespace FarmFury.UI
         /// <summary>The HUD's Locker button: equip owned hats / trails mid-level (the level freezes while open).</summary>
         public void OpenLocker()
         {
-            if (_gm.State == GameState.Playing && !_gm.ReviveDecisionPending) { Locker?.Open(); }
+            // Web demo: no Locker (cosmetics are sold in the full game).
         }
 
         public void ResumeFromPause() => _gm.ResumeGame();
@@ -437,7 +453,7 @@ namespace FarmFury.UI
         public void OpenSettings() => Settings.Show();
 
         /// <summary>Settings cog (landing, Level Complete): the menu hub over that screen; Back returns to it.</summary>
-        public void OpenMenuHub() => MenuHub.Show();
+        public void OpenMenuHub() => Settings.Show();   // web demo: no Shop / merch / cross-promo hub
 
         /// <summary>The menu hub's Shop sign.</summary>
         public void OpenShop() => ShopHub.Show();

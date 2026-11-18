@@ -216,7 +216,7 @@ namespace FarmFury.Core
             EquippedChanged?.Invoke(StoreProducts.Trails);
         }
 
-        public bool IsWorldPurchased(WorldType world) => GetProtectedBool(WorldPurchasedKeyPrefix + world, false);
+        public bool IsWorldPurchased(WorldType world) => false;   // web demo: nothing is sold
 
         public void SetWorldPurchased(WorldType world)
         {
@@ -400,6 +400,7 @@ namespace FarmFury.Core
         /// </summary>
         public bool IsWorldUnlocked(WorldType world)
         {
+            if (!WebDemo.IsPlayable(world)) { return false; }   // web demo: Meadow Ruins only
             if (DebugAllLevelsOpen) { return true; }
             if (IsPaidWorld(world)) { return IsWorldPurchased(world); }
             return world == WorldType.MeadowRuins || IsWorldBossCleared(world - 1);

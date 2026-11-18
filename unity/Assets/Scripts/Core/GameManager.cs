@@ -64,9 +64,14 @@ public class GameManager : MonoBehaviour
         if (GetComponent<FarmFury.Core.SaveManager>() == null) gameObject.AddComponent<FarmFury.Core.SaveManager>();
         // Franchise monetisation (Phase 5): store, ads, analytics. AdManager stays inert until FarmFury's own
         // LevelPlay keys are entered on it (Inspector); IAP uses the fake store in the Editor.
-        if (GetComponent<FarmFury.Core.IAPManager>() == null) gameObject.AddComponent<FarmFury.Core.IAPManager>();
-        if (GetComponent<FarmFury.Shared.Monetisation.AdManager>() == null) gameObject.AddComponent<FarmFury.Shared.Monetisation.AdManager>();
-        if (GetComponent<FarmFury.Shared.Monetisation.AnalyticsManager>() == null) gameObject.AddComponent<FarmFury.Shared.Monetisation.AnalyticsManager>();
+        // Web demo: no store, ads or analytics. WebDemoBuilder removes these components from the scene; this catches a
+        // scene that still has them (the components are disabled before their Start, where they connect).
+        foreach (var c in new MonoBehaviour[] { GetComponent<FarmFury.Core.IAPManager>(),
+                     GetComponent<FarmFury.Shared.Monetisation.AdManager>(),
+                     GetComponent<FarmFury.Shared.Monetisation.AnalyticsManager>() })
+        {
+            if (c != null) { c.enabled = false; Destroy(c); }
+        }
 
         // Eggs spawn AT the firing Cluck's own position (see CluckAnimal.SpawnEggs()), so with
         // every layer pair colliding by default (Physics2D's project-wide matrix), each egg

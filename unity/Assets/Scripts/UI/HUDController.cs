@@ -332,6 +332,7 @@ public class HUDController : MonoBehaviour
         lockerBtn.targetGraphic = lockerImg;
         StyleTopButtonColors(lockerBtn);
         lockerBtn.onClick.AddListener(() => FarmFury.UI.GameFlow.Instance?.OpenLocker());
+        lockerImg.gameObject.SetActive(false);   // web demo: no Locker
 
         // Character switch (2026-11-09), under the Locker: back to Character Select for the animals still to fire.
         _swapImage = MakeImage(_topRightRoot, "SwapBtn",
@@ -339,7 +340,7 @@ public class HUDController : MonoBehaviour
                           _swapSprite != null ? Color.white : new Color(0.2f, 0.25f, 0.38f, 0.95f),
                           anchorMin: new Vector2(1f, 0f), anchorMax: new Vector2(1f, 0f),
                           pivot:     new Vector2(1f, 1f),
-                          pos:       new Vector2(0f, -16f - btnSize - 16f),
+                          pos:       new Vector2(0f, -16f),   // web demo: in the hidden Locker's place
                           size:      new Vector2(btnSize, btnSize));
         _swapImage.preserveAspect = true;
         _swapButton = _swapImage.gameObject.AddComponent<Button>();
