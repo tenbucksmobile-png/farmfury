@@ -337,7 +337,7 @@ holds the character, only for genuinely missing pieces); **Suno** for music. Art
 | 3 Character roster (8 animals) | Done (Horace's ability/impact art pending) |
 | 4 World 1 (18 levels + boss) | Done — rebuilt Nov 2026: tall live-physics towers, mounts, rolling wagons |
 | 5 Worlds 2–9 | Levels, robots, bosses, backdrops, props built (Nov 2026); per-world launcher mechanics planned |
-| 6 Polish & release | Monetisation built; next: Play-mode verification of everything, level validator, store setup, device testing, soft launch |
+| 6 Polish & release | Monetisation built; **iOS 1.0 approved by App Store review 2026-11-18**; Android (Google Play) in progress |
 
 **Post-launch ideas (from v2, not scheduled):** daily challenge levels, weekly timed challenges, story events,
 leaderboards on the "Perfect" goal, seasonal cosmetics.

@@ -136,12 +136,15 @@ needing a live pass before shipping.
 - **`assets/` (raw Kling AI source art) is permanently removed from this repo**, relocated to the
   Desktop. `unity/Assets/Sprites/` (processed game art) is tracked in git since 2026-11-13 (Unity
   Build Automation builds iOS from GitHub; tool-only `~` folders stay local).
-- **iOS build (2026-11-13):** team `UC5MMY5SW3`, build number 1 (bump + push before every cloud build),
+- **iOS: APPROVED by App Store review (2026-11-18)** - Farm Fury Cannonfire 1.0 (build 2, commit c27abf1), Apple ID
+  **6834522614**, App Store link `https://apps.apple.com/app/id6834522614`. Any further iOS change ships as a new version
+  (bump `bundleVersion` + `buildNumber.iPhone`). Stampede / Arcade can now cross-promote Cannonfire with that id.
+- **iOS build (2026-11-13):** team `UC5MMY5SW3`, build number 2 since 2026-11-14 (bump + push before every cloud build),
   landscape only, `Assets/CloudBuildScripts/post-build.bash` uploads to TestFlight (env API_KEY_ID /
   API_ISSUER_ID / ENCRYPTION_KEY, Stampede's). Build Automation: project subfolder `unity`, branch
   `align-franchise-ui` until merged. App ID + App Store profile done 2026-11-13 (`FarmFury_Secrets\iOS_Cannonfire\`,
-  Stampede's distribution cert); App Store Connect record Apple ID **6834522614** (2026-11-14). Still needed: the Build
-  Automation iOS target and the first build.
+  Stampede's distribution cert); App Store Connect record Apple ID **6834522614** (2026-11-14). Build Automation target
+  set up; build 2 ran on device via TestFlight (2026-11-14), was submitted as 1.0 and approved 2026-11-18.
 - **Texture compression (2026-11-14):** a non-power-of-two sprite WITH mipmaps is never ASTC/ETC2-compressed by
   Unity 6.5 - it ships raw RGBA32. Keep sprite mipmaps off (`SceneSetup.Cornfield.LoadSpriteAt` caps non-opaque art at
   2048 instead) and run `python tools/pad_sprites_to_4.py` after cutting new art (block compression needs sizes that
