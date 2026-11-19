@@ -136,6 +136,10 @@ needing a live pass before shipping.
 - **`assets/` (raw Kling AI source art) is permanently removed from this repo**, relocated to the
   Desktop. `unity/Assets/Sprites/` (processed game art) is tracked in git since 2026-11-13 (Unity
   Build Automation builds iOS from GitHub; tool-only `~` folders stay local).
+- **Android: PUBLISHED on Google Play (2026-11-19, user)** - package `com.farmfury.cannonfire`, store link
+  `https://play.google.com/store/apps/details?id=com.farmfury.cannonfire`. The user is activating ads in LevelPlay and
+  AdMob (Android app). Follow-ups: set `CrossPromo.CannonfireOnGooglePlay = true` in Stampede and Arcade (then rebuild
+  them), and swap the website's greyed "Coming soon" Play badge for the live link.
 - **iOS: APPROVED by App Store review (2026-11-18)** - Farm Fury Cannonfire 1.0 (build 2, commit c27abf1), Apple ID
   **6834522614**, App Store link `https://apps.apple.com/app/id6834522614`. Any further iOS change ships as a new version
   (bump `bundleVersion` + `buildNumber.iPhone`). Stampede / Arcade can now cross-promote Cannonfire with that id.
