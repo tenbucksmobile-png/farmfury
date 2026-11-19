@@ -136,7 +136,7 @@ needing a live pass before shipping.
 - **`assets/` (raw Kling AI source art) is permanently removed from this repo**, relocated to the
   Desktop. `unity/Assets/Sprites/` (processed game art) is tracked in git since 2026-11-13 (Unity
   Build Automation builds iOS from GitHub; tool-only `~` folders stay local).
-- **Android: production release 1 (versionCode 1) submitted to Google Play, not yet public on 2026-11-19 (store page 404, release status not yet "Available")** - package `com.farmfury.cannonfire`, store link
+- **Android: production release 1 (versionCode 1) IN REVIEW on Google Play since 2026-11-19 (was never sent for review until the Data safety form declared the ad / analytics / purchase data)** - package `com.farmfury.cannonfire`, store link
   `https://play.google.com/store/apps/details?id=com.farmfury.cannonfire`. The user is activating ads in LevelPlay and
   AdMob (Android app). Follow-ups: set `CrossPromo.CannonfireOnGooglePlay = true` in Stampede and Arcade (then rebuild
   them), and swap the website's greyed "Coming soon" Play badge for the live link.
