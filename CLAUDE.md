@@ -136,10 +136,12 @@ needing a live pass before shipping.
 - **`assets/` (raw Kling AI source art) is permanently removed from this repo**, relocated to the
   Desktop. `unity/Assets/Sprites/` (processed game art) is tracked in git since 2026-11-13 (Unity
   Build Automation builds iOS from GitHub; tool-only `~` folders stay local).
-- **Android: production release 1 (versionCode 1) IN REVIEW on Google Play since 2026-11-19 (was never sent for review until the Data safety form declared the ad / analytics / purchase data)** - package `com.farmfury.cannonfire`, store link
-  `https://play.google.com/store/apps/details?id=com.farmfury.cannonfire`. The user is activating ads in LevelPlay and
-  AdMob (Android app). Follow-ups: set `CrossPromo.CannonfireOnGooglePlay = true` in Stampede and Arcade (then rebuild
-  them), and swap the website's greyed "Coming soon" Play badge for the live link.
+- **Android: production release 1 (versionCode 1) LIVE on Google Play (published 2026-11-19, category Games > Casual, Family section); LevelPlay Android app activated 2026-11-26** - package `com.farmfury.cannonfire`, store link
+  `https://play.google.com/store/apps/details?id=com.farmfury.cannonfire`. LevelPlay activated it with that store URL
+  (category Games > Casual). Open: check ads on a device (banner on Pause, interstitial every 6 loads, rewarded revive /
+  Double Coins); activate the iOS LevelPlay app (`https://apps.apple.com/us/app/farm-fury-cannonfire/id6834522614`);
+  `app-ads.txt` on the site still has only the AdMob line - add LevelPlay's list from its dashboard; set
+  `CrossPromo.CannonfireOnGooglePlay = true` in Stampede and Arcade (then rebuild them).
 - **iOS: APPROVED by App Store review (2026-11-18)** - Farm Fury Cannonfire 1.0 (build 2, commit c27abf1), Apple ID
   **6834522614**, App Store link `https://apps.apple.com/app/id6834522614`. Any further iOS change ships as a new version
   (bump `bundleVersion` + `buildNumber.iPhone`). Stampede / Arcade can now cross-promote Cannonfire with that id.
@@ -164,7 +166,8 @@ needing a live pass before shipping.
   (self-hosted 720p mp4s; Ep 10 left out until finished); `/shop/` merch placeholder grid. Checked at phone / tablet /
   desktop sizes. The host caches CSS 7 days and pages a day: pages link `site.css?v=...` (bump it on every CSS change);
   `htaccess-cache-rules.txt` (paste at the top of `public_html/.htaccess`) makes pages always revalidate. Cannonfire's
-  Google Play badge is a greyed "Coming soon" until the Play release. Updated privacy/terms v2.0
+  Google Play badge links to the live store page since 2026-11-26 - local only until
+  `update-2026-11-26-index-only.zip` (index.html) is uploaded to `public_html`. Updated privacy/terms v2.0
   (`policies-2026-11-14/`) were not yet live on 2026-11-18.
 - **Cross-promo (2026-11-18):** Stampede (`fce0746`) and Arcade (`8047602`) menu hubs now advertise Cannonfire (App Store
   6834522614); their `CrossPromo.CannonfireOnGooglePlay` keeps the card off Android - set it true in both once Cannonfire
